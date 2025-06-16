@@ -8,7 +8,8 @@ namespace oomtm450PuckMod_Ruleset.SystemFunc {
         /// </summary>
         /// <returns>Bool, true if this is a dedicated server.</returns>
         internal static bool IsDedicatedServer() {
-            return SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null;
+            //return SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null;
+            return ServerManager.Instance.IsServer;
         }
     }
 }

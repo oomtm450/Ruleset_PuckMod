@@ -3,7 +3,10 @@ using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Unity.Netcode;
+using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace oomtm450PuckMod_Ruleset {
     /// <summary>
@@ -32,28 +35,176 @@ namespace oomtm450PuckMod_Ruleset {
         /// ServerConfig, config set by the client.
         /// </summary>
         private static ClientConfig _clientConfig = new ClientConfig();
+
+        private static readonly Dictionary<ArenaElement, (double Start, double End)> ICE_Z_POSITIONS = new Dictionary<ArenaElement, (double Start, double End)> {
+            { ArenaElement.BlueTeam_BlueLine, (13.0, 13.5) },
+            { ArenaElement.RedTeam_BlueLine, (-13.0, -13.5) },
+            { ArenaElement.CenterLine, (-0.25, 0.25) },
+            { ArenaElement.BlueTeam_GoalLine, (39.75, 40) },
+            { ArenaElement.RedTeam_GoalLine, (-39.75, -40) },
+        };
+
+        private static readonly Dictionary<PlayerTeam, bool> _isOffside = new Dictionary<PlayerTeam, bool> {
+            { PlayerTeam.Blue, false },
+            { PlayerTeam.Red, false },
+        };
+
+        private static Dictionary<string, Stopwatch> _playersLastTimePuckPossession = new Dictionary<string, Stopwatch>();
+
+        private static InputAction _getStickLocation;
+
+        // Barrier collider, position 0 -19 0 is realistic.
         #endregion
 
-        /// <summary>
-        /// Class that patches the Event_Client_OnPositionSelectClickPosition event from PlayerPositionManagerController.
+        /*/// <summary>
+        /// Class that patches the OnCollisionEnter event from Puck.
         /// </summary>
-        [HarmonyPatch(typeof(PlayerPositionManagerController), "????")]
-        public class PlayerPositionManagerControllerPatch {
-            /// <summary>
-            /// Prefix patch function to check if the player is authorized to claim the selected position.
-            /// </summary>
-            /// <param name="message">Dictionary of string and object, content of the event.</param>
-            /// <returns>Bool, true if the user is authorized.</returns>
+        [HarmonyPatch(typeof(Puck), "OnCollisionEnter")]
+        public class Puck_OnCollisionEnter_Patch {
             [HarmonyPostfix]
-            public static bool Postfix(Dictionary<string, object> message) {
-                // If this is not the server, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer())
-                    return true;
+            public static void Postfix(Collision collision) {
+                // If this is not the server or game is not started, do not use the patch.
+                if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                    return;
 
-                Logging.Log("????", _serverConfig);
+                Stick stick = GetStick(collision.gameObject);
+                if (!stick)
+                    return;
+
+                Logging.Log($"Puck was hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" (enter)!", _serverConfig);
+            }
+        }*/
+
+        /// <summary>
+        /// Class that patches the OnCollisionStay event from Puck.
+        /// </summary>
+        [HarmonyPatch(typeof(Puck), "OnCollisionStay")]
+        public class Puck_OnCollisionStay_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(Collision collision) {
+                // If this is not the server or game is not started, do not use the patch.
+                if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                    return;
+
+                try {
+                    Stick stick = GetStick(collision.gameObject);
+                    if (!stick)
+                        return;
+
+                    Logging.Log($"Puck is being hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" (stay)!", _serverConfig);
+
+                    if (!_playersLastTimePuckPossession.TryGetValue(stick.Player.SteamId.Value.ToString(), out Stopwatch watch)) {
+                        watch = new Stopwatch();
+                        watch.Start();
+                        _playersLastTimePuckPossession.Add(stick.Player.SteamId.Value.ToString(), watch);
+                    }
+
+                    // Offside logic.
+                    if (IsOffside(stick.Player.Team.Value))
+                        Logging.Log($"{stick.Player.Team.Value} team offside has been called !", _serverConfig);
+
+                    watch.Restart();
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in Puck_OnCollisionStay_Patch Postfix().\n{ex}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the OnCollisionExit event from Puck.
+        /// </summary>
+        [HarmonyPatch(typeof(Puck), "OnCollisionExit")]
+        public class Puck_OnCollisionExit_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(Collision collision) {
+                // If this is not the server or game is not started, do not use the patch.
+                if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                    return;
+
+                try {
+                    Stick stick = GetStick(collision.gameObject);
+                    if (!stick)
+                        return;
+
+                    Logging.Log($"Puck is not being hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" anymore (exit)!", _serverConfig);
+                }
+                catch (Exception ex)  {
+                    Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Update event from PlayerInput.
+        /// </summary>
+        [HarmonyPatch(typeof(PlayerInput), "Update")]
+        public class PlayerInput_Update_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix() {
+                try {
+                    UIChat chat = UIChat.Instance;
+
+                    if (chat.IsFocused)
+                        return true;
+
+                    if (_getStickLocation.WasPressedThisFrame())
+                        Logging.Log($"Stick position : {PlayerManager.Instance.GetLocalPlayer().Stick.BladeHandlePosition}", _clientConfig);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in PlayerInput_Update_Patch Prefix().\n{ex}");
+                }
 
                 return true;
             }
+        }
+
+        /// <summary>
+        /// Class that patches the Update event from ServerManager.
+        /// </summary>
+        [HarmonyPatch(typeof(ServerManager), "Update")]
+        public class ServerManager_Update_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix() {
+                // If this is not the server or game is not started, do not use the patch.
+                if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                    return true;
+
+                try {
+                    // Offside logic.
+                    List<Player> players = PlayerManager.Instance.GetPlayers();
+                    foreach (Player p in players) {
+                        p.PlayerPosition.transform.GetPositionAndRotation(out Vector3 position, out _);
+                        switch (p.Team.Value) {
+                            case PlayerTeam.Blue:
+                                if (position.z > ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) // Is offside.
+                                    Logging.Log($"{p.Team.Value} team is offside.", _serverConfig);
+                                else if (position.z < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].Start && _isOffside[p.Team.Value]) // Not offside.
+                                    Logging.Log($"{p.Team.Value} team is not offside anymore.", _serverConfig);
+                                break;
+                        }
+                    }
+                    //Logging.Log($"{stick.Player.Team.Value} team is offside.", _serverConfig);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix().\n{ex}");
+                }
+
+                return true;
+            }
+        }
+
+        private static bool IsOffside(PlayerTeam team) {
+            return _isOffside[team];
+        }
+
+        /// <summary>
+        /// Function that returns a Stick instance from a GameObject.
+        /// </summary>
+        /// <param name="gameObject">GameObject, GameObject to use.</param>
+        /// <returns>Stick, found Stick object or null.</returns>
+        private static Stick GetStick(GameObject gameObject) {
+            return gameObject.GetComponent<Stick>();
         }
 
         /// <summary>
@@ -178,6 +329,9 @@ namespace oomtm450PuckMod_Ruleset {
                 else {
                     Logging.Log("Setting client sided config.", _serverConfig, true);
                     _clientConfig = ClientConfig.ReadConfig();
+
+                    _getStickLocation = new InputAction(binding: "<keyboard>/#(o)");
+                    _getStickLocation.Enable();
                 }
 
                 Logging.Log("Subscribing to events.", _serverConfig, true);
@@ -207,6 +361,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 Logging.Log($"Disabling...", _serverConfig, true);
 
+                _getStickLocation.Disable();
                 _harmony.UnpatchSelf();
 
                 Logging.Log($"Disabled.", _serverConfig, true);
@@ -217,5 +372,13 @@ namespace oomtm450PuckMod_Ruleset {
                 return false;
             }
         }
+    }
+
+    public enum ArenaElement {
+        BlueTeam_BlueLine,
+        RedTeam_BlueLine,
+        CenterLine,
+        BlueTeam_GoalLine,
+        RedTeam_GoalLine,
     }
 }
