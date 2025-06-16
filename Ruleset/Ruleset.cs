@@ -179,31 +179,37 @@ namespace oomtm450PuckMod_Ruleset {
                     Puck puck = PuckManager.Instance.GetPuck();
 
                     // Offside logic.
-
-                    if (puck.Rigidbody.transform.position.z < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) {
+                    if (puck.Rigidbody.transform.position.z > ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) {
                         foreach (Player player in bluePlayers) {
                             if (player.PlayerBody.transform.position.z < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) { // Is offside.
                                 Logging.Log($"{player.Team.Value} team is offside.", _serverConfig);
                                 _isOffside[player.Team.Value] = true;
                             }
-                            else if (player.PlayerBody.transform.position.z > ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].Start && _isOffside[player.Team.Value]) { // Not offside.
-                                Logging.Log($"{player.Team.Value} team is not offside anymore.", _serverConfig);
-                                _isOffside[player.Team.Value] = false;
-                            }
                         }
                     }
-                    else if (puck.Rigidbody.transform.position.z > ICE_Z_POSITIONS[ArenaElement.BlueTeam_BlueLine].End) {
+                    else if (puck.Rigidbody.transform.position.z < ICE_Z_POSITIONS[ArenaElement.BlueTeam_BlueLine].End) {
                         foreach (Player player in redPlayers) {
-                            if (player.PlayerBody.transform.position.z < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) { // Is offside.
+                            if (player.PlayerBody.transform.position.z > ICE_Z_POSITIONS[ArenaElement.BlueTeam_BlueLine].End) { // Is offside.
                                 Logging.Log($"{player.Team.Value} team is offside.", _serverConfig);
                                 _isOffside[player.Team.Value] = true;
                             }
-                            else if (player.PlayerBody.transform.position.z > ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].Start && _isOffside[player.Team.Value]) { // Not offside.
-                                Logging.Log($"{player.Team.Value} team is not offside anymore.", _serverConfig);
-                                _isOffside[player.Team.Value] = false;
-                            }
                         }
                     }
+
+                    foreach (Player player in bluePlayers) {
+                        if (player.PlayerBody.transform.position.z > ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].Start && _isOffside[player.Team.Value]) { // Not offside.
+                            Logging.Log($"{player.Team.Value} team is not offside anymore.", _serverConfig);
+                            _isOffside[player.Team.Value] = false;
+                        }
+                    }
+                    
+                    foreach (Player player in redPlayers) {
+                        if (player.PlayerBody.transform.position.z < ICE_Z_POSITIONS[ArenaElement.BlueTeam_BlueLine].Start && _isOffside[player.Team.Value]) { // Not offside.
+                            Logging.Log($"{player.Team.Value} team is not offside anymore.", _serverConfig);
+                            _isOffside[player.Team.Value] = false;
+                        }
+                    }
+
                     //Logging.Log($"{stick.Player.Team.Value} team is offside.", _serverConfig);
                 }
                 catch (Exception ex) {
