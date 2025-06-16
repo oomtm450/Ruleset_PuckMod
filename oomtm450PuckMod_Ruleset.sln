@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Template", "Template\Template.csproj", "{FE5B60DD-5A85-CD62-8047-1C686E2FE7C5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ruleset", "Ruleset\Ruleset.csproj", "{FE5B60DD-5A85-CD62-8047-1C686E2FE7C5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

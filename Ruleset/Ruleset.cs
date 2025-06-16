@@ -9,7 +9,7 @@ namespace oomtm450PuckMod_Template {
     /// <summary>
     /// Class containing the main code for the Template patch.
     /// </summary>
-    public class Template : IPuckMod {
+    public class Ruleset : IPuckMod {
         #region Constants
         /// <summary>
         /// Const string, version of the mod.
