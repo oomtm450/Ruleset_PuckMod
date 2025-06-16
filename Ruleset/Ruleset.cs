@@ -177,9 +177,9 @@ namespace oomtm450PuckMod_Ruleset {
                         p.PlayerPosition.transform.GetPositionAndRotation(out Vector3 position, out _);
                         switch (p.Team.Value) {
                             case PlayerTeam.Blue:
-                                if (position.z > ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) // Is offside.
+                                if (position.z < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) // Is offside.
                                     Logging.Log($"{p.Team.Value} team is offside.", _serverConfig);
-                                else if (position.z < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].Start && _isOffside[p.Team.Value]) // Not offside.
+                                else if (position.z > ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].Start && _isOffside[p.Team.Value]) // Not offside.
                                     Logging.Log($"{p.Team.Value} team is not offside anymore.", _serverConfig);
                                 break;
                         }
