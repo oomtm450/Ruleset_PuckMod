@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
-using oomtm450PuckMod_Template.SystemFunc;
+using oomtm450PuckMod_Ruleset.SystemFunc;
 using System.IO;
 
-namespace oomtm450PuckMod_Template.Configs {
+namespace oomtm450PuckMod_Ruleset.Configs {
     /// <summary>
     /// Class containing the configuration from oomtm450_template_serverconfig.json used for this mod.
     /// </summary>

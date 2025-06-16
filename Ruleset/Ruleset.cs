@@ -1,13 +1,13 @@
 ﻿using HarmonyLib;
-using oomtm450PuckMod_Template.Configs;
-using oomtm450PuckMod_Template.SystemFunc;
+using oomtm450PuckMod_Ruleset.Configs;
+using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 
-namespace oomtm450PuckMod_Template {
+namespace oomtm450PuckMod_Ruleset {
     /// <summary>
-    /// Class containing the main code for the Template patch.
+    /// Class containing the main code for the Ruleset patch.
     /// </summary>
     public class Ruleset : IPuckMod {
         #region Constants
@@ -37,121 +37,22 @@ namespace oomtm450PuckMod_Template {
         /// <summary>
         /// Class that patches the Event_Client_OnPositionSelectClickPosition event from PlayerPositionManagerController.
         /// </summary>
-        [HarmonyPatch(typeof(PlayerPositionManagerController), "Event_Client_OnPositionSelectClickPosition")]
+        [HarmonyPatch(typeof(PlayerPositionManagerController), "????")]
         public class PlayerPositionManagerControllerPatch {
             /// <summary>
             /// Prefix patch function to check if the player is authorized to claim the selected position.
             /// </summary>
             /// <param name="message">Dictionary of string and object, content of the event.</param>
             /// <returns>Bool, true if the user is authorized.</returns>
-            [HarmonyPrefix]
-            public static bool Prefix(Dictionary<string, object> message) {
-                // If this is the server or the config was not sent by server (mod not installed on the server ?), do not use the patch.
-                if (ServerFunc.IsDedicatedServer() || !_serverConfig.SentByServer)
+            [HarmonyPostfix]
+            public static bool Postfix(Dictionary<string, object> message) {
+                // If this is not the server, do not use the patch.
+                if (!ServerFunc.IsDedicatedServer())
                     return true;
 
-                Logging.Log("Event_Client_OnPositionSelectClickPosition", _clientConfig);
-
-                /* From this point on to the end of the function, this is custom code that is left for example. */
-                PlayerPosition currentPPosition = (PlayerPosition)message["playerPosition"];
-
-                // Goalie bypass.
-                if (PlayerFunc.IsGoalie(currentPPosition, false))
-                    return true;
-
-                // Admin bypass.
-                if (_serverConfig.AdminBypass && PlayerFunc.IsAdmin(_serverConfig, _clientConfig))
-                    return true;
-
-                // Get blue team infos.
-                bool hasBlueGoalie = false;
-                int numberOfBlueSkaters = 0;
-                foreach (PlayerPosition pPosition in PlayerPositionManager.Instance.BluePositions) {
-                    if (PlayerFunc.IsAttacker(pPosition))
-                        numberOfBlueSkaters++;
-                    if (PlayerFunc.IsGoalie(pPosition))
-                        hasBlueGoalie = true;
-                }
-
-                // Get red team infos.
-                bool hasRedGoalie = false;
-                int numberOfRedSkaters = 0;
-                foreach (PlayerPosition pPosition in PlayerPositionManager.Instance.RedPositions) {
-                    if (PlayerFunc.IsAttacker(pPosition))
-                        numberOfRedSkaters++;
-                    if (PlayerFunc.IsGoalie(pPosition))
-                        hasRedGoalie = true;
-                }
-
-                int maxNumberOfSkaters = _serverConfig.MaxNumberOfSkaters;
-                bool teamBalancing = TeamBalancing(hasBlueGoalie, hasRedGoalie);
-
-                // Get certain informations depending the player's team.
-                int numberOfSkaters;
-                bool goalieAvailable = true;
-                switch (currentPPosition.Team) {
-                    case PlayerTeam.Blue:
-                        numberOfSkaters = numberOfBlueSkaters;
-
-                        if (teamBalancing) {
-                            int newMaxNumberOfSkaters = numberOfRedSkaters + _serverConfig.TeamBalanceOffset + 1;
-                            if (newMaxNumberOfSkaters < maxNumberOfSkaters)
-                                maxNumberOfSkaters = newMaxNumberOfSkaters;
-                        }
-
-                        if (hasBlueGoalie)
-                            goalieAvailable = false;
-
-                        break;
-
-                    case PlayerTeam.Red:
-                        numberOfSkaters = numberOfRedSkaters;
-
-                        if (teamBalancing) {
-                            int newMaxNumberOfSkaters = numberOfBlueSkaters + _serverConfig.TeamBalanceOffset + 1;
-                            if (newMaxNumberOfSkaters < maxNumberOfSkaters)
-                                maxNumberOfSkaters = newMaxNumberOfSkaters;
-                        }
-
-                        if (hasRedGoalie)
-                            goalieAvailable = false;
-
-                        break;
-
-                    default:
-                        Logging.LogError("No team assigned to the current player position ?");
-                        return true;
-                }
-
-                /* Logging for client debugging */
-                if (teamBalancing)
-                    Logging.Log("Team balancing is on.", _clientConfig);
-
-                Logging.Log($"Current team : {nameof(currentPPosition.Team)} with {numberOfSkaters} skaters.", _clientConfig);
-                Logging.Log($"Current number of skaters on red team : {numberOfRedSkaters}.", _clientConfig);
-                Logging.Log($"Current number of skaters on blue team : {numberOfBlueSkaters}.", _clientConfig);
-                /*                              */
-
-                if (numberOfSkaters >= maxNumberOfSkaters) {
-                    if (teamBalancing) {
-                        if (goalieAvailable)
-                            UIChat.Instance.AddChatMessage($"Teams are unbalanced ({maxNumberOfSkaters}). Go goalie or switch teams.");
-                        else
-                            UIChat.Instance.AddChatMessage($"Teams are unbalanced ({maxNumberOfSkaters}). Switch teams.");
-                    }
-                    else {
-                        if (goalieAvailable)
-                            UIChat.Instance.AddChatMessage($"Team is full ({maxNumberOfSkaters}). Only {PlayerFunc.GOALIE_POSITION} position is available.");
-                        else
-                            UIChat.Instance.AddChatMessage($"Team is full ({maxNumberOfSkaters}). Switch teams.");
-                    }
-                        
-                    return false;
-                }
+                Logging.Log("????", _serverConfig);
 
                 return true;
-
-                /* End of example code. */
             }
         }
 
@@ -237,7 +138,7 @@ namespace oomtm450PuckMod_Template {
                         NetworkCommunication.SendData("kick", "1", clientId, Constants.FROM_SERVER, _serverConfig);
                         break;
 
-                    case "config": // CLIENT-SIDE : Set the server config on the client to use later for the Template logic, since the logic happens on the client.
+                    case "config": // CLIENT-SIDE : Set the server config on the client to use later for the Ruleset logic, since the logic happens on the client.
                         _serverConfig = ServerConfig.SetConfig(dataStr);
                         break;
 
@@ -315,28 +216,6 @@ namespace oomtm450PuckMod_Template {
                 Logging.LogError($"Failed to disable.\n{ex}");
                 return false;
             }
-        }
-
-        /// <summary>
-        /// Function that returns true if team balancing is activated.
-        /// </summary>
-        /// <param name="hasBlueGoalie">Bool, true if blue team has a goalie.</param>
-        /// <param name="hasRedGoalie">Bool, true if red team has a goalie.</param>
-        /// <returns>Bool, true if team balancing is activated.</returns>
-        private static bool TeamBalancing(bool hasBlueGoalie, bool hasRedGoalie) {
-            if (_serverConfig.TeamBalancing)
-                return true;
-
-            if (!_serverConfig.TeamBalancingGoalie)
-                return false;
-
-            if (hasBlueGoalie && hasRedGoalie)
-                return false;
-
-            if (hasBlueGoalie || hasRedGoalie)
-                return true;
-
-            return false;
         }
     }
 }

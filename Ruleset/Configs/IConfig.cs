@@ -1,4 +1,4 @@
-﻿namespace oomtm450PuckMod_Template.Configs {
+﻿namespace oomtm450PuckMod_Ruleset.Configs {
     /// <summary>
     /// Class containing the configuration from oomtm450_template_clientconfig.json used for this mod.
     /// </summary>

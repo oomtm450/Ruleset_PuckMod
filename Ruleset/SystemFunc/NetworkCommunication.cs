@@ -1,11 +1,10 @@
-﻿using oomtm450PuckMod_Template.Configs;
+﻿using oomtm450PuckMod_Ruleset.Configs;
 using System;
 using System.Text;
 using Unity.Collections;
 using Unity.Netcode;
-using static UnityEngine.Rendering.STP;
 
-namespace oomtm450PuckMod_Template.SystemFunc {
+namespace oomtm450PuckMod_Ruleset.SystemFunc {
     internal static class NetworkCommunication {
         /// <summary>
         /// Method that sends data to the listener.

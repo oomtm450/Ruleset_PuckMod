@@ -1,6 +1,6 @@
-﻿using oomtm450PuckMod_Template.Configs;
+﻿using oomtm450PuckMod_Ruleset.Configs;
 
-namespace oomtm450PuckMod_Template.SystemFunc {
+namespace oomtm450PuckMod_Ruleset.SystemFunc {
     internal class PlayerFunc {
         /// <summary>
         /// Const string, position name for the goalie.
