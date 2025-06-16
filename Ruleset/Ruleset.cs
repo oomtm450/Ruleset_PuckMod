@@ -190,7 +190,7 @@ namespace oomtm450PuckMod_Ruleset {
                         foreach (Player player in bluePlayers) { // TODO : Generalize code block.
                             string playerSteamId = player.SteamId.Value.ToString();
                             Zone oldPlayerZone;
-                            if (!_playersZone.TryGetValue(playerSteamId, out var result) {
+                            if (!_playersZone.TryGetValue(playerSteamId, out var result)) {
                                 if (player.Team.Value == PlayerTeam.Red)
                                     oldPlayerZone = Zone.RedTeam_Center;
                                 else
@@ -213,7 +213,7 @@ namespace oomtm450PuckMod_Ruleset {
                         foreach (Player player in redPlayers) { // TODO : Generalize code block.
                             string playerSteamId = player.SteamId.Value.ToString();
                             Zone oldPlayerZone;
-                            if (!_playersZone.TryGetValue(playerSteamId, out var result) {
+                            if (!_playersZone.TryGetValue(playerSteamId, out var result)) {
                                 if (player.Team.Value == PlayerTeam.Red)
                                     oldPlayerZone = Zone.RedTeam_Center;
                                 else
