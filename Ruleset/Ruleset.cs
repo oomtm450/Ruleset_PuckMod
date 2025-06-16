@@ -186,7 +186,7 @@ namespace oomtm450PuckMod_Ruleset {
                     //Logging.Log($"Puck zone : {Enum.GetName(typeof(Zone), _puckZone)}", _serverConfig);
 
                     // Offside logic.
-                    if (_puckZone != Zone.RedTeam_Zone) {
+                    if (_puckZone != Zone.RedTeam_Zone && _puckZone != Zone.RedTeam_BehindGoalLine) {
                         foreach (Player player in bluePlayers) { // TODO : Generalize code block.
                             string playerSteamId = player.SteamId.Value.ToString();
                             Zone oldPlayerZone;
@@ -203,13 +203,13 @@ namespace oomtm450PuckMod_Ruleset {
                             Zone playerZone = GetZone(player.PlayerBody.transform, oldPlayerZone);
                             _playersZone[playerSteamId] = (player.Team.Value, playerZone);
 
-                            if (playerZone == Zone.RedTeam_Zone) { // Is offside.
+                            if (playerZone == Zone.RedTeam_Zone || playerZone == Zone.RedTeam_BehindGoalLine) { // Is offside.
                                 Logging.Log($"{player.Team.Value} team is offside.", _serverConfig);
                                 _isOffside[player.Team.Value] = true;
                             }
                         }
                     }
-                    if (_puckZone != Zone.BlueTeam_Zone) {
+                    if (_puckZone != Zone.BlueTeam_Zone && _puckZone != Zone.BlueTeam_BehindGoalLine) {
                         foreach (Player player in redPlayers) { // TODO : Generalize code block.
                             string playerSteamId = player.SteamId.Value.ToString();
                             Zone oldPlayerZone;
@@ -226,7 +226,7 @@ namespace oomtm450PuckMod_Ruleset {
                             Zone playerZone = GetZone(player.PlayerBody.transform, oldPlayerZone);
                             _playersZone[playerSteamId] = (player.Team.Value, playerZone);
 
-                            if (playerZone == Zone.BlueTeam_Zone) { // Is offside.
+                            if (playerZone == Zone.BlueTeam_Zone || playerZone == Zone.BlueTeam_BehindGoalLine) { // Is offside.
                                 Logging.Log($"{player.Team.Value} team is offside.", _serverConfig);
                                 _isOffside[player.Team.Value] = true;
                             }
@@ -235,7 +235,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     foreach (Player player in bluePlayers) {
                         string playerSteamId = player.SteamId.Value.ToString();
-                        if (_playersZone[playerSteamId].Zone != Zone.RedTeam_Zone && _isOffside[player.Team.Value]) { // Not offside.
+                        if (_playersZone[playerSteamId].Zone != Zone.RedTeam_Zone && _playersZone[playerSteamId].Zone != Zone.RedTeam_BehindGoalLine && _isOffside[player.Team.Value]) { // Not offside.
                             Logging.Log($"{player.Team.Value} team is not offside anymore.", _serverConfig);
                             _isOffside[player.Team.Value] = false;
                         }
@@ -243,7 +243,7 @@ namespace oomtm450PuckMod_Ruleset {
                     
                     foreach (Player player in redPlayers) {
                         string playerSteamId = player.SteamId.Value.ToString();
-                        if (_playersZone[playerSteamId].Zone != Zone.BlueTeam_Zone && _isOffside[player.Team.Value]) { // Not offside.
+                        if (_playersZone[playerSteamId].Zone != Zone.BlueTeam_Zone && _playersZone[playerSteamId].Zone != Zone.BlueTeam_BehindGoalLine && _isOffside[player.Team.Value]) { // Not offside.
                             Logging.Log($"{player.Team.Value} team is not offside anymore.", _serverConfig);
                             _isOffside[player.Team.Value] = false;
                         }
