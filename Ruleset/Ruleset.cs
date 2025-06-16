@@ -91,7 +91,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!stick)
                         return;
 
-                    Logging.Log($"Puck is being hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" (stay)!", _serverConfig);
+                    //Logging.Log($"Puck is being hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" (stay)!", _serverConfig);
 
                     if (!_playersLastTimePuckPossession.TryGetValue(stick.Player.SteamId.Value.ToString(), out Stopwatch watch)) {
                         watch = new Stopwatch();
@@ -100,8 +100,11 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // Offside logic.
-                    if (IsOffside(stick.Player.Team.Value))
+                    if (IsOffside(stick.Player.Team.Value)) {
                         Logging.Log($"{stick.Player.Team.Value} team offside has been called !", _serverConfig);
+                        GameManager.Instance.Server_SetPhase(GamePhase.FaceOff);
+                    }
+                        
 
                     watch.Restart();
                 }
@@ -127,7 +130,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!stick)
                         return;
 
-                    Logging.Log($"Puck is not being hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" anymore (exit)!", _serverConfig);
+                    //Logging.Log($"Puck is not being hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" anymore (exit)!", _serverConfig);
                 }
                 catch (Exception ex)  {
                     Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}");
@@ -173,14 +176,17 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     // Offside logic.
                     List<Player> players = PlayerManager.Instance.GetPlayers();
-                    foreach (Player p in players) {
-                        p.PlayerPosition.transform.GetPositionAndRotation(out Vector3 position, out _);
-                        switch (p.Team.Value) {
+                    foreach (Player player in players) {
+                        switch (player.Team.Value) {
                             case PlayerTeam.Blue:
-                                if (position.z < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) // Is offside.
-                                    Logging.Log($"{p.Team.Value} team is offside.", _serverConfig);
-                                else if (position.z > ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].Start && _isOffside[p.Team.Value]) // Not offside.
-                                    Logging.Log($"{p.Team.Value} team is not offside anymore.", _serverConfig);
+                                if (player.PlayerBody.transform.position.z < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) { // Is offside.
+                                    Logging.Log($"{player.Team.Value} team is offside.", _serverConfig);
+                                    _isOffside[player.Team.Value] = true;
+                                }
+                                else if (player.PlayerBody.transform.position.z > ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].Start && _isOffside[player.Team.Value]) { // Not offside.
+                                    Logging.Log($"{player.Team.Value} team is not offside anymore.", _serverConfig);
+                                    _isOffside[player.Team.Value] = false;
+                                }
                                 break;
                         }
                     }
