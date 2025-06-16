@@ -105,7 +105,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // Offside logic.
-                    if (IsOffside(stick.Player.Team.Value) && _puckZone == GetTeamZone(stick.Player.Team.Value)) {
+                    if (IsOffside(stick.Player.Team.Value) && _puckZone == GetTeamZone(GetOtherTeam(stick.Player.Team.Value))) {
                         Logging.Log($"{stick.Player.Team.Value} team offside has been called !", _serverConfig);
                         GameManager.Instance.Server_SetPhase(GamePhase.FaceOff);
                     }
@@ -234,20 +234,20 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     foreach (Player player in bluePlayers) {
-                        if (player.PlayerBody.transform.position.z > ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].Start && _isOffside[player.Team.Value]) { // Not offside.
-                            //Logging.Log($"{player.Team.Value} team is not offside anymore.", _serverConfig);
+                        string playerSteamId = player.SteamId.Value.ToString();
+                        if (_playersZone[playerSteamId].Zone != Zone.RedTeam_Zone && _isOffside[player.Team.Value]) { // Not offside.
+                            Logging.Log($"{player.Team.Value} team is not offside anymore.", _serverConfig);
                             _isOffside[player.Team.Value] = false;
                         }
                     }
                     
                     foreach (Player player in redPlayers) {
-                        if (player.PlayerBody.transform.position.z < ICE_Z_POSITIONS[ArenaElement.BlueTeam_BlueLine].Start && _isOffside[player.Team.Value]) { // Not offside.
-                            //Logging.Log($"{player.Team.Value} team is not offside anymore.", _serverConfig);
+                        string playerSteamId = player.SteamId.Value.ToString();
+                        if (_playersZone[playerSteamId].Zone != Zone.BlueTeam_Zone && _isOffside[player.Team.Value]) { // Not offside.
+                            Logging.Log($"{player.Team.Value} team is not offside anymore.", _serverConfig);
                             _isOffside[player.Team.Value] = false;
                         }
                     }
-
-                    //Logging.Log($"{stick.Player.Team.Value} team is offside.", _serverConfig);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix().\n{ex}");
