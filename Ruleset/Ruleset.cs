@@ -19,7 +19,14 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private const string MOD_VERSION = "0.1.0DEV";
 
-        private const float PUCK_RADIUS = 0.12f;
+        /// <summary>
+        /// Const float, radius of the puck.
+        /// </summary>
+        private const float PUCK_RADIUS = 0.125f;
+
+        /// <summary>
+        /// Const float, radius of a player.
+        /// </summary>
         private const float PLAYER_RADIUS = 0.25f;
         #endregion
 
@@ -189,50 +196,49 @@ namespace oomtm450PuckMod_Ruleset {
                     _puckZone = GetZone(puck.Rigidbody.transform, _puckZone, PUCK_RADIUS);
 
                     // Offside logic.
-                    if (_puckZone != Zone.RedTeam_Zone && _puckZone != Zone.RedTeam_BehindGoalLine) {
-                        foreach (Player player in bluePlayers) { // TODO : Generalize code block.
-                            string playerSteamId = player.SteamId.Value.ToString();
-                            Zone oldPlayerZone;
-                            if (!_playersZone.TryGetValue(playerSteamId, out var result)) {
-                                if (player.Team.Value == PlayerTeam.Red)
-                                    oldPlayerZone = Zone.RedTeam_Center;
-                                else
-                                    oldPlayerZone = Zone.BlueTeam_Center;
+                    foreach (Player player in bluePlayers) { // TODO : Generalize code block.
+                        string playerSteamId = player.SteamId.Value.ToString();
+                        Zone oldPlayerZone;
+                        if (!_playersZone.TryGetValue(playerSteamId, out var result)) {
+                            if (player.Team.Value == PlayerTeam.Red)
+                                oldPlayerZone = Zone.RedTeam_Center;
+                            else
+                                oldPlayerZone = Zone.BlueTeam_Center;
 
-                                _playersZone.Add(playerSteamId, (player.Team.Value, oldPlayerZone));
-                            }
-                            oldPlayerZone = result.Zone;
+                            _playersZone.Add(playerSteamId, (player.Team.Value, oldPlayerZone));
+                        }
+                        oldPlayerZone = result.Zone;
 
-                            Zone playerZone = GetZone(player.PlayerBody.transform, oldPlayerZone, PLAYER_RADIUS);
-                            _playersZone[playerSteamId] = (player.Team.Value, playerZone);
+                        Zone playerZone = GetZone(player.PlayerBody.transform, oldPlayerZone, PLAYER_RADIUS);
+                        _playersZone[playerSteamId] = (player.Team.Value, playerZone);
 
-                            if (playerZone == Zone.RedTeam_Zone || playerZone == Zone.RedTeam_BehindGoalLine) { // Is offside.
-                                Logging.Log($"{player.Team.Value} team is offside.", _serverConfig);
-                                _isOffside[player.Team.Value] = true;
-                            }
+                        // Is offside.
+                        if (_puckZone != Zone.RedTeam_Zone && _puckZone != Zone.RedTeam_BehindGoalLine && (playerZone == Zone.RedTeam_Zone || playerZone == Zone.RedTeam_BehindGoalLine)) {
+                            Logging.Log($"{player.Team.Value} team is offside.", _serverConfig);
+                            _isOffside[player.Team.Value] = true;
                         }
                     }
-                    if (_puckZone != Zone.BlueTeam_Zone && _puckZone != Zone.BlueTeam_BehindGoalLine) {
-                        foreach (Player player in redPlayers) { // TODO : Generalize code block.
-                            string playerSteamId = player.SteamId.Value.ToString();
-                            Zone oldPlayerZone;
-                            if (!_playersZone.TryGetValue(playerSteamId, out var result)) {
-                                if (player.Team.Value == PlayerTeam.Red)
-                                    oldPlayerZone = Zone.RedTeam_Center;
-                                else
-                                    oldPlayerZone = Zone.BlueTeam_Center;
+                    
+                    foreach (Player player in redPlayers) { // TODO : Generalize code block.
+                        string playerSteamId = player.SteamId.Value.ToString();
+                        Zone oldPlayerZone;
+                        if (!_playersZone.TryGetValue(playerSteamId, out var result)) {
+                            if (player.Team.Value == PlayerTeam.Red)
+                                oldPlayerZone = Zone.RedTeam_Center;
+                            else
+                                oldPlayerZone = Zone.BlueTeam_Center;
 
-                                _playersZone.Add(playerSteamId, (player.Team.Value, oldPlayerZone));
-                            }
-                            oldPlayerZone = result.Zone;
+                            _playersZone.Add(playerSteamId, (player.Team.Value, oldPlayerZone));
+                        }
+                        oldPlayerZone = result.Zone;
 
-                            Zone playerZone = GetZone(player.PlayerBody.transform, oldPlayerZone, PLAYER_RADIUS);
-                            _playersZone[playerSteamId] = (player.Team.Value, playerZone);
+                        Zone playerZone = GetZone(player.PlayerBody.transform, oldPlayerZone, PLAYER_RADIUS);
+                        _playersZone[playerSteamId] = (player.Team.Value, playerZone);
 
-                            if (playerZone == Zone.BlueTeam_Zone || playerZone == Zone.BlueTeam_BehindGoalLine) { // Is offside.
-                                Logging.Log($"{player.Team.Value} team is offside.", _serverConfig);
-                                _isOffside[player.Team.Value] = true;
-                            }
+                        // Is offside.
+                        if (_puckZone != Zone.BlueTeam_Zone && _puckZone != Zone.BlueTeam_BehindGoalLine && (playerZone == Zone.BlueTeam_Zone || playerZone == Zone.BlueTeam_BehindGoalLine)) {
+                            Logging.Log($"{player.Team.Value} team is offside.", _serverConfig);
+                            _isOffside[player.Team.Value] = true;
                         }
                     }
 
