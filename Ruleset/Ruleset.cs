@@ -18,7 +18,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.1.0";
+        private const string MOD_VERSION = "0.1.1";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -115,7 +115,8 @@ namespace oomtm450PuckMod_Ruleset {
                     List<Zone> zones = GetTeamZones(GetOtherTeam(stick.Player.Team.Value));
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == zones[0] || _puckZone == zones[1])) {
                         UIChat.Instance.Server_SendSystemChatMessage($"{stick.Player.Team.Value} team offside has been called !");
-                        GameManager.Instance.Server_UpdateGameState(GamePhase.FaceOff, GameManager.Instance.GameState.Value.Time);
+                        GameManager.Instance.Server_SetPhase(GamePhase.FaceOff,
+                            ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.phaseDurationMap[GamePhase.FaceOff]);
                     }
 
                     watch.Restart();
@@ -246,8 +247,9 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         if (notOffside) {
-                            UIChat.Instance.Server_SendSystemChatMessage($"{player.Team.Value} team is not offside anymore.");
                             _isOffside[playerSteamId] = (player.Team.Value, false);
+                            if (!IsOffside(player.Team.Value))
+                                UIChat.Instance.Server_SendSystemChatMessage($"{player.Team.Value} team is not offside anymore.");
                         }
                     }
                 }
