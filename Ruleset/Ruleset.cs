@@ -18,7 +18,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.1.3";
+        private const string MOD_VERSION = "0.2.0DEV";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -56,6 +56,16 @@ namespace oomtm450PuckMod_Ruleset {
         };
 
         private static readonly Dictionary<string, (PlayerTeam Team, bool IsOffside)> _isOffside = new Dictionary<string, (PlayerTeam, bool)>();
+
+        private static readonly Dictionary<PlayerTeam, bool> _isIcingPossible = new Dictionary<PlayerTeam, bool>{
+            { PlayerTeam.Blue, false },
+            { PlayerTeam.Red, false },
+        };
+
+        private static readonly Dictionary<PlayerTeam, bool> _isIcingActive = new Dictionary<PlayerTeam, bool> {
+            { PlayerTeam.Blue, false },
+            { PlayerTeam.Red, false },
+        };
 
         private static Zone _puckZone = Zone.BlueTeam_Center;
 
@@ -121,12 +131,20 @@ namespace oomtm450PuckMod_Ruleset {
                     List<Zone> zones = GetTeamZones(GetOtherTeam(stick.Player.Team.Value));
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == zones[0] || _puckZone == zones[1])) {
                         UIChat.Instance.Server_SendSystemChatMessage($"{stick.Player.Team.Value} team offside has been called !");
-                        _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
-                        _changedPhase = true;
-                        GameManager.Instance.Server_SetPhase(GamePhase.FaceOff,
-                            ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.phaseDurationMap[GamePhase.FaceOff]);
+                        Faceoff();
                     }
 
+                    // Icing logic.
+                    if (IsIcing(GetOtherTeam(stick.Player.Team.Value))) {
+                        UIChat.Instance.Server_SendSystemChatMessage($"{stick.Player.Team.Value} team icing has been called !");
+                        Faceoff();
+                    }
+                    else {
+                        if (IsIcing(stick.Player.Team.Value))
+                            UIChat.Instance.Server_SendSystemChatMessage($"{stick.Player.Team.Value} team icing cancelled !");
+                        ResetIcings();
+                    }
+                    
                     watch.Restart();
                 }
                 catch (Exception ex) {
@@ -148,18 +166,17 @@ namespace oomtm450PuckMod_Ruleset {
                         return true;
 
                     if (phase == GamePhase.FaceOff) {
-                        // Reset possession times.
                         lock (_locker) {
+                            // Reset possession times.
                             foreach (Stopwatch watch in _playersLastTimePuckPossession.Values)
                                 watch.Restart();
-                        }
 
-                        // Reset offsides.
-                        lock (_locker) {
-                            List<string> keys = new List<string>(_isOffside.Keys);
-                            foreach (string key in keys)
+                            // Reset offsides.
+                            foreach (string key in new List<string>(_isOffside.Keys))
                                 _isOffside[key] = (_isOffside[key].Team, false);
                         }
+                        // Reset icings.
+                        ResetIcings();
 
                         _puckZone = Zone.BlueTeam_Center;
                     }
@@ -198,7 +215,13 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!stick)
                         return;
 
-                    //Logging.Log($"Puck is not being hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" anymore (exit)!", _serverConfig);
+                    // Icing logic.
+                    bool icingPossible = false;
+                    if (GetTeamZones(stick.Player.Team.Value, true).Any(x => x == _puckZone))
+                        icingPossible = true;
+
+                    lock (_locker)
+                        _isIcingPossible[stick.Player.Team.Value] = icingPossible;
                 }
                 catch (Exception ex)  {
                     Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}");
@@ -255,6 +278,14 @@ namespace oomtm450PuckMod_Ruleset {
 
                     _puckZone = GetZone(puck.Rigidbody.transform, _puckZone, PUCK_RADIUS);
 
+                    // Icing logic.
+                    lock (_locker) {
+                        if (_isIcingPossible[PlayerTeam.Blue] && _puckZone == Zone.RedTeam_BehindGoalLine)
+                            _isIcingActive[PlayerTeam.Blue] = true;
+                        if (_isIcingPossible[PlayerTeam.Red] && _puckZone == Zone.BlueTeam_BehindGoalLine)
+                            _isIcingActive[PlayerTeam.Red] = true;
+                    }
+
                     // Offside logic.
                     foreach (Player player in players) {
                         string playerSteamId = player.SteamId.Value.ToString();
@@ -295,13 +326,9 @@ namespace oomtm450PuckMod_Ruleset {
                             lock (_locker)
                                 _isOffside[playerSteamId] = (player.Team.Value, true);
                         }
-                    }
 
-                    // Not offside.
-                    foreach (Player player in players) {
+                        // Is not offside.
                         bool notOffside = false;
-
-                        string playerSteamId = player.SteamId.Value.ToString();
                         if (player.Team.Value == PlayerTeam.Blue) {
                             lock (_locker) {
                                 if (_playersZone[playerSteamId].Zone != Zone.RedTeam_Zone && _playersZone[playerSteamId].Zone != Zone.RedTeam_BehindGoalLine && _isOffside[playerSteamId].IsOffside)
@@ -330,6 +357,23 @@ namespace oomtm450PuckMod_Ruleset {
 
                 return true;
             }
+        }
+
+        private static void ResetIcings() {
+            lock (_locker) {
+                foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingPossible.Keys))
+                    _isIcingPossible[key] = false;
+
+                foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingActive.Keys))
+                    _isIcingActive[key] = false;
+            }
+        }
+
+        private static void Faceoff() {
+            _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
+            _changedPhase = true;
+            GameManager.Instance.Server_SetPhase(GamePhase.FaceOff,
+                ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.phaseDurationMap[GamePhase.FaceOff]);
         }
 
         private static Zone GetZone(Transform transform, Zone oldZone, float radius) {
@@ -395,13 +439,19 @@ namespace oomtm450PuckMod_Ruleset {
             return Zone.BlueTeam_BehindGoalLine;
         }
 
-        private static List<Zone> GetTeamZones(PlayerTeam team) {
-            switch (team) {
+        private static List<Zone> GetTeamZones(PlayerTeam team, bool includeCenter = false) {
+            switch (team) { // TODO : Optimize with pre made lists.
                 case PlayerTeam.Blue:
-                    return new List<Zone> { Zone.BlueTeam_Zone, Zone.BlueTeam_BehindGoalLine }; // TODO : Optimize with pre made lists.
+                    List<Zone> blueZones = new List<Zone> { Zone.BlueTeam_Zone, Zone.BlueTeam_BehindGoalLine };
+                    if (includeCenter)
+                        blueZones.Add(Zone.BlueTeam_Center);
+                    return blueZones;
 
                 case PlayerTeam.Red:
-                    return new List<Zone> { Zone.RedTeam_Zone, Zone.RedTeam_BehindGoalLine };
+                    List<Zone> redZones = new List<Zone> { Zone.RedTeam_Zone, Zone.RedTeam_BehindGoalLine };
+                    if (includeCenter)
+                        redZones.Add(Zone.RedTeam_Center);
+                    return redZones;
             }
 
             return new List<Zone> { Zone.None };
@@ -419,6 +469,11 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool IsOffside(PlayerTeam team) {
             lock (_locker)
                 return _isOffside.Where(x => x.Value.Team == team).Any(x => x.Value.IsOffside);
+        }
+
+        private static bool IsIcing(PlayerTeam team) {
+            lock (_locker)
+                return _isIcingActive[team];
         }
 
         /// <summary>
