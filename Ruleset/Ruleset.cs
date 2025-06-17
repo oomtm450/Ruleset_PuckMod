@@ -141,13 +141,11 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_SetPhase))]
         public class GameManager_Server_SetPhase_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(GamePhase phase, int time = -1) {
+            public static bool Prefix(GamePhase phase, ref int time) {
                 try {
                     // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
-
-                    Logging.Log("Entered GameManager_Server_SetPhase_Patch Prefix()", _serverConfig);
 
                     if (phase == GamePhase.FaceOff) {
                         // Reset possession times.
@@ -170,10 +168,10 @@ namespace oomtm450PuckMod_Ruleset {
                         return true;
 
                     if (phase == GamePhase.Playing) {
-                        Logging.Log($"Remaining time should of been {time} seconds.", _serverConfig);
+                        Logging.Log($"Remaining time should of been {time} seconds.", _serverConfig); // TODO : Remove debug log.
                         _changedPhase = false;
                         time = _periodTimeRemaining;
-                        Logging.Log($"Remaining time is now {time} seconds.", _serverConfig);
+                        Logging.Log($"Remaining time is now {time} seconds.", _serverConfig); // TODO : Remove debug log.
                     }
                 }
                 catch (Exception ex) {
