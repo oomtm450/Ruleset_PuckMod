@@ -2,8 +2,10 @@
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -111,8 +113,9 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // Offside logic.
-                    if (IsOffside(stick.Player.Team.Value) && _puckZone == GetTeamZone(GetOtherTeam(stick.Player.Team.Value))) {
-                        Logging.Log($"{stick.Player.Team.Value} team offside has been called !", _serverConfig);
+                    List<Zone> zones = GetTeamZones(GetOtherTeam(stick.Player.Team.Value));
+                    if (IsOffside(stick.Player.Team.Value) && (_puckZone == zones[0] || _puckZone == zones[1])) {
+                        UIChat.Instance.Server_SendSystemChatMessage($"{stick.Player.Team.Value} team offside has been called !");
                         GameManager.Instance.Server_UpdateGameState(GamePhase.FaceOff);
                     }
 
@@ -220,7 +223,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         if (offside) {
-                            Logging.Log($"{player.Team.Value} team is offside.", _serverConfig);
+                            UIChat.Instance.Server_SendSystemChatMessage($"{player.Team.Value} team is offside.");
                             _isOffside[playerSteamId] = (player.Team.Value, true);
                         }
                     }
@@ -240,7 +243,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         if (notOffside) {
-                            Logging.Log($"{player.Team.Value} team is not offside anymore.", _serverConfig);
+                            UIChat.Instance.Server_SendSystemChatMessage($"{player.Team.Value} team is not offside anymore.");
                             _isOffside[playerSteamId] = (player.Team.Value, false);
                         }
                     }
@@ -316,16 +319,16 @@ namespace oomtm450PuckMod_Ruleset {
             return Zone.BlueTeam_BehindGoalLine;
         }
 
-        private static Zone GetTeamZone(PlayerTeam team) {
+        private static List<Zone> GetTeamZones(PlayerTeam team) {
             switch (team) {
                 case PlayerTeam.Blue:
-                    return Zone.BlueTeam_Zone;
+                    return new List<Zone> { Zone.BlueTeam_Zone, Zone.BlueTeam_BehindGoalLine }; // TODO : Optimize with pre made lists.
 
                 case PlayerTeam.Red:
-                    return Zone.RedTeam_Zone;
+                    return new List<Zone> { Zone.RedTeam_Zone, Zone.RedTeam_BehindGoalLine };
             }
 
-            return Zone.None;
+            return new List<Zone> { Zone.None };
         }
 
         private static PlayerTeam GetOtherTeam(PlayerTeam team) {
@@ -338,7 +341,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static bool IsOffside(PlayerTeam team) {
-            return _isOffside[team];
+            return _isOffside.Where(x => x.Value.Team == team).Any(x => x.Value.IsOffside);
         }
 
         /// <summary>
