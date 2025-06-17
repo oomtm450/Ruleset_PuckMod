@@ -328,8 +328,8 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         if (offside) {
-                            if (!IsOffside(player.Team.Value))
-                                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM");
+                            //if (!IsOffside(player.Team.Value))
+                                //UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM");
                             lock (_locker)
                                 _isOffside[playerSteamId] = (player.Team.Value, true);
                         }
@@ -353,8 +353,8 @@ namespace oomtm450PuckMod_Ruleset {
                         if (notOffside) {
                             lock (_locker)
                                 _isOffside[playerSteamId] = (player.Team.Value, false);
-                            if (!IsOffside(player.Team.Value))
-                                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM CANCELLED");
+                            //if (!IsOffside(player.Team.Value))
+                                //UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM CANCELLED");
                         }
                     }
                 }
