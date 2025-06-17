@@ -2,7 +2,6 @@
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Unity.Netcode;
@@ -19,6 +18,9 @@ namespace oomtm450PuckMod_Ruleset {
         /// Const string, version of the mod.
         /// </summary>
         private const string MOD_VERSION = "0.1.0DEV";
+
+        private const float PUCK_RADIUS = 0.12f;
+        private const float PLAYER_RADIUS = 0.25f;
         #endregion
 
         #region Fields
@@ -155,8 +157,10 @@ namespace oomtm450PuckMod_Ruleset {
                     if (chat.IsFocused)
                         return true;
 
-                    if (_getStickLocation.WasPressedThisFrame())
+                    if (_getStickLocation.WasPressedThisFrame()) {
                         Logging.Log($"Stick position : {PlayerManager.Instance.GetLocalPlayer().Stick.BladeHandlePosition}", _clientConfig);
+                    }
+                        
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in PlayerInput_Update_Patch Prefix().\n{ex}");
@@ -182,8 +186,7 @@ namespace oomtm450PuckMod_Ruleset {
                     List<Player> bluePlayers = PlayerManager.Instance.GetPlayersByTeam(PlayerTeam.Blue);
                     Puck puck = PuckManager.Instance.GetPuck();
 
-                    _puckZone = GetZone(puck.Rigidbody.transform, _puckZone);
-                    //Logging.Log($"Puck zone : {Enum.GetName(typeof(Zone), _puckZone)}", _serverConfig);
+                    _puckZone = GetZone(puck.Rigidbody.transform, _puckZone, PUCK_RADIUS);
 
                     // Offside logic.
                     if (_puckZone != Zone.RedTeam_Zone && _puckZone != Zone.RedTeam_BehindGoalLine) {
@@ -200,7 +203,7 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             oldPlayerZone = result.Zone;
 
-                            Zone playerZone = GetZone(player.PlayerBody.transform, oldPlayerZone);
+                            Zone playerZone = GetZone(player.PlayerBody.transform, oldPlayerZone, PLAYER_RADIUS);
                             _playersZone[playerSteamId] = (player.Team.Value, playerZone);
 
                             if (playerZone == Zone.RedTeam_Zone || playerZone == Zone.RedTeam_BehindGoalLine) { // Is offside.
@@ -223,7 +226,7 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             oldPlayerZone = result.Zone;
 
-                            Zone playerZone = GetZone(player.PlayerBody.transform, oldPlayerZone);
+                            Zone playerZone = GetZone(player.PlayerBody.transform, oldPlayerZone, PLAYER_RADIUS);
                             _playersZone[playerSteamId] = (player.Team.Value, playerZone);
 
                             if (playerZone == Zone.BlueTeam_Zone || playerZone == Zone.BlueTeam_BehindGoalLine) { // Is offside.
@@ -257,39 +260,39 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static Zone GetZone(Transform transform, Zone oldZone) {
-            float z = transform.position.z;
+        private static Zone GetZone(Transform transform, Zone oldZone, float radius) {
+            float zMax = transform.position.z + radius;
             
             // Red team.
-            if (z < ICE_Z_POSITIONS[ArenaElement.RedTeam_GoalLine].Start) {
+            if (zMax < ICE_Z_POSITIONS[ArenaElement.RedTeam_GoalLine].Start) {
                 return Zone.RedTeam_BehindGoalLine;
             }
-            if (z < ICE_Z_POSITIONS[ArenaElement.RedTeam_GoalLine].End && oldZone == Zone.RedTeam_BehindGoalLine) {
+            if (zMax < ICE_Z_POSITIONS[ArenaElement.RedTeam_GoalLine].End && oldZone == Zone.RedTeam_BehindGoalLine) {
                 if (oldZone == Zone.RedTeam_BehindGoalLine)
                     return Zone.RedTeam_BehindGoalLine;
                 else
                     return Zone.RedTeam_Zone;
             }
 
-            if (z < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].Start) {
+            if (zMax < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].Start) {
                 return Zone.RedTeam_Zone;
             }
-            if (z < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) {
+            if (zMax < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) {
                 if (oldZone == Zone.RedTeam_Zone)
                     return Zone.RedTeam_Zone;
                 else
                     return Zone.RedTeam_Center;
             }
 
-            if (z < ICE_Z_POSITIONS[ArenaElement.CenterLine].Start) {
+            if (zMax < ICE_Z_POSITIONS[ArenaElement.CenterLine].Start) {
                 return Zone.RedTeam_Center;
             }
-            if (z < ICE_Z_POSITIONS[ArenaElement.CenterLine].End && oldZone == Zone.RedTeam_Center) {
+            if (zMax < ICE_Z_POSITIONS[ArenaElement.CenterLine].End && oldZone == Zone.RedTeam_Center) {
                 return Zone.RedTeam_Center;
             }
 
             // Both team.
-            if (z < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) {
+            if (zMax < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) {
                 if (oldZone == Zone.RedTeam_Center)
                     return Zone.RedTeam_Center;
                 else
@@ -297,20 +300,20 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             // Blue team.
-            if (z < ICE_Z_POSITIONS[ArenaElement.BlueTeam_BlueLine].Start) {
+            if (zMax < ICE_Z_POSITIONS[ArenaElement.BlueTeam_BlueLine].Start) {
                 return Zone.BlueTeam_Center;
             }
-            if (z < ICE_Z_POSITIONS[ArenaElement.BlueTeam_BlueLine].End) {
+            if (zMax < ICE_Z_POSITIONS[ArenaElement.BlueTeam_BlueLine].End) {
                 if (oldZone == Zone.BlueTeam_Center)
                     return Zone.BlueTeam_Center;
                 else
                     return Zone.BlueTeam_Zone;
             }
 
-            if (z < ICE_Z_POSITIONS[ArenaElement.BlueTeam_GoalLine].Start) {
+            if (zMax < ICE_Z_POSITIONS[ArenaElement.BlueTeam_GoalLine].Start) {
                 return Zone.BlueTeam_Zone;
             }
-            if (z < ICE_Z_POSITIONS[ArenaElement.BlueTeam_GoalLine].End) {
+            if (zMax < ICE_Z_POSITIONS[ArenaElement.BlueTeam_GoalLine].End) {
                 if (oldZone == Zone.BlueTeam_Zone)
                     return Zone.BlueTeam_Zone;
                 else
@@ -330,16 +333,6 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             return Zone.None;
-        }
-
-        private static bool IsPuckInZone(Puck puck, PlayerTeam teamZone) {
-            if (teamZone == PlayerTeam.Red && puck.Rigidbody.transform.position.z < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End)
-                return true;
-
-            if (teamZone == PlayerTeam.Blue && puck.Rigidbody.transform.position.z > ICE_Z_POSITIONS[ArenaElement.BlueTeam_BlueLine].End)
-                return true;
-
-            return false;
         }
 
         private static PlayerTeam GetOtherTeam(PlayerTeam team) {
