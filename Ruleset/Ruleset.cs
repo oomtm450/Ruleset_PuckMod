@@ -280,10 +280,16 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Icing logic.
                     lock (_locker) {
-                        if (_isIcingPossible[PlayerTeam.Blue] && _puckZone == Zone.RedTeam_BehindGoalLine)
+                        if (_isIcingPossible[PlayerTeam.Blue] && _puckZone == Zone.RedTeam_BehindGoalLine) {
+                            if (!IsIcing(PlayerTeam.Blue))
+                                UIChat.Instance.Server_SendSystemChatMessage($"{PlayerTeam.Blue} team is in icing.");
                             _isIcingActive[PlayerTeam.Blue] = true;
-                        if (_isIcingPossible[PlayerTeam.Red] && _puckZone == Zone.BlueTeam_BehindGoalLine)
+                        }
+                        if (_isIcingPossible[PlayerTeam.Red] && _puckZone == Zone.BlueTeam_BehindGoalLine) {
+                            if (!IsIcing(PlayerTeam.Red))
+                                UIChat.Instance.Server_SendSystemChatMessage($"{PlayerTeam.Red} team is in icing.");
                             _isIcingActive[PlayerTeam.Red] = true;
+                        }
                     }
 
                     // Offside logic.
