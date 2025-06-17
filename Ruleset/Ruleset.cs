@@ -65,6 +65,10 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static InputAction _getStickLocation;
 
+        private static bool _changedPhase = false;
+
+        private static int _periodTimeRemaining = 0;
+
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
 
@@ -115,6 +119,8 @@ namespace oomtm450PuckMod_Ruleset {
                     List<Zone> zones = GetTeamZones(GetOtherTeam(stick.Player.Team.Value));
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == zones[0] || _puckZone == zones[1])) {
                         UIChat.Instance.Server_SendSystemChatMessage($"{stick.Player.Team.Value} team offside has been called !");
+                        _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
+                        _changedPhase = true;
                         GameManager.Instance.Server_SetPhase(GamePhase.FaceOff,
                             ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.phaseDurationMap[GamePhase.FaceOff]);
                     }
@@ -124,6 +130,31 @@ namespace oomtm450PuckMod_Ruleset {
                 catch (Exception ex) {
                     Logging.LogError($"Error in Puck_OnCollisionStay_Patch Postfix().\n{ex}");
                 }
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_SetPhase event from GameManager.
+        /// </summary>
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_SetPhase))]
+        public class GameManager_Server_SetPhase_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(GamePhase phase, int time = -1) {
+                try {
+                    // If this is not the server or phase has not been changed by the mod, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer() || !_changedPhase)
+                        return true;
+
+                    if (phase == GamePhase.Playing) {
+                        _changedPhase = false;
+                        time = _periodTimeRemaining;
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in GameManager_Server_SetPhase_Patch Prefix().\n{ex}");
+                }
+
+                return true;
             }
         }
 
