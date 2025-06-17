@@ -18,7 +18,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.1.1";
+        private const string MOD_VERSION = "0.1.2";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -141,8 +141,19 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPrefix]
             public static bool Prefix(GamePhase phase, int time = -1) {
                 try {
-                    // If this is not the server or phase has not been changed by the mod, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || !_changedPhase)
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    // Reset possession times.
+                    foreach (string key in _playersLastTimePuckPossession.Keys)
+                        _playersLastTimePuckPossession[key].Restart();
+
+                    // Reset offsides.
+                    foreach (string key in _isOffside.Keys)
+                        _isOffside[key] = (_isOffside[key].Team, false);
+
+                    if (!_changedPhase)
                         return true;
 
                     if (phase == GamePhase.Playing) {
