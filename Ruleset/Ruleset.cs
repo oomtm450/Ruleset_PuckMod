@@ -116,7 +116,7 @@ namespace oomtm450PuckMod_Ruleset {
                     List<Zone> zones = GetTeamZones(GetOtherTeam(stick.Player.Team.Value));
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == zones[0] || _puckZone == zones[1])) {
                         UIChat.Instance.Server_SendSystemChatMessage($"{stick.Player.Team.Value} team offside has been called !");
-                        GameManager.Instance.Server_UpdateGameState(GamePhase.FaceOff);
+                        GameManager.Instance.Server_UpdateGameState(GamePhase.FaceOff, GameManager.Instance.GameState.Value.Time);
                     }
 
                     watch.Restart();
