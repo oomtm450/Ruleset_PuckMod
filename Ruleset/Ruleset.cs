@@ -18,7 +18,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.1.2DEV4";
+        private const string MOD_VERSION = "0.1.3";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -249,6 +249,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                     List<Player> players = PlayerManager.Instance.GetPlayers();
                     Puck puck = PuckManager.Instance.GetPuck();
+
+                    if (players.Count == 0 || puck == null)
+                        return true;
 
                     _puckZone = GetZone(puck.Rigidbody.transform, _puckZone, PUCK_RADIUS);
 
