@@ -18,7 +18,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.1.2DEV2";
+        private const string MOD_VERSION = "0.1.2DEV4";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -162,6 +162,8 @@ namespace oomtm450PuckMod_Ruleset {
                             foreach (string key in keys)
                                 _isOffside[key] = (_isOffside[key].Team, false);
                         }
+
+                        _puckZone = Zone.BlueTeam_Center;
                     }
 
                     if (!_changedPhase)
@@ -253,11 +255,13 @@ namespace oomtm450PuckMod_Ruleset {
                     _puckZone = GetZone(puck.Rigidbody.transform, _puckZone, PUCK_RADIUS);
 
                     // Offside logic.
-                    foreach (Player player in players) { // TODO : Generalize code block.
+                    foreach (Player player in players) {
                         string playerSteamId = player.SteamId.Value.ToString();
 
-                        if (!_isOffside.TryGetValue(playerSteamId, out _))
-                            _isOffside.Add(playerSteamId, (player.Team.Value, false));
+                        lock (_locker) {
+                            if (!_isOffside.TryGetValue(playerSteamId, out _))
+                                _isOffside.Add(playerSteamId, (player.Team.Value, false));
+                        }
 
                         Zone oldPlayerZone;
                         if (!_playersZone.TryGetValue(playerSteamId, out var result)) {
