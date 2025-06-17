@@ -127,21 +127,22 @@ namespace oomtm450PuckMod_Ruleset {
                         _playersLastTimePuckPossession.Add(stick.Player.SteamId.Value.ToString(), watch);
                     }
 
+                    PlayerTeam otherTeam = GetOtherTeam(stick.Player.Team.Value);
                     // Offside logic.
-                    List<Zone> zones = GetTeamZones(GetOtherTeam(stick.Player.Team.Value));
+                    List<Zone> zones = GetTeamZones(otherTeam);
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == zones[0] || _puckZone == zones[1])) {
-                        UIChat.Instance.Server_SendSystemChatMessage($"{stick.Player.Team.Value} team offside has been called !");
+                        UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
                         Faceoff();
                     }
 
                     // Icing logic.
-                    if (IsIcing(GetOtherTeam(stick.Player.Team.Value))) {
-                        UIChat.Instance.Server_SendSystemChatMessage($"{stick.Player.Team.Value} team icing has been called !");
+                    if (IsIcing(otherTeam)) {
+                        UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
                         Faceoff();
                     }
                     else {
                         if (IsIcing(stick.Player.Team.Value))
-                            UIChat.Instance.Server_SendSystemChatMessage($"{stick.Player.Team.Value} team icing cancelled !");
+                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CANCELLED");
                         ResetIcings();
                     }
                     
@@ -282,12 +283,12 @@ namespace oomtm450PuckMod_Ruleset {
                     lock (_locker) {
                         if (_isIcingPossible[PlayerTeam.Blue] && _puckZone == Zone.RedTeam_BehindGoalLine) {
                             if (!IsIcing(PlayerTeam.Blue))
-                                UIChat.Instance.Server_SendSystemChatMessage($"{PlayerTeam.Blue} team is in icing.");
+                                UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Blue.ToString().ToUpperInvariant()} TEAM");
                             _isIcingActive[PlayerTeam.Blue] = true;
                         }
                         if (_isIcingPossible[PlayerTeam.Red] && _puckZone == Zone.BlueTeam_BehindGoalLine) {
                             if (!IsIcing(PlayerTeam.Red))
-                                UIChat.Instance.Server_SendSystemChatMessage($"{PlayerTeam.Red} team is in icing.");
+                                UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Red.ToString().ToUpperInvariant()} TEAM");
                             _isIcingActive[PlayerTeam.Red] = true;
                         }
                     }
@@ -328,7 +329,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (offside) {
                             if (!IsOffside(player.Team.Value))
-                                UIChat.Instance.Server_SendSystemChatMessage($"{player.Team.Value} team is offside.");
+                                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM");
                             lock (_locker)
                                 _isOffside[playerSteamId] = (player.Team.Value, true);
                         }
@@ -353,7 +354,7 @@ namespace oomtm450PuckMod_Ruleset {
                             lock (_locker)
                                 _isOffside[playerSteamId] = (player.Team.Value, false);
                             if (!IsOffside(player.Team.Value))
-                                UIChat.Instance.Server_SendSystemChatMessage($"{player.Team.Value} team is not offside anymore.");
+                                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM CANCELLED");
                         }
                     }
                 }
