@@ -136,7 +136,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // Icing logic.
-                    if (IsIcing(otherTeam)) {
+                    if (IsIcing(otherTeam) && stick.Player.PlayerPosition.Role != PlayerRole.Goalie) {
                         UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
                         Faceoff();
                     }
