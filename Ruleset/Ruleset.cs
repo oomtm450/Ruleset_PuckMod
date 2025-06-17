@@ -22,7 +22,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const float, radius of the puck.
         /// </summary>
-        private const float PUCK_RADIUS = 0.125f;
+        private const float PUCK_RADIUS = 0.13f;
 
         /// <summary>
         /// Const float, radius of a player.
