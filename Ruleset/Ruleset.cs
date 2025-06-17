@@ -95,11 +95,11 @@ namespace oomtm450PuckMod_Ruleset {
         public class Puck_OnCollisionStay_Patch {
             [HarmonyPostfix]
             public static void Postfix(Collision collision) {
-                // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
-                    return;
-
                 try {
+                    // If this is not the server or game is not started, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                        return;
+
                     Stick stick = GetStick(collision.gameObject);
                     if (!stick)
                         return;
@@ -134,11 +134,11 @@ namespace oomtm450PuckMod_Ruleset {
         public class Puck_OnCollisionExit_Patch {
             [HarmonyPostfix]
             public static void Postfix(Collision collision) {
-                // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
-                    return;
-
                 try {
+                    // If this is not the server or game is not started, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                        return;
+
                     Stick stick = GetStick(collision.gameObject);
                     if (!stick)
                         return;
@@ -159,6 +159,9 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPrefix]
             public static bool Prefix() {
                 try {
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+
                     UIChat chat = UIChat.Instance;
 
                     if (chat.IsFocused)
@@ -184,11 +187,11 @@ namespace oomtm450PuckMod_Ruleset {
         public class ServerManager_Update_Patch {
             [HarmonyPrefix]
             public static bool Prefix() {
-                // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
-                    return true;
-
                 try {
+                    // If this is not the server or game is not started, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                        return true;
+
                     List<Player> players = PlayerManager.Instance.GetPlayers();
                     Puck puck = PuckManager.Instance.GetPuck();
 
@@ -223,7 +226,8 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         if (offside) {
-                            UIChat.Instance.Server_SendSystemChatMessage($"{player.Team.Value} team is offside.");
+                            if (!IsOffside(player.Team.Value))
+                                UIChat.Instance.Server_SendSystemChatMessage($"{player.Team.Value} team is offside.");
                             _isOffside[playerSteamId] = (player.Team.Value, true);
                         }
                     }
