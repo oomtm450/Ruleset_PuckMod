@@ -18,7 +18,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.1.2";
+        private const string MOD_VERSION = "0.1.2DEV2";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -68,6 +68,8 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool _changedPhase = false;
 
         private static int _periodTimeRemaining = 0;
+
+        private static object _locker = new object();
 
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
@@ -145,14 +147,21 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
+                    Logging.Log("Entered GameManager_Server_SetPhase_Patch Prefix()", _serverConfig);
+
                     if (phase == GamePhase.FaceOff) {
                         // Reset possession times.
-                        foreach (string key in _playersLastTimePuckPossession.Keys)
-                            _playersLastTimePuckPossession[key].Restart();
+                        lock (_locker) {
+                            foreach (Stopwatch watch in _playersLastTimePuckPossession.Values)
+                                watch.Restart();
+                        }
 
                         // Reset offsides.
-                        foreach (string key in _isOffside.Keys)
-                            _isOffside[key] = (_isOffside[key].Team, false);
+                        lock (_locker) {
+                            List<string> keys = new List<string>(_isOffside.Keys);
+                            foreach (string key in keys)
+                                _isOffside[key] = (_isOffside[key].Team, false);
+                        }
                     }
 
                     if (!_changedPhase)
@@ -246,6 +255,10 @@ namespace oomtm450PuckMod_Ruleset {
                     // Offside logic.
                     foreach (Player player in players) { // TODO : Generalize code block.
                         string playerSteamId = player.SteamId.Value.ToString();
+
+                        if (!_isOffside.TryGetValue(playerSteamId, out _))
+                            _isOffside.Add(playerSteamId, (player.Team.Value, false));
+
                         Zone oldPlayerZone;
                         if (!_playersZone.TryGetValue(playerSteamId, out var result)) {
                             if (player.Team.Value == PlayerTeam.Red)
@@ -274,7 +287,8 @@ namespace oomtm450PuckMod_Ruleset {
                         if (offside) {
                             if (!IsOffside(player.Team.Value))
                                 UIChat.Instance.Server_SendSystemChatMessage($"{player.Team.Value} team is offside.");
-                            _isOffside[playerSteamId] = (player.Team.Value, true);
+                            lock (_locker)
+                                _isOffside[playerSteamId] = (player.Team.Value, true);
                         }
                     }
 
@@ -284,16 +298,22 @@ namespace oomtm450PuckMod_Ruleset {
 
                         string playerSteamId = player.SteamId.Value.ToString();
                         if (player.Team.Value == PlayerTeam.Blue) {
-                            if (_playersZone[playerSteamId].Zone != Zone.RedTeam_Zone && _playersZone[playerSteamId].Zone != Zone.RedTeam_BehindGoalLine && _isOffside[playerSteamId].IsOffside)
-                                notOffside = true;
+                            lock (_locker) {
+                                if (_playersZone[playerSteamId].Zone != Zone.RedTeam_Zone && _playersZone[playerSteamId].Zone != Zone.RedTeam_BehindGoalLine && _isOffside[playerSteamId].IsOffside)
+                                    notOffside = true;
+                            }
+                                
                         }
                         else if (player.Team.Value == PlayerTeam.Red) {
-                            if (_playersZone[playerSteamId].Zone != Zone.BlueTeam_Zone && _playersZone[playerSteamId].Zone != Zone.BlueTeam_BehindGoalLine && _isOffside[playerSteamId].IsOffside)
-                                notOffside = true;
+                            lock (_locker) {
+                                if (_playersZone[playerSteamId].Zone != Zone.BlueTeam_Zone && _playersZone[playerSteamId].Zone != Zone.BlueTeam_BehindGoalLine && _isOffside[playerSteamId].IsOffside)
+                                    notOffside = true;
+                            }
                         }
 
                         if (notOffside) {
-                            _isOffside[playerSteamId] = (player.Team.Value, false);
+                            lock (_locker)
+                                _isOffside[playerSteamId] = (player.Team.Value, false);
                             if (!IsOffside(player.Team.Value))
                                 UIChat.Instance.Server_SendSystemChatMessage($"{player.Team.Value} team is not offside anymore.");
                         }
@@ -392,7 +412,8 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static bool IsOffside(PlayerTeam team) {
-            return _isOffside.Where(x => x.Value.Team == team).Any(x => x.Value.IsOffside);
+            lock (_locker)
+                return _isOffside.Where(x => x.Value.Team == team).Any(x => x.Value.IsOffside);
         }
 
         /// <summary>
