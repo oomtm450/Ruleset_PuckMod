@@ -145,20 +145,24 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
-                    // Reset possession times.
-                    foreach (string key in _playersLastTimePuckPossession.Keys)
-                        _playersLastTimePuckPossession[key].Restart();
+                    if (phase == GamePhase.FaceOff) {
+                        // Reset possession times.
+                        foreach (string key in _playersLastTimePuckPossession.Keys)
+                            _playersLastTimePuckPossession[key].Restart();
 
-                    // Reset offsides.
-                    foreach (string key in _isOffside.Keys)
-                        _isOffside[key] = (_isOffside[key].Team, false);
+                        // Reset offsides.
+                        foreach (string key in _isOffside.Keys)
+                            _isOffside[key] = (_isOffside[key].Team, false);
+                    }
 
                     if (!_changedPhase)
                         return true;
 
                     if (phase == GamePhase.Playing) {
+                        Logging.Log($"Remaining time should of been {time} seconds.", _serverConfig);
                         _changedPhase = false;
                         time = _periodTimeRemaining;
+                        Logging.Log($"Remaining time is now {time} seconds.", _serverConfig);
                     }
                 }
                 catch (Exception ex) {
