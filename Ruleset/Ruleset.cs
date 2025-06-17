@@ -79,7 +79,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static int _periodTimeRemaining = 0;
 
-        private static object _locker = new object();
+        private static readonly object _locker = new object();
 
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
@@ -173,8 +173,13 @@ namespace oomtm450PuckMod_Ruleset {
                                 watch.Restart();
 
                             // Reset offsides.
-                            foreach (string key in new List<string>(_isOffside.Keys))
-                                _isOffside[key] = (_isOffside[key].Team, false);
+                            _isOffside.Clear();
+
+                            // Reset players zone.
+                            _playersZone.Clear();
+
+                            // Reset puck possessions time.
+                            _playersLastTimePuckPossession.Clear();
                         }
                         // Reset icings.
                         ResetIcings();
@@ -266,17 +271,24 @@ namespace oomtm450PuckMod_Ruleset {
         public class ServerManager_Update_Patch {
             [HarmonyPrefix]
             public static bool Prefix() {
+                Puck puck = null;
+                List<Player> players = null;
+
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                    if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing)
                         return true;
 
-                    List<Player> players = PlayerManager.Instance.GetPlayers();
-                    Puck puck = PuckManager.Instance.GetPuck();
+                    players = PlayerManager.Instance.GetPlayers();
+                    puck = PuckManager.Instance.GetPuck();
 
                     if (players.Count == 0 || puck == null)
                         return true;
-
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 1.\n{ex}");
+                }
+                try {
                     _puckZone = GetZone(puck.Rigidbody.transform, _puckZone, PUCK_RADIUS);
 
                     // Icing logic.
@@ -293,6 +305,11 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
 
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}");
+                }
+                try {
                     // Offside logic.
                     foreach (Player player in players) {
                         string playerSteamId = player.SteamId.Value.ToString();
@@ -311,7 +328,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                             _playersZone.Add(playerSteamId, (player.Team.Value, oldPlayerZone));
                         }
-                        oldPlayerZone = result.Zone;
+                        else
+                            oldPlayerZone = result.Zone;
 
                         Zone playerZone = GetZone(player.PlayerBody.transform, oldPlayerZone, PLAYER_RADIUS);
                         _playersZone[playerSteamId] = (player.Team.Value, playerZone);
@@ -359,7 +377,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix().\n{ex}");
+                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 3.\n{ex}");
                 }
 
                 return true;
