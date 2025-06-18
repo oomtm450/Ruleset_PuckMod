@@ -106,7 +106,7 @@ namespace oomtm450PuckMod_Ruleset {
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
 
-        /*/// <summary>
+        /// <summary>
         /// Class that patches the OnCollisionEnter event from Puck.
         /// </summary>
         [HarmonyPatch(typeof(Puck), "OnCollisionEnter")]
@@ -117,13 +117,45 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
                     return;
 
-                Stick stick = GetStick(collision.gameObject);
-                if (!stick)
-                    return;
+                try {
+                    Stick stick = GetStick(collision.gameObject);
+                    if (!stick)
+                        return;
 
-                Logging.Log($"Puck was hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" (enter)!", _serverConfig);
+                    //Logging.Log($"Puck was hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" (enter)!", _serverConfig);
+
+                    // High stick logic.
+                    Puck puck = PuckManager.Instance.GetPuck();
+                    if (puck.Rigidbody.transform.position.y > CROSSBAR_HEIGHT) {
+                        lock (_locker) {
+                            if (!_isHighStickActive[stick.Player.Team.Value]) {
+                                _isHighStickActive[stick.Player.Team.Value] = true;
+                                UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM");
+                            }
+                        }
+                    }
+                    else if (puck.IsGrounded) {
+                        lock (_locker) {
+                            if (_isHighStickActive[stick.Player.Team.Value]) {
+                                UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
+                                Faceoff();
+                            }
+                        }
+                    }
+
+                    PlayerTeam otherTeam = GetOtherTeam(stick.Player.Team.Value);
+                    lock (_locker) {
+                        if (_isHighStickActive[otherTeam]) {
+                            _isHighStickActive[otherTeam] = false;
+                            UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {otherTeam.ToString().ToUpperInvariant()} TEAM CANCELLED");
+                        }
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in Puck_OnCollisionEnter_Patch Postfix().\n{ex}");
+                }
             }
-        }*/
+        }
 
         /// <summary>
         /// Class that patches the OnCollisionStay event from Puck.
@@ -200,32 +232,6 @@ namespace oomtm450PuckMod_Ruleset {
                         if (IsIcing(stick.Player.Team.Value))
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CANCELLED");
                         ResetIcings();
-                    }
-
-                    // High stick logic.
-                    Puck puck = PuckManager.Instance.GetPuck();
-                    if (puck.Rigidbody.transform.position.y > CROSSBAR_HEIGHT) {
-                        lock (_locker) {
-                            if (!_isHighStickActive[stick.Player.Team.Value]) {
-                                _isHighStickActive[stick.Player.Team.Value] = true;
-                                UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM");
-                            }
-                        }
-                    }
-                    else if (puck.IsGrounded) {
-                        lock (_locker) {
-                            if (_isHighStickActive[stick.Player.Team.Value]) {
-                                UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
-                                Faceoff();
-                            }
-                        }
-                    }
-
-                    lock (_locker) {
-                        if (_isHighStickActive[otherTeam]) {
-                            _isHighStickActive[otherTeam] = false;
-                            UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {otherTeam.ToString().ToUpperInvariant()} TEAM CANCELLED");
-                        }
                     }
                     
                     watch.Restart();
