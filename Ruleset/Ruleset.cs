@@ -83,6 +83,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly object _locker = new object();
 
+        private static FaceoffSpot _faceoffSpot = FaceoffSpot.Center;
+
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
 
@@ -161,6 +163,22 @@ namespace oomtm450PuckMod_Ruleset {
                     // Offside logic.
                     List<Zone> zones = GetTeamZones(otherTeam);
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == zones[0] || _puckZone == zones[1])) {
+                        switch(stick.Player.Team.Value)
+                        {
+                            case PlayerTeam.Red:
+                                if (PuckManager.Instance.GetPuck().Rigidbody.transform.position.x < 0)
+                                    _faceoffSpot = FaceoffSpot.BlueteamBLLeft;
+                                else
+                                    _faceoffSpot = FaceoffSpot.BlueteamBLRight;
+                                break;
+
+                            case PlayerTeam.Blue:
+                                if (PuckManager.Instance.GetPuck().Rigidbody.transform.position.x < 0)
+                                    _faceoffSpot = FaceoffSpot.RedteamBLLeft;
+                                else
+                                    _faceoffSpot = FaceoffSpot.RedteamBLRight;
+                                break;
+                        }
                         UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
                         Faceoff();
                     }
@@ -239,10 +257,94 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        /// <summary>
-        /// Class that patches the OnCollisionExit event from Puck.
-        /// </summary>
-        [HarmonyPatch(typeof(Puck), "OnCollisionExit")]
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_SetPhase))]
+        public class GameManager_Server_SetPhase_PostPatch
+        {
+            [HarmonyPostfix]
+            public static void Postfix(GamePhase phase, ref int time)
+            {
+                try
+                {
+                    Vector3 dot = new Vector3(0, 0, 0); //Default faceoff (center)
+
+                    switch (_faceoffSpot)
+                    {
+                        case FaceoffSpot.BlueteamBLLeft:
+                            dot = new Vector3(-10, 0, 11);
+                            break;
+                        case FaceoffSpot.BlueteamBLRight:
+                            dot = new Vector3(10, 0, 11);
+                            break;
+                        case FaceoffSpot.RedteamBLLeft:
+                            dot = new Vector3(-10, 0, -11);
+                            break;
+                        case FaceoffSpot.RedteamBLRight:
+                            dot = new Vector3(10, 0, -11);
+                            break;
+
+                    }
+
+                    List<Player> redteam = PlayerManager.Instance.GetPlayersByTeam(PlayerTeam.Red);
+                    foreach (Player player in redteam)
+                    {
+                        switch(player.PlayerPosition.Name)
+                        {
+                            case PlayerFunc.CENTER_POSITION:
+                                player.PlayerBody.Server_Teleport(new Vector3(dot.x, dot.y, (dot.z - 1.5f)), new Quaternion(0, 0, 0, 0));
+                                break;
+                            case PlayerFunc.LEFT_WINGER_POSITION:
+                                player.PlayerBody.Server_Teleport(new Vector3(dot.x - 9f, dot.y, dot.z - 1.5f), new Quaternion(0, 0, 0, 0));
+                                break;
+                            case PlayerFunc.RIGHT_WINGER_POSITION:
+                                player.PlayerBody.Server_Teleport(new Vector3(dot.x + 9f, dot.y, dot.z - 1.5f), new Quaternion(0, 0, 0, 0));
+                                break;
+                            case PlayerFunc.LEFT_DEFENDER_POSITION:
+                                player.PlayerBody.Server_Teleport(new Vector3(dot.x - 4f, dot.y, dot.z - 14.5f), new Quaternion(0, 0, 0, 0));
+                                break;
+                            case PlayerFunc.RIGHT_DEFENDER_POSITION:
+                                player.PlayerBody.Server_Teleport(new Vector3(dot.x + 5f, dot.y, dot.z - 14.5f), new Quaternion(0, 0, 0, 0));
+                                break;
+                        }
+                    }
+
+                    List<Player> blueteam = PlayerManager.Instance.GetPlayersByTeam(PlayerTeam.Blue);
+                    foreach (Player player in blueteam)
+                    {
+                        switch (player.PlayerPosition.Name)
+                        {
+                            case PlayerFunc.CENTER_POSITION:
+                                player.PlayerBody.Server_Teleport(new Vector3(dot.x, dot.y, (dot.z + 1.5f)), new Quaternion(0, 0, 0, 0));
+                                break;
+                            case PlayerFunc.LEFT_WINGER_POSITION:
+                                player.PlayerBody.Server_Teleport(new Vector3(dot.x + 9f, dot.y, dot.z + 1.5f), new Quaternion(0, 0, 0, 0));
+                                break;
+                            case PlayerFunc.RIGHT_WINGER_POSITION:
+                                player.PlayerBody.Server_Teleport(new Vector3(dot.x - 9f, dot.y, dot.z + 1.5f), new Quaternion(0, 0, 0, 0));
+                                break;
+                            case PlayerFunc.LEFT_DEFENDER_POSITION:
+                                player.PlayerBody.Server_Teleport(new Vector3(dot.x + 4f, dot.y, dot.z + 14.5f), new Quaternion(0, 0, 0, 0));
+                                break;
+                            case PlayerFunc.RIGHT_DEFENDER_POSITION:
+                                player.PlayerBody.Server_Teleport(new Vector3(dot.x - 5f, dot.y, dot.z + 14.5f), new Quaternion(0, 0, 0, 0));
+                                break;
+                        }
+                    }
+                }
+
+
+                catch (Exception ex)
+                {
+                    Logging.LogError($"Error in GameManager_Server_SetPhase_Patch Postfix().\n{ex}");
+                }
+
+                return;
+            }
+        }
+
+    /// <summary>
+    /// Class that patches the OnCollisionExit event from Puck.
+    /// </summary>
+    [HarmonyPatch(typeof(Puck), "OnCollisionExit")]
         public class Puck_OnCollisionExit_Patch {
             [HarmonyPostfix]
             public static void Postfix(Collision collision) {
@@ -789,5 +891,17 @@ namespace oomtm450PuckMod_Ruleset {
         BlueTeam_Zone,
         RedTeam_Center,
         BlueTeam_Center,
+    }
+
+    public enum FaceoffSpot {
+        Center,
+        BlueteamBLLeft,
+        BlueteamBLRight,
+        RedteamBLLeft,
+        RedteamBLRight,
+        BlueteamDZoneLeft,
+        BlueteamDZoneRight,
+        RedteamDZoneLeft,
+        RedteamDZoneRight,
     }
 }
