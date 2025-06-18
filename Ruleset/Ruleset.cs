@@ -192,10 +192,8 @@ namespace oomtm450PuckMod_Ruleset {
                         return true;
 
                     if (phase == GamePhase.Playing) {
-                        Logging.Log($"Remaining time should of been {time} seconds.", _serverConfig); // TODO : Remove debug log.
                         _changedPhase = false;
                         time = _periodTimeRemaining;
-                        Logging.Log($"Remaining time is now {time} seconds.", _serverConfig); // TODO : Remove debug log.
                     }
                 }
                 catch (Exception ex) {
@@ -378,7 +376,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 3.\n{ex}"); // TODO : No goal if offside.
+                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 3.\n{ex}");
                 }
 
                 return true;
