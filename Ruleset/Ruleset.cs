@@ -120,7 +120,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                     Stick stick = GetStick(collision.gameObject);
                     if (!stick) {
-                        Logging.Log($"{collision.gameObject.name} {collision.gameObject}", _serverConfig);
                         PlayerBodyV2 playerBody = GetPlayerBodyV2(collision.gameObject);
                         if (!playerBody)
                             return;
