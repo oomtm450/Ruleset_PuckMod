@@ -104,7 +104,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static int _periodTimeRemaining = 0;
 
-        private static Player _lastPlayerOnPuck = null;
+        private static PlayerTeam _lastPlayerOnPuckTeam = PlayerTeam.Blue;
 
         private static readonly object _locker = new object();
 
@@ -209,7 +209,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
                     }
 
-                    _lastPlayerOnPuck = stick.Player;
+                    _lastPlayerOnPuckTeam = stick.Player.Team.Value;
 
                     //Logging.Log($"Puck is being hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" (stay)!", _serverConfig);
 
@@ -402,7 +402,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!stick)
                         return;
 
-                    _lastPlayerOnPuck = stick.Player;
+                    _lastPlayerOnPuckTeam = stick.Player.Team.Value;
 
                     // Icing logic.
                     bool icingPossible = false;
@@ -556,15 +556,13 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         // Remove offside if the other team entered the zone with the puck.
-                        if (_lastPlayerOnPuck != null) {
-                            List<Zone> lastPlayerOnPuckTeamZones = GetTeamZones(_lastPlayerOnPuck.Team.Value, true);
-                            if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
-                                PlayerTeam otherTeam = GetOtherTeam(_lastPlayerOnPuck.Team.Value);
-                                lock (_locker) {
-                                    foreach (string key in new List<string>(_isOffside.Keys)) {
-                                        if (_isOffside[key].Team == otherTeam)
-                                            _isOffside[key] = (_isOffside[key].Team, false);
-                                    }
+                        List<Zone> lastPlayerOnPuckTeamZones = GetTeamZones(_lastPlayerOnPuckTeam, true);
+                        if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
+                            PlayerTeam otherTeam = GetOtherTeam(_lastPlayerOnPuckTeam);
+                            lock (_locker) {
+                                foreach (string key in new List<string>(_isOffside.Keys)) {
+                                    if (_isOffside[key].Team == otherTeam)
+                                        _isOffside[key] = (_isOffside[key].Team, false);
                                 }
                             }
                         }
