@@ -2,7 +2,6 @@
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -351,6 +350,9 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     // Offside logic.
                     foreach (Player player in players) {
+                        if (player.Role.Value == PlayerRole.None)
+                            continue;
+
                         string playerSteamId = player.SteamId.Value.ToString();
 
                         lock (_locker) {
