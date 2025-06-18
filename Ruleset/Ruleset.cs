@@ -163,6 +163,22 @@ namespace oomtm450PuckMod_Ruleset {
                     // Offside logic.
                     List<Zone> zones = GetTeamZones(otherTeam);
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == zones[0] || _puckZone == zones[1])) {
+                        switch(stick.Player.Team.Value)
+                        {
+                            case PlayerTeam.Red:
+                                if (PuckManager.Instance.GetPuck().Rigidbody.transform.position.x < 0)
+                                    _faceoffSpot = FaceoffSpot.BlueteamBLLeft;
+                                else
+                                    _faceoffSpot = FaceoffSpot.BlueteamBLRight;
+                                break;
+
+                            case PlayerTeam.Blue:
+                                if (PuckManager.Instance.GetPuck().Rigidbody.transform.position.x < 0)
+                                    _faceoffSpot = FaceoffSpot.RedteamBLLeft;
+                                else
+                                    _faceoffSpot = FaceoffSpot.RedteamBLRight;
+                                break;
+                        }
                         UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
                         Faceoff();
                     }
