@@ -591,7 +591,10 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static string GetPlayerSteamIdInPossession() {
-            Dictionary<string, Stopwatch> dict = _playersLastTimePuckPossession.Where(x => x.Value.ElapsedMilliseconds < POSSESSION_MILLISECONDS).ToDictionary(x => x.Key, x => x.Value);
+            Dictionary<string, Stopwatch> dict;
+            lock (_locker) {
+                dict = _playersLastTimePuckPossession.Where(x => x.Value.ElapsedMilliseconds < POSSESSION_MILLISECONDS).ToDictionary(x => x.Key, x => x.Value);
+            }
             if (dict.Count != 1)
                 return "";
 
