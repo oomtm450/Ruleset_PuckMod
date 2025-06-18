@@ -136,6 +136,8 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
                     }
 
+                    _lastPlayerOnPuck = stick.Player;
+
                     //Logging.Log($"Puck is being hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" (stay)!", _serverConfig);
 
                     if (!_playersLastTimePuckPossession.TryGetValue(stick.Player.SteamId.Value.ToString(), out Stopwatch watch)) {
@@ -235,6 +237,8 @@ namespace oomtm450PuckMod_Ruleset {
                     Stick stick = GetStick(collision.gameObject);
                     if (!stick)
                         return;
+
+                    _lastPlayerOnPuck = stick.Player;
 
                     // Icing logic.
                     bool icingPossible = false;
