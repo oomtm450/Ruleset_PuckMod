@@ -317,7 +317,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(GamePhase phase, int time) {
                 try {
                     if (phase == GamePhase.FaceOff) {
-                        Vector3 dot = = GetFaceoffDot();
+                        Vector3 dot = GetFaceoffDot();
                         Quaternion bluePlayersRotation = Quaternion.Euler(0, 180, 0);
                         Quaternion redPlayersRotation = new Quaternion(0, 0, 0, 0);
 
