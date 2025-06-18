@@ -316,32 +316,9 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(GamePhase phase, int time) {
                 try {
-                    Vector3 dot;
-
-                    switch (_nextFaceoffSpot) {
-                        case FaceoffSpot.BlueteamBLLeft:
-                            dot = new Vector3(-10, 0, 11);
-                            break;
-
-                        case FaceoffSpot.BlueteamBLRight:
-                            dot = new Vector3(10, 0, 11);
-                            break;
-
-                        case FaceoffSpot.RedteamBLLeft:
-                            dot = new Vector3(-10, 0, -11);
-                            break;
-
-                        case FaceoffSpot.RedteamBLRight:
-                            dot = new Vector3(10, 0, -11);
-                            break;
-
-                        default:
-                            dot = new Vector3(0, 0, 0);
-                            break;
-                    }
-
                     if (phase == GamePhase.FaceOff) {
-                        Quaternion bluePlayersRotation = Quaternion.Euler(0, 0, 180);
+                        Vector3 dot = = GetFaceoffDot();
+                        Quaternion bluePlayersRotation = Quaternion.Euler(0, 180, 0);
                         Quaternion redPlayersRotation = new Quaternion(0, 0, 0, 0);
 
                         foreach (Player redPlayer in PlayerManager.Instance.GetPlayersByTeam(PlayerTeam.Red)) {
@@ -384,10 +361,7 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                         }
 
-                        _nextFaceoffSpot = FaceoffSpot.Center;
-                    }
-                    else if (phase == GamePhase.Playing) {
-                        PuckManager.Instance.GetPuck().Rigidbody.transform.position = new Vector3(dot.x, 1f, dot.z);
+                        return;
                     }
                 }
                 catch (Exception ex) {
@@ -396,10 +370,36 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-    /// <summary>
-    /// Class that patches the OnCollisionExit event from Puck.
-    /// </summary>
-    [HarmonyPatch(typeof(Puck), "OnCollisionExit")]
+        /// <summary>
+        /// Class that patches the Server_SpawnPuck event from PuckManager.
+        /// </summary>
+        [HarmonyPatch(typeof(PuckManager), nameof(PuckManager.Server_SpawnPuck))]
+        public class PuckManager_Server_SpawnPuck_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(ref Vector3 position, Quaternion rotation, Vector3 velocity, bool isReplay) {
+                try {
+                    // If this is not the server or game is not started, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff))
+                        return true;
+
+                    Vector3 dot = GetFaceoffDot();
+                    Logging.Log($"Changed puck position to {dot.x} {1f} {dot.z} for faceoff.", _serverConfig);
+                    position = new Vector3(dot.x, 1f, dot.z);
+                    _nextFaceoffSpot = FaceoffSpot.Center;
+
+                }
+                catch (Exception ex)  {
+                    Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}");
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the OnCollisionExit event from Puck.
+        /// </summary>
+        [HarmonyPatch(typeof(Puck), "OnCollisionExit")]
         public class Puck_OnCollisionExit_Patch {
             [HarmonyPostfix]
             public static void Postfix(Collision collision) {
@@ -600,6 +600,34 @@ namespace oomtm450PuckMod_Ruleset {
 
                 return true;
             }
+        }
+
+        private static Vector3 GetFaceoffDot() {
+            Vector3 dot;
+
+            switch (_nextFaceoffSpot) {
+                case FaceoffSpot.BlueteamBLLeft:
+                    dot = new Vector3(-10f, 0.01f, 11f);
+                    break;
+
+                case FaceoffSpot.BlueteamBLRight:
+                    dot = new Vector3(10f, 0.01f, 11f);
+                    break;
+
+                case FaceoffSpot.RedteamBLLeft:
+                    dot = new Vector3(-10f, 0.01f, -11f);
+                    break;
+
+                case FaceoffSpot.RedteamBLRight:
+                    dot = new Vector3(10f, 0.01f, -11f);
+                    break;
+
+                default:
+                    dot = new Vector3(0f, 0.01f, 0f);
+                    break;
+            }
+
+            return dot;
         }
 
         private static void ResetIcings() {
