@@ -335,11 +335,15 @@ namespace oomtm450PuckMod_Ruleset {
                                     xOffset = -9f;
                                     break;
                                 case PlayerFunc.LEFT_DEFENDER_POSITION:
-                                    zOffset = 14.5f;
+                                    zOffset = 13.5f;
+                                    if ((ushort)_nextFaceoffSpot >= 5)
+                                        zOffset -= 1f;
                                     xOffset = 4f;
                                     break;
                                 case PlayerFunc.RIGHT_DEFENDER_POSITION:
-                                    zOffset = 14.5f;
+                                    zOffset = 13.5f;
+                                    if ((ushort)_nextFaceoffSpot >= 5)
+                                        zOffset -= 1f;
                                     xOffset = -4f;
                                     break;
                             }
@@ -1070,7 +1074,7 @@ namespace oomtm450PuckMod_Ruleset {
         BlueTeam_Center,
     }
 
-    public enum FaceoffSpot {
+    public enum FaceoffSpot : ushort {
         Center,
         BlueteamBLLeft,
         BlueteamBLRight,
