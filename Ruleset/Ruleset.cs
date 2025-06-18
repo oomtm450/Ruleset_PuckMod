@@ -18,7 +18,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.5.0DEV";
+        private const string MOD_VERSION = "0.5.0DEV2";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -318,7 +318,7 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     if (phase == GamePhase.FaceOff) {
                         Vector3 dot;
-                        Quaternion bluePlayersRotation = Quaternion.Euler(180, 0, 0);
+                        Quaternion bluePlayersRotation = Quaternion.Euler(0, 0, 180);
                         Quaternion redPlayersRotation = new Quaternion(0, 0, 0, 0);
 
                         switch (_nextFaceoffSpot) {
