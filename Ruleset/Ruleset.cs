@@ -607,19 +607,19 @@ namespace oomtm450PuckMod_Ruleset {
 
             switch (_nextFaceoffSpot) {
                 case FaceoffSpot.BlueteamBLLeft:
-                    dot = new Vector3(-10f, 0.01f, 11f);
+                    dot = new Vector3(-9.95f, 0.01f, 11f);
                     break;
 
                 case FaceoffSpot.BlueteamBLRight:
-                    dot = new Vector3(10f, 0.01f, 11f);
+                    dot = new Vector3(9.95f, 0.01f, 11f);
                     break;
 
                 case FaceoffSpot.RedteamBLLeft:
-                    dot = new Vector3(-10f, 0.01f, -11f);
+                    dot = new Vector3(-9.95f, 0.01f, -11f);
                     break;
 
                 case FaceoffSpot.RedteamBLRight:
-                    dot = new Vector3(10f, 0.01f, -11f);
+                    dot = new Vector3(9.95f, 0.01f, -11f);
                     break;
 
                 default:
