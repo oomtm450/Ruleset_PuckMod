@@ -318,22 +318,20 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     if (phase == GamePhase.FaceOff) {
                         Vector3 dot = GetFaceoffDot();
-                        Quaternion bluePlayersRotation = Quaternion.Euler(0, 180, 0);
-                        Quaternion redPlayersRotation = new Quaternion(0, 0, 0, 0);
 
                         foreach (Player redPlayer in PlayerManager.Instance.GetPlayersByTeam(PlayerTeam.Red)) {
                             switch (redPlayer.PlayerPosition.Name) {
                                 case PlayerFunc.LEFT_WINGER_POSITION:
-                                    redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x - 9f, dot.y, dot.z - 1.5f), redPlayersRotation);
+                                    redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x - 9f, dot.y, dot.z - 1.5f), redPlayer.PlayerBody.Rigidbody.rotation);
                                     break;
                                 case PlayerFunc.RIGHT_WINGER_POSITION:
-                                    redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x + 9f, dot.y, dot.z - 1.5f), redPlayersRotation);
+                                    redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x + 9f, dot.y, dot.z - 1.5f), redPlayer.PlayerBody.Rigidbody.rotation);
                                     break;
                                 case PlayerFunc.LEFT_DEFENDER_POSITION:
-                                    redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x - 4f, dot.y, dot.z - 14.5f), redPlayersRotation);
+                                    redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x - 4f, dot.y, dot.z - 14.5f), redPlayer.PlayerBody.Rigidbody.rotation);
                                     break;
                                 case PlayerFunc.RIGHT_DEFENDER_POSITION:
-                                    redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x + 5f, dot.y, dot.z - 14.5f), redPlayersRotation);
+                                    redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x + 5f, dot.y, dot.z - 14.5f), redPlayer.PlayerBody.Rigidbody.rotation);
                                     break;
                             }
                         }
@@ -341,16 +339,16 @@ namespace oomtm450PuckMod_Ruleset {
                         foreach (Player bluePlayer in PlayerManager.Instance.GetPlayersByTeam(PlayerTeam.Blue)) {
                             switch (bluePlayer.PlayerPosition.Name) {
                                 case PlayerFunc.LEFT_WINGER_POSITION:
-                                    bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x + 9f, dot.y, dot.z + 1.5f), bluePlayersRotation);
+                                    bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x + 9f, dot.y, dot.z + 1.5f), bluePlayer.PlayerBody.Rigidbody.rotation);
                                     break;
                                 case PlayerFunc.RIGHT_WINGER_POSITION:
-                                    bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x - 9f, dot.y, dot.z + 1.5f), bluePlayersRotation);
+                                    bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x - 9f, dot.y, dot.z + 1.5f), bluePlayer.PlayerBody.Rigidbody.rotation);
                                     break;
                                 case PlayerFunc.LEFT_DEFENDER_POSITION:
-                                    bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x + 4f, dot.y, dot.z + 14.5f), bluePlayersRotation);
+                                    bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x + 4f, dot.y, dot.z + 14.5f), bluePlayer.PlayerBody.Rigidbody.rotation);
                                     break;
                                 case PlayerFunc.RIGHT_DEFENDER_POSITION:
-                                    bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x - 5f, dot.y, dot.z + 14.5f), bluePlayersRotation);
+                                    bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x - 5f, dot.y, dot.z + 14.5f), bluePlayer.PlayerBody.Rigidbody.rotation);
                                     break;
                             }
                         }
