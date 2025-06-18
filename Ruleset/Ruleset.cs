@@ -31,6 +31,11 @@ namespace oomtm450PuckMod_Ruleset {
         private const float PLAYER_RADIUS = 0.25f;
 
         /// <summary>
+        /// Const float, height of the net's crossbar.
+        /// </summary>
+        private const float CROSSBAR_HEIGHT = 1.8f;
+
+        /// <summary>
         /// Const int, number of milliseconds for a possession to be considered with challenging.
         /// </summary>
         private const int MIN_POSSESSION_MILLISECONDS = 250;
@@ -73,6 +78,11 @@ namespace oomtm450PuckMod_Ruleset {
         };
 
         private static readonly Dictionary<PlayerTeam, bool> _isIcingActive = new Dictionary<PlayerTeam, bool> {
+            { PlayerTeam.Blue, false },
+            { PlayerTeam.Red, false },
+        };
+
+        private static readonly Dictionary<PlayerTeam, bool> _isHighStickActive = new Dictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, false },
             { PlayerTeam.Red, false },
         };
@@ -191,6 +201,32 @@ namespace oomtm450PuckMod_Ruleset {
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CANCELLED");
                         ResetIcings();
                     }
+
+                    // High stick logic.
+                    Puck puck = PuckManager.Instance.GetPuck();
+                    if (puck.Rigidbody.transform.position.y > CROSSBAR_HEIGHT) {
+                        lock (_locker) {
+                            if (!_isHighStickActive[stick.Player.Team.Value]) {
+                                _isHighStickActive[stick.Player.Team.Value] = true;
+                                UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM");
+                            }
+                        }
+                    }
+                    else if (puck.IsGrounded) {
+                        lock (_locker) {
+                            if (_isHighStickActive[stick.Player.Team.Value]) {
+                                UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
+                                Faceoff();
+                            }
+                        }
+                    }
+
+                    lock (_locker) {
+                        if (_isHighStickActive[otherTeam]) {
+                            _isHighStickActive[otherTeam] = false;
+                            UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {otherTeam.ToString().ToUpperInvariant()} TEAM CANCELLED");
+                        }
+                    }
                     
                     watch.Restart();
                 }
@@ -226,6 +262,10 @@ namespace oomtm450PuckMod_Ruleset {
 
                             // Reset puck possessions time.
                             _playersLastTimePuckPossession.Clear();
+
+                            // Reset high sticks.
+                            foreach (PlayerTeam key in new List<PlayerTeam>(_isHighStickActive.Keys))
+                                _isHighStickActive[key] = false;
                         }
                         // Reset icings.
                         ResetIcings();
