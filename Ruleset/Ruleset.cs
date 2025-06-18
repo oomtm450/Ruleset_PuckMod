@@ -117,8 +117,23 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     Stick stick = GetStick(collision.gameObject);
-                    if (!stick)
+                    if (!stick) {
+                        Logging.Log($"{collision.gameObject.name} {collision.gameObject}", _serverConfig);
+                        PlayerBodyV2 playerBody = GetPlayerBodyV2(collision.gameObject);
+                        if (!playerBody)
+                            return;
+
+                        if (playerBody.Player.Role.Value != PlayerRole.Goalie)
+                            return;
+
+                        PlayerTeam goalieOtherTeam = GetOtherTeam(playerBody.Player.Team.Value);
+                        if (IsIcing(goalieOtherTeam)) {
+                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {goalieOtherTeam.ToString().ToUpperInvariant()} TEAM CANCELLED");
+                            ResetIcings();
+                        }
+
                         return;
+                    }
 
                     //Logging.Log($"Puck is being hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" (stay)!", _serverConfig);
 
@@ -534,6 +549,15 @@ namespace oomtm450PuckMod_Ruleset {
         /// <returns>Stick, found Stick object or null.</returns>
         private static Stick GetStick(GameObject gameObject) {
             return gameObject.GetComponent<Stick>();
+        }
+
+        /// <summary>
+        /// Function that returns a PlayerBodyV2 instance from a GameObject.
+        /// </summary>
+        /// <param name="gameObject">GameObject, GameObject to use.</param>
+        /// <returns>PlayerBodyV2, found PlayerBodyV2 object or null.</returns>
+        private static PlayerBodyV2 GetPlayerBodyV2(GameObject gameObject) {
+            return gameObject.GetComponent<PlayerBodyV2>();
         }
 
         /// <summary>
