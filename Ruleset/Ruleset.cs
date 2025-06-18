@@ -143,7 +143,7 @@ namespace oomtm450PuckMod_Ruleset {
                     else if (puck.IsGrounded) {
                         lock (_locker) {
                             if (_isHighStickActive[stick.Player.Team.Value]) {
-                                SetNextFaceoffPosition(stick.Player.Team.Value, _puckLastPositionBeforeCall, false, true);
+                                SetNextFaceoffPosition(stick.Player.Team.Value, _puckLastPositionBeforeCall, false);
                                 UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
                                 Faceoff();
                             }
@@ -221,7 +221,7 @@ namespace oomtm450PuckMod_Ruleset {
                     List<Zone> zones = GetTeamZones(otherTeam);
                     Puck puck = PuckManager.Instance.GetPuck();
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == zones[0] || _puckZone == zones[1])) {
-                        SetNextFaceoffPosition(stick.Player.Team.Value, _puckLastPositionBeforeCall, false, false);
+                        SetNextFaceoffPosition(stick.Player.Team.Value, _puckLastPositionBeforeCall, false);
                         UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
                         Faceoff();
                     }
@@ -229,7 +229,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // Icing logic.
                     if (IsIcing(otherTeam)){
                         if (stick.Player.PlayerPosition.Role != PlayerRole.Goalie) {
-                            SetNextFaceoffPosition(otherTeam, _puckLastPositionBeforeCall, true, false);
+                            SetNextFaceoffPosition(otherTeam, _puckLastPositionBeforeCall, true);
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
                             Faceoff();
                         }
