@@ -2,6 +2,7 @@
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -377,7 +378,34 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 3.\n{ex}");
+                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 3.\n{ex}"); // TODO : No goal if offside.
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Event_Server_OnPuckEnterTeamGoal event from GameManagerController.
+        /// </summary>
+        [HarmonyPatch(typeof(GameManagerController), "Event_Server_OnPuckEnterTeamGoal")]
+        public class GameManagerController_GameManagerController_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(Dictionary<string, object> message) {
+                try {
+                    PlayerTeam playerTeam = (PlayerTeam)message["team"];
+                    playerTeam = GetOtherTeam(playerTeam);
+
+                    // No goal if offside.
+                    if (IsOffside(playerTeam)) {
+                        UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                        Faceoff();
+                        return false;
+                    }
+                        
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in GameManagerController_GameManagerController_Patch Prefix().\n{ex}");
                 }
 
                 return true;
