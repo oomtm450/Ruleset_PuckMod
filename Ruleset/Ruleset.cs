@@ -19,7 +19,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.3.0DEV";
+        private const string MOD_VERSION = "0.3.0DEV2";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -289,7 +289,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static bool Prefix() {
                 Puck puck = null;
                 List<Player> players = null;
-                Zone oldZone = null;
+                Zone oldZone = Zone.BlueTeam_Center;
 
                 try {
                     // If this is not the server or game is not started, do not use the patch.
