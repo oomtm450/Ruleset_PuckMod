@@ -318,7 +318,7 @@ namespace oomtm450PuckMod_Ruleset {
                         Vector3 dot = GetFaceoffDot();
 
                         foreach (Player player in PlayerManager.Instance.GetPlayers()) {
-                            if (!IsPlayerPlaying(player))
+                            if (!IsPlayerPlaying(player) || player.Role.Value == PlayerRole.Goalie)
                                 continue;
 
                             float xOffset = 0, zOffset = 0;
