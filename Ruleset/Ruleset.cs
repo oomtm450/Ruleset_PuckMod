@@ -18,7 +18,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.4.0DEV";
+        private const string MOD_VERSION = "0.5.0DEV";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -103,7 +103,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly object _locker = new object();
 
-        private static FaceoffSpot _faceoffSpot = FaceoffSpot.Center;
+        private static FaceoffSpot _nextFaceoffSpot = FaceoffSpot.Center;
 
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
@@ -215,20 +215,20 @@ namespace oomtm450PuckMod_Ruleset {
                     // Offside logic.
                     List<Zone> zones = GetTeamZones(otherTeam);
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == zones[0] || _puckZone == zones[1])) {
-                        switch(stick.Player.Team.Value)
-                        {
+                        float puckXPosition = PuckManager.Instance.GetPuck().Rigidbody.transform.position.x;
+                        switch (stick.Player.Team.Value) {
                             case PlayerTeam.Red:
-                                if (PuckManager.Instance.GetPuck().Rigidbody.transform.position.x < 0)
-                                    _faceoffSpot = FaceoffSpot.BlueteamBLLeft;
+                                if (puckXPosition < 0)
+                                    _nextFaceoffSpot = FaceoffSpot.BlueteamBLLeft;
                                 else
-                                    _faceoffSpot = FaceoffSpot.BlueteamBLRight;
+                                    _nextFaceoffSpot = FaceoffSpot.BlueteamBLRight;
                                 break;
 
                             case PlayerTeam.Blue:
-                                if (PuckManager.Instance.GetPuck().Rigidbody.transform.position.x < 0)
-                                    _faceoffSpot = FaceoffSpot.RedteamBLLeft;
+                                if (puckXPosition < 0)
+                                    _nextFaceoffSpot = FaceoffSpot.RedteamBLLeft;
                                 else
-                                    _faceoffSpot = FaceoffSpot.RedteamBLRight;
+                                    _nextFaceoffSpot = FaceoffSpot.RedteamBLRight;
                                 break;
                         }
                         UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
@@ -311,85 +311,80 @@ namespace oomtm450PuckMod_Ruleset {
 
                 return true;
             }
-        }
 
-        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_SetPhase))]
-        public class GameManager_Server_SetPhase_PostPatch
-        {
+
             [HarmonyPostfix]
-            public static void Postfix(GamePhase phase, ref int time)
-            {
-                try
-                {
-                    Vector3 dot = new Vector3(0, 0, 0); //Default faceoff (center)
+            public static void Postfix(GamePhase phase, int time) {
+                try {
+                    if (phase == GamePhase.FaceOff) {
+                        Vector3 dot;
 
-                    switch (_faceoffSpot)
-                    {
-                        case FaceoffSpot.BlueteamBLLeft:
-                            dot = new Vector3(-10, 0, 11);
-                            break;
-                        case FaceoffSpot.BlueteamBLRight:
-                            dot = new Vector3(10, 0, 11);
-                            break;
-                        case FaceoffSpot.RedteamBLLeft:
-                            dot = new Vector3(-10, 0, -11);
-                            break;
-                        case FaceoffSpot.RedteamBLRight:
-                            dot = new Vector3(10, 0, -11);
-                            break;
+                        switch (_nextFaceoffSpot) {
+                            case FaceoffSpot.BlueteamBLLeft:
+                                dot = new Vector3(-10, 0, 11);
+                                break;
 
-                    }
+                            case FaceoffSpot.BlueteamBLRight:
+                                dot = new Vector3(10, 0, 11);
+                                break;
 
-                    List<Player> redteam = PlayerManager.Instance.GetPlayersByTeam(PlayerTeam.Red);
-                    foreach (Player player in redteam)
-                    {
-                        switch(player.PlayerPosition.Name)
-                        {
-                            case PlayerFunc.CENTER_POSITION:
-                                player.PlayerBody.Server_Teleport(new Vector3(dot.x, dot.y, (dot.z - 1.5f)), new Quaternion(0, 0, 0, 0));
+                            case FaceoffSpot.RedteamBLLeft:
+                                dot = new Vector3(-10, 0, -11);
                                 break;
-                            case PlayerFunc.LEFT_WINGER_POSITION:
-                                player.PlayerBody.Server_Teleport(new Vector3(dot.x - 9f, dot.y, dot.z - 1.5f), new Quaternion(0, 0, 0, 0));
+
+                            case FaceoffSpot.RedteamBLRight:
+                                dot = new Vector3(10, 0, -11);
                                 break;
-                            case PlayerFunc.RIGHT_WINGER_POSITION:
-                                player.PlayerBody.Server_Teleport(new Vector3(dot.x + 9f, dot.y, dot.z - 1.5f), new Quaternion(0, 0, 0, 0));
-                                break;
-                            case PlayerFunc.LEFT_DEFENDER_POSITION:
-                                player.PlayerBody.Server_Teleport(new Vector3(dot.x - 4f, dot.y, dot.z - 14.5f), new Quaternion(0, 0, 0, 0));
-                                break;
-                            case PlayerFunc.RIGHT_DEFENDER_POSITION:
-                                player.PlayerBody.Server_Teleport(new Vector3(dot.x + 5f, dot.y, dot.z - 14.5f), new Quaternion(0, 0, 0, 0));
+
+                            default:
+                                dot = new Vector3(0, 0, 0);
                                 break;
                         }
-                    }
 
-                    List<Player> blueteam = PlayerManager.Instance.GetPlayersByTeam(PlayerTeam.Blue);
-                    foreach (Player player in blueteam)
-                    {
-                        switch (player.PlayerPosition.Name)
-                        {
-                            case PlayerFunc.CENTER_POSITION:
-                                player.PlayerBody.Server_Teleport(new Vector3(dot.x, dot.y, (dot.z + 1.5f)), new Quaternion(0, 0, 0, 0));
-                                break;
-                            case PlayerFunc.LEFT_WINGER_POSITION:
-                                player.PlayerBody.Server_Teleport(new Vector3(dot.x + 9f, dot.y, dot.z + 1.5f), new Quaternion(0, 0, 0, 0));
-                                break;
-                            case PlayerFunc.RIGHT_WINGER_POSITION:
-                                player.PlayerBody.Server_Teleport(new Vector3(dot.x - 9f, dot.y, dot.z + 1.5f), new Quaternion(0, 0, 0, 0));
-                                break;
-                            case PlayerFunc.LEFT_DEFENDER_POSITION:
-                                player.PlayerBody.Server_Teleport(new Vector3(dot.x + 4f, dot.y, dot.z + 14.5f), new Quaternion(0, 0, 0, 0));
-                                break;
-                            case PlayerFunc.RIGHT_DEFENDER_POSITION:
-                                player.PlayerBody.Server_Teleport(new Vector3(dot.x - 5f, dot.y, dot.z + 14.5f), new Quaternion(0, 0, 0, 0));
-                                break;
+                        foreach (Player redPlayer in PlayerManager.Instance.GetPlayersByTeam(PlayerTeam.Red)) {
+                            switch (redPlayer.PlayerPosition.Name) {
+                                case PlayerFunc.CENTER_POSITION:
+                                    redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x, dot.y, dot.z - 1.5f), new Quaternion(0, 0, 0, 0));
+                                    break;
+                                case PlayerFunc.LEFT_WINGER_POSITION:
+                                    redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x - 9f, dot.y, dot.z - 1.5f), new Quaternion(0, 0, 0, 0));
+                                    break;
+                                case PlayerFunc.RIGHT_WINGER_POSITION:
+                                    redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x + 9f, dot.y, dot.z - 1.5f), new Quaternion(0, 0, 0, 0));
+                                    break;
+                                case PlayerFunc.LEFT_DEFENDER_POSITION:
+                                    redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x - 4f, dot.y, dot.z - 14.5f), new Quaternion(0, 0, 0, 0));
+                                    break;
+                                case PlayerFunc.RIGHT_DEFENDER_POSITION:
+                                    redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x + 5f, dot.y, dot.z - 14.5f), new Quaternion(0, 0, 0, 0));
+                                    break;
+                            }
                         }
+
+                        foreach (Player bluePlayer in PlayerManager.Instance.GetPlayersByTeam(PlayerTeam.Blue)) {
+                            switch (bluePlayer.PlayerPosition.Name) {
+                                case PlayerFunc.CENTER_POSITION:
+                                    bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x, dot.y, dot.z + 1.5f), new Quaternion(0, 0, 0, 0));
+                                    break;
+                                case PlayerFunc.LEFT_WINGER_POSITION:
+                                    bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x + 9f, dot.y, dot.z + 1.5f), new Quaternion(0, 0, 0, 0));
+                                    break;
+                                case PlayerFunc.RIGHT_WINGER_POSITION:
+                                    bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x - 9f, dot.y, dot.z + 1.5f), new Quaternion(0, 0, 0, 0));
+                                    break;
+                                case PlayerFunc.LEFT_DEFENDER_POSITION:
+                                    bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x + 4f, dot.y, dot.z + 14.5f), new Quaternion(0, 0, 0, 0));
+                                    break;
+                                case PlayerFunc.RIGHT_DEFENDER_POSITION:
+                                    bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x - 5f, dot.y, dot.z + 14.5f), new Quaternion(0, 0, 0, 0));
+                                    break;
+                            }
+                        }
+
+                        _nextFaceoffSpot = FaceoffSpot.Center;
                     }
                 }
-
-
-                catch (Exception ex)
-                {
+                catch (Exception ex) {
                     Logging.LogError($"Error in GameManager_Server_SetPhase_Patch Postfix().\n{ex}");
                 }
 
