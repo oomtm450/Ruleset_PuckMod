@@ -323,9 +323,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                         foreach (Player redPlayer in PlayerManager.Instance.GetPlayersByTeam(PlayerTeam.Red)) {
                             switch (redPlayer.PlayerPosition.Name) {
-                                case PlayerFunc.CENTER_POSITION:
-                                    redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x, dot.y, dot.z - 1.5f), redPlayersRotation);
-                                    break;
                                 case PlayerFunc.LEFT_WINGER_POSITION:
                                     redPlayer.PlayerBody.Server_Teleport(new Vector3(dot.x - 9f, dot.y, dot.z - 1.5f), redPlayersRotation);
                                     break;
@@ -343,9 +340,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                         foreach (Player bluePlayer in PlayerManager.Instance.GetPlayersByTeam(PlayerTeam.Blue)) {
                             switch (bluePlayer.PlayerPosition.Name) {
-                                case PlayerFunc.CENTER_POSITION:
-                                    bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x, dot.y, dot.z + 1.5f), bluePlayersRotation);
-                                    break;
                                 case PlayerFunc.LEFT_WINGER_POSITION:
                                     bluePlayer.PlayerBody.Server_Teleport(new Vector3(dot.x + 9f, dot.y, dot.z + 1.5f), bluePlayersRotation);
                                     break;
