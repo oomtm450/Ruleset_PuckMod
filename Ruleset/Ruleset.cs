@@ -350,7 +350,7 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     // Offside logic.
                     foreach (Player player in players) {
-                        if (player.Role.Value == PlayerRole.None)
+                        if (player.Role.Value == PlayerRole.None || !player.IsCharacterFullySpawned)
                             continue;
 
                         string playerSteamId = player.SteamId.Value.ToString();
