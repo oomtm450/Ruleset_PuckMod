@@ -124,12 +124,23 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!playerBody)
                             return;
 
-                        if (playerBody.Player.Role.Value != PlayerRole.Goalie)
-                            return;
+                        PlayerTeam playerOtherTeam = GetOtherTeam(playerBody.Player.Team.Value);
+                        if (IsIcingPossible(playerOtherTeam)) {
+                            if (playerBody.Player.Role.Value != PlayerRole.Goalie) {
+                                Zone playerZone;
+                                if (!_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var result))
+                                    return;
+                                else {
+                                    playerZone = result.Zone;
 
-                        PlayerTeam goalieOtherTeam = GetOtherTeam(playerBody.Player.Team.Value);
-                        if (IsIcing(goalieOtherTeam)) {
-                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {goalieOtherTeam.ToString().ToUpperInvariant()} TEAM CANCELLED");
+                                    if (playerZone != GetTeamZones(playerBody.Player.Team.Value)[1])
+                                        ResetIcings();
+                                }
+
+                                return;
+                            }
+
+                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerOtherTeam.ToString().ToUpperInvariant()} TEAM CANCELLED");
                             ResetIcings();
                         }
 
@@ -155,9 +166,15 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // Icing logic.
-                    if (IsIcing(otherTeam) && stick.Player.PlayerPosition.Role != PlayerRole.Goalie) {
-                        UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
-                        Faceoff();
+                    if (IsIcing(otherTeam)){
+                        if (stick.Player.PlayerPosition.Role != PlayerRole.Goalie) {
+                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                            Faceoff();
+                        }
+                        else if (stick.Player.PlayerPosition.Role == PlayerRole.Goalie) {
+                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CANCELLED");
+                            ResetIcings();
+                        }
                     }
                     else {
                         if (IsIcing(stick.Player.Team.Value))
@@ -561,6 +578,11 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool IsIcing(PlayerTeam team) {
             lock (_locker)
                 return _isIcingActive[team];
+        }
+
+        private static bool IsIcingPossible(PlayerTeam team) {
+            lock (_locker)
+                return _isIcingPossible[team];
         }
 
         /// <summary>
