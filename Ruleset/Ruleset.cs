@@ -316,32 +316,33 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(GamePhase phase, int time) {
                 try {
+                    Vector3 dot;
+
+                    switch (_nextFaceoffSpot) {
+                        case FaceoffSpot.BlueteamBLLeft:
+                            dot = new Vector3(-10, 0, 11);
+                            break;
+
+                        case FaceoffSpot.BlueteamBLRight:
+                            dot = new Vector3(10, 0, 11);
+                            break;
+
+                        case FaceoffSpot.RedteamBLLeft:
+                            dot = new Vector3(-10, 0, -11);
+                            break;
+
+                        case FaceoffSpot.RedteamBLRight:
+                            dot = new Vector3(10, 0, -11);
+                            break;
+
+                        default:
+                            dot = new Vector3(0, 0, 0);
+                            break;
+                    }
+
                     if (phase == GamePhase.FaceOff) {
-                        Vector3 dot;
                         Quaternion bluePlayersRotation = Quaternion.Euler(0, 0, 180);
                         Quaternion redPlayersRotation = new Quaternion(0, 0, 0, 0);
-
-                        switch (_nextFaceoffSpot) {
-                            case FaceoffSpot.BlueteamBLLeft:
-                                dot = new Vector3(-10, 0, 11);
-                                break;
-
-                            case FaceoffSpot.BlueteamBLRight:
-                                dot = new Vector3(10, 0, 11);
-                                break;
-
-                            case FaceoffSpot.RedteamBLLeft:
-                                dot = new Vector3(-10, 0, -11);
-                                break;
-
-                            case FaceoffSpot.RedteamBLRight:
-                                dot = new Vector3(10, 0, -11);
-                                break;
-
-                            default:
-                                dot = new Vector3(0, 0, 0);
-                                break;
-                        }
 
                         foreach (Player redPlayer in PlayerManager.Instance.GetPlayersByTeam(PlayerTeam.Red)) {
                             switch (redPlayer.PlayerPosition.Name) {
@@ -385,12 +386,13 @@ namespace oomtm450PuckMod_Ruleset {
 
                         _nextFaceoffSpot = FaceoffSpot.Center;
                     }
+                    else if (phase == GamePhase.Playing) {
+                        PuckManager.Instance.GetPuck().Rigidbody.transform.position = new Vector3(dot.x, 1f, dot.z);
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManager_Server_SetPhase_Patch Postfix().\n{ex}");
                 }
-
-                return;
             }
         }
 
