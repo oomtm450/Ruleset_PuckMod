@@ -377,7 +377,6 @@ namespace oomtm450PuckMod_Ruleset {
                         return true;
 
                     Vector3 dot = GetFaceoffDot();
-                    Logging.Log($"Changed puck position to {dot.x} {1f} {dot.z} for faceoff.", _serverConfig);
                     position = new Vector3(dot.x, 1.1f, dot.z);
                     _nextFaceoffSpot = FaceoffSpot.Center;
 
