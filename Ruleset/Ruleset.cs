@@ -19,7 +19,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.3.0DEV2";
+        private const string MOD_VERSION = "0.3.0";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -140,7 +140,8 @@ namespace oomtm450PuckMod_Ruleset {
                                 return;
                             }
 
-                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerOtherTeam.ToString().ToUpperInvariant()} TEAM CANCELLED");
+                            if (IsIcing(playerOtherTeam))
+                                UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerOtherTeam.ToString().ToUpperInvariant()} TEAM CANCELLED");
                             ResetIcings();
                         }
 
