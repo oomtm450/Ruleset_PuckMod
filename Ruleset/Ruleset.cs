@@ -31,9 +31,14 @@ namespace oomtm450PuckMod_Ruleset {
         private const float PLAYER_RADIUS = 0.25f;
 
         /// <summary>
-        /// Const int, number of milliseconds for a possession to be considered.
+        /// Const int, number of milliseconds for a possession to be considered with challenging.
         /// </summary>
-        private const int POSSESSION_MILLISECONDS = 250;
+        private const int MIN_POSSESSION_MILLISECONDS = 250;
+
+        /// <summary>
+        /// Const int, number of milliseconds for a possession to be considered without challenging.
+        /// </summary>
+        private const int MAX_POSSESSION_MILLISECONDS = 500;
         #endregion
 
         #region Fields
@@ -590,15 +595,32 @@ namespace oomtm450PuckMod_Ruleset {
             return gameObject.GetComponent<PlayerBodyV2>();
         }
 
+        /// <summary>
+        /// Function that returns the player steam Id that has possession.
+        /// </summary>
+        /// <returns>String, player steam Id with the possession or an empty string if no one has the puck (or it is challenged).</returns>
         private static string GetPlayerSteamIdInPossession() {
             Dictionary<string, Stopwatch> dict;
             lock (_locker) {
-                dict = _playersLastTimePuckPossession.Where(x => x.Value.ElapsedMilliseconds < POSSESSION_MILLISECONDS).ToDictionary(x => x.Key, x => x.Value);
+                dict = _playersLastTimePuckPossession.Where(x => x.Value.ElapsedMilliseconds < MIN_POSSESSION_MILLISECONDS).ToDictionary(x => x.Key, x => x.Value);
             }
-            if (dict.Count != 1)
+            if (dict.Count > 1) // Puck possession is challenged.
                 return "";
 
-            return dict.First().Key;
+            if (dict.Count == 1)
+                return dict.First().Key;
+
+            lock (_locker) {
+                List<string> steamIds = _playersLastTimePuckPossession
+                    .Where(x => x.Value.ElapsedMilliseconds < MAX_POSSESSION_MILLISECONDS)
+                    .OrderBy(x => x.Value.ElapsedMilliseconds)
+                    .Select(x => x.Key).ToList();
+
+                if (steamIds.Count != 0)
+                    return steamIds.First();
+            }
+
+            return "";
         }
 
         /// <summary>
