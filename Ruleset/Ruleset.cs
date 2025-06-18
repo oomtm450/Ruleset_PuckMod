@@ -80,6 +80,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static int _periodTimeRemaining = 0;
 
+        private static Player _lastPlayerOnPuck = null;
+
         private static readonly object _locker = new object();
 
         // Barrier collider, position 0 -19 0 is realistic.
@@ -287,6 +289,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static bool Prefix() {
                 Puck puck = null;
                 List<Player> players = null;
+                Zone oldZone = null;
 
                 try {
                     // If this is not the server or game is not started, do not use the patch.
@@ -303,7 +306,8 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 1.\n{ex}");
                 }
                 try {
-                    _puckZone = GetZone(puck.Rigidbody.transform, _puckZone, PUCK_RADIUS);
+                    oldZone = _puckZone;
+                    _puckZone = GetZone(puck.Rigidbody.transform, oldZone, PUCK_RADIUS);
 
                     // Icing logic.
                     lock (_locker) {
@@ -387,6 +391,20 @@ namespace oomtm450PuckMod_Ruleset {
                                 _isOffside[playerSteamId] = (player.Team.Value, false);
                             //if (!IsOffside(player.Team.Value))
                                 //UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM CANCELLED");
+                        }
+
+                        // Remove offside if the other got in the zone with the puck.
+                        if (_lastPlayerOnPuck != null) {
+                            List<Zone> teamZones = GetTeamZones(_lastPlayerOnPuck.Team.Value, true);
+                            if (oldZone == teamZones[2] && _puckZone == teamZones[0]) {
+                                PlayerTeam otherTeam = GetOtherTeam(_lastPlayerOnPuck.Team.Value);
+                                lock (_locker) {
+                                    foreach (string key in new List<string>(_isOffside.Keys)) {
+                                        if (_isOffside[key].Team == otherTeam)
+                                            _isOffside[key] = (_isOffside[key].Team, false);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
