@@ -408,14 +408,14 @@ namespace oomtm450PuckMod_Ruleset {
                                 case PlayerFunc.LEFT_WINGER_POSITION:
                                     zOffset = 1.5f;
                                     if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team.Value == PlayerTeam.Blue))
-                                        xOffset = 8f;
+                                        xOffset = 7.5f;
                                     else
                                         xOffset = 9f;
                                     break;
                                 case PlayerFunc.RIGHT_WINGER_POSITION:
                                     zOffset = 1.5f;
                                     if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team.Value == PlayerTeam.Blue))
-                                        xOffset = -8f;
+                                        xOffset = -7.5f;
                                     else
                                         xOffset = -9f;
                                     break;
