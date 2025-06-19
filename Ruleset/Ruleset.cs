@@ -148,8 +148,38 @@ namespace oomtm450PuckMod_Ruleset {
 
                 try {
                     Stick stick = GetStick(collision.gameObject);
-                    if (!stick)
+                    if (!stick) {
+                        PlayerBodyV2 playerBody = GetPlayerBodyV2(collision.gameObject);
+                        if (!playerBody)
+                            return;
+
+                        PlayerTeam playerOtherTeam = GetOtherTeam(playerBody.Player.Team.Value);
+                        if (IsIcingPossible(playerOtherTeam)) {
+                            if (playerBody.Player.Role.Value != PlayerRole.Goalie) {
+                                if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var result)) {
+                                    if (result.Zone != GetTeamZones(playerBody.Player.Team.Value)[1]) {
+                                        if (IsIcing(playerOtherTeam))
+                                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                                        ResetIcings();
+                                    }
+                                }
+                            }
+
+                            if (IsIcing(playerOtherTeam))
+                                UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                            ResetIcings();
+                        }
+                        if (IsIcingPossible(playerBody.Player.Team.Value)) {
+                            if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var result)) {
+                                if (GetTeamZones(playerOtherTeam, true).Any(x => x == result.Zone)) {
+                                    if (IsIcing(playerBody.Player.Team.Value))
+                                        UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerBody.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                                    ResetIcings();
+                                }
+                            }
+                        }
                         return;
+                    }
 
                     string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
 
@@ -234,38 +264,8 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     Stick stick = GetStick(collision.gameObject);
-                    if (!stick) {
-                        PlayerBodyV2 playerBody = GetPlayerBodyV2(collision.gameObject);
-                        if (!playerBody)
-                            return;
-
-                        PlayerTeam playerOtherTeam = GetOtherTeam(playerBody.Player.Team.Value);
-                        if (IsIcingPossible(playerOtherTeam)) {
-                            if (playerBody.Player.Role.Value != PlayerRole.Goalie) {
-                                if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var result)) {
-                                    if (result.Zone != GetTeamZones(playerBody.Player.Team.Value)[1]) {
-                                        if (IsIcing(playerOtherTeam))
-                                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
-                                        ResetIcings();
-                                    }
-                                }
-                            }
-
-                            if (IsIcing(playerOtherTeam))
-                                UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
-                            ResetIcings();
-                        }
-                        if (IsIcingPossible(playerBody.Player.Team.Value)) { // TODO : More testing. Not sure if this works.
-                            if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var result)) {
-                                if (GetTeamZones(playerOtherTeam, true).Any(x => x == result.Zone)) {
-                                    if (IsIcing(playerBody.Player.Team.Value))
-                                        UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerBody.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
-                                    ResetIcings();
-                                }
-                            }
-                        }
+                    if (!stick)
                         return;
-                    }
 
                     string playerSteamId = stick.Player.SteamId.Value.ToString();
 
@@ -394,7 +394,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         List<Player> players = PlayerManager.Instance.GetPlayers();
                         foreach (Player player in players) {
-                            if (!IsPlayerPlaying(player) || player.Role.Value == PlayerRole.Goalie)
+                            if (!IsPlayerPlaying(player))
                                 continue;
 
                             float xOffset = 0, zOffset = 0;
@@ -406,14 +406,14 @@ namespace oomtm450PuckMod_Ruleset {
                                 case PlayerFunc.LEFT_WINGER_POSITION:
                                     zOffset = 1.5f;
                                     if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team.Value == PlayerTeam.Blue))
-                                        xOffset = 7.5f;
+                                        xOffset = 7f;
                                     else
                                         xOffset = 9f;
                                     break;
                                 case PlayerFunc.RIGHT_WINGER_POSITION:
                                     zOffset = 1.5f;
                                     if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team.Value == PlayerTeam.Blue))
-                                        xOffset = -7.5f;
+                                        xOffset = -7f;
                                     else
                                         xOffset = -9f;
                                     break;
@@ -452,18 +452,31 @@ namespace oomtm450PuckMod_Ruleset {
 
                                 case PlayerFunc.GOALIE_POSITION:
                                     if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft || _nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft)
-                                        zOffset = -2f;
+                                        xOffset = -2f;
                                     else if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight || _nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight)
-                                        zOffset = 2f;
+                                        xOffset = 2f;
+
+                                    if (player.Team.Value == PlayerTeam.Red)  {
+                                        xOffset *= -1;
+                                        zOffset *= -1;
+                                    }
+
+                                    if (player.Team.Value == PlayerTeam.Red)
+                                        quaternion = Quaternion.Euler(0, 45, 0);
+                                    else
+                                        quaternion = Quaternion.Euler(0, -45, 0);
+
+                                    player.PlayerBody.Server_Teleport(new Vector3(player.PlayerBody.transform.position.x + xOffset, player.PlayerBody.transform.position.y, player.PlayerBody.transform.position.z + zOffset), quaternion);
                                     break;
                             }
 
-                            if (player.Team.Value == PlayerTeam.Red) {
-                                xOffset *= -1;
-                                zOffset *= -1;
+                            if (player.PlayerPosition.Name != PlayerFunc.GOALIE_POSITION) {
+                                if (player.Team.Value == PlayerTeam.Red) {
+                                    xOffset *= -1;
+                                    zOffset *= -1;
+                                }
+                                player.PlayerBody.Server_Teleport(new Vector3(dot.x + xOffset, dot.y, dot.z + zOffset), quaternion);
                             }
-
-                            player.PlayerBody.Server_Teleport(new Vector3(dot.x + xOffset, dot.y, dot.z + zOffset), quaternion);
                         }
 
                         return;
