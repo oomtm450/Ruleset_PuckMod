@@ -34,7 +34,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const float, height of the net's crossbar.
         /// </summary>
-        private const float CROSSBAR_HEIGHT = 1.8f;
+        private const float CROSSBAR_HEIGHT = 1.75f;
 
         /// <summary>
         /// Const int, number of milliseconds for a possession to be considered with challenging.
@@ -134,7 +134,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // High stick logic.
                     if (stick.Player.Role.Value != PlayerRole.Goalie) {
                         Puck puck = PuckManager.Instance.GetPuck();
-                        if (puck.Rigidbody.transform.position.y > CROSSBAR_HEIGHT) {
+                        if (puck.Rigidbody.transform.position.y > CROSSBAR_HEIGHT + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
                             lock (_locker) {
                                 if (!_isHighStickActive[stick.Player.Team.Value]) {
                                     _isHighStickActive[stick.Player.Team.Value] = true;
