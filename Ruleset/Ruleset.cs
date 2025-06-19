@@ -38,7 +38,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        private const int MAX_TIPPED_MILLISECONDS = 90;
+        private const int MAX_TIPPED_MILLISECONDS = 125;
 
         /// <summary>
         /// Const int, number of milliseconds for a possession to be considered with challenging.
@@ -445,8 +445,8 @@ namespace oomtm450PuckMod_Ruleset {
                             _isIcingPossible[stick.Player.Team.Value] = icingPossible;
                     }
 
-                    //lock (_locker)
-                        //Logging.Log($"{stick.Player.Username} had the puck for {_playersCurrentPuckTouch[stick.Player.SteamId.Value.ToString()].ElapsedMilliseconds / 1000} seconds.", _serverConfig);
+                    lock (_locker)
+                        Logging.Log($"{stick.Player.Username} had the puck for {_playersCurrentPuckTouch[stick.Player.SteamId.Value.ToString()].ElapsedMilliseconds / 1000} seconds.", _serverConfig);
                 }
                 catch (Exception ex)  {
                     Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}");
