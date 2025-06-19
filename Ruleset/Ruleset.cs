@@ -18,7 +18,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.6.0DEV3";
+        private const string MOD_VERSION = "0.6.0DEV4";
         
         /// <summary>
         /// Const float, radius of the puck.
@@ -322,7 +322,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
-                    if (phase == GamePhase.FaceOff) {
+                    if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) {
                         lock (_locker) {
                             // Reset offsides.
                             _isOffside.Clear();
@@ -672,6 +672,10 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPrefix]
             public static bool Prefix(Dictionary<string, object> message) {
                 try {
+                    // If this is not the server or game is not started, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing)
+                        return true;
+
                     PlayerTeam playerTeam = (PlayerTeam)message["team"];
                     playerTeam = GetOtherTeam(playerTeam);
 
