@@ -452,9 +452,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                                 case PlayerFunc.GOALIE_POSITION:
                                     if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft || _nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft)
-                                        xOffset = -2f;
+                                        xOffset = -1.5f;
                                     else if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight || _nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight)
-                                        xOffset = 2f;
+                                        xOffset = 1.5f;
 
                                     if (player.Team.Value == PlayerTeam.Red)  {
                                         xOffset *= -1;
