@@ -444,6 +444,9 @@ namespace oomtm450PuckMod_Ruleset {
                         lock (_locker)
                             _isIcingPossible[stick.Player.Team.Value] = icingPossible;
                     }
+
+                    //lock (_locker)
+                        //Logging.Log($"{stick.Player.Username} had the puck for {_playersCurrentPuckTouch[stick.Player.SteamId.Value.ToString()].ElapsedMilliseconds / 1000} seconds.", _serverConfig);
                 }
                 catch (Exception ex)  {
                     Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}");
@@ -566,15 +569,18 @@ namespace oomtm450PuckMod_Ruleset {
                         // Is offside.
                         if (!PuckIsTipped(playerSteamId)) {
                             List<Zone> otherTeamZones = GetTeamZones(GetOtherTeam(player.Team.Value));
-                            if (playerWithPossessionSteamId != player.SteamId.Value.ToString() && _puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1] && (playerZone == otherTeamZones[0] || playerZone == otherTeamZones[1])) {
-                                if (!IsOffside(player.Team.Value)) {
-                                    _puckLastPositionBeforeCall = puck.Rigidbody.transform.position;
-                                    _puckLastZoneBeforeCall = _puckZone;
-                                    //UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM");
-                                }
+                            if (playerWithPossessionSteamId != player.SteamId.Value.ToString() && (playerZone == otherTeamZones[0] || playerZone == otherTeamZones[1])) {
+                                bool isPlayerTeamOffside = IsOffside(player.Team.Value);
+                                if ((_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1]) || isPlayerTeamOffside) {
+                                    if (!isPlayerTeamOffside) {
+                                        _puckLastPositionBeforeCall = puck.Rigidbody.transform.position;
+                                        _puckLastZoneBeforeCall = _puckZone;
+                                        //UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM");
+                                    }
 
-                                lock (_locker)
-                                    _isOffside[playerSteamId] = (player.Team.Value, true);
+                                    lock (_locker)
+                                        _isOffside[playerSteamId] = (player.Team.Value, true);
+                                }
                             }
 
                             // Is not offside.
