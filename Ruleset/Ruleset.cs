@@ -2,6 +2,7 @@
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.6.0";
+        private const string MOD_VERSION = "0.6.1DEV";
         
         /// <summary>
         /// Const float, radius of the puck.
@@ -121,17 +122,6 @@ namespace oomtm450PuckMod_Ruleset {
         private static FaceoffSpot _nextFaceoffSpot = FaceoffSpot.Center;
 
         // Barrier collider, position 0 -19 0 is realistic.
-        #endregion
-
-        #region Properties
-        private static PlayerTeam LastPlayerOnPuckTeam  {
-            get => _lastPlayerOnPuckTeam;
-            set {
-                if (value != _lastPlayerOnPuckTeam)
-                    ResetAssists(_lastPlayerOnPuckTeam);
-                _lastPlayerOnPuckTeam = value;
-            }
-        }
         #endregion
 
         /// <summary>
@@ -269,7 +259,9 @@ namespace oomtm450PuckMod_Ruleset {
                     string playerSteamId = stick.Player.SteamId.Value.ToString();
 
                     if (!PuckIsTipped(playerSteamId)) {
-                        LastPlayerOnPuckTeam = stick.Player.Team.Value;
+                        _lastPlayerOnPuckTeam = stick.Player.Team.Value;
+                        if (stick.Player.Role.Value != PlayerRole.Goalie)
+                            ResetAssists(_lastPlayerOnPuckTeam);
                         _lastPlayerOnPuckSteamId = playerSteamId;
                     }
 
@@ -362,7 +354,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         _puckZone = Zone.BlueTeam_Center;
 
-                        LastPlayerOnPuckTeam = PlayerTeam.Blue;
+                        _lastPlayerOnPuckTeam = PlayerTeam.Blue;
                         _lastPlayerOnPuckSteamId = "";
                     }
 
@@ -437,7 +429,7 @@ namespace oomtm450PuckMod_Ruleset {
                                     if ((ushort)_nextFaceoffSpot >= 5)
                                         zOffset -= 1f;
 
-                                    if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team.Value == PlayerTeam.Blue)) {
+                                    if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team.Value == PlayerTeam.Blue)) {
                                         zOffset = 1.5f;
                                         xOffset = 9f;
                                         if (player.Team.Value == PlayerTeam.Red)
@@ -454,22 +446,22 @@ namespace oomtm450PuckMod_Ruleset {
                                     if (player.Team.Value == PlayerTeam.Red) {
                                         if (_nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft) {
                                             xOffset = -1.4f;
-                                            quaternion = Quaternion.Euler(0, -23, 0);
+                                            quaternion = Quaternion.Euler(0, -25, 0);
                                         }
                                         else if (_nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight) {
                                             xOffset = 1.4f;
-                                            quaternion = Quaternion.Euler(0, 23, 0);
+                                            quaternion = Quaternion.Euler(0, 25, 0);
                                         }
                                     }
                                     else {
                                         zOffset = 0.1f;
                                         if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft) {
                                             xOffset = -1.4f;
-                                            quaternion = Quaternion.Euler(0, -157, 0);
+                                            quaternion = Quaternion.Euler(0, -155, 0);
                                         }
                                         else if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight) {
                                             xOffset = 1.4f;
-                                            quaternion = Quaternion.Euler(0, 157, 0);
+                                            quaternion = Quaternion.Euler(0, 155, 0);
                                         }
                                     }
 
@@ -549,7 +541,9 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     if (!PuckIsTipped(currentPlayerSteamId)) {
-                        LastPlayerOnPuckTeam = stick.Player.Team.Value;
+                        _lastPlayerOnPuckTeam = stick.Player.Team.Value;
+                        if (stick.Player.Role.Value != PlayerRole.Goalie)
+                            ResetAssists(_lastPlayerOnPuckTeam);
                         _lastPlayerOnPuckSteamId = currentPlayerSteamId;
                     }
 
@@ -708,9 +702,9 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         // Remove offside if the other team entered the zone with the puck.
-                        List<Zone> lastPlayerOnPuckTeamZones = GetTeamZones(LastPlayerOnPuckTeam, true);
+                        List<Zone> lastPlayerOnPuckTeamZones = GetTeamZones(_lastPlayerOnPuckTeam, true);
                         if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
-                            PlayerTeam otherTeam = GetOtherTeam(LastPlayerOnPuckTeam);
+                            PlayerTeam otherTeam = GetOtherTeam(_lastPlayerOnPuckTeam);
                             lock (_locker) {
                                 foreach (string key in new List<string>(_isOffside.Keys)) {
                                     if (_isOffside[key].Team == otherTeam)
