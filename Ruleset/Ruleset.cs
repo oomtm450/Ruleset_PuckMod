@@ -144,6 +144,8 @@ namespace oomtm450PuckMod_Ruleset {
                             watch.Start();
                             _playersCurrentPuckTouch.Add(stick.Player.SteamId.Value.ToString(), watch);
                         }
+                        else
+                            watch.Restart();
                     }
 
                     // High stick logic.
@@ -445,8 +447,15 @@ namespace oomtm450PuckMod_Ruleset {
                             _isIcingPossible[stick.Player.Team.Value] = icingPossible;
                     }
 
+                    lock (_locker) {
+                        if (_playersCurrentPuckTouch.TryGetValue(stick.Player.SteamId.Value.ToString(), out Stopwatch watch)) {
+                            watch.Stop();
+                            Logging.Log($"{stick.Player.Username.Value} had the puck for {((double)watch.ElapsedMilliseconds) / 1000d} seconds.", _serverConfig);
+                        }
+                    }
+
                     lock (_locker)
-                        Logging.Log($"{stick.Player.Username} had the puck for {_playersCurrentPuckTouch[stick.Player.SteamId.Value.ToString()].ElapsedMilliseconds / 1000} seconds.", _serverConfig);
+                        Logging.Log($"{stick.Player.Username.Value} had the puck for {_playersCurrentPuckTouch[stick.Player.SteamId.Value.ToString()].ElapsedMilliseconds / 1000} seconds.", _serverConfig);
                 }
                 catch (Exception ex)  {
                     Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}");
