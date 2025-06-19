@@ -18,8 +18,8 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.6.0DEV";
-
+        private const string MOD_VERSION = "0.6.0DEV3";
+        
         /// <summary>
         /// Const float, radius of the puck.
         /// </summary>
@@ -38,7 +38,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        private const int MAX_TIPPED_MILLISECONDS = 125;
+        private const int MAX_TIPPED_MILLISECONDS = 100;
 
         /// <summary>
         /// Const int, number of milliseconds for a possession to be considered with challenging.
@@ -106,11 +106,15 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static InputAction _getStickLocation;
 
+        private static Dictionary<string, Stopwatch> _lastTimeOnCollisionExitWasCalled = new Dictionary<string, Stopwatch>();
+
         private static bool _changedPhase = false;
 
         private static int _periodTimeRemaining = 0;
 
         private static PlayerTeam _lastPlayerOnPuckTeam = PlayerTeam.Blue;
+
+        private static string _lastPlayerOnPuckSteamId = "";
 
         private static readonly object _locker = new object();
 
@@ -135,17 +139,36 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!stick)
                         return;
 
+                    string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
+
                     //Logging.Log($"Puck was hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" (enter)!", _serverConfig);
 
                     // Start tipped timer.
                     lock (_locker) {
-                        if (!_playersCurrentPuckTouch.TryGetValue(stick.Player.SteamId.Value.ToString(), out Stopwatch watch)) {
+                        if (!_playersCurrentPuckTouch.TryGetValue(currentPlayerSteamId, out Stopwatch watch)) {
                             watch = new Stopwatch();
                             watch.Start();
-                            _playersCurrentPuckTouch.Add(stick.Player.SteamId.Value.ToString(), watch);
+                            _playersCurrentPuckTouch.Add(currentPlayerSteamId, watch);
                         }
-                        else
+
+                        if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionWatch)) {
+                            lastTimeCollisionWatch = new Stopwatch();
+                            lastTimeCollisionWatch.Start();
+                            _lastTimeOnCollisionExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionWatch);
+                        }
+
+                        else if (lastTimeCollisionWatch.ElapsedMilliseconds > MAX_TIPPED_MILLISECONDS || _lastPlayerOnPuckSteamId != currentPlayerSteamId) {
+                            if (_lastPlayerOnPuckSteamId == currentPlayerSteamId || string.IsNullOrEmpty(_lastPlayerOnPuckSteamId))
+                                Logging.Log($"{stick.Player.Username.Value} had the puck for {((double)(watch.ElapsedMilliseconds - lastTimeCollisionWatch.ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
                             watch.Restart();
+
+                            if (!string.IsNullOrEmpty(_lastPlayerOnPuckSteamId) && _lastPlayerOnPuckSteamId != currentPlayerSteamId) {
+                                if (_playersCurrentPuckTouch.TryGetValue(_lastPlayerOnPuckSteamId, out Stopwatch lastPlayerWatch)) {
+                                    Logging.Log($"{_lastPlayerOnPuckSteamId} had the puck for {((double)(lastPlayerWatch.ElapsedMilliseconds - _lastTimeOnCollisionExitWasCalled[_lastPlayerOnPuckSteamId].ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
+                                    lastPlayerWatch.Reset();
+                                }
+                            }
+                        }
                     }
 
                     // High stick logic.
@@ -233,6 +256,7 @@ namespace oomtm450PuckMod_Ruleset {
                     _lastPlayerOnPuckTeam = stick.Player.Team.Value;
 
                     string playerSteamId = stick.Player.SteamId.Value.ToString();
+                    _lastPlayerOnPuckSteamId = playerSteamId;
 
                     //Logging.Log($"Puck is being hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" (stay)!", _serverConfig);
 
@@ -306,6 +330,11 @@ namespace oomtm450PuckMod_Ruleset {
                                 watch.Stop();
                             _playersLastTimePuckPossession.Clear();
 
+                            // Reset puck collision exit times.
+                            foreach (Stopwatch watch in _lastTimeOnCollisionExitWasCalled.Values)
+                                watch.Stop();
+                            _lastTimeOnCollisionExitWasCalled.Clear();
+
                             // Reset tipped times.
                             foreach (Stopwatch watch in _playersCurrentPuckTouch.Values)
                                 watch.Stop();
@@ -319,6 +348,9 @@ namespace oomtm450PuckMod_Ruleset {
                         ResetIcings();
 
                         _puckZone = Zone.BlueTeam_Center;
+
+                        _lastPlayerOnPuckTeam = PlayerTeam.Blue;
+                        _lastPlayerOnPuckSteamId = "";
                     }
 
                     if (!_changedPhase)
@@ -402,7 +434,7 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPrefix]
             public static bool Prefix(ref Vector3 position, Quaternion rotation, Vector3 velocity, bool isReplay) {
                 try {
-                    // If this is not the server or game is not started, do not use the patch.
+                    // If this is not the server or this is a replay or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff))
                         return true;
 
@@ -412,7 +444,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 }
                 catch (Exception ex)  {
-                    Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}");
+                    Logging.LogError($"Error in PuckManager_Server_SpawnPuck_Patch Prefix().\n{ex}");
                 }
 
                 return true;
@@ -436,9 +468,11 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     _lastPlayerOnPuckTeam = stick.Player.Team.Value;
+                    string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
+                    _lastPlayerOnPuckSteamId = currentPlayerSteamId;
 
                     // Icing logic.
-                    if (!PuckIsTipped(stick.Player.SteamId.Value.ToString())) {
+                    if (!PuckIsTipped(currentPlayerSteamId)) {
                         bool icingPossible = false;
                         if (GetTeamZones(stick.Player.Team.Value, true).Any(x => x == _puckZone))
                             icingPossible = true;
@@ -448,14 +482,14 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     lock (_locker) {
-                        if (_playersCurrentPuckTouch.TryGetValue(stick.Player.SteamId.Value.ToString(), out Stopwatch watch)) {
-                            watch.Stop();
-                            Logging.Log($"{stick.Player.Username.Value} had the puck for {((double)watch.ElapsedMilliseconds) / 1000d} seconds.", _serverConfig);
+                        if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionWatch)) {
+                            lastTimeCollisionWatch = new Stopwatch();
+                            lastTimeCollisionWatch.Start();
+                            _lastTimeOnCollisionExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionWatch);
                         }
-                    }
 
-                    lock (_locker)
-                        Logging.Log($"{stick.Player.Username.Value} had the puck for {_playersCurrentPuckTouch[stick.Player.SteamId.Value.ToString()].ElapsedMilliseconds / 1000} seconds.", _serverConfig);
+                        lastTimeCollisionWatch.Restart();
+                    }
                 }
                 catch (Exception ex)  {
                     Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}");
@@ -938,13 +972,16 @@ namespace oomtm450PuckMod_Ruleset {
         }
         
         private static bool PuckIsTipped(string playerSteamId) {
-            Stopwatch watch;
+            Stopwatch currentPuckTouchWatch, lastPuckExitWatch;
             lock (_locker) {
-                if (!_playersCurrentPuckTouch.TryGetValue(playerSteamId, out watch))
+                if (!_playersCurrentPuckTouch.TryGetValue(playerSteamId, out currentPuckTouchWatch))
+                    return true;
+
+                if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(playerSteamId, out lastPuckExitWatch))
                     return true;
             }
 
-            if (watch.ElapsedMilliseconds < MAX_TIPPED_MILLISECONDS)
+            if (currentPuckTouchWatch.ElapsedMilliseconds - lastPuckExitWatch.ElapsedMilliseconds < MAX_TIPPED_MILLISECONDS)
                 return true;
 
             return false;
