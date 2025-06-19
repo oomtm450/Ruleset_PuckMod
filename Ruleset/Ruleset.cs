@@ -2,7 +2,6 @@
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -39,7 +38,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        private const int MAX_TIPPED_MILLISECONDS = 75;
+        private const int MAX_TIPPED_MILLISECONDS = 90;
 
         /// <summary>
         /// Const int, number of milliseconds for a possession to be considered with challenging.
@@ -216,6 +215,8 @@ namespace oomtm450PuckMod_Ruleset {
                                         ResetIcings();
                                 }
 
+                                // TODO : Icing logic called off or remove icing possible if tipped.
+
                                 return;
                             }
 
@@ -253,7 +254,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // Icing logic.
-                    if (IsIcing(otherTeam)){
+                    if (IsIcing(otherTeam)) {
                         if (stick.Player.PlayerPosition.Role != PlayerRole.Goalie) {
                             SetNextFaceoffPosition(otherTeam, true);
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
@@ -583,7 +584,7 @@ namespace oomtm450PuckMod_Ruleset {
                                     if (!IsOffside(player.Team.Value)) {
                                         _puckLastPositionBeforeCall = puck.Rigidbody.transform.position;
                                         _puckLastZoneBeforeCall = _puckZone;
-                                        //UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED FF");
+                                        //UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                                     }
                                 }
                             }
