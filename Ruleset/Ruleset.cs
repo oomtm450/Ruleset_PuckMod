@@ -128,7 +128,8 @@ namespace oomtm450PuckMod_Ruleset {
         private static PlayerTeam LastPlayerOnPuckTeam  {
             get => _lastPlayerOnPuckTeam;
             set {
-                ResetAssists(_lastPlayerOnPuckTeam);
+                if (value != _lastPlayerOnPuckTeam)
+                    ResetAssists(_lastPlayerOnPuckTeam);
                 _lastPlayerOnPuckTeam = value;
             }
         }
