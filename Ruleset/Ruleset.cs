@@ -170,13 +170,13 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         else if (lastTimeCollisionWatch.ElapsedMilliseconds > MAX_TIPPED_MILLISECONDS || _lastPlayerOnPuckSteamId != currentPlayerSteamId) {
-                            if (_lastPlayerOnPuckSteamId == currentPlayerSteamId || string.IsNullOrEmpty(_lastPlayerOnPuckSteamId))
-                                Logging.Log($"{stick.Player.Username.Value} had the puck for {((double)(watch.ElapsedMilliseconds - lastTimeCollisionWatch.ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
+                            //if (_lastPlayerOnPuckSteamId == currentPlayerSteamId || string.IsNullOrEmpty(_lastPlayerOnPuckSteamId))
+                                //Logging.Log($"{stick.Player.Username.Value} had the puck for {((double)(watch.ElapsedMilliseconds - lastTimeCollisionWatch.ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
                             watch.Restart();
 
                             if (!string.IsNullOrEmpty(_lastPlayerOnPuckSteamId) && _lastPlayerOnPuckSteamId != currentPlayerSteamId) {
                                 if (_playersCurrentPuckTouch.TryGetValue(_lastPlayerOnPuckSteamId, out Stopwatch lastPlayerWatch)) {
-                                    Logging.Log($"{_lastPlayerOnPuckSteamId} had the puck for {((double)(lastPlayerWatch.ElapsedMilliseconds - _lastTimeOnCollisionExitWasCalled[_lastPlayerOnPuckSteamId].ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
+                                    //Logging.Log($"{_lastPlayerOnPuckSteamId} had the puck for {((double)(lastPlayerWatch.ElapsedMilliseconds - _lastTimeOnCollisionExitWasCalled[_lastPlayerOnPuckSteamId].ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
                                     lastPlayerWatch.Reset();
                                 }
                             }
@@ -273,8 +273,6 @@ namespace oomtm450PuckMod_Ruleset {
                         LastPlayerOnPuckTeam = stick.Player.Team.Value;
                         _lastPlayerOnPuckSteamId = playerSteamId;
                     }
-
-                    //Logging.Log($"Puck is being hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" (stay)!", _serverConfig);
 
                     Stopwatch watch;
                     lock (_locker) {
@@ -1042,24 +1040,29 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void ResetAssists(PlayerTeam team) {
-            Puck puck = PuckManager.Instance.GetPuck();
-            if (!puck)
-                return;
+            try {
+                Puck puck = PuckManager.Instance.GetPuck();
+                if (!puck)
+                    return;
 
-            List<NetworkObjectCollision> collisions = new List<NetworkObjectCollision>();
-            foreach (NetworkObjectCollision collision in puck.NetworkObjectCollisionBuffer.Buffer) {
-                if (collision.NetworkObjectReference.TryGet(out NetworkObject networkObject, null)) {
-                    networkObject.TryGetComponent<PlayerBodyV2>(out PlayerBodyV2 playerBody);
-                    networkObject.TryGetComponent<Stick>(out Stick stick);
-                    if (playerBody && playerBody.Player.Team.Value == team)
-                        collisions.Add(collision);
-                    if (stick && stick.Player.Team.Value == team)
-                        collisions.Add(collision);
+                List<NetworkObjectCollision> collisions = new List<NetworkObjectCollision>();
+                foreach (NetworkObjectCollision collision in puck.NetworkObjectCollisionBuffer.Buffer) {
+                    if (collision.NetworkObjectReference.TryGet(out NetworkObject networkObject, null)) {
+                        networkObject.TryGetComponent<PlayerBodyV2>(out PlayerBodyV2 playerBody);
+                        networkObject.TryGetComponent<Stick>(out Stick stick);
+                        if (playerBody && playerBody.Player.Team.Value == team)
+                            collisions.Add(collision);
+                        if (stick && stick.Player.Team.Value == team)
+                            collisions.Add(collision);
+                    }
                 }
-            }
 
-            foreach (NetworkObjectCollision collision in collisions)
-                puck.NetworkObjectCollisionBuffer.Buffer.Remove(collision);
+                foreach (NetworkObjectCollision collision in collisions)
+                    puck.NetworkObjectCollisionBuffer.Buffer.Remove(collision);
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in ResetAssists.\n{ex}");
+            }
         }
 
         /// <summary>
