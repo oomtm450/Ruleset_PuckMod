@@ -898,7 +898,9 @@ namespace oomtm450PuckMod_Ruleset {
         private static string GetPlayerSteamIdInPossession() {
             Dictionary<string, Stopwatch> dict;
             lock (_locker) {
-                dict = _playersLastTimePuckPossession.Where(x => x.Value.ElapsedMilliseconds < MIN_POSSESSION_MILLISECONDS).ToDictionary(x => x.Key, x => x.Value);
+                dict = _playersLastTimePuckPossession
+                    .Where(x => x.Value.ElapsedMilliseconds < MIN_POSSESSION_MILLISECONDS && x.Value.ElapsedMilliseconds > MAX_TIPPED_MILLISECONDS)
+                    .ToDictionary(x => x.Key, x => x.Value);
             }
             if (dict.Count > 1) // Puck possession is challenged.
                 return "";
@@ -908,7 +910,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             lock (_locker) {
                 List<string> steamIds = _playersLastTimePuckPossession
-                    .Where(x => x.Value.ElapsedMilliseconds < MAX_POSSESSION_MILLISECONDS)
+                    .Where(x => x.Value.ElapsedMilliseconds < MAX_POSSESSION_MILLISECONDS && x.Value.ElapsedMilliseconds > MAX_TIPPED_MILLISECONDS)
                     .OrderBy(x => x.Value.ElapsedMilliseconds)
                     .Select(x => x.Key).ToList();
 
