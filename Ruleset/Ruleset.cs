@@ -243,9 +243,8 @@ namespace oomtm450PuckMod_Ruleset {
                                 UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                             ResetIcings();
                         }
-                        else if (IsIcingPossible(playerBody.Player.Team.Value)) {
+                        if (IsIcingPossible(playerBody.Player.Team.Value)) {
                             if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var result)) {
-                                List<Zone> otherTeamZones = GetTeamZones(playerOtherTeam, true);
                                 if (GetTeamZones(playerOtherTeam, true).Any(x => x == result.Zone)) {
                                     if (IsIcing(playerBody.Player.Team.Value))
                                         UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerBody.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
