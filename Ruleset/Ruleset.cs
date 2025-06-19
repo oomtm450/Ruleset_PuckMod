@@ -2,6 +2,7 @@
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -121,6 +122,16 @@ namespace oomtm450PuckMod_Ruleset {
         private static FaceoffSpot _nextFaceoffSpot = FaceoffSpot.Center;
 
         // Barrier collider, position 0 -19 0 is realistic.
+        #endregion
+
+        #region Properties
+        private static PlayerTeam LastPlayerOnPuckTeam  {
+            get => _lastPlayerOnPuckTeam;
+            set {
+                ResetAssists(_lastPlayerOnPuckTeam);
+                _lastPlayerOnPuckTeam = value;
+            }
+        }
         #endregion
 
         /// <summary>
@@ -243,7 +254,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                             ResetIcings();
                         }
-                        if (IsIcingPossible(playerBody.Player.Team.Value)) {
+                        if (IsIcingPossible(playerBody.Player.Team.Value)) { // TODO : More testing. Not sure if this works.
                             if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var result)) {
                                 if (GetTeamZones(playerOtherTeam, true).Any(x => x == result.Zone)) {
                                     if (IsIcing(playerBody.Player.Team.Value))
@@ -258,7 +269,7 @@ namespace oomtm450PuckMod_Ruleset {
                     string playerSteamId = stick.Player.SteamId.Value.ToString();
 
                     if (!PuckIsTipped(playerSteamId)) {
-                        _lastPlayerOnPuckTeam = stick.Player.Team.Value;
+                        LastPlayerOnPuckTeam = stick.Player.Team.Value;
                         _lastPlayerOnPuckSteamId = playerSteamId;
                     }
 
@@ -353,7 +364,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         _puckZone = Zone.BlueTeam_Center;
 
-                        _lastPlayerOnPuckTeam = PlayerTeam.Blue;
+                        LastPlayerOnPuckTeam = PlayerTeam.Blue;
                         _lastPlayerOnPuckSteamId = "";
                     }
 
@@ -484,7 +495,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     if (!PuckIsTipped(currentPlayerSteamId)) {
-                        _lastPlayerOnPuckTeam = stick.Player.Team.Value;
+                        LastPlayerOnPuckTeam = stick.Player.Team.Value;
                         _lastPlayerOnPuckSteamId = currentPlayerSteamId;
                     }
 
@@ -643,9 +654,9 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         // Remove offside if the other team entered the zone with the puck.
-                        List<Zone> lastPlayerOnPuckTeamZones = GetTeamZones(_lastPlayerOnPuckTeam, true);
+                        List<Zone> lastPlayerOnPuckTeamZones = GetTeamZones(LastPlayerOnPuckTeam, true);
                         if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
-                            PlayerTeam otherTeam = GetOtherTeam(_lastPlayerOnPuckTeam);
+                            PlayerTeam otherTeam = GetOtherTeam(LastPlayerOnPuckTeam);
                             lock (_locker) {
                                 foreach (string key in new List<string>(_isOffside.Keys)) {
                                     if (_isOffside[key].Team == otherTeam)
@@ -992,6 +1003,27 @@ namespace oomtm450PuckMod_Ruleset {
                 return true;
 
             return false;
+        }
+
+        private static void ResetAssists(PlayerTeam team) {
+            Puck puck = PuckManager.Instance.GetPuck();
+            if (!puck)
+                return;
+
+            List<NetworkObjectCollision> collisions = new List<NetworkObjectCollision>();
+            foreach (NetworkObjectCollision collision in puck.NetworkObjectCollisionBuffer.Buffer) {
+                if (collision.NetworkObjectReference.TryGet(out NetworkObject networkObject, null)) {
+                    networkObject.TryGetComponent<PlayerBodyV2>(out PlayerBodyV2 playerBody);
+                    networkObject.TryGetComponent<Stick>(out Stick stick);
+                    if (playerBody && playerBody.Player.Team.Value == team)
+                        collisions.Add(collision);
+                    if (stick && stick.Player.Team.Value == team)
+                        collisions.Add(collision);
+                }
+            }
+
+            foreach (NetworkObjectCollision collision in collisions)
+                puck.NetworkObjectCollisionBuffer.Buffer.Remove(collision);
         }
 
         /// <summary>
