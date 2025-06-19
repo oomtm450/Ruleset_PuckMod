@@ -2,7 +2,6 @@
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -19,7 +18,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.6.0DEV4";
+        private const string MOD_VERSION = "0.6.0";
         
         /// <summary>
         /// Const float, radius of the puck.
@@ -451,20 +450,28 @@ namespace oomtm450PuckMod_Ruleset {
                                     break;
 
                                 case PlayerFunc.GOALIE_POSITION:
-                                    if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft || _nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft)
-                                        xOffset = -1.5f;
-                                    else if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight || _nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight)
-                                        xOffset = 1.5f;
-
-                                    if (player.Team.Value == PlayerTeam.Red)  {
-                                        xOffset *= -1;
-                                        zOffset *= -1;
+                                    zOffset = -0.1f;
+                                    if (player.Team.Value == PlayerTeam.Red) {
+                                        if (_nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft) {
+                                            xOffset = -1.4f;
+                                            quaternion = Quaternion.Euler(0, -23, 0);
+                                        }
+                                        else if (_nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight) {
+                                            xOffset = 1.4f;
+                                            quaternion = Quaternion.Euler(0, 23, 0);
+                                        }
                                     }
-
-                                    if (player.Team.Value == PlayerTeam.Red)
-                                        quaternion = Quaternion.Euler(0, 45, 0);
-                                    else
-                                        quaternion = Quaternion.Euler(0, -45, 0);
+                                    else {
+                                        zOffset = 0.1f;
+                                        if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft) {
+                                            xOffset = -1.4f;
+                                            quaternion = Quaternion.Euler(0, -157, 0);
+                                        }
+                                        else if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight) {
+                                            xOffset = 1.4f;
+                                            quaternion = Quaternion.Euler(0, 157, 0);
+                                        }
+                                    }
 
                                     player.PlayerBody.Server_Teleport(new Vector3(player.PlayerBody.transform.position.x + xOffset, player.PlayerBody.transform.position.y, player.PlayerBody.transform.position.z + zOffset), quaternion);
                                     break;
@@ -1058,20 +1065,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!puck)
                     return;
 
-                List<NetworkObjectCollision> collisions = new List<NetworkObjectCollision>();
-                foreach (NetworkObjectCollision collision in puck.NetworkObjectCollisionBuffer.Buffer) {
-                    if (collision.NetworkObjectReference.TryGet(out NetworkObject networkObject, null)) {
-                        networkObject.TryGetComponent<PlayerBodyV2>(out PlayerBodyV2 playerBody);
-                        networkObject.TryGetComponent<Stick>(out Stick stick);
-                        if (playerBody && playerBody.Player.Team.Value == team)
-                            collisions.Add(collision);
-                        if (stick && stick.Player.Team.Value == team)
-                            collisions.Add(collision);
-                    }
-                }
-
-                foreach (NetworkObjectCollision collision in collisions)
-                    puck.NetworkObjectCollisionBuffer.Buffer.Remove(collision);
+                puck.NetworkObjectCollisionBuffer.Clear();
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in ResetAssists.\n{ex}");
