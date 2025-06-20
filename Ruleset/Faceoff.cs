@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
-    internal class Faceoff {
+    internal static class Faceoff {
         internal static void SetNextFaceoffPosition(PlayerTeam team, bool isIcing, Vector3 puckLastPositionBeforeCall, Zone puckLastZoneBeforeCall) {
             ushort teamOffset;
             if (team == PlayerTeam.Red)
@@ -24,7 +24,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void SetNextFaceoffPositionFromLastTouch(PlayerTeam team, bool left, Vector3 puckLastPositionBeforeCall, Zone puckLastZoneBeforeCall) {
-            Zone puckZone = Ruleset.GetZone(puckLastPositionBeforeCall, puckLastZoneBeforeCall, Ruleset.PUCK_RADIUS);
+            Zone puckZone = ZoneFunc.GetZone(puckLastPositionBeforeCall, puckLastZoneBeforeCall, Ruleset.PUCK_RADIUS);
             if (puckZone == Zone.BlueTeam_BehindGoalLine || puckZone == Zone.BlueTeam_Zone) {
                 if (team == PlayerTeam.Blue) {
                     if (left)
@@ -110,5 +110,17 @@ namespace oomtm450PuckMod_Ruleset {
 
             return dot;
         }
+    }
+
+    public enum FaceoffSpot : ushort {
+        Center,
+        BlueteamBLLeft,
+        BlueteamBLRight,
+        RedteamBLLeft,
+        RedteamBLRight,
+        BlueteamDZoneLeft,
+        BlueteamDZoneRight,
+        RedteamDZoneLeft,
+        RedteamDZoneRight,
     }
 }
