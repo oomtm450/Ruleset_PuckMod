@@ -794,7 +794,11 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!puck)
                     return;
 
-                NetworkList<NetworkObjectCollision> buffer = (NetworkList<NetworkObjectCollision>)typeof(Puck).GetField("buffer", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(puck);
+                NetworkList<NetworkObjectCollision> buffer = (NetworkList<NetworkObjectCollision>)typeof(NetworkObjectCollisionBuffer).GetField("buffer", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(puck.NetworkObjectCollisionBuffer);
+                if (buffer == null) {
+                    Logging.Log($"Buffer field is null !!!", _serverConfig);
+                    return;
+                }
 
                 List<NetworkObjectCollision> collisionToRemove = new List<NetworkObjectCollision>();
                 foreach (NetworkObjectCollision collision in buffer) {
