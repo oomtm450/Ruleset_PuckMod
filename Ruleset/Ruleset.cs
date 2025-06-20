@@ -375,7 +375,7 @@ namespace oomtm450PuckMod_Ruleset {
 
 
             [HarmonyPostfix]
-            public static void Postfix(GamePhase phase, int _) {
+            public static void Postfix(GamePhase phase, int time) {
                 try {
                     if (phase == GamePhase.FaceOff) {
                         if (_nextFaceoffSpot == FaceoffSpot.Center)
@@ -402,7 +402,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(PuckManager), nameof(PuckManager.Server_SpawnPuck))]
         public class PuckManager_Server_SpawnPuck_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(ref Vector3 position, Quaternion _1, Vector3 _2, bool isReplay) {
+            public static bool Prefix(ref Vector3 position, Quaternion rotation, Vector3 velocity, bool isReplay) {
                 try {
                     // If this is not the server or this is a replay or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff))
@@ -669,7 +669,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(Player), nameof(Player.Server_RespawnCharacter))]
         public class Player_Server_RespawnCharacter_Patch {
             [HarmonyPostfix]
-            public static void Postfix(Vector3 position, Quaternion _1, PlayerRole _2) {
+            public static void Postfix(Vector3 position, Quaternion rotation, PlayerRole role) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.FaceOff)
