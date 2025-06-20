@@ -2,10 +2,10 @@
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -99,15 +99,15 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static Zone _puckZone = Zone.BlueTeam_Center;
 
-        private static Dictionary<string, (PlayerTeam Team, Zone Zone)> _playersZone = new Dictionary<string, (PlayerTeam, Zone)>();
+        private readonly static Dictionary<string, (PlayerTeam Team, Zone Zone)> _playersZone = new Dictionary<string, (PlayerTeam, Zone)>();
 
-        private static Dictionary<string, Stopwatch> _playersCurrentPuckTouch = new Dictionary<string, Stopwatch>();
+        private readonly static Dictionary<string, Stopwatch> _playersCurrentPuckTouch = new Dictionary<string, Stopwatch>();
 
-        private static Dictionary<string, Stopwatch> _playersLastTimePuckPossession = new Dictionary<string, Stopwatch>();
+        private readonly static Dictionary<string, Stopwatch> _playersLastTimePuckPossession = new Dictionary<string, Stopwatch>();
 
         private static InputAction _getStickLocation;
 
-        private static Dictionary<string, Stopwatch> _lastTimeOnCollisionExitWasCalled = new Dictionary<string, Stopwatch>();
+        private readonly static Dictionary<string, Stopwatch> _lastTimeOnCollisionExitWasCalled = new Dictionary<string, Stopwatch>();
 
         private static bool _changedPhase = false;
 
@@ -375,7 +375,7 @@ namespace oomtm450PuckMod_Ruleset {
 
 
             [HarmonyPostfix]
-            public static void Postfix(GamePhase phase, int time) {
+            public static void Postfix(GamePhase phase, int _) {
                 try {
                     if (phase == GamePhase.FaceOff) {
                         if (_nextFaceoffSpot == FaceoffSpot.Center)
@@ -493,7 +493,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(PuckManager), nameof(PuckManager.Server_SpawnPuck))]
         public class PuckManager_Server_SpawnPuck_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(ref Vector3 position, Quaternion rotation, Vector3 velocity, bool isReplay) {
+            public static bool Prefix(ref Vector3 position, Quaternion _1, Vector3 _2, bool isReplay) {
                 try {
                     // If this is not the server or this is a replay or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff))
@@ -1059,7 +1059,25 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!puck)
                     return;
 
-                //puck.NetworkObjectCollisionBuffer.Clear();
+                NetworkList<NetworkObjectCollision> buffer = (NetworkList<NetworkObjectCollision>)typeof(Puck).GetField("buffer", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(puck);
+
+                List<NetworkObjectCollision> collisionToRemove = new List<NetworkObjectCollision>();
+                foreach (NetworkObjectCollision collision in buffer) {
+                    if (!collision.NetworkObjectReference.TryGet(out NetworkObject networkObject, null))
+                        continue;
+
+                    networkObject.TryGetComponent<PlayerBodyV2>(out PlayerBodyV2 playerBody);
+                    if (playerBody && playerBody.Player.Team.Value == team)
+                        collisionToRemove.Add(collision);
+                    else {
+                        networkObject.TryGetComponent<Stick>(out Stick stick);
+                        if (stick && stick.Player.Team.Value == team)
+                            collisionToRemove.Add(collision);
+                    }
+                }
+                
+                foreach (NetworkObjectCollision collision in collisionToRemove)
+                    buffer.Remove(collision);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in ResetAssists.\n{ex}");
