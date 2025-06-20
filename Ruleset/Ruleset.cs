@@ -384,99 +384,8 @@ namespace oomtm450PuckMod_Ruleset {
                         Vector3 dot = GetFaceoffDot();
 
                         List<Player> players = PlayerManager.Instance.GetPlayers();
-                        foreach (Player player in players) {
-                            if (!IsPlayerPlaying(player))
-                                continue;
-
-                            float xOffset = 0, zOffset = 0;
-                            Quaternion quaternion = player.PlayerBody.Rigidbody.rotation;
-                            switch (player.PlayerPosition.Name) {
-                                case PlayerFunc.CENTER_POSITION:
-                                    zOffset = 1.5f;
-                                    break;
-                                case PlayerFunc.LEFT_WINGER_POSITION:
-                                    zOffset = 1.5f;
-                                    if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team.Value == PlayerTeam.Blue))
-                                        xOffset = 7f;
-                                    else
-                                        xOffset = 9f;
-                                    break;
-                                case PlayerFunc.RIGHT_WINGER_POSITION:
-                                    zOffset = 1.5f;
-                                    if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team.Value == PlayerTeam.Blue))
-                                        xOffset = -7f;
-                                    else
-                                        xOffset = -9f;
-                                    break;
-                                case PlayerFunc.LEFT_DEFENDER_POSITION:
-                                    zOffset = 13.5f;
-                                    if ((ushort)_nextFaceoffSpot >= 5)
-                                        zOffset -= 1f;
-
-                                    if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team.Value == PlayerTeam.Blue)) {
-                                        zOffset = 1.5f;
-                                        xOffset = -9f;
-                                        if (player.Team.Value == PlayerTeam.Red)
-                                            quaternion = Quaternion.Euler(0, -90, 0);
-                                        else
-                                            quaternion = Quaternion.Euler(0, 90, 0);
-                                    }
-                                    else
-                                        xOffset = 4f;
-                                    break;
-                                case PlayerFunc.RIGHT_DEFENDER_POSITION:
-                                    zOffset = 13.5f;
-                                    if ((ushort)_nextFaceoffSpot >= 5)
-                                        zOffset -= 1f;
-
-                                    if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team.Value == PlayerTeam.Blue)) {
-                                        zOffset = 1.5f;
-                                        xOffset = 9f;
-                                        if (player.Team.Value == PlayerTeam.Red)
-                                            quaternion = Quaternion.Euler(0, 90, 0);
-                                        else
-                                            quaternion = Quaternion.Euler(0, -90, 0);
-                                    }
-                                    else
-                                        xOffset = -4f;
-                                    break;
-
-                                case PlayerFunc.GOALIE_POSITION:
-                                    zOffset = -0.1f;
-                                    if (player.Team.Value == PlayerTeam.Red) {
-                                        if (_nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft) {
-                                            xOffset = -1.4f;
-                                            quaternion = Quaternion.Euler(0, -25, 0);
-                                        }
-                                        else if (_nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight) {
-                                            xOffset = 1.4f;
-                                            quaternion = Quaternion.Euler(0, 25, 0);
-                                        }
-                                    }
-                                    else {
-                                        zOffset = 0.1f;
-                                        if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft) {
-                                            xOffset = -1.4f;
-                                            quaternion = Quaternion.Euler(0, -155, 0);
-                                        }
-                                        else if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight) {
-                                            xOffset = 1.4f;
-                                            quaternion = Quaternion.Euler(0, 155, 0);
-                                        }
-                                    }
-
-                                    player.PlayerBody.Server_Teleport(new Vector3(player.PlayerBody.transform.position.x + xOffset, player.PlayerBody.transform.position.y, player.PlayerBody.transform.position.z + zOffset), quaternion);
-                                    break;
-                            }
-
-                            if (player.PlayerPosition.Name != PlayerFunc.GOALIE_POSITION) {
-                                if (player.Team.Value == PlayerTeam.Red) {
-                                    xOffset *= -1;
-                                    zOffset *= -1;
-                                }
-                                player.PlayerBody.Server_Teleport(new Vector3(dot.x + xOffset, dot.y, dot.z + zOffset), quaternion);
-                            }
-                        }
+                        foreach (Player player in players)
+                            TeleportPlayerOnFaceoff(dot, player);
 
                         return;
                     }
@@ -751,6 +660,130 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_RespawnCharacter event from Player.
+        /// </summary>
+        [HarmonyPatch(typeof(Player), nameof(Player.Server_RespawnCharacter))]
+        public class Player_Server_RespawnCharacter_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(Vector3 position, Quaternion _1, PlayerRole _2) {
+                try {
+                    // If this is not the server or game is not started, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.FaceOff)
+                        return;
+
+                    // Reteleport player on faceoff to the correct faceoff. // TODO : TESTING.
+                    Player player = PlayerManager.Instance.GetPlayers()
+                        .Where(x =>
+                            x.PlayerBody.transform.position.x == position.x &&
+                            x.PlayerBody.transform.position.y == position.y &&
+                            x.PlayerBody.transform.position.z == position.z).FirstOrDefault();
+
+                    if (!player)
+                        return;
+
+                    TeleportPlayerOnFaceoff(GetFaceoffDot(), player);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in Player_Server_RespawnCharacter_Patch Postfix().\n{ex}");
+                }
+            }
+        }
+
+        private static void TeleportPlayerOnFaceoff(Vector3 faceoffDot, Player player) {
+            if (!IsPlayerPlaying(player))
+                return;
+
+            float xOffset = 0, zOffset = 0;
+            Quaternion quaternion = player.PlayerBody.Rigidbody.rotation;
+            switch (player.PlayerPosition.Name) {
+                case PlayerFunc.CENTER_POSITION:
+                    zOffset = 1.5f;
+                    break;
+                case PlayerFunc.LEFT_WINGER_POSITION:
+                    zOffset = 1.5f;
+                    if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team.Value == PlayerTeam.Blue))
+                        xOffset = 7f;
+                    else
+                        xOffset = 9f;
+                    break;
+                case PlayerFunc.RIGHT_WINGER_POSITION:
+                    zOffset = 1.5f;
+                    if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team.Value == PlayerTeam.Blue))
+                        xOffset = -7f;
+                    else
+                        xOffset = -9f;
+                    break;
+                case PlayerFunc.LEFT_DEFENDER_POSITION:
+                    zOffset = 13.5f;
+                    if ((ushort)_nextFaceoffSpot >= 5)
+                        zOffset -= 1f;
+
+                    if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team.Value == PlayerTeam.Blue)) {
+                        zOffset = 1.5f;
+                        xOffset = -9f;
+                        if (player.Team.Value == PlayerTeam.Red)
+                            quaternion = Quaternion.Euler(0, -90, 0);
+                        else
+                            quaternion = Quaternion.Euler(0, 90, 0);
+                    }
+                    else
+                        xOffset = 4f;
+                    break;
+                case PlayerFunc.RIGHT_DEFENDER_POSITION:
+                    zOffset = 13.5f;
+                    if ((ushort)_nextFaceoffSpot >= 5)
+                        zOffset -= 1f;
+
+                    if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team.Value == PlayerTeam.Blue)) {
+                        zOffset = 1.5f;
+                        xOffset = 9f;
+                        if (player.Team.Value == PlayerTeam.Red)
+                            quaternion = Quaternion.Euler(0, 90, 0);
+                        else
+                            quaternion = Quaternion.Euler(0, -90, 0);
+                    }
+                    else
+                        xOffset = -4f;
+                    break;
+
+                case PlayerFunc.GOALIE_POSITION:
+                    zOffset = -0.1f;
+                    if (player.Team.Value == PlayerTeam.Red) {
+                        if (_nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft) {
+                            xOffset = -1.4f;
+                            quaternion = Quaternion.Euler(0, -25, 0);
+                        }
+                        else if (_nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight) {
+                            xOffset = 1.4f;
+                            quaternion = Quaternion.Euler(0, 25, 0);
+                        }
+                    }
+                    else {
+                        zOffset = 0.1f;
+                        if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft) {
+                            xOffset = -1.4f;
+                            quaternion = Quaternion.Euler(0, -155, 0);
+                        }
+                        else if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight) {
+                            xOffset = 1.4f;
+                            quaternion = Quaternion.Euler(0, 155, 0);
+                        }
+                    }
+
+                    player.PlayerBody.Server_Teleport(new Vector3(player.PlayerBody.transform.position.x + xOffset, player.PlayerBody.transform.position.y, player.PlayerBody.transform.position.z + zOffset), quaternion);
+                    break;
+            }
+
+            if (player.PlayerPosition.Name != PlayerFunc.GOALIE_POSITION) {
+                if (player.Team.Value == PlayerTeam.Red) {
+                    xOffset *= -1;
+                    zOffset *= -1;
+                }
+                player.PlayerBody.Server_Teleport(new Vector3(faceoffDot.x + xOffset, faceoffDot.y, faceoffDot.z + zOffset), quaternion);
             }
         }
 
