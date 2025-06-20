@@ -118,6 +118,8 @@ namespace oomtm450PuckMod_Ruleset {
         internal static FaceoffSpot NextFaceoffSpot { get; set; } = FaceoffSpot.Center;
         #endregion
 
+        #region Harmony Patches
+        #region Puck_OnCollision
         /// <summary>
         /// Class that patches the OnCollisionEnter event from Puck.
         /// </summary>
@@ -305,6 +307,56 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /// <summary>
+        /// Class that patches the OnCollisionExit event from Puck.
+        /// </summary>
+        [HarmonyPatch(typeof(Puck), "OnCollisionExit")]
+        public class Puck_OnCollisionExit_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(Collision collision) {
+                try {
+                    // If this is not the server or game is not started, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                        return;
+
+                    Stick stick = GetStick(collision.gameObject);
+                    if (!stick)
+                        return;
+
+                    string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
+
+                    lock (_locker) {
+                        if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionWatch)) {
+                            lastTimeCollisionWatch = new Stopwatch();
+                            lastTimeCollisionWatch.Start();
+                            _lastTimeOnCollisionExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionWatch);
+                        }
+
+                        lastTimeCollisionWatch.Restart();
+                    }
+
+                    if (!PuckIsTipped(currentPlayerSteamId)) {
+                        _lastPlayerOnPuckTeam = stick.Player.Team.Value;
+                        if (stick.Player.Role.Value != PlayerRole.Goalie)
+                            ResetAssists(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
+                        _lastPlayerOnPuckSteamId = currentPlayerSteamId;
+                    }
+
+                    // Icing logic. // TODO : Check if puck tip should cancel this.
+                    bool icingPossible = false;
+                    if (ZoneFunc.GetTeamZones(stick.Player.Team.Value, true).Any(x => x == _puckZone))
+                        icingPossible = true;
+
+                    lock (_locker)
+                        _isIcingPossible[stick.Player.Team.Value] = icingPossible;
+                }
+                catch (Exception ex)  {
+                    Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}");
+                }
+            }
+        }
+        #endregion
+
+        /// <summary>
         /// Class that patches the Server_SetPhase event from GameManager.
         /// </summary>
         [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_SetPhase))]
@@ -412,55 +464,6 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 return true;
-            }
-        }
-
-        /// <summary>
-        /// Class that patches the OnCollisionExit event from Puck.
-        /// </summary>
-        [HarmonyPatch(typeof(Puck), "OnCollisionExit")]
-        public class Puck_OnCollisionExit_Patch {
-            [HarmonyPostfix]
-            public static void Postfix(Collision collision) {
-                try {
-                    // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
-                        return;
-
-                    Stick stick = GetStick(collision.gameObject);
-                    if (!stick)
-                        return;
-
-                    string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
-
-                    lock (_locker) {
-                        if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionWatch)) {
-                            lastTimeCollisionWatch = new Stopwatch();
-                            lastTimeCollisionWatch.Start();
-                            _lastTimeOnCollisionExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionWatch);
-                        }
-
-                        lastTimeCollisionWatch.Restart();
-                    }
-
-                    if (!PuckIsTipped(currentPlayerSteamId)) {
-                        _lastPlayerOnPuckTeam = stick.Player.Team.Value;
-                        if (stick.Player.Role.Value != PlayerRole.Goalie)
-                            ResetAssists(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
-                        _lastPlayerOnPuckSteamId = currentPlayerSteamId;
-                    }
-
-                    // Icing logic. // TODO : Check if puck tip should cancel this.
-                    bool icingPossible = false;
-                    if (ZoneFunc.GetTeamZones(stick.Player.Team.Value, true).Any(x => x == _puckZone))
-                        icingPossible = true;
-
-                    lock (_locker)
-                        _isIcingPossible[stick.Player.Team.Value] = icingPossible;
-                }
-                catch (Exception ex)  {
-                    Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}");
-                }
             }
         }
 
@@ -686,7 +689,9 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
         }
+        #endregion
 
+        #region Methods/Functions
         private static void ResetIcings() {
             lock (_locker) {
                 foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingPossible.Keys))
@@ -813,7 +818,9 @@ namespace oomtm450PuckMod_Ruleset {
                 Logging.LogError($"Error in ResetAssists.\n{ex}");
             }
         }
+        #endregion
 
+        #region Events
         /// <summary>
         /// Method called when the client has started on the client-side.
         /// Used to register to the server messaging (config sync and version check).
@@ -979,5 +986,6 @@ namespace oomtm450PuckMod_Ruleset {
                 return false;
             }
         }
+        #endregion
     }
 }
