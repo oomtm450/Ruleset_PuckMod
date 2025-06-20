@@ -1059,7 +1059,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!puck)
                     return;
 
-                puck.NetworkObjectCollisionBuffer.Clear();
+                //puck.NetworkObjectCollisionBuffer.Clear();
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in ResetAssists.\n{ex}");
