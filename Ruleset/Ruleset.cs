@@ -19,7 +19,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.6.1DEV";
+        private const string MOD_VERSION = "0.6.2";
         
         /// <summary>
         /// Const float, radius of the puck.
@@ -261,7 +261,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!PuckIsTipped(playerSteamId)) {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                         if (stick.Player.Role.Value != PlayerRole.Goalie)
-                            ResetAssists(_lastPlayerOnPuckTeam);
+                            ResetAssists(GetOtherTeam(_lastPlayerOnPuckTeam));
                         _lastPlayerOnPuckSteamId = playerSteamId;
                     }
 
@@ -543,7 +543,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!PuckIsTipped(currentPlayerSteamId)) {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                         if (stick.Player.Role.Value != PlayerRole.Goalie)
-                            ResetAssists(_lastPlayerOnPuckTeam);
+                            ResetAssists(GetOtherTeam(_lastPlayerOnPuckTeam));
                         _lastPlayerOnPuckSteamId = currentPlayerSteamId;
                     }
 
