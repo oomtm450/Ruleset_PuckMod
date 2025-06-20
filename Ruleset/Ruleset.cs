@@ -381,11 +381,11 @@ namespace oomtm450PuckMod_Ruleset {
                         if (_nextFaceoffSpot == FaceoffSpot.Center)
                             return;
 
-                        Vector3 dot = GetFaceoffDot();
+                        Vector3 dot = GetFaceoffDot(_nextFaceoffSpot);
 
                         List<Player> players = PlayerManager.Instance.GetPlayers();
                         foreach (Player player in players)
-                            TeleportPlayerOnFaceoff(dot, player);
+                            PlayerFunc.TeleportOnFaceoff(player, dot, _nextFaceoffSpot);
 
                         return;
                     }
@@ -408,7 +408,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff))
                         return true;
 
-                    Vector3 dot = GetFaceoffDot();
+                    Vector3 dot = GetFaceoffDot(_nextFaceoffSpot);
                     position = new Vector3(dot.x, 1.1f, dot.z);
                     _nextFaceoffSpot = FaceoffSpot.Center;
 
@@ -557,7 +557,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Offside logic.
                     foreach (Player player in players) {
-                        if (!IsPlayerPlaying(player))
+                        if (!PlayerFunc.IsPlayerPlaying(player))
                             continue;
 
                         string playerSteamId = player.SteamId.Value.ToString();
@@ -675,7 +675,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.FaceOff)
                         return;
 
-                    // Reteleport player on faceoff to the correct faceoff. // TODO : TESTING.
+                    // Reteleport player on faceoff to the correct faceoff.
                     Player player = PlayerManager.Instance.GetPlayers()
                         .Where(x =>
                             x.PlayerBody.transform.position.x == position.x &&
@@ -685,105 +685,11 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!player)
                         return;
 
-                    TeleportPlayerOnFaceoff(GetFaceoffDot(), player);
+                    PlayerFunc.TeleportOnFaceoff(player, GetFaceoffDot(_nextFaceoffSpot), _nextFaceoffSpot);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Player_Server_RespawnCharacter_Patch Postfix().\n{ex}");
                 }
-            }
-        }
-
-        private static void TeleportPlayerOnFaceoff(Vector3 faceoffDot, Player player) {
-            if (!IsPlayerPlaying(player))
-                return;
-
-            float xOffset = 0, zOffset = 0;
-            Quaternion quaternion = player.PlayerBody.Rigidbody.rotation;
-            switch (player.PlayerPosition.Name) {
-                case PlayerFunc.CENTER_POSITION:
-                    zOffset = 1.5f;
-                    break;
-                case PlayerFunc.LEFT_WINGER_POSITION:
-                    zOffset = 1.5f;
-                    if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team.Value == PlayerTeam.Blue))
-                        xOffset = 7f;
-                    else
-                        xOffset = 9f;
-                    break;
-                case PlayerFunc.RIGHT_WINGER_POSITION:
-                    zOffset = 1.5f;
-                    if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team.Value == PlayerTeam.Blue))
-                        xOffset = -7f;
-                    else
-                        xOffset = -9f;
-                    break;
-                case PlayerFunc.LEFT_DEFENDER_POSITION:
-                    zOffset = 13.5f;
-                    if ((ushort)_nextFaceoffSpot >= 5)
-                        zOffset -= 1f;
-
-                    if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team.Value == PlayerTeam.Blue)) {
-                        zOffset = 1.5f;
-                        xOffset = -9f;
-                        if (player.Team.Value == PlayerTeam.Red)
-                            quaternion = Quaternion.Euler(0, -90, 0);
-                        else
-                            quaternion = Quaternion.Euler(0, 90, 0);
-                    }
-                    else
-                        xOffset = 4f;
-                    break;
-                case PlayerFunc.RIGHT_DEFENDER_POSITION:
-                    zOffset = 13.5f;
-                    if ((ushort)_nextFaceoffSpot >= 5)
-                        zOffset -= 1f;
-
-                    if ((_nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team.Value == PlayerTeam.Red) || (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team.Value == PlayerTeam.Blue)) {
-                        zOffset = 1.5f;
-                        xOffset = 9f;
-                        if (player.Team.Value == PlayerTeam.Red)
-                            quaternion = Quaternion.Euler(0, 90, 0);
-                        else
-                            quaternion = Quaternion.Euler(0, -90, 0);
-                    }
-                    else
-                        xOffset = -4f;
-                    break;
-
-                case PlayerFunc.GOALIE_POSITION:
-                    zOffset = -0.1f;
-                    if (player.Team.Value == PlayerTeam.Red) {
-                        if (_nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft) {
-                            xOffset = -1.4f;
-                            quaternion = Quaternion.Euler(0, -25, 0);
-                        }
-                        else if (_nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight) {
-                            xOffset = 1.4f;
-                            quaternion = Quaternion.Euler(0, 25, 0);
-                        }
-                    }
-                    else {
-                        zOffset = 0.1f;
-                        if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft) {
-                            xOffset = -1.4f;
-                            quaternion = Quaternion.Euler(0, -155, 0);
-                        }
-                        else if (_nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight) {
-                            xOffset = 1.4f;
-                            quaternion = Quaternion.Euler(0, 155, 0);
-                        }
-                    }
-
-                    player.PlayerBody.Server_Teleport(new Vector3(player.PlayerBody.transform.position.x + xOffset, player.PlayerBody.transform.position.y, player.PlayerBody.transform.position.z + zOffset), quaternion);
-                    break;
-            }
-
-            if (player.PlayerPosition.Name != PlayerFunc.GOALIE_POSITION) {
-                if (player.Team.Value == PlayerTeam.Red) {
-                    xOffset *= -1;
-                    zOffset *= -1;
-                }
-                player.PlayerBody.Server_Teleport(new Vector3(faceoffDot.x + xOffset, faceoffDot.y, faceoffDot.z + zOffset), quaternion);
             }
         }
 
@@ -852,10 +758,10 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static Vector3 GetFaceoffDot() {
+        private static Vector3 GetFaceoffDot(FaceoffSpot nextFaceoffSpot) {
             Vector3 dot;
 
-            switch (_nextFaceoffSpot) {
+            switch (nextFaceoffSpot) {
                 case FaceoffSpot.BlueteamBLLeft:
                     dot = new Vector3(-9.975f, 0.01f, 11f);
                     break;
@@ -894,10 +800,6 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             return dot;
-        }
-
-        private static bool IsPlayerPlaying(Player player) {
-            return !(player.Role.Value == PlayerRole.None || !player.IsCharacterFullySpawned);
         }
 
         private static void ResetIcings() {
