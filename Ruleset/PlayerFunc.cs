@@ -7,7 +7,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void TeleportOnFaceoff(Player player, Vector3 faceoffDot, FaceoffSpot nextFaceoffSpot) {
-            if (!IsPlayerPlaying(player))
+            if (!IsPlayerPlaying(player) || nextFaceoffSpot == FaceoffSpot.Center)
                 return;
 
             float xOffset = 0, zOffset = 0;
