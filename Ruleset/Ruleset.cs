@@ -20,11 +20,11 @@ namespace oomtm450PuckMod_Ruleset {
         /// Const string, version of the mod.
         /// </summary>
         private const string MOD_VERSION = "0.7.0DEV";
-        
+
         /// <summary>
         /// Const float, radius of the puck.
         /// </summary>
-        private const float PUCK_RADIUS = 0.13f;
+        internal const float PUCK_RADIUS = 0.13f;
 
         /// <summary>
         /// Const float, radius of a player.
@@ -95,7 +95,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static Vector3 _puckLastPositionBeforeCall = Vector3.zero;
 
-        private static Zone _puckLastZoneBeforeCall = Zone.BlueTeam_Center;
+        internal static Zone _puckLastZoneBeforeCall = Zone.BlueTeam_Center;
 
         private static Zone _puckZone = Zone.BlueTeam_Center;
 
@@ -119,9 +119,11 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly object _locker = new object();
 
-        private static FaceoffSpot _nextFaceoffSpot = FaceoffSpot.Center;
-
         // Barrier collider, position 0 -19 0 is realistic.
+        #endregion
+
+        #region Properties
+        internal static FaceoffSpot NextFaceoffSpot { get; set; } = FaceoffSpot.Center;
         #endregion
 
         /// <summary>
@@ -218,9 +220,9 @@ namespace oomtm450PuckMod_Ruleset {
                         else if (puck.IsGrounded) {
                             lock (_locker) {
                                 if (_isHighStickActive[stick.Player.Team.Value]) {
-                                    SetNextFaceoffPosition(stick.Player.Team.Value, false);
+                                    Faceoff.SetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastPositionBeforeCall, _puckLastZoneBeforeCall);
                                     UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
-                                    Faceoff();
+                                    DoFaceoff();
                                 }
                             }
                         }
@@ -279,17 +281,17 @@ namespace oomtm450PuckMod_Ruleset {
                     List<Zone> zones = GetTeamZones(otherTeam);
                     Puck puck = PuckManager.Instance.GetPuck();
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == zones[0] || _puckZone == zones[1])) {
-                        SetNextFaceoffPosition(stick.Player.Team.Value, false);
+                        Faceoff.SetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastPositionBeforeCall, _puckLastZoneBeforeCall);
                         UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
-                        Faceoff();
+                        DoFaceoff();
                     }
 
                     // Icing logic.
                     if (IsIcing(otherTeam)) {
                         if (stick.Player.PlayerPosition.Role != PlayerRole.Goalie) {
-                            SetNextFaceoffPosition(otherTeam, true);
+                            Faceoff.SetNextFaceoffPosition(otherTeam, true, _puckLastPositionBeforeCall, _puckLastZoneBeforeCall);
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
-                            Faceoff();
+                            DoFaceoff();
                         }
                         else if (stick.Player.PlayerPosition.Role == PlayerRole.Goalie) {
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
@@ -378,14 +380,14 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(GamePhase phase, int time) {
                 try {
                     if (phase == GamePhase.FaceOff) {
-                        if (_nextFaceoffSpot == FaceoffSpot.Center)
+                        if (NextFaceoffSpot == FaceoffSpot.Center)
                             return;
 
-                        Vector3 dot = GetFaceoffDot(_nextFaceoffSpot);
+                        Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
 
                         List<Player> players = PlayerManager.Instance.GetPlayers();
                         foreach (Player player in players)
-                            PlayerFunc.TeleportOnFaceoff(player, dot, _nextFaceoffSpot);
+                            PlayerFunc.TeleportOnFaceoff(player, dot, NextFaceoffSpot);
 
                         return;
                     }
@@ -408,9 +410,9 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff))
                         return true;
 
-                    Vector3 dot = GetFaceoffDot(_nextFaceoffSpot);
+                    Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
                     position = new Vector3(dot.x, 1.1f, dot.z);
-                    _nextFaceoffSpot = FaceoffSpot.Center;
+                    NextFaceoffSpot = FaceoffSpot.Center;
 
                 }
                 catch (Exception ex)  {
@@ -648,9 +650,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // No goal if offside.
                     if (IsOffside(playerTeam)) {
-                        SetNextFaceoffPosition(playerTeam, false);
+                        Faceoff.SetNextFaceoffPosition(playerTeam, false, _puckLastPositionBeforeCall, _puckLastZoneBeforeCall);
                         UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
-                        Faceoff();
+                        DoFaceoff();
                         return false;
                     }
                         
@@ -685,121 +687,12 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!player)
                         return;
 
-                    PlayerFunc.TeleportOnFaceoff(player, GetFaceoffDot(_nextFaceoffSpot), _nextFaceoffSpot);
+                    PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(NextFaceoffSpot), NextFaceoffSpot);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Player_Server_RespawnCharacter_Patch Postfix().\n{ex}");
                 }
             }
-        }
-
-        private static void SetNextFaceoffPosition(PlayerTeam team, bool isIcing) {
-            ushort teamOffset;
-            if (team == PlayerTeam.Red)
-                teamOffset = 2;
-            else
-                teamOffset = 0;
-
-            if (_puckLastPositionBeforeCall.x < 0) {
-                if (isIcing)
-                    _nextFaceoffSpot = FaceoffSpot.BlueteamDZoneLeft + teamOffset;
-                else
-                    SetNextFaceoffPositionFromLastTouch(team, true);
-            }
-            else {
-                if (isIcing)
-                    _nextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight + teamOffset;
-                else
-                    SetNextFaceoffPositionFromLastTouch(team, false);
-            }
-        }
-
-        private static void SetNextFaceoffPositionFromLastTouch(PlayerTeam team, bool left) {
-            Zone puckZone = GetZone(_puckLastPositionBeforeCall, _puckLastZoneBeforeCall, PUCK_RADIUS);
-            if (puckZone == Zone.BlueTeam_BehindGoalLine || puckZone == Zone.BlueTeam_Zone) {
-                if (team == PlayerTeam.Blue) {
-                    if (left)
-                        _nextFaceoffSpot = FaceoffSpot.BlueteamDZoneLeft;
-                    else
-                        _nextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight;
-                }
-                else {
-                    if (left)
-                        _nextFaceoffSpot = FaceoffSpot.BlueteamBLLeft;
-                    else
-                        _nextFaceoffSpot = FaceoffSpot.BlueteamBLRight;
-                }
-            }
-            else if (puckZone == Zone.RedTeam_BehindGoalLine || puckZone == Zone.RedTeam_Zone) {
-                if (team == PlayerTeam.Red) {
-                    if (left)
-                        _nextFaceoffSpot = FaceoffSpot.RedteamDZoneLeft;
-                    else
-                        _nextFaceoffSpot = FaceoffSpot.RedteamDZoneRight;
-                }
-                else {
-                    if (left)
-                        _nextFaceoffSpot = FaceoffSpot.RedteamBLLeft;
-                    else
-                        _nextFaceoffSpot = FaceoffSpot.RedteamBLRight;
-                }
-            }
-            else if (puckZone == Zone.BlueTeam_Center) {
-                if (left)
-                    _nextFaceoffSpot = FaceoffSpot.BlueteamBLLeft;
-                else
-                    _nextFaceoffSpot = FaceoffSpot.BlueteamBLRight;
-            }
-            else if (puckZone == Zone.RedTeam_Center) {
-                if (left)
-                    _nextFaceoffSpot = FaceoffSpot.RedteamBLLeft;
-                else
-                    _nextFaceoffSpot = FaceoffSpot.RedteamBLRight;
-            }
-        }
-
-        private static Vector3 GetFaceoffDot(FaceoffSpot nextFaceoffSpot) {
-            Vector3 dot;
-
-            switch (nextFaceoffSpot) {
-                case FaceoffSpot.BlueteamBLLeft:
-                    dot = new Vector3(-9.975f, 0.01f, 11f);
-                    break;
-
-                case FaceoffSpot.BlueteamBLRight:
-                    dot = new Vector3(9.975f, 0.01f, 11f);
-                    break;
-
-                case FaceoffSpot.RedteamBLLeft:
-                    dot = new Vector3(-9.975f, 0.01f, -11f);
-                    break;
-
-                case FaceoffSpot.RedteamBLRight:
-                    dot = new Vector3(9.975f, 0.01f, -11f);
-                    break;
-
-                case FaceoffSpot.BlueteamDZoneLeft:
-                    dot = new Vector3(-9.95f, 0.01f, 29.75f);
-                    break;
-
-                case FaceoffSpot.BlueteamDZoneRight:
-                    dot = new Vector3(9.95f, 0.01f, 29.75f);
-                    break;
-
-                case FaceoffSpot.RedteamDZoneLeft:
-                    dot = new Vector3(-9.95f, 0.01f, -29.75f);
-                    break;
-
-                case FaceoffSpot.RedteamDZoneRight:
-                    dot = new Vector3(9.95f, 0.01f, -29.75f);
-                    break;
-
-                default:
-                    dot = new Vector3(0f, 0.01f, 0f);
-                    break;
-            }
-
-            return dot;
         }
 
         private static void ResetIcings() {
@@ -812,14 +705,14 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void Faceoff() {
+        private static void DoFaceoff() {
             _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
             _changedPhase = true;
             GameManager.Instance.Server_SetPhase(GamePhase.FaceOff,
                 ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.phaseDurationMap[GamePhase.FaceOff]);
         }
 
-        private static Zone GetZone(Vector3 position, Zone oldZone, float radius) {
+        internal static Zone GetZone(Vector3 position, Zone oldZone, float radius) {
             float zMax = position.z + radius;
             
             // Red team.
