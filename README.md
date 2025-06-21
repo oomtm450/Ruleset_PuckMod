@@ -1,3 +1,3 @@
 # Ruleset_PuckMod
 Ruleset mod for the game Puck.
-!ADD STEAM WORKSHOP LINK!
+https://steamcommunity.com/sharedfiles/filedetails/?id=3501446576
