@@ -64,27 +64,24 @@ namespace oomtm450PuckMod_Ruleset {
                     break;
 
                 case SystemFunc.PlayerFunc.GOALIE_POSITION:
-                    zOffset = -0.1f;
+                    zOffset = 0.1f;
+                    xOffset = 0.6f;
+                    float quaternionY = 35;
+
                     if (player.Team.Value == PlayerTeam.Red) {
+                        zOffset *= -1f;
                         if (nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft) {
-                            xOffset = -1.4f;
-                            quaternion = Quaternion.Euler(0, -25, 0);
-                        }
-                        else if (nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight) {
-                            xOffset = 1.4f;
-                            quaternion = Quaternion.Euler(0, 25, 0);
+                            xOffset *= -1f;
+                            quaternion *= Quaternion.Euler(0, -1, 0);
                         }
                     }
                     else {
-                        zOffset = 0.1f;
                         if (nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft) {
-                            xOffset = -1.4f;
-                            quaternion = Quaternion.Euler(0, -155, 0);
+                            xOffset *= -1f;
+                            quaternion = Quaternion.Euler(0, quaternionY - 180, 0);
                         }
-                        else if (nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight) {
-                            xOffset = 1.4f;
-                            quaternion = Quaternion.Euler(0, 155, 0);
-                        }
+                        else if (nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight)
+                            quaternion = Quaternion.Euler(0, 180 - quaternionY, 0);
                     }
 
                     player.PlayerBody.Server_Teleport(new Vector3(player.PlayerBody.transform.position.x + xOffset, player.PlayerBody.transform.position.y, player.PlayerBody.transform.position.z + zOffset), quaternion);
