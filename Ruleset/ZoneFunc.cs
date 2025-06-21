@@ -87,6 +87,27 @@ namespace oomtm450PuckMod_Ruleset {
             return Zone.BlueTeam_BehindGoalLine;
         }
 
+        internal static Zone GetZone(FaceoffSpot faceoffSpot) {
+            switch (faceoffSpot) {
+                case FaceoffSpot.BlueteamDZoneLeft:
+                case FaceoffSpot.BlueteamDZoneRight:
+                    return Zone.BlueTeam_Zone;
+                case FaceoffSpot.BlueteamBLLeft:
+                case FaceoffSpot.BlueteamBLRight:
+                    return Zone.BlueTeam_Center;
+
+                case FaceoffSpot.RedteamDZoneLeft:
+                case FaceoffSpot.RedteamDZoneRight:
+                    return Zone.RedTeam_Zone;
+                case FaceoffSpot.RedteamBLLeft:
+                case FaceoffSpot.RedteamBLRight:
+                    return Zone.RedTeam_Center;
+
+                default:
+                    return Zone.BlueTeam_Center;
+            }
+        }
+
         internal static List<Zone> GetTeamZones(PlayerTeam team, bool includeCenter = false) {
             switch (team) { // TODO : Optimize with pre made lists.
                 case PlayerTeam.Blue:
