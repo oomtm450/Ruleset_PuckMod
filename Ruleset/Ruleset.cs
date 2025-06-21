@@ -85,17 +85,12 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, false },
         };
 
-        private static Vector3 _puckLastPositionBeforeIcing = Vector3.zero;
-
-        private static Zone _puckLastZoneBeforeIcing = Zone.BlueTeam_Center;
-
-        private static Vector3 _puckLastPositionBeforeOffside = Vector3.zero;
-
-        private static Zone _puckLastZoneBeforeOffside = Zone.BlueTeam_Center;
-
-        private static Vector3 _puckLastPositionBeforeHighStick = Vector3.zero;
-
-        private static Zone _puckLastZoneBeforeHighStick = Zone.BlueTeam_Center;
+        private static readonly Dictionary<Rule, (Vector3 Position, Zone Zone)> _puckLastStateBeforeCall = new Dictionary<Rule, (Vector3 Position, Zone Zone)> {
+            { Rule.Offside, (Vector3.zero, Zone.BlueTeam_Center) },
+            { Rule.Icing, (Vector3.zero, Zone.BlueTeam_Center) },
+            { Rule.HighStick, (Vector3.zero, Zone.BlueTeam_Center) },
+            { Rule.GoalieInt, (Vector3.zero, Zone.BlueTeam_Center) },
+        };
 
         private static Zone _puckZone = Zone.BlueTeam_Center;
 
@@ -213,8 +208,7 @@ namespace oomtm450PuckMod_Ruleset {
                             lock (_locker) {
                                 if (!_isHighStickActive[stick.Player.Team.Value]) {
                                     _isHighStickActive[stick.Player.Team.Value] = true;
-                                    _puckLastPositionBeforeHighStick = puck.Rigidbody.transform.position;
-                                    _puckLastZoneBeforeHighStick = _puckZone;
+                                    _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
                                     UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM");
                                 }
                             }
@@ -222,7 +216,7 @@ namespace oomtm450PuckMod_Ruleset {
                         else if (puck.IsGrounded) {
                             lock (_locker) {
                                 if (_isHighStickActive[stick.Player.Team.Value]) {
-                                    Faceoff.SetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastPositionBeforeHighStick, _puckLastZoneBeforeHighStick);
+                                    Faceoff.SetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
                                     UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
                                     DoFaceoff();
                                 }
@@ -283,7 +277,8 @@ namespace oomtm450PuckMod_Ruleset {
                     List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
                     Puck puck = PuckManager.Instance.GetPuck();
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == otherTeamZones[0] || _puckZone == otherTeamZones[1])) {
-                        Faceoff.SetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastPositionBeforeOffside, _puckLastZoneBeforeOffside);
+                        lock (_locker)
+                            Faceoff.SetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.Offside]);
                         UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
                         DoFaceoff();
                     }
@@ -291,7 +286,8 @@ namespace oomtm450PuckMod_Ruleset {
                     // Icing logic.
                     if (IsIcing(otherTeam)) {
                         if (stick.Player.PlayerPosition.Role != PlayerRole.Goalie) {
-                            Faceoff.SetNextFaceoffPosition(otherTeam, true, _puckLastPositionBeforeIcing, _puckLastZoneBeforeIcing);
+                            lock (_locker)
+                                Faceoff.SetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
                             DoFaceoff();
                         }
@@ -350,12 +346,12 @@ namespace oomtm450PuckMod_Ruleset {
 
                         Puck puck = PuckManager.Instance.GetPuck();
                         if (puck) {
-                            _puckLastPositionBeforeOffside = puck.Rigidbody.transform.position;
-                            _puckLastZoneBeforeOffside = _puckZone;
+                            lock (_locker)
+                                _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
                         }
                     }
 
-                    // Icing logic. // TODO : Check if puck tip should cancel this.
+                    // Icing logic.
                     bool icingPossible = false;
                     if (ZoneFunc.GetTeamZones(stick.Player.Team.Value, true).Any(x => x == _puckZone))
                         icingPossible = true;
@@ -408,6 +404,10 @@ namespace oomtm450PuckMod_Ruleset {
                             // Reset high sticks.
                             foreach (PlayerTeam key in new List<PlayerTeam>(_isHighStickActive.Keys))
                                 _isHighStickActive[key] = false;
+                            
+                            // Reset puck rule states.
+                            foreach (Rule key in new List<Rule>(_puckLastStateBeforeCall.Keys))
+                                _puckLastStateBeforeCall[key] = (Vector3.zero, Zone.BlueTeam_Center);
                         }
                         // Reset icings.
                         ResetIcings();
@@ -543,16 +543,14 @@ namespace oomtm450PuckMod_Ruleset {
                     lock (_locker) {
                         if (_isIcingPossible[PlayerTeam.Blue] && _puckZone == Zone.RedTeam_BehindGoalLine) {
                             if (!IsIcing(PlayerTeam.Blue)) {
-                                _puckLastPositionBeforeIcing = puck.Rigidbody.transform.position;
-                                _puckLastZoneBeforeIcing = _puckZone;
+                                _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
                                 UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Blue.ToString().ToUpperInvariant()} TEAM");
                             }
                             _isIcingActive[PlayerTeam.Blue] = true;
                         }
                         if (_isIcingPossible[PlayerTeam.Red] && _puckZone == Zone.BlueTeam_BehindGoalLine) {
                             if (!IsIcing(PlayerTeam.Red)) {
-                                _puckLastPositionBeforeIcing = puck.Rigidbody.transform.position;
-                                _puckLastZoneBeforeIcing = _puckZone;
+                                _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
                                 UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Red.ToString().ToUpperInvariant()} TEAM");
                             }
                             _isIcingActive[PlayerTeam.Red] = true;
@@ -658,7 +656,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // No goal if offside.
                     if (IsOffside(playerTeam)) {
-                        Faceoff.SetNextFaceoffPosition(playerTeam, false, _puckLastPositionBeforeOffside, _puckLastZoneBeforeOffside);
+                        Faceoff.SetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.Offside]);
                         UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
                         DoFaceoff();
                         return false;
@@ -1004,5 +1002,12 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
         #endregion
+    }
+
+    public enum Rule {
+        Offside,
+        Icing,
+        HighStick,
+        GoalieInt,
     }
 }
