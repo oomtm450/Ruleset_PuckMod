@@ -72,11 +72,12 @@ namespace oomtm450PuckMod_Ruleset {
                         zOffset *= -1f;
                         if (nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft) {
                             xOffset *= -1f;
-                            quaternion *= Quaternion.Euler(0, -1, 0);
+                            quaternion = Quaternion.Euler(0, -1 * quaternionY, 0);
                         }
                         else if (nextFaceoffSpot != FaceoffSpot.RedteamDZoneRight) {
                             zOffset = 0;
                             xOffset = 0;
+                            quaternion = Quaternion.Euler(0, quaternionY, 0);
                         }
                     }
                     else {
