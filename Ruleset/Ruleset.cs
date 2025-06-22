@@ -663,6 +663,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // Reteleport player on faceoff to the correct faceoff.
                     Player player = PlayerManager.Instance.GetPlayers()
                         .Where(x =>
+                            PlayerFunc.IsPlayerPlaying(x) && x.PlayerBody != null &&
                             x.PlayerBody.transform.position.x == position.x &&
                             x.PlayerBody.transform.position.y == position.y &&
                             x.PlayerBody.transform.position.z == position.z).FirstOrDefault();
