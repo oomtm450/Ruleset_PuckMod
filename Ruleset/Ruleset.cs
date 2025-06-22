@@ -896,11 +896,12 @@ namespace oomtm450PuckMod_Ruleset {
                         if (MOD_VERSION == dataStr) // TODO : Move the kick later so that it doesn't break anything. Maybe even add a chat message and a 3-5 sec wait.
                             break;
 
-                        NetworkCommunication.SendData("kick", "1", clientId, Constants.FROM_SERVER, _serverConfig);
+                        NetworkCommunication.SendData("kick", "1", clientId, Constants.FROM_SERVER, _clientConfig);
                         break;
 
-                    case "config": // CLIENT-SIDE : Set the server config on the client to use later for the Ruleset logic, since the logic happens on the client.
-                        _serverConfig = ServerConfig.SetConfig(dataStr);
+                    case "config": // CLIENT-SIDE : Set the server config on the client to use later if needed.
+                        if (!_serverConfig.SentByServer)
+                            _serverConfig = ServerConfig.SetConfig(dataStr);
                         break;
 
                     case "kick": // SERVER-SIDE : Kick the client that asked to be kicked.
