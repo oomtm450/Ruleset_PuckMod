@@ -29,6 +29,51 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// String array, all admin steam Ids of the server.
         /// </summary>
         public string[] AdminSteamIds { get; set; }
+
+        /// <summary>
+        /// Bool, true if red team offsides are activated.
+        /// </summary>
+        public bool RedTeamOffsides { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if blue team offsides are activated.
+        /// </summary>
+        public bool BlueTeamOffsides { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if red team icings are activated.
+        /// </summary>
+        public bool RedTeamIcings { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if blue team icings are activated.
+        /// </summary>
+        public bool BlueTeamIcings { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if red team high stick are activated.
+        /// </summary>
+        public bool RedTeamHighStick { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if blue team high stick are activated.
+        /// </summary>
+        public bool BlueTeamHighStick { get; set; } = true;
+
+        /// <summary>
+        /// Float, base height before hitting the puck with a stick is considered high stick.
+        /// </summary>
+        public float HighStickHeight { get; set; } = Ruleset.SHOULDERS_HEIGHT;
+
+        /// <summary>
+        /// Bool, true if red team is able to get their goal called off because of goalie interference.
+        /// </summary>
+        public bool RedTeamGInt { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if blue team is able to get their goal called off because of goalie interference.
+        /// </summary>
+        public bool BlueTeamGInt { get; set; } = true;
         #endregion
 
         #region Methods/Functions

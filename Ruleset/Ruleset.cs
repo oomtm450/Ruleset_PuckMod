@@ -40,7 +40,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const float, height of the player's shoulders.
         /// </summary>
-        private const float SHOULDERS_HEIGHT = 1.775f;
+        internal const float SHOULDERS_HEIGHT = 1.775f;
 
         /// <summary>
         /// Const int, number of milliseconds for a puck to not be considered tipped by a player's stick.
@@ -206,7 +206,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // High stick logic.
                     if (stick.Player.Role.Value != PlayerRole.Goalie) {
                         Puck puck = PuckManager.Instance.GetPuck();
-                        if (puck.Rigidbody.transform.position.y > SHOULDERS_HEIGHT + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
+                        if (puck.Rigidbody.transform.position.y > _serverConfig.HighStickHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
                             if (!_isHighStickActive[stick.Player.Team.Value]) {
                                 _isHighStickActive[stick.Player.Team.Value] = true;
                                 _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
@@ -572,8 +572,9 @@ namespace oomtm450PuckMod_Ruleset {
                         Zone playerZone = ZoneFunc.GetZone(player.PlayerBody.transform.position, oldPlayerZone, PLAYER_RADIUS);
                         _playersZone[playerSteamId] = (player.Team.Value, playerZone);
 
-                        // Is offside.
                         List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(TeamFunc.GetOtherTeam(player.Team.Value));
+
+                        // Is offside.
                         if (playerWithPossessionSteamId != player.SteamId.Value.ToString() && (playerZone == otherTeamZones[0] || playerZone == otherTeamZones[1])) {
                             if ((_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1]) || IsOffside(player.Team.Value)) {
                                 /*if (!isPlayerTeamOffside) {
@@ -705,14 +706,41 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static bool IsOffside(PlayerTeam team) {
+            bool offsidesActivated;
+            if (team == PlayerTeam.Blue)
+                offsidesActivated = _serverConfig.BlueTeamOffsides;
+            else
+                offsidesActivated = _serverConfig.RedTeamOffsides;
+
+            if (!offsidesActivated)
+                return false;
+
             return _isOffside.Where(x => x.Value.Team == team).Any(x => x.Value.IsOffside);
         }
 
         private static bool IsHighStick(PlayerTeam team) {
+            bool highStickActivated;
+            if (team == PlayerTeam.Blue)
+                highStickActivated = _serverConfig.BlueTeamHighStick;
+            else
+                highStickActivated = _serverConfig.RedTeamHighStick;
+
+            if (!highStickActivated)
+                return false;
+
             return _isHighStickActive[team];
         }
 
         private static bool IsIcing(PlayerTeam team) {
+            bool icingsActivated;
+            if (team == PlayerTeam.Blue)
+                icingsActivated = _serverConfig.BlueTeamIcings;
+            else
+                icingsActivated = _serverConfig.RedTeamIcings;
+
+            if (!icingsActivated)
+                return false;
+
             return _isIcingActive[team];
         }
 
