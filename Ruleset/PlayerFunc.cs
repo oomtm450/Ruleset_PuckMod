@@ -19,19 +19,19 @@ namespace oomtm450PuckMod_Ruleset {
                 case SystemFunc.PlayerFunc.LEFT_WINGER_POSITION:
                     zOffset = 1.5f;
                     if ((nextFaceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team.Value == PlayerTeam.Red) || (nextFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team.Value == PlayerTeam.Blue))
-                        xOffset = 7f;
+                        xOffset = 6.5f;
                     else
                         xOffset = 9f;
                     break;
                 case SystemFunc.PlayerFunc.RIGHT_WINGER_POSITION:
                     zOffset = 1.5f;
                     if ((nextFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team.Value == PlayerTeam.Red) || (nextFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team.Value == PlayerTeam.Blue))
-                        xOffset = -7f;
+                        xOffset = -6.5f;
                     else
                         xOffset = -9f;
                     break;
                 case SystemFunc.PlayerFunc.LEFT_DEFENDER_POSITION:
-                    zOffset = 13.5f;
+                    zOffset = 13.75f;
                     if ((ushort)nextFaceoffSpot >= 5)
                         zOffset -= 1f;
 
@@ -44,10 +44,10 @@ namespace oomtm450PuckMod_Ruleset {
                             quaternion = Quaternion.Euler(0, 90, 0);
                     }
                     else
-                        xOffset = 4f;
+                        xOffset = 4.25f;
                     break;
                 case SystemFunc.PlayerFunc.RIGHT_DEFENDER_POSITION:
-                    zOffset = 13.5f;
+                    zOffset = 13.75f;
                     if ((ushort)nextFaceoffSpot >= 5)
                         zOffset -= 1f;
 
@@ -60,7 +60,7 @@ namespace oomtm450PuckMod_Ruleset {
                             quaternion = Quaternion.Euler(0, -90, 0);
                     }
                     else
-                        xOffset = -4f;
+                        xOffset = -4.25f;
                     break;
 
                 case SystemFunc.PlayerFunc.GOALIE_POSITION:
