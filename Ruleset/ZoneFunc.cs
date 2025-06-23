@@ -134,34 +134,26 @@ namespace oomtm450PuckMod_Ruleset {
             switch (team) { // TODO : Optimize with pre made lists.
                 case PlayerTeam.Blue:
                     if (includeCenter) {
-                        List<Zone> blueZones = new List<Zone>(BLUE_TEAM_DEFENSE_ZONES) {
+                        return new List<Zone>(BLUE_TEAM_DEFENSE_ZONES) {
                             Zone.BlueTeam_Center
                         };
-                        string msg = "";
-                        foreach (Zone zone in blueZones)
-                            msg += zone.ToString() + ", ";
-                        Logging.Log($"Blue zones : {msg}", new ServerConfig());
-                        return blueZones;
                     }
                     else
                         return BLUE_TEAM_DEFENSE_ZONES.ToList();
 
                 case PlayerTeam.Red:
                     if (includeCenter) {
-                        List<Zone> redZones = new List<Zone>(RED_TEAM_DEFENSE_ZONES) {
+                        return new List<Zone>(RED_TEAM_DEFENSE_ZONES) {
                             Zone.RedTeam_Center
                         };
-                        string msg = "";
-                        foreach (Zone zone in redZones)
-                            msg += zone.ToString() + ", ";
-                        Logging.Log($"Red zones : {msg}", new ServerConfig());
-                        return redZones;
                     }
                     else
                         return RED_TEAM_DEFENSE_ZONES.ToList();
             }
 
-            return new List<Zone> { Zone.None };
+            return new List<Zone> {
+                Zone.None,
+            };
         }
         #endregion
     }

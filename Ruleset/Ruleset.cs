@@ -56,6 +56,14 @@ namespace oomtm450PuckMod_Ruleset {
         /// Const int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
         private const int MAX_POSSESSION_MILLISECONDS = 500;
+
+        /// <summary>
+        /// Const int, number of milliseconds after a push on the goalie to be considered no goal.
+        /// </summary>
+        private const int GINT_PUSH_NO_GOAL_MILLISECONDS = 300;
+        private const int GINT_HIT_NO_GOAL_MILLISECONDS = 800; // TODO : Remove when penalty is added.
+
+        private const float GINT_COLLISION_FORCE_THRESHOLD = 1f;
         #endregion
 
         #region Fields
@@ -91,6 +99,11 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, false },
         };
 
+        private static readonly LockDictionary<PlayerTeam, Stopwatch> _goalieIntTimer = new LockDictionary<PlayerTeam, Stopwatch> {
+            { PlayerTeam.Blue, null },
+            { PlayerTeam.Red, null },
+        };
+
         private static readonly LockDictionary<Rule, (Vector3 Position, Zone Zone)> _puckLastStateBeforeCall = new LockDictionary<Rule, (Vector3, Zone)> {
             { Rule.Offside, (Vector3.zero, Zone.BlueTeam_Center) },
             { Rule.Icing, (Vector3.zero, Zone.BlueTeam_Center) },
@@ -100,15 +113,15 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static Zone _puckZone = Zone.BlueTeam_Center;
 
-        private readonly static LockDictionary<string, (PlayerTeam Team, Zone Zone)> _playersZone = new LockDictionary<string, (PlayerTeam, Zone)>();
+        private static readonly LockDictionary<string, (PlayerTeam Team, Zone Zone)> _playersZone = new LockDictionary<string, (PlayerTeam, Zone)>();
 
-        private readonly static LockDictionary<string, Stopwatch> _playersCurrentPuckTouch = new LockDictionary<string, Stopwatch>();
+        private static readonly LockDictionary<string, Stopwatch> _playersCurrentPuckTouch = new LockDictionary<string, Stopwatch>();
 
-        private readonly static LockDictionary<string, Stopwatch> _playersLastTimePuckPossession = new LockDictionary<string, Stopwatch>();
+        private static readonly LockDictionary<string, Stopwatch> _playersLastTimePuckPossession = new LockDictionary<string, Stopwatch>();
 
         private static InputAction _getStickLocation;
 
-        private readonly static LockDictionary<string, Stopwatch> _lastTimeOnCollisionExitWasCalled = new LockDictionary<string, Stopwatch>();
+        private static readonly LockDictionary<string, Stopwatch> _lastTimeOnCollisionExitWasCalled = new LockDictionary<string, Stopwatch>();
 
         private static bool _changedPhase = false;
 
@@ -116,15 +129,23 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static PlayerTeam _lastPlayerOnPuckTeam = PlayerTeam.Blue;
 
-        private static LockDictionary<PlayerTeam, string> _lastPlayerOnPuckSteamId = new LockDictionary<PlayerTeam, string> {
+        private static readonly LockDictionary<PlayerTeam, string> _lastPlayerOnPuckSteamId = new LockDictionary<PlayerTeam, string> {
             { PlayerTeam.Blue, "" },
             { PlayerTeam.Red, "" },
+        };
+
+        private static readonly LockDictionary<PlayerTeam, bool> _lastGoalieStateCollision = new LockDictionary<PlayerTeam, bool> {
+            { PlayerTeam.Blue, false },
+            { PlayerTeam.Red, false },
         };
 
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
 
         #region Properties
+        /// <summary>
+        /// FaceoffSpot, where the next faceoff has to be taken.
+        /// </summary>
         internal static FaceoffSpot NextFaceoffSpot { get; set; } = FaceoffSpot.Center;
         #endregion
 
@@ -356,6 +377,59 @@ namespace oomtm450PuckMod_Ruleset {
         }
         #endregion
 
+        #region PlayerBodyV2_OnCollision
+        /// <summary>
+        /// Class that patches the OnCollisionEnter event from PlayerBodyV2.
+        /// </summary>
+        [HarmonyPatch(typeof(PlayerBodyV2), "OnCollisionEnter")]
+        public class PlayerBodyV2_OnCollisionEnter_Patch {
+            [HarmonyPostfix]
+            public static bool Postfix(Collision collision) {
+                // If this is not the server or game is not started, do not use the patch.
+                if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                    return true;
+
+                try {
+                    if (collision.gameObject.layer != LayerMask.NameToLayer("Player"))
+                        return true;
+
+                    Player currentPlayer = collision.body.GetComponentInParent<Player>(false);
+                    if (!currentPlayer || currentPlayer.Role.Value != PlayerRole.Goalie)
+                        return true;
+
+                    PlayerBodyV2 playerBody = GetPlayerBodyV2(collision.gameObject);
+                    if (!playerBody)
+                        return true;
+
+                    // If the goalie has been hit by the same team, return;
+                    if (playerBody.Player.Team.Value == currentPlayer.Team.Value)
+                        return true;
+
+                    bool goalieDown = currentPlayer.PlayerBody.IsSlipping || currentPlayer.PlayerBody.HasSlipped;
+                    Logging.Log("GOALIE IS DOWN !!!", _serverConfig);
+                    _lastGoalieStateCollision[currentPlayer.Team.Value] = goalieDown;
+
+                    if (goalieDown || Utils.GetCollisionForce(collision) <= GINT_COLLISION_FORCE_THRESHOLD) {
+                        if (!_goalieIntTimer.TryGetValue(playerBody.Player.Team.Value, out Stopwatch watch))
+                            return true;
+
+                        if (watch == null) {
+                            watch = new Stopwatch();
+                            _goalieIntTimer[playerBody.Player.Team.Value] = watch;
+                        }
+
+                        watch.Restart();
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in PlayerBodyV2_OnCollisionEnter_Patch Postfix().\n{ex}");
+                }
+
+                return true;
+            }
+        }
+        #endregion
+
         /// <summary>
         /// Class that patches the Server_SetPhase event from GameManager.
         /// </summary>
@@ -391,14 +465,10 @@ namespace oomtm450PuckMod_Ruleset {
                         foreach (Rule key in new List<Rule>(_puckLastStateBeforeCall.Keys))
                             _puckLastStateBeforeCall[key] = (Vector3.zero, Zone.BlueTeam_Center);
 
-                        // Reset offsides.
                         ResetOffsides();
-
-                        // Reset high sticks.
                         ResetHighSticks();
-
-                        // Reset icings.
                         ResetIcings();
+                        ResetGoalieInt();
 
                         _puckZone = ZoneFunc.GetZone(NextFaceoffSpot);
 
@@ -636,10 +706,26 @@ namespace oomtm450PuckMod_Ruleset {
                     PlayerTeam playerTeam = (PlayerTeam)message["team"];
                     playerTeam = TeamFunc.GetOtherTeam(playerTeam);
 
-                    // No goal if offside or high stick.
-                    if (IsOffside(playerTeam) || IsHighStick(playerTeam)) {
-                        Faceoff.SetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.Offside]);
-                        UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                    // No goal if offside or high stick or GInt.
+                    bool isOffside = false, isHighStick = false, isGoalieInt = false;
+                    isOffside = IsOffside(playerTeam);
+                    isHighStick = IsHighStick(playerTeam);
+                    isGoalieInt = IsGoalieInt(playerTeam);
+
+                    if (isOffside || isHighStick || isGoalieInt) {
+                        if (isOffside) {
+                            Faceoff.SetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.Offside]);
+                            UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                        }
+                        else if (isHighStick) {
+                            Faceoff.SetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                            UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                        }
+                        else if (isGoalieInt) {
+                            Faceoff.SetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
+                            UIChat.Instance.Server_SendSystemChatMessage($"GOALIE INT {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                        }
+                        
                         DoFaceoff();
                         return false;
                     }
@@ -668,14 +754,10 @@ namespace oomtm450PuckMod_Ruleset {
                         return true;
 
                     // If own goal, add goal attribution to last player on puck on the other team.
-                    Logging.Log($"Own goal scored by the {team} team. Finding the last {TeamFunc.GetOtherTeam(team)} team's player that touched the puck.", _serverConfig);
+                    UIChat.Instance.Server_SendSystemChatMessage($"OWN GOAL");
                     goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckSteamId[team]).FirstOrDefault();
-                    if (goalPlayer != null) {
-                        Logging.Log($"Goal given to {goalPlayer.Username} #{goalPlayer.Number}.", _serverConfig);
+                    if (goalPlayer != null)
                         lastPlayer = goalPlayer;
-                    }
-                    else
-                        Logging.Log($"Can't find who to give the goal to.", _serverConfig);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManagerController_GameManagerController_Patch Prefix().\n{ex}");
@@ -724,6 +806,14 @@ namespace oomtm450PuckMod_Ruleset {
 
             foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingActive.Keys))
                 _isIcingActive[key] = false;
+        }
+
+        private static void ResetGoalieInt() {
+            foreach (PlayerTeam key in new List<PlayerTeam>(_goalieIntTimer.Keys))
+                _goalieIntTimer[key] = null;
+
+            foreach (PlayerTeam key in new List<PlayerTeam>(_lastGoalieStateCollision.Keys))
+                _lastGoalieStateCollision[key] = false;
         }
 
         private static void ResetOffsides() {
@@ -783,6 +873,28 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static bool IsIcingPossible(PlayerTeam team) {
             return _isIcingPossible[team];
+        }
+
+        private static bool IsGoalieInt(PlayerTeam team) {
+            bool goalieIntActivated;
+            if (team == PlayerTeam.Blue)
+                goalieIntActivated = _serverConfig.BlueTeamGInt;
+            else
+                goalieIntActivated = _serverConfig.RedTeamGInt;
+
+            if (!goalieIntActivated)
+                return false;
+            
+            Stopwatch watch = _goalieIntTimer[team];
+            if (watch == null)
+                return false;
+
+            Logging.Log($"Goalie is down : {_lastGoalieStateCollision[team]}.", _serverConfig);
+            Logging.Log($"Goalie was lsat touched : {((double)watch.ElapsedMilliseconds) / 1000d} seconds ago.", _serverConfig);
+            if (_lastGoalieStateCollision[team])
+                return watch.ElapsedMilliseconds < GINT_HIT_NO_GOAL_MILLISECONDS;
+            else
+                return watch.ElapsedMilliseconds < GINT_PUSH_NO_GOAL_MILLISECONDS;
         }
 
         /// <summary>
@@ -927,10 +1039,10 @@ namespace oomtm450PuckMod_Ruleset {
         /// Used to send data to the new client that has connected (config and mod version).
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
-        public static void Event_OnPlayerSpawned(Dictionary<string, object> message) {
+        public static void Event_OnPlayerSpawned(Dictionary<string, object> message) { // TODO : Find an function that doesn't get called every respawn.
             if (!ServerFunc.IsDedicatedServer())
                 return;
-            
+
             Logging.Log("Event_OnPlayerSpawned", _serverConfig);
 
             try {
