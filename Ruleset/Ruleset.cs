@@ -116,7 +116,10 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static PlayerTeam _lastPlayerOnPuckTeam = PlayerTeam.Blue;
 
-        private static string _lastPlayerOnPuckSteamId = "";
+        private static LockDictionary<PlayerTeam, string> _lastPlayerOnPuckSteamId = new LockDictionary<PlayerTeam, string> {
+            { PlayerTeam.Blue, "" },
+            { PlayerTeam.Red, "" },
+        };
 
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
@@ -184,20 +187,21 @@ namespace oomtm450PuckMod_Ruleset {
                         _playersCurrentPuckTouch.Add(currentPlayerSteamId, watch);
                     }
 
+                    string lastPlayerOnPuckSteamId = _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam];
+
                     if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionExitWatch)) {
                         lastTimeCollisionExitWatch = new Stopwatch();
                         lastTimeCollisionExitWatch.Start();
                         _lastTimeOnCollisionExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionExitWatch);
                     }
-
-                    else if (lastTimeCollisionExitWatch.ElapsedMilliseconds > MAX_TIPPED_MILLISECONDS || _lastPlayerOnPuckSteamId != currentPlayerSteamId) {
-                        //if (_lastPlayerOnPuckSteamId == currentPlayerSteamId || string.IsNullOrEmpty(_lastPlayerOnPuckSteamId))
+                    else if (lastTimeCollisionExitWatch.ElapsedMilliseconds > MAX_TIPPED_MILLISECONDS || lastPlayerOnPuckSteamId != currentPlayerSteamId) {
+                        //if (lastPlayerOnPuckSteamId == currentPlayerSteamId || string.IsNullOrEmpty(lastPlayerOnPuckSteamId))
                             //Logging.Log($"{stick.Player.Username.Value} had the puck for {((double)(watch.ElapsedMilliseconds - lastTimeCollisionExitWatch.ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
                         watch.Restart();
 
-                        if (!string.IsNullOrEmpty(_lastPlayerOnPuckSteamId) && _lastPlayerOnPuckSteamId != currentPlayerSteamId) {
-                            if (_playersCurrentPuckTouch.TryGetValue(_lastPlayerOnPuckSteamId, out Stopwatch lastPlayerWatch)) {
-                                //Logging.Log($"{_lastPlayerOnPuckSteamId} had the puck for {((double)(lastPlayerWatch.ElapsedMilliseconds - _lastTimeOnCollisionExitWasCalled[_lastPlayerOnPuckSteamId].ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
+                        if (!string.IsNullOrEmpty(lastPlayerOnPuckSteamId) && lastPlayerOnPuckSteamId != currentPlayerSteamId) {
+                            if (_playersCurrentPuckTouch.TryGetValue(lastPlayerOnPuckSteamId, out Stopwatch lastPlayerWatch)) {
+                                //Logging.Log($"{lastPlayerOnPuckSteamId} had the puck for {((double)(lastPlayerWatch.ElapsedMilliseconds - _lastTimeOnCollisionExitWasCalled[lastPlayerOnPuckSteamId].ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
                                 lastPlayerWatch.Reset();
                             }
                         }
@@ -256,7 +260,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                         if (stick.Player.Role.Value != PlayerRole.Goalie)
                             ResetAssists(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
-                        _lastPlayerOnPuckSteamId = playerSteamId;
+                        _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = playerSteamId;
                     }
 
                     Stopwatch watch;
@@ -331,7 +335,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                         if (stick.Player.Role.Value != PlayerRole.Goalie)
                             ResetAssists(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
-                        _lastPlayerOnPuckSteamId = currentPlayerSteamId;
+                        _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
 
                         Puck puck = PuckManager.Instance.GetPuck();
                         if (puck)
@@ -399,7 +403,8 @@ namespace oomtm450PuckMod_Ruleset {
                         _puckZone = ZoneFunc.GetZone(NextFaceoffSpot);
 
                         _lastPlayerOnPuckTeam = PlayerTeam.Blue;
-                        _lastPlayerOnPuckSteamId = "";
+                        foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckSteamId.Keys))
+                            _lastPlayerOnPuckSteamId[key] = "";
                     }
 
                     if (!_changedPhase)
@@ -620,7 +625,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// Class that patches the Event_Server_OnPuckEnterTeamGoal event from GameManagerController.
         /// </summary>
         [HarmonyPatch(typeof(GameManagerController), "Event_Server_OnPuckEnterTeamGoal")]
-        public class GameManagerController_GameManagerController_Patch {
+        public class GameManagerController_Event_Server_OnPuckEnterTeamGoal_Patch {
             [HarmonyPrefix]
             public static bool Prefix(Dictionary<string, object> message) {
                 try {
@@ -638,7 +643,34 @@ namespace oomtm450PuckMod_Ruleset {
                         DoFaceoff();
                         return false;
                     }
-                        
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in GameManagerController_GameManagerController_Patch Prefix().\n{ex}");
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_GoalScored event from GameManager.
+        /// </summary>
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_GoalScored))]
+        public class GameManager_Server_GoalScored_Patch { // TODO : Testing.
+            [HarmonyPrefix]
+            public static bool Prefix(PlayerTeam team, ref Player lastPlayer, ref Player goalPlayer, Player assistPlayer, Player secondAssistPlayer, Puck puck) {
+                try {
+                    // If this is not the server or game is not started, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    // If own goal, add goal attribution to last player on puck on the other team.
+                    if (goalPlayer != null)
+                        return true;
+
+                    goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckSteamId[team]).FirstOrDefault();
+                    if (goalPlayer != null)
+                        lastPlayer = goalPlayer;
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManagerController_GameManagerController_Patch Prefix().\n{ex}");
@@ -809,11 +841,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void ResetAssists(PlayerTeam team) {
             try {
-                Puck puck = PuckManager.Instance.GetPuck();
-                if (!puck)
-                    return;
-
-                NetworkList<NetworkObjectCollision> buffer = (NetworkList<NetworkObjectCollision>)typeof(NetworkObjectCollisionBuffer).GetField("buffer", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(puck.NetworkObjectCollisionBuffer);
+                NetworkList<NetworkObjectCollision> buffer = GetPuckBuffer();
                 if (buffer == null) {
                     Logging.Log($"Buffer field is null !!!", _serverConfig);
                     return;
@@ -840,6 +868,16 @@ namespace oomtm450PuckMod_Ruleset {
             catch (Exception ex) {
                 Logging.LogError($"Error in ResetAssists.\n{ex}");
             }
+        }
+
+        private static NetworkList<NetworkObjectCollision> GetPuckBuffer(Puck puck = null) {
+            if (puck == null) {
+                puck = PuckManager.Instance.GetPuck();
+                if (!puck)
+                    return null;
+            }
+
+            return (NetworkList<NetworkObjectCollision>)typeof(NetworkObjectCollisionBuffer).GetField("buffer", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(puck.NetworkObjectCollisionBuffer);
         }
         #endregion
 
