@@ -664,13 +664,18 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
-                    // If own goal, add goal attribution to last player on puck on the other team.
                     if (goalPlayer != null)
                         return true;
 
+                    // If own goal, add goal attribution to last player on puck on the other team.
+                    Logging.Log($"Own goal scored by the {team} team. Finding the last {TeamFunc.GetOtherTeam(team)} team's player that touched the puck.", _serverConfig);
                     goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckSteamId[team]).FirstOrDefault();
-                    if (goalPlayer != null)
+                    if (goalPlayer != null) {
+                        Logging.Log($"Goal given to {goalPlayer.Username} #{goalPlayer.Number}.", _serverConfig);
                         lastPlayer = goalPlayer;
+                    }
+                    else
+                        Logging.Log($"Can't find who to give the goal to.", _serverConfig);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManagerController_GameManagerController_Patch Prefix().\n{ex}");

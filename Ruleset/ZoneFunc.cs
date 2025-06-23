@@ -1,4 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using oomtm450PuckMod_Ruleset.Configs;
+using oomtm450PuckMod_Ruleset.SystemFunc;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
@@ -7,13 +11,31 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Dictionary of ArenaElement and (double Start, double End), dictionary containing all the start and end Z positions of all the lines on the ice for the zones.
         /// </summary>
-        private static readonly Dictionary<ArenaElement, (double Start, double End)> ICE_Z_POSITIONS = new Dictionary<ArenaElement, (double Start, double End)> {
+        private static Dictionary<ArenaElement, (double Start, double End)> ICE_Z_POSITIONS { get; } = new Dictionary<ArenaElement, (double Start, double End)> {
             { ArenaElement.BlueTeam_BlueLine, (13.0, 13.5) },
             { ArenaElement.RedTeam_BlueLine, (-13.5, -13.0) },
             { ArenaElement.CenterLine, (-0.25, 0.25) },
             { ArenaElement.BlueTeam_GoalLine, (39.75, 40) },
             { ArenaElement.RedTeam_GoalLine, (-40, -39.75) },
+            { ArenaElement.BlueTeam_HashMarks, (0, 0) }, // TODO
+            { ArenaElement.RedTeam_HashMarks, (0, 0) }, // TODO
         };
+
+        /// <summary>
+        /// ReadOnlyCollection of Zone, defense zones attributed to the blue team.
+        /// </summary>
+        private static ReadOnlyCollection<Zone> BLUE_TEAM_DEFENSE_ZONES { get; } = new ReadOnlyCollection<Zone>(new List<Zone> {
+            Zone.BlueTeam_Zone,
+            Zone.BlueTeam_BehindGoalLine,
+        });
+
+        /// <summary>
+        /// ReadOnlyCollection of Zone, defense zones attributed to the red team.
+        /// </summary>
+        private static ReadOnlyCollection<Zone> RED_TEAM_DEFENSE_ZONES { get; } = new ReadOnlyCollection<Zone>(new List<Zone> {
+            Zone.RedTeam_Zone,
+            Zone.RedTeam_BehindGoalLine,
+        });
         #endregion
 
         #region Methods/Functions
@@ -111,16 +133,32 @@ namespace oomtm450PuckMod_Ruleset {
         internal static List<Zone> GetTeamZones(PlayerTeam team, bool includeCenter = false) {
             switch (team) { // TODO : Optimize with pre made lists.
                 case PlayerTeam.Blue:
-                    List<Zone> blueZones = new List<Zone> { Zone.BlueTeam_Zone, Zone.BlueTeam_BehindGoalLine };
-                    if (includeCenter)
-                        blueZones.Add(Zone.BlueTeam_Center);
-                    return blueZones;
+                    if (includeCenter) {
+                        List<Zone> blueZones = new List<Zone>(BLUE_TEAM_DEFENSE_ZONES) {
+                            Zone.BlueTeam_Center
+                        };
+                        string msg = "";
+                        foreach (Zone zone in blueZones)
+                            msg += zone.ToString() + ", ";
+                        Logging.Log($"Blue zones : {msg}", new ServerConfig());
+                        return blueZones;
+                    }
+                    else
+                        return BLUE_TEAM_DEFENSE_ZONES.ToList();
 
                 case PlayerTeam.Red:
-                    List<Zone> redZones = new List<Zone> { Zone.RedTeam_Zone, Zone.RedTeam_BehindGoalLine };
-                    if (includeCenter)
-                        redZones.Add(Zone.RedTeam_Center);
-                    return redZones;
+                    if (includeCenter) {
+                        List<Zone> redZones = new List<Zone>(RED_TEAM_DEFENSE_ZONES) {
+                            Zone.RedTeam_Center
+                        };
+                        string msg = "";
+                        foreach (Zone zone in redZones)
+                            msg += zone.ToString() + ", ";
+                        Logging.Log($"Red zones : {msg}", new ServerConfig());
+                        return redZones;
+                    }
+                    else
+                        return RED_TEAM_DEFENSE_ZONES.ToList();
             }
 
             return new List<Zone> { Zone.None };
@@ -131,12 +169,14 @@ namespace oomtm450PuckMod_Ruleset {
     #region Enums
     public enum Zone {
         None,
-        RedTeam_BehindGoalLine,
         BlueTeam_BehindGoalLine,
-        RedTeam_Zone,
+        RedTeam_BehindGoalLine,
         BlueTeam_Zone,
-        RedTeam_Center,
+        RedTeam_Zone,
         BlueTeam_Center,
+        RedTeam_Center,
+        BlueTeam_HashMarks,
+        RedTeam_HashMarks,
     }
 
     public enum ArenaElement {
@@ -145,6 +185,8 @@ namespace oomtm450PuckMod_Ruleset {
         CenterLine,
         BlueTeam_GoalLine,
         RedTeam_GoalLine,
+        BlueTeam_HashMarks,
+        RedTeam_HashMarks,
     }
     #endregion
 }
