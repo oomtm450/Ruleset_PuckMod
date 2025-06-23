@@ -11,14 +11,24 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Dictionary of ArenaElement and (double Start, double End), dictionary containing all the start and end Z positions of all the lines on the ice for the zones.
         /// </summary>
-        private static Dictionary<ArenaElement, (double Start, double End)> ICE_Z_POSITIONS { get; } = new Dictionary<ArenaElement, (double Start, double End)> {
+        internal static Dictionary<ArenaElement, (double Start, double End)> ICE_Z_POSITIONS { get; } = new Dictionary<ArenaElement, (double Start, double End)> {
             { ArenaElement.BlueTeam_BlueLine, (13.0, 13.5) },
             { ArenaElement.RedTeam_BlueLine, (-13.5, -13.0) },
             { ArenaElement.CenterLine, (-0.25, 0.25) },
             { ArenaElement.BlueTeam_GoalLine, (39.75, 40) },
             { ArenaElement.RedTeam_GoalLine, (-40, -39.75) },
+            { ArenaElement.BlueTeam_BluePaint, (37.25, 40) },
+            { ArenaElement.RedTeam_BluePaint, (-40, -37.25) },
             { ArenaElement.BlueTeam_HashMarks, (0, 0) }, // TODO
             { ArenaElement.RedTeam_HashMarks, (0, 0) }, // TODO
+        };
+
+        /// <summary>
+        /// Dictionary of ArenaElement and (double Start, double End), dictionary containing all the start and end Z positions of all the lines on the ice for the zones.
+        /// </summary>
+        internal static Dictionary<ArenaElement, (double Start, double End)> ICE_X_POSITIONS { get; } = new Dictionary<ArenaElement, (double Start, double End)> {
+            { ArenaElement.BlueTeam_BluePaint, (-2.5, 2.5) },
+            { ArenaElement.RedTeam_BluePaint, (-2.5, 2.5) },
         };
 
         /// <summary>
@@ -167,8 +177,6 @@ namespace oomtm450PuckMod_Ruleset {
         RedTeam_Zone,
         BlueTeam_Center,
         RedTeam_Center,
-        BlueTeam_HashMarks,
-        RedTeam_HashMarks,
     }
 
     public enum ArenaElement {
@@ -179,6 +187,8 @@ namespace oomtm450PuckMod_Ruleset {
         RedTeam_GoalLine,
         BlueTeam_HashMarks,
         RedTeam_HashMarks,
+        BlueTeam_BluePaint,
+        RedTeam_BluePaint,
     }
     #endregion
 }
