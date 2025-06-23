@@ -2,29 +2,29 @@
 
 namespace oomtm450PuckMod_Ruleset {
     internal static class Faceoff {
-        internal static void SetNextFaceoffPosition(PlayerTeam team, bool isIcing, Vector3 puckLastPositionBeforeCall, Zone puckLastZoneBeforeCall) {
+        internal static void SetNextFaceoffPosition(PlayerTeam team, bool isIcing, (Vector3 Position, Zone Zone) puckLastState) {
             ushort teamOffset;
             if (team == PlayerTeam.Red)
                 teamOffset = 2;
             else
                 teamOffset = 0;
 
-            if (puckLastPositionBeforeCall.x < 0) {
+            if (puckLastState.Position.x < 0) {
                 if (isIcing)
                     Ruleset.NextFaceoffSpot = FaceoffSpot.BlueteamDZoneLeft + teamOffset;
                 else
-                    SetNextFaceoffPositionFromLastTouch(team, true, puckLastPositionBeforeCall, puckLastZoneBeforeCall);
+                    SetNextFaceoffPositionFromLastTouch(team, true, puckLastState);
             }
             else {
                 if (isIcing)
                     Ruleset.NextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight + teamOffset;
                 else
-                    SetNextFaceoffPositionFromLastTouch(team, false, puckLastPositionBeforeCall, puckLastZoneBeforeCall);
+                    SetNextFaceoffPositionFromLastTouch(team, false, puckLastState);
             }
         }
 
-        private static void SetNextFaceoffPositionFromLastTouch(PlayerTeam team, bool left, Vector3 puckLastPositionBeforeCall, Zone puckLastZoneBeforeCall) {
-            Zone puckZone = ZoneFunc.GetZone(puckLastPositionBeforeCall, puckLastZoneBeforeCall, Ruleset.PUCK_RADIUS);
+        private static void SetNextFaceoffPositionFromLastTouch(PlayerTeam team, bool left, (Vector3 Position, Zone Zone) puckLastState) {
+            Zone puckZone = ZoneFunc.GetZone(puckLastState.Position, puckLastState.Zone, Ruleset.PUCK_RADIUS);
             if (puckZone == Zone.BlueTeam_BehindGoalLine || puckZone == Zone.BlueTeam_Zone) {
                 if (team == PlayerTeam.Blue) {
                     if (left)
