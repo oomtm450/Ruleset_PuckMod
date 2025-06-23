@@ -436,10 +436,10 @@ namespace oomtm450PuckMod_Ruleset {
                         (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[ArenaElement.RedTeam_BluePaint];
                     }
 
-                    if (goalie.PlayerBody.Rigidbody.transform.position.x < startX ||
-                        goalie.PlayerBody.Rigidbody.transform.position.x > endX ||
-                        goalie.PlayerBody.Rigidbody.transform.position.z < startZ ||
-                        goalie.PlayerBody.Rigidbody.transform.position.z > endZ)
+                    if (goalie.PlayerBody.Rigidbody.transform.position.x - PLAYER_RADIUS < startX ||
+                        goalie.PlayerBody.Rigidbody.transform.position.x + PLAYER_RADIUS > endX ||
+                        goalie.PlayerBody.Rigidbody.transform.position.z - PLAYER_RADIUS < startZ ||
+                        goalie.PlayerBody.Rigidbody.transform.position.z + PLAYER_RADIUS > endZ)
                         return;
 
                     PlayerTeam goalieOtherTeam = TeamFunc.GetOtherTeam(goalie.Team.Value);
