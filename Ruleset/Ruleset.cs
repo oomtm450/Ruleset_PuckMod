@@ -864,8 +864,6 @@ namespace oomtm450PuckMod_Ruleset {
         private static void ResetHighSticks() {
             foreach (PlayerTeam key in new List<PlayerTeam>(_isHighStickActive.Keys))
                 _isHighStickActive[key] = false;
-
-            Logging.Log($"_isHighStickActive resetted.", _serverConfig);
         }
 
         private static void DoFaceoff() {
