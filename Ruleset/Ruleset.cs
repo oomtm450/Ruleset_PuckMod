@@ -886,7 +886,7 @@ namespace oomtm450PuckMod_Ruleset {
                 _isHighStickActive[key] = false;
         }
 
-        private static void DoFaceoff(int millisecondsPause = 3000) {
+        private static void DoFaceoff(int millisecondsPauseMin = 3000, int millisecondsPauseMax = 4000) {
             if (_paused)
                 return;
 
@@ -898,7 +898,7 @@ namespace oomtm450PuckMod_Ruleset {
             GameManager.Instance.Server_Pause();
 
             _ = Task.Run(() => {
-                Thread.Sleep(millisecondsPause);
+                Thread.Sleep(new System.Random().Next(millisecondsPauseMin, millisecondsPauseMax));
 
                 if (GameManager.Instance.GameState.Value.Phase != GamePhase.Playing) // TODO : Add other checks when game is started via chat etc.
                     return;
