@@ -148,6 +148,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static bool _doFaceoff = false;
 
+        private static string _currentFaceoffSound = "";
+
         // Client-side.
         private static Sounds _sounds = null;
 
@@ -552,6 +554,8 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(GamePhase phase, int time) {
                 try {
                     if (phase == GamePhase.FaceOff) {
+                        NetworkCommunication.SendDataToAll("SoundEnd", _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
+
                         if (NextFaceoffSpot == FaceoffSpot.Center)
                             return;
 
@@ -893,13 +897,15 @@ namespace oomtm450PuckMod_Ruleset {
                 _isHighStickActive[key] = false;
         }
 
-        private static void DoFaceoff(int millisecondsPauseMin = 3000, int millisecondsPauseMax = 4000) {
+        private static void DoFaceoff(int millisecondsPauseMin = 3500, int millisecondsPauseMax = 5000) {
             if (_paused)
                 return;
 
             _paused = true;
 
-            NetworkCommunication.SendDataToAll(Sounds.WHISTLE, "1", Constants.FROM_SERVER, _serverConfig);
+            NetworkCommunication.SendDataToAll("Sound", Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
+            _currentFaceoffSound = Sounds.GetRandomFaceoffSound();
+            NetworkCommunication.SendDataToAll("SoundStart", _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
 
             _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
             GameManager.Instance.Server_Pause();
@@ -1193,15 +1199,26 @@ namespace oomtm450PuckMod_Ruleset {
                         _sounds.LoadWhistlePrefab();
                         break;
 
-                    case Sounds.WHISTLE: // CLIENT-SIDE : Play whistle.
-                        if (dataStr != "1" || _sounds == null)
+                    case "SoundStart": // CLIENT-SIDE : Play sound.
+                        if (_sounds == null)
                             break;
                         if (_sounds._errors.Count != 0) {
                             foreach (string error in _sounds._errors)
                                 Logging.LogError(error);
                         }
                         else
-                            _sounds.Play(Sounds.WHISTLE);
+                            _sounds.Play(dataStr);
+                        break;
+
+                    case "SoundEnd": // CLIENT-SIDE : Stop sound.
+                        if (_sounds == null)
+                            break;
+                        if (_sounds._errors.Count != 0) {
+                            foreach (string error in _sounds._errors)
+                                Logging.LogError(error);
+                        }
+                        else
+                            _sounds.Stop(dataStr);
                         break;
 
                     case Constants.MOD_NAME + "_" + "kick": // SERVER-SIDE : Kick the client that asked to be kicked.
