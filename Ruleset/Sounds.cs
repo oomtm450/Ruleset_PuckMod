@@ -11,7 +11,7 @@ using UnityEngine.Networking;
 namespace oomtm450PuckMod_Ruleset {
     public class Sounds : MonoBehaviour {
         public const string SOUND_FOLDER_PATH = "sounds";
-        public const string WHISTLE = "whistle.mp3";
+        public const string WHISTLE = "whistle.ogg";
         public Dictionary<string, GameObject> _soundObjects = new Dictionary<string, GameObject>();
         public readonly List<AudioClip> _audioClips = new List<AudioClip>();
         public List<string> _errors = new List<string>();
