@@ -37,6 +37,35 @@ namespace oomtm450PuckMod_Ruleset.SystemFunc {
         }
 
         /// <summary>
+        /// Method that sends data to the listener.
+        /// </summary>
+        /// <param name="dataName">String, header of the data.</param>
+        /// <param name="dataStr">String, content of the data.</param>
+        /// <param name="listener">String, listener where to send the data.</param>
+        /// <param name="config">IConfig, config for the logs.</param>
+        public static void SendDataToAll(string dataName, string dataStr, string listener, IConfig config = null) {
+            try {
+                byte[] data = Encoding.UTF8.GetBytes(dataStr);
+
+                int size = Encoding.UTF8.GetByteCount(dataName) + sizeof(ulong) + data.Length;
+
+                FastBufferWriter writer = new FastBufferWriter(size, Allocator.TempJob);
+                writer.WriteValue(dataName);
+                writer.WriteBytes(data);
+
+                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll(listener, writer, NetworkDelivery.ReliableFragmentedSequenced);
+
+                writer.Dispose();
+
+                if (config != null)
+                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to all clients.", config);
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error when writing streamed data: {ex}");
+            }
+        }
+
+        /// <summary>
         /// Function that reads data from the reader and returns it.
         /// </summary>
         /// <param name="clientId">Ulong, Id of the client that sent the data.</param>

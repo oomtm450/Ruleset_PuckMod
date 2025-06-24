@@ -1,6 +1,4 @@
-﻿using oomtm450PuckMod_Ruleset.Configs;
-using oomtm450PuckMod_Ruleset.SystemFunc;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEngine;

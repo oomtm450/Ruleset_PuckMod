@@ -1,12 +1,13 @@
 ﻿using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
-using Ruleset.SystemFunc;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -20,7 +21,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.8.1";
+        private const string MOD_VERSION = "0.9.0";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -80,7 +81,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// ServerConfig, config set by the client.
         /// </summary>
-        private static ClientConfig _clientConfig = new ClientConfig();
+        internal static ClientConfig _clientConfig = new ClientConfig();
 
         private static readonly LockDictionary<string, (PlayerTeam Team, bool IsOffside)> _isOffside = new LockDictionary<string, (PlayerTeam, bool)>();
 
@@ -143,6 +144,13 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static string _lastForceOnGoaliePlayerSteamId = "";
 
+        private static bool _paused = false;
+
+        private static bool _doFaceoff = false;
+
+        // Client-side.
+        private static Sounds _sounds = null;
+
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
 
@@ -163,7 +171,7 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(Collision collision) {
                 // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                if (_paused || !ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
                     return;
 
                 try {
@@ -277,7 +285,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                    if (_paused || !ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
                         return;
 
                     Stick stick = GetStick(collision.gameObject);
@@ -343,7 +351,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                    if (_paused || !ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
                         return;
 
                     Stick stick = GetStick(collision.gameObject);
@@ -394,7 +402,7 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(Collision collision) {
                 // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                if (_paused || !ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
                     return;
 
                 try {
@@ -479,6 +487,8 @@ namespace oomtm450PuckMod_Ruleset {
                     // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
+
+                    _paused = false;
 
                     if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) {
                         // Reset players zone.
@@ -623,6 +633,13 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing)
                         return true;
 
+                    if (_paused) {
+                        if (_doFaceoff)
+                            PostDoFaceoff();
+                        else
+                            return true;
+                    }
+
                     players = PlayerManager.Instance.GetPlayers();
                     puck = PuckManager.Instance.GetPuck();
 
@@ -737,6 +754,9 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPrefix]
             public static bool Prefix(Dictionary<string, object> message) {
                 try {
+                    if (_paused)
+                        return false;
+
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing)
                         return true;
@@ -780,7 +800,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// Class that patches the Server_GoalScored event from GameManager.
         /// </summary>
         [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_GoalScored))]
-        public class GameManager_Server_GoalScored_Patch { // TODO : Testing.
+        public class GameManager_Server_GoalScored_Patch {
             [HarmonyPrefix]
             public static bool Prefix(PlayerTeam team, ref Player lastPlayer, ref Player goalPlayer, Player assistPlayer, Player secondAssistPlayer, Puck puck) {
                 try {
@@ -866,8 +886,30 @@ namespace oomtm450PuckMod_Ruleset {
                 _isHighStickActive[key] = false;
         }
 
-        private static void DoFaceoff() {
+        private static void DoFaceoff(int millisecondsPauseMin = 3000, int millisecondsPauseMax = 4000) {
+            if (_paused)
+                return;
+
+            _paused = true;
+
+            NetworkCommunication.SendDataToAll(Sounds.WHISTLE, "1", Constants.FROM_SERVER, _serverConfig);
+
             _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
+            GameManager.Instance.Server_Pause();
+
+            _ = Task.Run(() => {
+                Thread.Sleep(new System.Random().Next(millisecondsPauseMin, millisecondsPauseMax));
+
+                if (GameManager.Instance.GameState.Value.Phase != GamePhase.Playing) // TODO : Add other checks when game is started via chat etc.
+                    return;
+
+                _doFaceoff = true;
+            });
+        }
+
+        private static void PostDoFaceoff() {
+            _doFaceoff = false;
+            GameManager.Instance.Server_Resume();
             _changedPhase = true;
             GameManager.Instance.Server_SetPhase(GamePhase.FaceOff,
                 ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.phaseDurationMap[GamePhase.FaceOff]);
@@ -1091,6 +1133,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
                 NetworkCommunication.SendData(ServerConfig.CONFIG_DATA_NAME, _serverConfig.ToString(), player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
+                NetworkCommunication.SendData("loadsounds", "1", player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_OnPlayerSpawned.\n{ex}");
@@ -1125,6 +1168,25 @@ namespace oomtm450PuckMod_Ruleset {
                     case ServerConfig.CONFIG_DATA_NAME: // CLIENT-SIDE : Set the server config on the client to use later if needed.
                         if (!_serverConfig.SentByServer)
                             _serverConfig = ServerConfig.SetConfig(dataStr);
+                        break;
+
+                    case "loadsounds": // CLIENT-SIDE : Load sounds.
+                        if (dataStr != "1")
+                            break;
+                        GameObject gameObject = new GameObject("Sounds");
+                        _sounds = gameObject.AddComponent<Sounds>();
+                        _sounds.LoadWhistlePrefab();
+                        break;
+
+                    case Sounds.WHISTLE: // CLIENT-SIDE : Play whistle.
+                        if (dataStr != "1" || _sounds == null)
+                            break;
+                        if (_sounds._errors.Count != 0) {
+                            foreach (string error in _sounds._errors)
+                                Logging.LogError(error);
+                        }
+                        else
+                            _sounds.Play(Sounds.WHISTLE);
                         break;
 
                     case Constants.MOD_NAME + "_" + "kick": // SERVER-SIDE : Kick the client that asked to be kicked.

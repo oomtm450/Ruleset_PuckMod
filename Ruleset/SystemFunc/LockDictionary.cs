@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 
-namespace Ruleset.SystemFunc {
+namespace oomtm450PuckMod_Ruleset.SystemFunc {
     /// <summary>
     /// Class containing a dictionary with an integrated lock for easier async unsafe thread code management.
     /// </summary>

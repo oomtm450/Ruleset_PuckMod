@@ -1,4 +1,4 @@
-﻿namespace Ruleset {
+﻿namespace oomtm450PuckMod_Ruleset {
     internal class Penalty {
 
     }

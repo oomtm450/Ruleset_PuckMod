@@ -2,14 +2,13 @@
 using UnityEngine.Rendering;
 
 namespace oomtm450PuckMod_Ruleset.SystemFunc {
-    internal class ServerFunc {
+    internal static class ServerFunc {
         /// <summary>
         /// Function that returns true if the instance is a dedicated server.
         /// </summary>
         /// <returns>Bool, true if this is a dedicated server.</returns>
         internal static bool IsDedicatedServer() {
             return SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null;
-            //return ServerManager.Instance.IsServer;
         }
     }
 }
