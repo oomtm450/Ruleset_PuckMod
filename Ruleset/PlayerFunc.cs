@@ -44,7 +44,7 @@ namespace oomtm450PuckMod_Ruleset {
                             quaternion = Quaternion.Euler(0, 90, 0);
                     }
                     else
-                        xOffset = 4.25f;
+                        xOffset = 4.5f;
                     break;
                 case SystemFunc.PlayerFunc.RIGHT_DEFENDER_POSITION:
                     zOffset = 13.75f;
@@ -60,7 +60,7 @@ namespace oomtm450PuckMod_Ruleset {
                             quaternion = Quaternion.Euler(0, -90, 0);
                     }
                     else
-                        xOffset = -4.25f;
+                        xOffset = -4.5f;
                     break;
 
                 case SystemFunc.PlayerFunc.GOALIE_POSITION:
