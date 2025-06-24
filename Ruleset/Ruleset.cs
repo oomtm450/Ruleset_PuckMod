@@ -244,22 +244,20 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // High stick logic.
-                    if (stick.Player.Role.Value != PlayerRole.Goalie) {
-                        Puck puck = PuckManager.Instance.GetPuck();
-                        if (puck) {
-                            if (puck.Rigidbody.transform.position.y > _serverConfig.HighStickHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
-                                if (!_isHighStickActive[stick.Player.Team.Value]) {
-                                    _isHighStickActive[stick.Player.Team.Value] = true;
-                                    _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
-                                    UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM");
-                                }
+                    Puck puck = PuckManager.Instance.GetPuck();
+                    if (puck) {
+                        if (stick.Player.Role.Value != PlayerRole.Goalie && puck.Rigidbody.transform.position.y > _serverConfig.HighStickHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
+                            if (!_isHighStickActive[stick.Player.Team.Value]) {
+                                _isHighStickActive[stick.Player.Team.Value] = true;
+                                _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
+                                UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM");
                             }
-                            else if (puck.IsGrounded) {
-                                if (_isHighStickActive[stick.Player.Team.Value]) {
-                                    Faceoff.SetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
-                                    UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
-                                    DoFaceoff();
-                                }
+                        }
+                        else if (puck.IsGrounded) {
+                            if (_isHighStickActive[stick.Player.Team.Value]) {
+                                Faceoff.SetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                                UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
+                                DoFaceoff();
                             }
                         }
                     }
