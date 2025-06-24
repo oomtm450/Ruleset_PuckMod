@@ -38,7 +38,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private IEnumerator GetAudioClip(Uri uri, string name) {
-            UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(uri.AbsoluteUri + "/" + name, AudioType.MPEG);
+            UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(uri.AbsoluteUri + "/" + name, AudioType.OGGVORBIS);
             yield return webRequest.SendWebRequest();
 
             if (webRequest.result != UnityWebRequest.Result.Success)
