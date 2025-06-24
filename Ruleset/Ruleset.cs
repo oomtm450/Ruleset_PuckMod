@@ -903,7 +903,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             _paused = true;
 
-            NetworkCommunication.SendDataToAll("Sound", Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
+            NetworkCommunication.SendDataToAll("SoundStart", Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
             _currentFaceoffSound = Sounds.GetRandomFaceoffSound();
             NetworkCommunication.SendDataToAll("SoundStart", _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
 
