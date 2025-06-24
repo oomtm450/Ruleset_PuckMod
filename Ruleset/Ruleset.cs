@@ -1,7 +1,7 @@
 ﻿using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
-using Ruleset.SystemFunc;
+using SocketIOClient;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -82,7 +82,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// ServerConfig, config set by the client.
         /// </summary>
-        private static ClientConfig _clientConfig = new ClientConfig();
+        internal static ClientConfig _clientConfig = new ClientConfig();
 
         private static readonly LockDictionary<string, (PlayerTeam Team, bool IsOffside)> _isOffside = new LockDictionary<string, (PlayerTeam, bool)>();
 
@@ -148,6 +148,9 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool _paused = false;
 
         private static bool _doFaceoff = false;
+
+        // Client-side.
+        private static Sounds _sounds = null;
 
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
@@ -890,6 +893,8 @@ namespace oomtm450PuckMod_Ruleset {
 
             _paused = true;
 
+            NetworkCommunication.SendDataToAll(Sounds.WHISTLE, "1", Constants.FROM_SERVER, _serverConfig);
+
             _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
             GameManager.Instance.Server_Pause();
 
@@ -1129,6 +1134,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
                 NetworkCommunication.SendData(ServerConfig.CONFIG_DATA_NAME, _serverConfig.ToString(), player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
+                NetworkCommunication.SendData("loadsounds", "1", player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_OnPlayerSpawned.\n{ex}");
@@ -1163,6 +1169,25 @@ namespace oomtm450PuckMod_Ruleset {
                     case ServerConfig.CONFIG_DATA_NAME: // CLIENT-SIDE : Set the server config on the client to use later if needed.
                         if (!_serverConfig.SentByServer)
                             _serverConfig = ServerConfig.SetConfig(dataStr);
+                        break;
+
+                    case "loadsounds": // CLIENT-SIDE : Load sounds.
+                        if (dataStr != "1")
+                            break;
+                        GameObject gameObject = new GameObject("Sounds");
+                        _sounds = gameObject.AddComponent<Sounds>();
+                        _sounds.LoadWhistlePrefab();
+                        break;
+
+                    case Sounds.WHISTLE: // CLIENT-SIDE : Play whistle.
+                        if (dataStr != "1" || _sounds == null)
+                            break;
+                        if (_sounds._errors.Count != 0) {
+                            foreach (string error in _sounds._errors)
+                                Logging.LogError(error);
+                        }
+                        else
+                            _sounds.Play(Sounds.WHISTLE);
                         break;
 
                     case Constants.MOD_NAME + "_" + "kick": // SERVER-SIDE : Kick the client that asked to be kicked.
