@@ -9,12 +9,16 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 namespace oomtm450PuckMod_Ruleset {
-    public class Sounds : MonoBehaviour {
-        public const string SOUND_FOLDER_PATH = "sounds";
-        public const string WHISTLE = "whistle.ogg";
-        public Dictionary<string, GameObject> _soundObjects = new Dictionary<string, GameObject>();
-        public readonly List<AudioClip> _audioClips = new List<AudioClip>();
-        public List<string> _errors = new List<string>();
+    internal class Sounds : MonoBehaviour {
+        private const string SOUND_FOLDER_PATH = "sounds";
+        private const string SOUND_EXTENSION = ".ogg";
+        internal const string WHISTLE = "whistle";
+        private readonly List<string> SOUNDS_LIST = new List<string> {
+            WHISTLE,
+        };
+        private Dictionary<string, GameObject> _soundObjects = new Dictionary<string, GameObject>();
+        private readonly List<AudioClip> _audioClips = new List<AudioClip>();
+        internal List<string> _errors = new List<string>();
 
         internal void LoadWhistlePrefab() {
             try {
@@ -30,27 +34,29 @@ namespace oomtm450PuckMod_Ruleset {
                     return;
                 }
 
-                StartCoroutine(GetAudioClip(new Uri(Path.GetFullPath(fullPath)), WHISTLE)); // TODO : Send list and not only WHISTLE.
+                StartCoroutine(GetAudioClips(new Uri(Path.GetFullPath(fullPath)), SOUNDS_LIST)); // TODO : Send list and not only WHISTLE.
             }
             catch (Exception ex) {
                 Logging.LogError($"Error loading AssetBundle.\n{ex}");
             }
         }
 
-        private IEnumerator GetAudioClip(Uri uri, string name) {
-            UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(uri.AbsoluteUri + "/" + name, AudioType.OGGVORBIS);
-            yield return webRequest.SendWebRequest();
+        private IEnumerator GetAudioClips(Uri uri, List<string> names) {
+            foreach (string name in names) {
+                UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(uri.AbsoluteUri + "/" + name + SOUND_EXTENSION, AudioType.OGGVORBIS);
+                yield return webRequest.SendWebRequest();
 
-            if (webRequest.result != UnityWebRequest.Result.Success)
-                _errors.Add(webRequest.error);
-            else {
-                try {
-                    AudioClip clip = DownloadHandlerAudioClip.GetContent(webRequest);
-                    clip.name = name;
-                    _audioClips.Add(clip);
-                }
-                catch (Exception ex) {
-                    _errors.Add(ex.ToString());
+                if (webRequest.result != UnityWebRequest.Result.Success)
+                    _errors.Add(webRequest.error);
+                else {
+                    try {
+                        AudioClip clip = DownloadHandlerAudioClip.GetContent(webRequest);
+                        clip.name = name;
+                        _audioClips.Add(clip);
+                    }
+                    catch (Exception ex) {
+                        _errors.Add(ex.ToString());
+                    }
                 }
             }
         }

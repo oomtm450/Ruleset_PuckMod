@@ -21,7 +21,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.9.0";
+        private const string MOD_VERSION = "0.9.1DEV";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -411,8 +411,17 @@ namespace oomtm450PuckMod_Ruleset {
 
                     PlayerBodyV2 playerBody = GetPlayerBodyV2(collision.gameObject);
 
-                    if (!playerBody)
+                    if (!playerBody) {
+                        /*PlayerLegPad playerLegPad = GetPlayerLegPad(collision.gameObject);
+                        if (!playerLegPad)
+                            return;
+
+                        playerBody = playerLegPad.GetComponentInParent<PlayerBodyV2>();
+                        Logging.Log($"This is a pad !!!", _serverConfig);
+                        if (playerBody == null || !playerBody)
+                            return;*/
                         return;
+                    }
 
                     float force = Utils.GetCollisionForce(collision);
 
@@ -899,10 +908,6 @@ namespace oomtm450PuckMod_Ruleset {
 
             _ = Task.Run(() => {
                 Thread.Sleep(new System.Random().Next(millisecondsPauseMin, millisecondsPauseMax));
-
-                if (GameManager.Instance.GameState.Value.Phase != GamePhase.Playing) // TODO : Add other checks when game is started via chat etc.
-                    return;
-
                 _doFaceoff = true;
             });
         }
@@ -910,6 +915,9 @@ namespace oomtm450PuckMod_Ruleset {
         private static void PostDoFaceoff() {
             _doFaceoff = false;
             GameManager.Instance.Server_Resume();
+            if (GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                return;
+
             _changedPhase = true;
             GameManager.Instance.Server_SetPhase(GamePhase.FaceOff,
                 ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.phaseDurationMap[GamePhase.FaceOff]);
@@ -996,6 +1004,15 @@ namespace oomtm450PuckMod_Ruleset {
         /// <returns>PlayerBodyV2, found PlayerBodyV2 object or null.</returns>
         private static PlayerBodyV2 GetPlayerBodyV2(GameObject gameObject) {
             return gameObject.GetComponent<PlayerBodyV2>();
+        }
+
+        /// <summary>
+        /// Function that returns a PlayerLegPad instance from a GameObject.
+        /// </summary>
+        /// <param name="gameObject">GameObject, GameObject to use.</param>
+        /// <returns>PlayerLegPad, found PlayerLegPad object or null.</returns>
+        private static PlayerLegPad GetPlayerLegPad(GameObject gameObject) {
+            return gameObject.GetComponent<PlayerLegPad>();
         }
 
         /// <summary>
