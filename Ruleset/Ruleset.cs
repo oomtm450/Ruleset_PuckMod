@@ -669,6 +669,8 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             return true;
                     }
+                    else if (_doFaceoff)
+                        PostDoFaceoff();
 
                     players = PlayerManager.Instance.GetPlayers();
                     puck = PuckManager.Instance.GetPuck();
