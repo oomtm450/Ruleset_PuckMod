@@ -66,7 +66,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private const float GINT_COLLISION_FORCE_THRESHOLD = 1f;
 
-        private const int MAX_ICING_TIMER = 7000;
+        private const int MAX_ICING_TIMER = 12000;
         #endregion
 
         #region Fields
