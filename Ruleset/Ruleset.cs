@@ -1198,7 +1198,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
                         GameObject gameObject = new GameObject("Sounds");
                         _sounds = gameObject.AddComponent<Sounds>();
-                        _sounds.LoadWhistlePrefab();
+                        _sounds.LoadSounds();
                         break;
 
                     case Sounds.PLAY_SOUND: // CLIENT-SIDE : Play sound.
@@ -1209,10 +1209,12 @@ namespace oomtm450PuckMod_Ruleset {
                                 Logging.LogError(error);
                         }
                         else {
-                            if (dataStr == Sounds.FACEOFF_MUSIC)
+                            if (dataStr == Sounds.FACEOFF_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomFaceoffSound();
-
-                            _sounds.Play(_currentMusicPlaying);
+                                _sounds.Play(_currentMusicPlaying);
+                            }
+                            else if (dataStr == Sounds.WHISTLE)
+                                _sounds.Play(Sounds.WHISTLE);
                         }
                         break;
 
@@ -1223,8 +1225,12 @@ namespace oomtm450PuckMod_Ruleset {
                             foreach (string error in _sounds._errors)
                                 Logging.LogError(error);
                         }
-                        else
-                            _sounds.Stop(dataStr);
+                        else {
+                            if (dataStr == Sounds.FACEOFF_MUSIC)
+                                _sounds.Stop(_currentMusicPlaying);
+
+                            _currentMusicPlaying = "";
+                        }
                         break;
 
                     case Constants.MOD_NAME + "_" + "kick": // SERVER-SIDE : Kick the client that asked to be kicked.

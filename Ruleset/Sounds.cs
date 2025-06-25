@@ -18,7 +18,7 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string PLAY_SOUND = "playsound";
         internal const string STOP_SOUND = "stopsound";
 
-        internal const string WHISTLE = "whistle";
+        internal const string WHISTLE = "whistle" + SOUND_EXTENSION;
         internal const string FACEOFF_MUSIC = "faceoffmusic";
 
         internal static List<string> faceoffMusicList = new List<string>();
@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         private readonly List<AudioClip> _audioClips = new List<AudioClip>();
         internal List<string> _errors = new List<string>();
 
-        internal void LoadWhistlePrefab() {
+        internal void LoadSounds() {
             try {
                 if (_audioClips.Count != 0)
                     return;
@@ -42,6 +42,15 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 Uri uri = new Uri(Path.GetFullPath(fullPath));
+                foreach (string file in Directory.GetFiles(uri.AbsolutePath, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
+                    //string path = name.Replace('\\', '/');
+                    //if (!path.StartsWith("file://"))
+                        //path = "file://" + path;
+
+                    string test = new Uri(Path.GetFullPath(file)).AbsolutePath;
+                    Logging.Log(test, Ruleset._clientConfig, true);
+                    Logging.Log(test.Substring(test.LastIndexOf('/') + 1, test.Length - test.LastIndexOf('/') - 1), Ruleset._clientConfig, true);
+                }
                 StartCoroutine(GetAudioClips(uri));
             }
             catch (Exception ex) {
@@ -50,8 +59,9 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private IEnumerator GetAudioClips(Uri uri) {
-            foreach (string name in Directory.GetFiles(uri.AbsolutePath, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
-                UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(name + SOUND_EXTENSION, AudioType.OGGVORBIS);
+            foreach (string file in Directory.GetFiles(uri.AbsolutePath, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
+                string path = new Uri(Path.GetFullPath(file)).AbsolutePath;
+                UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(path, AudioType.OGGVORBIS);
                 yield return webRequest.SendWebRequest();
 
                 if (webRequest.result != UnityWebRequest.Result.Success)
@@ -59,10 +69,10 @@ namespace oomtm450PuckMod_Ruleset {
                 else {
                     try {
                         AudioClip clip = DownloadHandlerAudioClip.GetContent(webRequest);
-                        clip.name = name;
+                        clip.name = path.Substring(path.LastIndexOf('/') + 1, path.Length - path.LastIndexOf('/') - 1);
                         _audioClips.Add(clip);
-                        if (name.Contains(FACEOFF_MUSIC))
-                            faceoffMusicList.Add(name);
+                        if (clip.name.Contains(FACEOFF_MUSIC))
+                            faceoffMusicList.Add(clip.name);
                     }
                     catch (Exception ex) {
                         _errors.Add(ex.ToString());
