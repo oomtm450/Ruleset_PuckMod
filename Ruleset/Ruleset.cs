@@ -21,7 +21,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.10.1DEV";
+        private const string MOD_VERSION = "0.10.1";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1077,11 +1077,10 @@ namespace oomtm450PuckMod_Ruleset {
         }
         
         private static bool PuckIsTipped(string playerSteamId) {
-            Stopwatch currentPuckTouchWatch, lastPuckExitWatch;
-            if (!_playersCurrentPuckTouch.TryGetValue(playerSteamId, out currentPuckTouchWatch))
+            if (!_playersCurrentPuckTouch.TryGetValue(playerSteamId, out Stopwatch currentPuckTouchWatch))
                 return false;
 
-            if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(playerSteamId, out lastPuckExitWatch))
+            if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(playerSteamId, out Stopwatch lastPuckExitWatch))
                 return false;
 
             if (currentPuckTouchWatch.ElapsedMilliseconds - lastPuckExitWatch.ElapsedMilliseconds < MAX_TIPPED_MILLISECONDS)
