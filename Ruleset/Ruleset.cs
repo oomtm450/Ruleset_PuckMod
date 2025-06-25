@@ -554,8 +554,6 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(GamePhase phase, int time) {
                 try {
                     if (phase == GamePhase.FaceOff) {
-                        NetworkCommunication.SendDataToAll("SoundEnd", _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
-
                         if (NextFaceoffSpot == FaceoffSpot.Center)
                             return;
 
@@ -565,6 +563,10 @@ namespace oomtm450PuckMod_Ruleset {
                         foreach (Player player in players)
                             PlayerFunc.TeleportOnFaceoff(player, dot, NextFaceoffSpot);
 
+                        return;
+                    }
+                    else if (phase == GamePhase.Playing) {
+                        NetworkCommunication.SendDataToAll("SoundEnd", _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
                         return;
                     }
                 }
