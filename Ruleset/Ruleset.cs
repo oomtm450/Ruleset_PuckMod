@@ -21,7 +21,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.9.0";
+        private const string MOD_VERSION = "0.9.1";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -148,6 +148,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static bool _doFaceoff = false;
 
+        private static string _currentFaceoffSound = "";
+
         // Client-side.
         private static Sounds _sounds = null;
 
@@ -244,22 +246,20 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // High stick logic.
-                    if (stick.Player.Role.Value != PlayerRole.Goalie) {
-                        Puck puck = PuckManager.Instance.GetPuck();
-                        if (puck) {
-                            if (puck.Rigidbody.transform.position.y > _serverConfig.HighStickHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
-                                if (!_isHighStickActive[stick.Player.Team.Value]) {
-                                    _isHighStickActive[stick.Player.Team.Value] = true;
-                                    _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
-                                    UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM");
-                                }
+                    Puck puck = PuckManager.Instance.GetPuck();
+                    if (puck) {
+                        if (stick.Player.Role.Value != PlayerRole.Goalie && puck.Rigidbody.transform.position.y > _serverConfig.HighStickHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
+                            if (!_isHighStickActive[stick.Player.Team.Value]) {
+                                _isHighStickActive[stick.Player.Team.Value] = true;
+                                _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
+                                UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM");
                             }
-                            else if (puck.IsGrounded) {
-                                if (_isHighStickActive[stick.Player.Team.Value]) {
-                                    Faceoff.SetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
-                                    UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
-                                    DoFaceoff();
-                                }
+                        }
+                        else if (puck.IsGrounded) {
+                            if (_isHighStickActive[stick.Player.Team.Value]) {
+                                Faceoff.SetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                                UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
+                                DoFaceoff();
                             }
                         }
                     }
@@ -411,8 +411,17 @@ namespace oomtm450PuckMod_Ruleset {
 
                     PlayerBodyV2 playerBody = GetPlayerBodyV2(collision.gameObject);
 
-                    if (!playerBody)
+                    if (!playerBody) {
+                        /*PlayerLegPad playerLegPad = GetPlayerLegPad(collision.gameObject);
+                        if (!playerLegPad)
+                            return;
+
+                        playerBody = playerLegPad.GetComponentInParent<PlayerBodyV2>();
+                        Logging.Log($"This is a pad !!!", _serverConfig);
+                        if (playerBody == null || !playerBody)
+                            return;*/
                         return;
+                    }
 
                     float force = Utils.GetCollisionForce(collision);
 
@@ -554,6 +563,10 @@ namespace oomtm450PuckMod_Ruleset {
                         foreach (Player player in players)
                             PlayerFunc.TeleportOnFaceoff(player, dot, NextFaceoffSpot);
 
+                        return;
+                    }
+                    else if (phase == GamePhase.Playing) {
+                        NetworkCommunication.SendDataToAll("SoundEnd", _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
                         return;
                     }
                 }
@@ -886,23 +899,21 @@ namespace oomtm450PuckMod_Ruleset {
                 _isHighStickActive[key] = false;
         }
 
-        private static void DoFaceoff(int millisecondsPauseMin = 3000, int millisecondsPauseMax = 4000) {
+        private static void DoFaceoff(int millisecondsPauseMin = 3500, int millisecondsPauseMax = 5000) {
             if (_paused)
                 return;
 
             _paused = true;
 
-            NetworkCommunication.SendDataToAll(Sounds.WHISTLE, "1", Constants.FROM_SERVER, _serverConfig);
+            NetworkCommunication.SendDataToAll("SoundStart", Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
+            _currentFaceoffSound = Sounds.GetRandomFaceoffSound();
+            NetworkCommunication.SendDataToAll("SoundStart", _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
 
             _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
             GameManager.Instance.Server_Pause();
 
             _ = Task.Run(() => {
                 Thread.Sleep(new System.Random().Next(millisecondsPauseMin, millisecondsPauseMax));
-
-                if (GameManager.Instance.GameState.Value.Phase != GamePhase.Playing) // TODO : Add other checks when game is started via chat etc.
-                    return;
-
                 _doFaceoff = true;
             });
         }
@@ -910,6 +921,9 @@ namespace oomtm450PuckMod_Ruleset {
         private static void PostDoFaceoff() {
             _doFaceoff = false;
             GameManager.Instance.Server_Resume();
+            if (GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                return;
+
             _changedPhase = true;
             GameManager.Instance.Server_SetPhase(GamePhase.FaceOff,
                 ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.phaseDurationMap[GamePhase.FaceOff]);
@@ -996,6 +1010,15 @@ namespace oomtm450PuckMod_Ruleset {
         /// <returns>PlayerBodyV2, found PlayerBodyV2 object or null.</returns>
         private static PlayerBodyV2 GetPlayerBodyV2(GameObject gameObject) {
             return gameObject.GetComponent<PlayerBodyV2>();
+        }
+
+        /// <summary>
+        /// Function that returns a PlayerLegPad instance from a GameObject.
+        /// </summary>
+        /// <param name="gameObject">GameObject, GameObject to use.</param>
+        /// <returns>PlayerLegPad, found PlayerLegPad object or null.</returns>
+        private static PlayerLegPad GetPlayerLegPad(GameObject gameObject) {
+            return gameObject.GetComponent<PlayerLegPad>();
         }
 
         /// <summary>
@@ -1178,15 +1201,26 @@ namespace oomtm450PuckMod_Ruleset {
                         _sounds.LoadWhistlePrefab();
                         break;
 
-                    case Sounds.WHISTLE: // CLIENT-SIDE : Play whistle.
-                        if (dataStr != "1" || _sounds == null)
+                    case "SoundStart": // CLIENT-SIDE : Play sound.
+                        if (_sounds == null)
                             break;
                         if (_sounds._errors.Count != 0) {
                             foreach (string error in _sounds._errors)
                                 Logging.LogError(error);
                         }
                         else
-                            _sounds.Play(Sounds.WHISTLE);
+                            _sounds.Play(dataStr);
+                        break;
+
+                    case "SoundEnd": // CLIENT-SIDE : Stop sound.
+                        if (_sounds == null)
+                            break;
+                        if (_sounds._errors.Count != 0) {
+                            foreach (string error in _sounds._errors)
+                                Logging.LogError(error);
+                        }
+                        else
+                            _sounds.Stop(dataStr);
                         break;
 
                     case Constants.MOD_NAME + "_" + "kick": // SERVER-SIDE : Kick the client that asked to be kicked.
