@@ -1131,6 +1131,8 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 _serverConfig = new ServerConfig();
+                if (!string.IsNullOrEmpty(_currentMusicPlaying))
+                    _sounds.Stop(_currentMusicPlaying);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_Client_OnClientStopped.\n{ex}");
