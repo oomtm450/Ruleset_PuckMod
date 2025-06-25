@@ -34,6 +34,11 @@ namespace oomtm450PuckMod_Ruleset {
         private const float PLAYER_RADIUS = 0.25f;
 
         /// <summary>
+        /// Const float, radius of a goalie.
+        /// </summary>
+        private const float GOALIE_RADIUS = 0.75f;
+
+        /// <summary>
         /// Const float, height of the net's crossbar.
         /// </summary>
         private const float CROSSBAR_HEIGHT = 1.8f;
@@ -64,7 +69,7 @@ namespace oomtm450PuckMod_Ruleset {
         private const int GINT_PUSH_NO_GOAL_MILLISECONDS = 300;
         private const int GINT_HIT_NO_GOAL_MILLISECONDS = 800; // TODO : Remove when penalty is added.
 
-        private const float GINT_COLLISION_FORCE_THRESHOLD = 1f;
+        private const float GINT_COLLISION_FORCE_THRESHOLD = 0.975f;
 
         private const int MAX_ICING_TIMER = 12000;
         #endregion
@@ -462,10 +467,10 @@ namespace oomtm450PuckMod_Ruleset {
                         (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[ArenaElement.RedTeam_BluePaint];
                     }
 
-                    if (goalie.PlayerBody.Rigidbody.transform.position.x - PLAYER_RADIUS < startX ||
-                        goalie.PlayerBody.Rigidbody.transform.position.x + PLAYER_RADIUS > endX ||
-                        goalie.PlayerBody.Rigidbody.transform.position.z - PLAYER_RADIUS < startZ ||
-                        goalie.PlayerBody.Rigidbody.transform.position.z + PLAYER_RADIUS > endZ)
+                    if (goalie.PlayerBody.Rigidbody.transform.position.x - GOALIE_RADIUS < startX ||
+                        goalie.PlayerBody.Rigidbody.transform.position.x + GOALIE_RADIUS > endX ||
+                        goalie.PlayerBody.Rigidbody.transform.position.z - GOALIE_RADIUS < startZ ||
+                        goalie.PlayerBody.Rigidbody.transform.position.z + GOALIE_RADIUS > endZ)
                         return;
 
                     PlayerTeam goalieOtherTeam = TeamFunc.GetOtherTeam(goalie.Team.Value);
@@ -561,7 +566,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                 return true;
             }
-
 
             [HarmonyPostfix]
             public static void Postfix(GamePhase phase, int time) {
