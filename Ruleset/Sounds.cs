@@ -126,6 +126,7 @@ namespace oomtm450PuckMod_Ruleset {
                 soundObject.GetComponent<AudioSource>().clip = clip;
                 _soundObjects.Add(name, soundObject);
             }
+            soundObject.GetComponent<AudioSource>().volume = SettingsManager.Instance.GlobalVolume;
             soundObject.GetComponent<AudioSource>().Play();
         }
 
