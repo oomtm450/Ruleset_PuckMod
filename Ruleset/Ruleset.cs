@@ -903,6 +903,8 @@ namespace oomtm450PuckMod_Ruleset {
             _isIcingPossible[team] = false;
             _isIcingActive[team] = false;
             _isIcingActiveTimers[team].Change(Timeout.Infinite, Timeout.Infinite);
+
+            UIChat.Instance.Server_SendSystemChatMessage($"ICING {team.ToString().ToUpperInvariant()} TEAM CALLED OFF");
         }
 
         private static void ResetGoalieInt() {
