@@ -2,7 +2,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -20,6 +19,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal const string WHISTLE = "whistle" + SOUND_EXTENSION;
         internal const string FACEOFF_MUSIC = "faceoffmusic";
+        internal const string FACEOFF_MUSIC_DELAYED = "faceoffmusicdelayed";
 
         internal static List<string> faceoffMusicList = new List<string>();
 

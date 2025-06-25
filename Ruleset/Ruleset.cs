@@ -938,7 +938,7 @@ namespace oomtm450PuckMod_Ruleset {
             _paused = true;
 
             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
-            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FACEOFF_MUSIC, Constants.FROM_SERVER, _serverConfig);
+            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FACEOFF_MUSIC_DELAYED, Constants.FROM_SERVER, _serverConfig);
 
             _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
             GameManager.Instance.Server_Pause();
@@ -1238,6 +1238,10 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         else {
                             if (dataStr == Sounds.FACEOFF_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomFaceoffSound();
+                                _sounds.Play(_currentMusicPlaying);
+                            }
+                            else if (dataStr == Sounds.FACEOFF_MUSIC_DELAYED) {
                                 _currentMusicPlaying = Sounds.GetRandomFaceoffSound();
                                 _sounds.Play(_currentMusicPlaying, 1f);
                             }
