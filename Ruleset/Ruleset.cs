@@ -148,12 +148,12 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static bool _doFaceoff = false;
 
-        private static string _currentFaceoffSound = "";
-
         private static bool _hasRegisteredWithNamedMessageHandler = false;
 
         // Client-side.
         private static Sounds _sounds = null;
+
+        private static string _currentMusicPlaying = "";
 
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
@@ -568,7 +568,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
                     }
                     else if (phase == GamePhase.Playing) {
-                        NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
+                        NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.FACEOFF_MUSIC, Constants.FROM_SERVER, _serverConfig);
                         return;
                     }
                 }
@@ -908,8 +908,7 @@ namespace oomtm450PuckMod_Ruleset {
             _paused = true;
 
             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
-            _currentFaceoffSound = Sounds.GetRandomFaceoffSound();
-            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
+            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FACEOFF_MUSIC, Constants.FROM_SERVER, _serverConfig);
 
             _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
             GameManager.Instance.Server_Pause();
@@ -1205,8 +1204,12 @@ namespace oomtm450PuckMod_Ruleset {
                             foreach (string error in _sounds._errors)
                                 Logging.LogError(error);
                         }
-                        else
-                            _sounds.Play(dataStr);
+                        else {
+                            if (dataStr == Sounds.FACEOFF_MUSIC)
+                                _currentMusicPlaying = Sounds.GetRandomFaceoffSound();
+
+                            _sounds.Play(_currentMusicPlaying);
+                        }
                         break;
 
                     case Sounds.STOP_SOUND: // CLIENT-SIDE : Stop sound.
