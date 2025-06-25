@@ -72,7 +72,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        internal void Play(string name) {
+        internal void Play(string name, float delay = 0) {
             if (!_soundObjects.TryGetValue(name, out GameObject soundObject)) {
                 AudioClip clip = _audioClips.FirstOrDefault(x => x.name == name);
                 if (clip == null)
@@ -84,7 +84,10 @@ namespace oomtm450PuckMod_Ruleset {
                 _soundObjects.Add(name, soundObject);
             }
             soundObject.GetComponent<AudioSource>().volume = SettingsManager.Instance.GlobalVolume;
-            soundObject.GetComponent<AudioSource>().Play();
+            if (delay == 0)
+                soundObject.GetComponent<AudioSource>().Play();
+            else
+                soundObject.GetComponent<AudioSource>().PlayDelayed(delay);
         }
 
         internal void Stop(string name) {

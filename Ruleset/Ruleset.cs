@@ -680,6 +680,15 @@ namespace oomtm450PuckMod_Ruleset {
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PUCK_RADIUS);
 
                     // Icing logic.
+                    if (!_isIcingPossible[PlayerTeam.Blue] && _isIcingActive[PlayerTeam.Blue]) {
+                        _isIcingActive[PlayerTeam.Blue] = false;
+                        UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Blue.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                    }
+                    if (!_isIcingPossible[PlayerTeam.Red] && _isIcingActive[PlayerTeam.Red]) {
+                        _isIcingActive[PlayerTeam.Red] = false;
+                        UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Red.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                    }
+
                     if (_isIcingPossible[PlayerTeam.Blue] && _puckZone == Zone.RedTeam_BehindGoalLine) {
                         if (!IsIcing(PlayerTeam.Blue)) {
                             _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
@@ -899,12 +908,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void ResetIcingCallback(object stateInfo) {
             PlayerTeam team = (PlayerTeam)stateInfo;
-
             _isIcingPossible[team] = false;
-            _isIcingActive[team] = false;
-            _isIcingActiveTimers[team].Change(Timeout.Infinite, Timeout.Infinite);
-
-            UIChat.Instance.Server_SendSystemChatMessage($"ICING {team.ToString().ToUpperInvariant()} TEAM CALLED OFF");
         }
 
         private static void ResetGoalieInt() {
@@ -1235,7 +1239,7 @@ namespace oomtm450PuckMod_Ruleset {
                         else {
                             if (dataStr == Sounds.FACEOFF_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomFaceoffSound();
-                                _sounds.Play(_currentMusicPlaying);
+                                _sounds.Play(_currentMusicPlaying, 1f);
                             }
                             else if (dataStr == Sounds.WHISTLE)
                                 _sounds.Play(Sounds.WHISTLE);
