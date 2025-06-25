@@ -568,7 +568,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
                     }
                     else if (phase == GamePhase.Playing) {
-                        NetworkCommunication.SendDataToAll("SoundEnd", _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
+                        NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
                         return;
                     }
                 }
@@ -907,9 +907,9 @@ namespace oomtm450PuckMod_Ruleset {
 
             _paused = true;
 
-            NetworkCommunication.SendDataToAll("SoundStart", Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
+            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
             _currentFaceoffSound = Sounds.GetRandomFaceoffSound();
-            NetworkCommunication.SendDataToAll("SoundStart", _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
+            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
 
             _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
             GameManager.Instance.Server_Pause();
@@ -1153,7 +1153,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
                 NetworkCommunication.SendData(ServerConfig.CONFIG_DATA_NAME, _serverConfig.ToString(), player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
-                NetworkCommunication.SendData("loadsounds", "1", player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
+                NetworkCommunication.SendData(Sounds.LOAD_SOUNDS, "1", player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_OnPlayerSpawned.\n{ex}");
@@ -1198,7 +1198,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _sounds.LoadWhistlePrefab();
                         break;
 
-                    case "SoundStart": // CLIENT-SIDE : Play sound.
+                    case Sounds.PLAY_SOUND: // CLIENT-SIDE : Play sound.
                         if (_sounds == null)
                             break;
                         if (_sounds._errors.Count != 0) {
@@ -1209,7 +1209,7 @@ namespace oomtm450PuckMod_Ruleset {
                             _sounds.Play(dataStr);
                         break;
 
-                    case "SoundEnd": // CLIENT-SIDE : Stop sound.
+                    case Sounds.STOP_SOUND: // CLIENT-SIDE : Stop sound.
                         if (_sounds == null)
                             break;
                         if (_sounds._errors.Count != 0) {

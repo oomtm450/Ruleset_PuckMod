@@ -14,6 +14,10 @@ namespace oomtm450PuckMod_Ruleset {
         private const string SOUND_FOLDER_PATH = "sounds";
         private const string SOUND_EXTENSION = ".ogg";
 
+        internal const string LOAD_SOUNDS = "loadsounds";
+        internal const string PLAY_SOUND = "playsound";
+        internal const string STOP_SOUND = "stopsound";
+
         internal const string WHISTLE = "whistle";
 
         internal const string MUSIC1 = "music1";
