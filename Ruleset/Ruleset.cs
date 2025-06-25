@@ -1337,9 +1337,9 @@ namespace oomtm450PuckMod_Ruleset {
                 Logging.Log($"Disabling...", _serverConfig, true);
 
                 if (ServerFunc.IsDedicatedServer())
-                    NetworkManager.Singleton?.CustomMessagingManager.UnregisterNamedMessageHandler(Constants.FROM_CLIENT);
+                    NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT);
                 else
-                    NetworkManager.Singleton?.CustomMessagingManager.UnregisterNamedMessageHandler(Constants.FROM_SERVER);
+                    NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER);
 
                 _hasRegisteredWithNamedMessageHandler = false;
 
