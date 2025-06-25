@@ -150,6 +150,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static string _currentFaceoffSound = "";
 
+        private static bool _hasRegisteredWithNamedMessageHandler = false;
+
         // Client-side.
         private static Sounds _sounds = null;
 
@@ -1117,7 +1119,13 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log("Event_Client_OnClientStarted", _clientConfig);
 
             try {
+                if (NetworkManager.Singleton != null && !_hasRegisteredWithNamedMessageHandler) {
+                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
+                    _hasRegisteredWithNamedMessageHandler = true;
+                }
+
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_SERVER, ReceiveData);
+                _hasRegisteredWithNamedMessageHandler = true;
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_Client_OnClientStarted.\n{ex}");
@@ -1252,7 +1260,10 @@ namespace oomtm450PuckMod_Ruleset {
 
                 if (ServerFunc.IsDedicatedServer()) {
                     Logging.Log("Setting server sided config.", _serverConfig, true);
-                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
+                    if (NetworkManager.Singleton != null) {
+                        NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
+                        _hasRegisteredWithNamedMessageHandler = true;
+                    }
 
                     _serverConfig = ServerConfig.ReadConfig(ServerManager.Instance.AdminSteamIds);
                 }
@@ -1290,6 +1301,13 @@ namespace oomtm450PuckMod_Ruleset {
                 EventManager.Instance.RemoveEventListener("Event_OnPlayerSpawned", Event_OnPlayerSpawned);
 
                 Logging.Log($"Disabling...", _serverConfig, true);
+
+                if (ServerFunc.IsDedicatedServer())
+                    NetworkManager.Singleton?.CustomMessagingManager.UnregisterNamedMessageHandler(Constants.FROM_CLIENT);
+                else
+                    NetworkManager.Singleton?.CustomMessagingManager.UnregisterNamedMessageHandler(Constants.FROM_SERVER);
+
+                _hasRegisteredWithNamedMessageHandler = false;
 
                 _getStickLocation.Disable();
                 _harmony.UnpatchSelf();
