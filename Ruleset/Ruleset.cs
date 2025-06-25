@@ -536,8 +536,12 @@ namespace oomtm450PuckMod_Ruleset {
                             _lastPlayerOnPuckSteamId[key] = "";
                     }
 
-                    if (!_changedPhase)
+                    if (!_changedPhase)  {
+                        if (phase == GamePhase.FaceOff)
+                            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FACEOFF_MUSIC, Constants.FROM_SERVER, _serverConfig);
+
                         return true;
+                    }
 
                     if (phase == GamePhase.Playing) {
                         _changedPhase = false;
