@@ -42,15 +42,6 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 Uri uri = new Uri(Path.GetFullPath(fullPath));
-                foreach (string file in Directory.GetFiles(uri.AbsolutePath, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
-                    //string path = name.Replace('\\', '/');
-                    //if (!path.StartsWith("file://"))
-                        //path = "file://" + path;
-
-                    string test = new Uri(Path.GetFullPath(file)).AbsolutePath;
-                    Logging.Log(test, Ruleset._clientConfig, true);
-                    Logging.Log(test.Substring(test.LastIndexOf('/') + 1, test.Length - test.LastIndexOf('/') - 1), Ruleset._clientConfig, true);
-                }
                 StartCoroutine(GetAudioClips(uri));
             }
             catch (Exception ex) {
