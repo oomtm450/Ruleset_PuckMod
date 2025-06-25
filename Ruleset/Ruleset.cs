@@ -390,7 +390,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         Puck puck = PuckManager.Instance.GetPuck();
                         if (puck)
-                            _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
+                            _puckLastStateBeforeCall[Rule.GoalieInt] = _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
                     }
 
                     // Icing logic.
