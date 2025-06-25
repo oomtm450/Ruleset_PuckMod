@@ -17,7 +17,7 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string PLAY_SOUND = "playsound";
         internal const string STOP_SOUND = "stopsound";
 
-        internal const string WHISTLE = "whistle" + SOUND_EXTENSION;
+        internal const string WHISTLE = "whistle";
         internal const string FACEOFF_MUSIC = "faceoffmusic";
         internal const string FACEOFF_MUSIC_DELAYED = "faceoffmusicdelayed";
 
@@ -41,18 +41,17 @@ namespace oomtm450PuckMod_Ruleset {
                     return;
                 }
 
-                Uri uri = new Uri(Path.GetFullPath(fullPath));
-                StartCoroutine(GetAudioClips(uri));
+                StartCoroutine(GetAudioClips(fullPath));
             }
             catch (Exception ex) {
                 Logging.LogError($"Error loading AssetBundle.\n{ex}");
             }
         }
 
-        private IEnumerator GetAudioClips(Uri uri) {
-            foreach (string file in Directory.GetFiles(uri.AbsolutePath, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
-                string path = new Uri(Path.GetFullPath(file)).AbsolutePath;
-                UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(path, AudioType.OGGVORBIS);
+        private IEnumerator GetAudioClips(string path) {
+            foreach (string file in Directory.GetFiles(path, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
+                string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
+                UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS);
                 yield return webRequest.SendWebRequest();
 
                 if (webRequest.result != UnityWebRequest.Result.Success)
@@ -60,7 +59,7 @@ namespace oomtm450PuckMod_Ruleset {
                 else {
                     try {
                         AudioClip clip = DownloadHandlerAudioClip.GetContent(webRequest);
-                        clip.name = path.Substring(path.LastIndexOf('/') + 1, path.Length - path.LastIndexOf('/') - 1);
+                        clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
                         _audioClips.Add(clip);
                         if (clip.name.Contains(FACEOFF_MUSIC))
                             faceoffMusicList.Add(clip.name);
@@ -73,6 +72,9 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal void Play(string name, float delay = 0) {
+            if (string.IsNullOrEmpty(name))
+                return;
+
             if (!_soundObjects.TryGetValue(name, out GameObject soundObject)) {
                 AudioClip clip = _audioClips.FirstOrDefault(x => x.name == name);
                 if (clip == null)
@@ -91,13 +93,16 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal void Stop(string name) {
-            if (!_soundObjects.TryGetValue(name, out GameObject soundObject))
+            if (string.IsNullOrEmpty(name) || !_soundObjects.TryGetValue(name, out GameObject soundObject))
                 return;
             soundObject.GetComponent<AudioSource>().Stop();
         }
 
         internal static string GetRandomFaceoffSound() {
-            return faceoffMusicList[new System.Random().Next(0, faceoffMusicList.Count - 1)];
+            if (faceoffMusicList.Count != 0)
+                return faceoffMusicList[new System.Random().Next(0, faceoffMusicList.Count - 1)];
+
+            return "";
         }
     }
 }

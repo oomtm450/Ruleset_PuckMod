@@ -21,7 +21,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.10.0";
+        private const string MOD_VERSION = "0.10.1";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -32,6 +32,11 @@ namespace oomtm450PuckMod_Ruleset {
         /// Const float, radius of a player.
         /// </summary>
         private const float PLAYER_RADIUS = 0.25f;
+
+        /// <summary>
+        /// Const float, radius of a goalie.
+        /// </summary>
+        private const float GOALIE_RADIUS = 0.75f;
 
         /// <summary>
         /// Const float, height of the net's crossbar.
@@ -64,7 +69,7 @@ namespace oomtm450PuckMod_Ruleset {
         private const int GINT_PUSH_NO_GOAL_MILLISECONDS = 300;
         private const int GINT_HIT_NO_GOAL_MILLISECONDS = 800; // TODO : Remove when penalty is added.
 
-        private const float GINT_COLLISION_FORCE_THRESHOLD = 1f;
+        private const float GINT_COLLISION_FORCE_THRESHOLD = 0.975f;
 
         private const int MAX_ICING_TIMER = 12000;
         #endregion
@@ -385,7 +390,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         Puck puck = PuckManager.Instance.GetPuck();
                         if (puck)
-                            _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
+                            _puckLastStateBeforeCall[Rule.GoalieInt] = _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
                     }
 
                     // Icing logic.
@@ -462,10 +467,10 @@ namespace oomtm450PuckMod_Ruleset {
                         (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[ArenaElement.RedTeam_BluePaint];
                     }
 
-                    if (goalie.PlayerBody.Rigidbody.transform.position.x - PLAYER_RADIUS < startX ||
-                        goalie.PlayerBody.Rigidbody.transform.position.x + PLAYER_RADIUS > endX ||
-                        goalie.PlayerBody.Rigidbody.transform.position.z - PLAYER_RADIUS < startZ ||
-                        goalie.PlayerBody.Rigidbody.transform.position.z + PLAYER_RADIUS > endZ)
+                    if (goalie.PlayerBody.Rigidbody.transform.position.x - GOALIE_RADIUS < startX ||
+                        goalie.PlayerBody.Rigidbody.transform.position.x + GOALIE_RADIUS > endX ||
+                        goalie.PlayerBody.Rigidbody.transform.position.z - GOALIE_RADIUS < startZ ||
+                        goalie.PlayerBody.Rigidbody.transform.position.z + GOALIE_RADIUS > endZ)
                         return;
 
                     PlayerTeam goalieOtherTeam = TeamFunc.GetOtherTeam(goalie.Team.Value);
@@ -561,7 +566,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                 return true;
             }
-
 
             [HarmonyPostfix]
             public static void Postfix(GamePhase phase, int time) {
@@ -665,6 +669,8 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             return true;
                     }
+                    else if (_doFaceoff)
+                        PostDoFaceoff();
 
                     players = PlayerManager.Instance.GetPlayers();
                     puck = PuckManager.Instance.GetPuck();
@@ -1071,11 +1077,10 @@ namespace oomtm450PuckMod_Ruleset {
         }
         
         private static bool PuckIsTipped(string playerSteamId) {
-            Stopwatch currentPuckTouchWatch, lastPuckExitWatch;
-            if (!_playersCurrentPuckTouch.TryGetValue(playerSteamId, out currentPuckTouchWatch))
+            if (!_playersCurrentPuckTouch.TryGetValue(playerSteamId, out Stopwatch currentPuckTouchWatch))
                 return false;
 
-            if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(playerSteamId, out lastPuckExitWatch))
+            if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(playerSteamId, out Stopwatch lastPuckExitWatch))
                 return false;
 
             if (currentPuckTouchWatch.ElapsedMilliseconds - lastPuckExitWatch.ElapsedMilliseconds < MAX_TIPPED_MILLISECONDS)
@@ -1213,7 +1218,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (MOD_VERSION == dataStr) // TODO : Move the kick later so that it doesn't break anything. Maybe even add a chat message and a 3-5 sec wait.
                             break;
 
-                        NetworkCommunication.SendData(Constants.MOD_NAME + "_" + "kick", "1", clientId, Constants.FROM_SERVER, _clientConfig);
+                        NetworkCommunication.SendData(Constants.MOD_NAME + "_kick", "1", clientId, Constants.FROM_CLIENT, _clientConfig);
                         break;
 
                     case ServerConfig.CONFIG_DATA_NAME: // CLIENT-SIDE : Set the server config on the client to use later if needed.
@@ -1265,7 +1270,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
-                    case Constants.MOD_NAME + "_" + "kick": // SERVER-SIDE : Kick the client that asked to be kicked.
+                    case Constants.MOD_NAME + "_kick": // SERVER-SIDE : Kick the client that asked to be kicked.
                         if (dataStr != "1")
                             break;
 
