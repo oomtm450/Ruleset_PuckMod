@@ -65,6 +65,8 @@ namespace oomtm450PuckMod_Ruleset {
         private const int GINT_HIT_NO_GOAL_MILLISECONDS = 800; // TODO : Remove when penalty is added.
 
         private const float GINT_COLLISION_FORCE_THRESHOLD = 1f;
+
+        private const int MAX_ICING_TIMER = 7000;
         #endregion
 
         #region Fields
@@ -93,6 +95,11 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly LockDictionary<PlayerTeam, bool> _isIcingActive = new LockDictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, false },
             { PlayerTeam.Red, false },
+        };
+
+        private static readonly LockDictionary<PlayerTeam, Timer> _isIcingActiveTimers = new LockDictionary<PlayerTeam, Timer> {
+            { PlayerTeam.Blue, new Timer(ResetIcingCallback, PlayerTeam.Blue, Timeout.Infinite, Timeout.Infinite) },
+            { PlayerTeam.Red, new Timer(ResetIcingCallback, PlayerTeam.Red, Timeout.Infinite, Timeout.Infinite) },
         };
 
         private static readonly LockDictionary<PlayerTeam, bool> _isHighStickActive = new LockDictionary<PlayerTeam, bool> {
@@ -676,6 +683,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (_isIcingPossible[PlayerTeam.Blue] && _puckZone == Zone.RedTeam_BehindGoalLine) {
                         if (!IsIcing(PlayerTeam.Blue)) {
                             _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
+                            _isIcingActiveTimers[PlayerTeam.Blue].Change(MAX_ICING_TIMER, Timeout.Infinite);
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Blue.ToString().ToUpperInvariant()} TEAM");
                         }
                         _isIcingActive[PlayerTeam.Blue] = true;
@@ -683,6 +691,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (_isIcingPossible[PlayerTeam.Red] && _puckZone == Zone.BlueTeam_BehindGoalLine) {
                         if (!IsIcing(PlayerTeam.Red)) {
                             _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
+                            _isIcingActiveTimers[PlayerTeam.Red].Change(MAX_ICING_TIMER, Timeout.Infinite);
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Red.ToString().ToUpperInvariant()} TEAM");
                         }
                         _isIcingActive[PlayerTeam.Red] = true;
@@ -883,6 +892,17 @@ namespace oomtm450PuckMod_Ruleset {
 
             foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingActive.Keys))
                 _isIcingActive[key] = false;
+
+            foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingActiveTimers.Keys))
+                _isIcingActiveTimers[key].Change(Timeout.Infinite, Timeout.Infinite);
+        }
+
+        private static void ResetIcingCallback(object stateInfo) {
+            PlayerTeam team = (PlayerTeam)stateInfo;
+
+            _isIcingPossible[team] = false;
+            _isIcingActive[team] = false;
+            _isIcingActiveTimers[team].Change(Timeout.Infinite, Timeout.Infinite);
         }
 
         private static void ResetGoalieInt() {
