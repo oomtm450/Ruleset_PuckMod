@@ -21,7 +21,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.9.1";
+        private const string MOD_VERSION = "0.10.0";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -65,6 +65,8 @@ namespace oomtm450PuckMod_Ruleset {
         private const int GINT_HIT_NO_GOAL_MILLISECONDS = 800; // TODO : Remove when penalty is added.
 
         private const float GINT_COLLISION_FORCE_THRESHOLD = 1f;
+
+        private const int MAX_ICING_TIMER = 12000;
         #endregion
 
         #region Fields
@@ -93,6 +95,11 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly LockDictionary<PlayerTeam, bool> _isIcingActive = new LockDictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, false },
             { PlayerTeam.Red, false },
+        };
+
+        private static readonly LockDictionary<PlayerTeam, Timer> _isIcingActiveTimers = new LockDictionary<PlayerTeam, Timer> {
+            { PlayerTeam.Blue, new Timer(ResetIcingCallback, PlayerTeam.Blue, Timeout.Infinite, Timeout.Infinite) },
+            { PlayerTeam.Red, new Timer(ResetIcingCallback, PlayerTeam.Red, Timeout.Infinite, Timeout.Infinite) },
         };
 
         private static readonly LockDictionary<PlayerTeam, bool> _isHighStickActive = new LockDictionary<PlayerTeam, bool> {
@@ -148,10 +155,12 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static bool _doFaceoff = false;
 
-        private static string _currentFaceoffSound = "";
+        private static bool _hasRegisteredWithNamedMessageHandler = false;
 
         // Client-side.
         private static Sounds _sounds = null;
+
+        private static string _currentMusicPlaying = "";
 
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
@@ -534,8 +543,12 @@ namespace oomtm450PuckMod_Ruleset {
                             _lastPlayerOnPuckSteamId[key] = "";
                     }
 
-                    if (!_changedPhase)
+                    if (!_changedPhase)  {
+                        if (phase == GamePhase.FaceOff)
+                            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FACEOFF_MUSIC, Constants.FROM_SERVER, _serverConfig);
+
                         return true;
+                    }
 
                     if (phase == GamePhase.Playing) {
                         _changedPhase = false;
@@ -566,7 +579,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
                     }
                     else if (phase == GamePhase.Playing) {
-                        NetworkCommunication.SendDataToAll("SoundEnd", _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
+                        NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.FACEOFF_MUSIC, Constants.FROM_SERVER, _serverConfig);
                         return;
                     }
                 }
@@ -667,9 +680,19 @@ namespace oomtm450PuckMod_Ruleset {
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PUCK_RADIUS);
 
                     // Icing logic.
+                    if (!_isIcingPossible[PlayerTeam.Blue] && _isIcingActive[PlayerTeam.Blue]) {
+                        _isIcingActive[PlayerTeam.Blue] = false;
+                        UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Blue.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                    }
+                    if (!_isIcingPossible[PlayerTeam.Red] && _isIcingActive[PlayerTeam.Red]) {
+                        _isIcingActive[PlayerTeam.Red] = false;
+                        UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Red.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                    }
+
                     if (_isIcingPossible[PlayerTeam.Blue] && _puckZone == Zone.RedTeam_BehindGoalLine) {
                         if (!IsIcing(PlayerTeam.Blue)) {
                             _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
+                            _isIcingActiveTimers[PlayerTeam.Blue].Change(MAX_ICING_TIMER, Timeout.Infinite);
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Blue.ToString().ToUpperInvariant()} TEAM");
                         }
                         _isIcingActive[PlayerTeam.Blue] = true;
@@ -677,6 +700,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (_isIcingPossible[PlayerTeam.Red] && _puckZone == Zone.BlueTeam_BehindGoalLine) {
                         if (!IsIcing(PlayerTeam.Red)) {
                             _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
+                            _isIcingActiveTimers[PlayerTeam.Red].Change(MAX_ICING_TIMER, Timeout.Infinite);
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Red.ToString().ToUpperInvariant()} TEAM");
                         }
                         _isIcingActive[PlayerTeam.Red] = true;
@@ -877,6 +901,14 @@ namespace oomtm450PuckMod_Ruleset {
 
             foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingActive.Keys))
                 _isIcingActive[key] = false;
+
+            foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingActiveTimers.Keys))
+                _isIcingActiveTimers[key].Change(Timeout.Infinite, Timeout.Infinite);
+        }
+
+        private static void ResetIcingCallback(object stateInfo) {
+            PlayerTeam team = (PlayerTeam)stateInfo;
+            _isIcingPossible[team] = false;
         }
 
         private static void ResetGoalieInt() {
@@ -905,9 +937,8 @@ namespace oomtm450PuckMod_Ruleset {
 
             _paused = true;
 
-            NetworkCommunication.SendDataToAll("SoundStart", Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
-            _currentFaceoffSound = Sounds.GetRandomFaceoffSound();
-            NetworkCommunication.SendDataToAll("SoundStart", _currentFaceoffSound, Constants.FROM_SERVER, _serverConfig);
+            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
+            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FACEOFF_MUSIC_DELAYED, Constants.FROM_SERVER, _serverConfig);
 
             _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
             GameManager.Instance.Server_Pause();
@@ -1013,15 +1044,6 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /// <summary>
-        /// Function that returns a PlayerLegPad instance from a GameObject.
-        /// </summary>
-        /// <param name="gameObject">GameObject, GameObject to use.</param>
-        /// <returns>PlayerLegPad, found PlayerLegPad object or null.</returns>
-        private static PlayerLegPad GetPlayerLegPad(GameObject gameObject) {
-            return gameObject.GetComponent<PlayerLegPad>();
-        }
-
-        /// <summary>
         /// Function that returns the player steam Id that has possession.
         /// </summary>
         /// <returns>String, player steam Id with the possession or an empty string if no one has the puck (or it is challenged).</returns>
@@ -1118,6 +1140,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_SERVER, ReceiveData);
+                _hasRegisteredWithNamedMessageHandler = true;
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_Client_OnClientStarted.\n{ex}");
@@ -1134,6 +1157,8 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 _serverConfig = new ServerConfig();
+                if (!string.IsNullOrEmpty(_currentMusicPlaying))
+                    _sounds.Stop(_currentMusicPlaying);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_Client_OnClientStopped.\n{ex}");
@@ -1154,9 +1179,12 @@ namespace oomtm450PuckMod_Ruleset {
             try {
                 Player player = (Player)message["player"];
 
+                if (NetworkManager.Singleton != null && !_hasRegisteredWithNamedMessageHandler)
+                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
+
                 NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
                 NetworkCommunication.SendData(ServerConfig.CONFIG_DATA_NAME, _serverConfig.ToString(), player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
-                NetworkCommunication.SendData("loadsounds", "1", player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
+                NetworkCommunication.SendData(Sounds.LOAD_SOUNDS, "1", player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_OnPlayerSpawned.\n{ex}");
@@ -1198,29 +1226,43 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
                         GameObject gameObject = new GameObject("Sounds");
                         _sounds = gameObject.AddComponent<Sounds>();
-                        _sounds.LoadWhistlePrefab();
+                        _sounds.LoadSounds();
                         break;
 
-                    case "SoundStart": // CLIENT-SIDE : Play sound.
+                    case Sounds.PLAY_SOUND: // CLIENT-SIDE : Play sound.
                         if (_sounds == null)
                             break;
                         if (_sounds._errors.Count != 0) {
                             foreach (string error in _sounds._errors)
                                 Logging.LogError(error);
                         }
-                        else
-                            _sounds.Play(dataStr);
+                        else {
+                            if (dataStr == Sounds.FACEOFF_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomFaceoffSound();
+                                _sounds.Play(_currentMusicPlaying);
+                            }
+                            else if (dataStr == Sounds.FACEOFF_MUSIC_DELAYED) {
+                                _currentMusicPlaying = Sounds.GetRandomFaceoffSound();
+                                _sounds.Play(_currentMusicPlaying, 1f);
+                            }
+                            else if (dataStr == Sounds.WHISTLE)
+                                _sounds.Play(Sounds.WHISTLE);
+                        }
                         break;
 
-                    case "SoundEnd": // CLIENT-SIDE : Stop sound.
+                    case Sounds.STOP_SOUND: // CLIENT-SIDE : Stop sound.
                         if (_sounds == null)
                             break;
                         if (_sounds._errors.Count != 0) {
                             foreach (string error in _sounds._errors)
                                 Logging.LogError(error);
                         }
-                        else
-                            _sounds.Stop(dataStr);
+                        else {
+                            if (dataStr == Sounds.FACEOFF_MUSIC)
+                                _sounds.Stop(_currentMusicPlaying);
+
+                            _currentMusicPlaying = "";
+                        }
                         break;
 
                     case Constants.MOD_NAME + "_" + "kick": // SERVER-SIDE : Kick the client that asked to be kicked.
@@ -1252,7 +1294,10 @@ namespace oomtm450PuckMod_Ruleset {
 
                 if (ServerFunc.IsDedicatedServer()) {
                     Logging.Log("Setting server sided config.", _serverConfig, true);
-                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
+                    if (NetworkManager.Singleton != null) {
+                        NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
+                        _hasRegisteredWithNamedMessageHandler = true;
+                    }
 
                     _serverConfig = ServerConfig.ReadConfig(ServerManager.Instance.AdminSteamIds);
                 }
@@ -1290,6 +1335,13 @@ namespace oomtm450PuckMod_Ruleset {
                 EventManager.Instance.RemoveEventListener("Event_OnPlayerSpawned", Event_OnPlayerSpawned);
 
                 Logging.Log($"Disabling...", _serverConfig, true);
+
+                if (ServerFunc.IsDedicatedServer())
+                    NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT);
+                else
+                    NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER);
+
+                _hasRegisteredWithNamedMessageHandler = false;
 
                 _getStickLocation.Disable();
                 _harmony.UnpatchSelf();

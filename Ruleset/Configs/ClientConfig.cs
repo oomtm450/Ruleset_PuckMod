@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using oomtm450PuckMod_Ruleset.SystemFunc;
+using System;
 using System.IO;
 
 namespace oomtm450PuckMod_Ruleset.Configs {
@@ -44,7 +45,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 config = SetConfig(configFileContent);
             }
 
-            File.WriteAllText(configPath, config.ToString());
+            try {
+                File.WriteAllText(configPath, config.ToString());
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Can't write the client config file. (Permission error ?)\n{ex}");
+            }
 
             Logging.Log($"Writing client config : {config}", config);
 
