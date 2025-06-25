@@ -1015,15 +1015,6 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /// <summary>
-        /// Function that returns a PlayerLegPad instance from a GameObject.
-        /// </summary>
-        /// <param name="gameObject">GameObject, GameObject to use.</param>
-        /// <returns>PlayerLegPad, found PlayerLegPad object or null.</returns>
-        private static PlayerLegPad GetPlayerLegPad(GameObject gameObject) {
-            return gameObject.GetComponent<PlayerLegPad>();
-        }
-
-        /// <summary>
         /// Function that returns the player steam Id that has possession.
         /// </summary>
         /// <returns>String, player steam Id with the possession or an empty string if no one has the puck (or it is challenged).</returns>
@@ -1119,11 +1110,6 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log("Event_Client_OnClientStarted", _clientConfig);
 
             try {
-                if (NetworkManager.Singleton != null && !_hasRegisteredWithNamedMessageHandler) {
-                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
-                    _hasRegisteredWithNamedMessageHandler = true;
-                }
-
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_SERVER, ReceiveData);
                 _hasRegisteredWithNamedMessageHandler = true;
             }
@@ -1161,6 +1147,9 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 Player player = (Player)message["player"];
+
+                if (NetworkManager.Singleton != null && !_hasRegisteredWithNamedMessageHandler)
+                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
 
                 NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
                 NetworkCommunication.SendData(ServerConfig.CONFIG_DATA_NAME, _serverConfig.ToString(), player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
