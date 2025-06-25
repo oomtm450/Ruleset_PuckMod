@@ -73,6 +73,9 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal void Play(string name, float delay = 0) {
+            if (string.IsNullOrEmpty(name))
+                return;
+
             if (!_soundObjects.TryGetValue(name, out GameObject soundObject)) {
                 AudioClip clip = _audioClips.FirstOrDefault(x => x.name == name);
                 if (clip == null)
@@ -91,13 +94,16 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal void Stop(string name) {
-            if (!_soundObjects.TryGetValue(name, out GameObject soundObject))
+            if (string.IsNullOrEmpty(name) || !_soundObjects.TryGetValue(name, out GameObject soundObject))
                 return;
             soundObject.GetComponent<AudioSource>().Stop();
         }
 
         internal static string GetRandomFaceoffSound() {
-            return faceoffMusicList[new System.Random().Next(0, faceoffMusicList.Count - 1)];
+            if (faceoffMusicList.Count != 0)
+                return faceoffMusicList[new System.Random().Next(0, faceoffMusicList.Count - 1)];
+
+            return "";
         }
     }
 }
