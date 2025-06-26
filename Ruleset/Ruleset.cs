@@ -46,7 +46,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const float, height of the player's shoulders.
         /// </summary>
-        internal const float SHOULDERS_HEIGHT = 1.775f;
+        internal const float SHOULDERS_HEIGHT = 1.78f;
 
         /// <summary>
         /// Const int, number of milliseconds for a puck to not be considered tipped by a player's stick.
