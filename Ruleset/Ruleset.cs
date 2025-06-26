@@ -4,6 +4,7 @@ using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -11,6 +12,8 @@ using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.HID;
+using UnityEngine.UIElements;
 
 namespace oomtm450PuckMod_Ruleset {
     /// <summary>
@@ -162,10 +165,19 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static bool _hasRegisteredWithNamedMessageHandler = false;
 
+        // Client-side and server-side.
+        private static LockDictionary<string, int> _sog = new LockDictionary<string, int>();
+
+        private static LockDictionary<string, (int Saves, int Shots)> _savePerc = new LockDictionary<string, (int Saves, int Shots)>();
+
         // Client-side.
         private static Sounds _sounds = null;
 
         private static string _currentMusicPlaying = "";
+
+        private static List<string> _hasUpdatedUIScoreboard = new List<string>();
+
+        private static LockDictionary<string, Label> _sogLabels = new LockDictionary<string, Label>();
 
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
@@ -851,14 +863,28 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
-                    if (goalPlayer != null)
+                    if (goalPlayer != null) {
+                        string _goalPlayerSteamId = goalPlayer.SteamId.Value.ToString();
+                        if (!_sog.TryGetValue(_goalPlayerSteamId, out int _))
+                            _sog.Add(_goalPlayerSteamId, 0);
+
+                        _sog[_goalPlayerSteamId] += 1;
+                        NetworkCommunication.SendDataToAll("SOG" + _goalPlayerSteamId, _sog[_goalPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
                         return true;
+                    }
 
                     // If own goal, add goal attribution to last player on puck on the other team.
                     UIChat.Instance.Server_SendSystemChatMessage($"OWN GOAL");
                     goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckSteamId[team]).FirstOrDefault();
                     if (goalPlayer != null)
                         lastPlayer = goalPlayer;
+
+                    string goalPlayerSteamId = goalPlayer.SteamId.Value.ToString();
+                    if (!_sog.TryGetValue(goalPlayerSteamId, out int lastSOG))
+                        _sog.Add(goalPlayerSteamId, 0);
+
+                    _sog[goalPlayerSteamId] += 1;
+                    NetworkCommunication.SendDataToAll("SOG" + goalPlayerSteamId, _sog[goalPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManagerController_GameManagerController_Patch Prefix().\n{ex}");
@@ -895,6 +921,88 @@ namespace oomtm450PuckMod_Ruleset {
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Player_Server_RespawnCharacter_Patch Postfix().\n{ex}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the UpdateServer event from UIScoreboard.
+        /// </summary>
+        [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.UpdateServer))]
+        public class UIScoreboard_UpdateServer_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(Server server, int playerCount) {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return;
+
+                    VisualElement scoreboardContainer = GetPrivateField<VisualElement>(typeof(UIScoreboard), UIScoreboard.Instance, "container");
+
+                    if (!_hasUpdatedUIScoreboard.Contains("header")) {
+                        foreach (VisualElement ve in scoreboardContainer.Children()) {
+                            Logging.Log($"ve : {ve}", _clientConfig, true);
+                            if (ve is Label label)
+                                Logging.Log($"Is label {label.name}, text : {label.text}", _clientConfig, true);
+
+                            if (ve is TemplateContainer && ve.childCount == 1) {
+                                VisualElement templateContainer = ve.Children().First();
+
+                                Label sogHeader = new Label("SOG/s%");
+                                sogHeader.name = "SOGHeaderLabel";
+                                templateContainer.Add(sogHeader);
+                                sogHeader.transform.position = new Vector3(sogHeader.transform.position.x - 280, sogHeader.transform.position.y + 16, sogHeader.transform.position.z);
+
+                                Logging.Log($"TemplateContainer children count : {templateContainer.childCount}", _clientConfig, true);
+                                foreach (VisualElement child in templateContainer.Children()) {
+                                    if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
+                                        child.transform.position = new Vector3(child.transform.position.x - 100, child.transform.position.y, child.transform.position.z);
+
+                                    Logging.Log($"TemplateContainer child : {child}", _clientConfig, true);
+                                    if (child is Label templateContainerChildLabel) {
+                                        Logging.Log($"Is label {templateContainerChildLabel.name}, text : {templateContainerChildLabel.text}", _clientConfig, true);
+                                    }
+                                }
+                            }
+                        }
+
+                        _hasUpdatedUIScoreboard.Add("header");
+                    }
+
+                    foreach (var kvp in GetPrivateField<Dictionary<Player, VisualElement>>(typeof(UIScoreboard), UIScoreboard.Instance, "playerVisualElementMap")) {
+                        if (string.IsNullOrEmpty(kvp.Key.SteamId.Value.ToString()))
+                            continue;
+
+                        string playerSteamId = kvp.Key.SteamId.Value.ToString();
+                        if (!_hasUpdatedUIScoreboard.Contains(playerSteamId)) {
+                            if (kvp.Value.childCount == 1) {
+                                VisualElement playerContainer = kvp.Value.Children().First();
+
+                                Label sogLabel = new Label("0");
+                                sogLabel.name = "SOGLabel";
+                                playerContainer.Add(sogLabel);
+                                sogLabel.transform.position = new Vector3(sogLabel.transform.position.x - 200, sogLabel.transform.position.y, sogLabel.transform.position.z);
+                                _sogLabels.Add(playerSteamId, sogLabel);
+
+                                foreach (VisualElement child in playerContainer.Children()) {
+                                    Logging.Log($"playerVisualElement child : {child}", _clientConfig, true);
+                                    if (child is Label label)
+                                        Logging.Log($"Is label {label.name}, text : {label.text}", _clientConfig, true);
+
+                                    if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
+                                        child.transform.position = new Vector3(child.transform.position.x - 100, child.transform.position.y, child.transform.position.z);
+                                }
+                            }
+                            _hasUpdatedUIScoreboard.Add(playerSteamId);
+
+                            if (!_sog.TryGetValue(playerSteamId, out int _))
+                                _sog.Add(playerSteamId, 0);
+                            _sog[playerSteamId] = 0;
+                        }
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in UIScoreboard_UpdateServer_Patch Postfix().\n{ex}");
                 }
             }
         }
@@ -1127,7 +1235,11 @@ namespace oomtm450PuckMod_Ruleset {
                     return null;
             }
 
-            return (NetworkList<NetworkObjectCollision>)typeof(NetworkObjectCollisionBuffer).GetField("buffer", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(puck.NetworkObjectCollisionBuffer);
+            return GetPrivateField<NetworkList<NetworkObjectCollision>>(typeof(NetworkObjectCollisionBuffer), puck.NetworkObjectCollisionBuffer, "buffer");
+        }
+
+        private static T GetPrivateField<T>(Type typeContainingField, object instanceOfType, string fieldName) {
+            return (T)typeContainingField.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(instanceOfType);
         }
         #endregion
 
@@ -1277,6 +1389,15 @@ namespace oomtm450PuckMod_Ruleset {
                         Logging.Log($"Kicking client {clientId}.", _serverConfig);
                         NetworkManager.Singleton.DisconnectClient(clientId,
                             $"Mod is out of date. Please restart your game or unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop to update.");
+                        break;
+
+                    default:
+                        if (dataName.StartsWith("SOG")) {
+                            string playerSteamId = dataName.Replace("SOG", "");
+                            int sog = int.Parse(dataStr);
+                            _sog[playerSteamId] = sog;
+                            _sogLabels[playerSteamId].text = sog.ToString();
+                        }
                         break;
                 }
             }
