@@ -4,7 +4,6 @@ using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -12,7 +11,6 @@ using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.HID;
 using UnityEngine.UIElements;
 
 namespace oomtm450PuckMod_Ruleset {
@@ -86,7 +84,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// ServerConfig, config set and sent by the server.
         /// </summary>
-        private static ServerConfig _serverConfig = new ServerConfig();
+        internal static ServerConfig _serverConfig = new ServerConfig();
 
         /// <summary>
         /// ServerConfig, config set by the client.
@@ -627,6 +625,21 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 return true;
+            }
+
+            [HarmonyPostfix]
+            public static void Postfix(ref Puck __result, Vector3 position, Quaternion rotation, Vector3 velocity, bool isReplay) {
+                try {
+                    // If this is not the server or this is a replay or game is not started, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff))
+                        return;
+
+                    __result.gameObject.AddComponent<PuckRaycast>();
+
+                }
+                catch (Exception ex)  {
+                    Logging.LogError($"Error in PuckManager_Server_SpawnPuck_Patch Postfix().\n{ex}");
+                }
             }
         }
 
