@@ -165,9 +165,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static PuckRaycast _puckRaycast;
 
-        private static LockDictionary<PlayerTeam, (bool Check, string PlayerSteamId)> _checkIfPuckWasSaved = new LockDictionary<PlayerTeam, (bool, string)> {
-            { PlayerTeam.Blue, (false, "") },
-            { PlayerTeam.Red, (false, "") },
+        private static LockDictionary<PlayerTeam, SaveCheck> _checkIfPuckWasSaved = new LockDictionary<PlayerTeam, SaveCheck> {
+            { PlayerTeam.Blue, new SaveCheck() },
+            { PlayerTeam.Red, new SaveCheck() },
         };
 
         // Client-side and server-side.
@@ -242,7 +242,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (_puckRaycast.PuckIsGoingToNet[playerBody.Player.Team.Value] && playerBody.Player.Role.Value == PlayerRole.Goalie) {
                             Logging.Log($"Puck has it {playerBody.Player.Team.Value} goalie body by {_lastPlayerOnPuckSteamId[TeamFunc.GetOtherTeam(playerBody.Player.Team.Value)]}", _serverConfig, true);
-                            _checkIfPuckWasSaved[playerBody.Player.Team.Value] = (true, _lastPlayerOnPuckSteamId[TeamFunc.GetOtherTeam(playerBody.Player.Team.Value)]);
+                            _checkIfPuckWasSaved[playerBody.Player.Team.Value] = new SaveCheck { HasToCheck = true, ShooterSteamId = _lastPlayerOnPuckSteamId[TeamFunc.GetOtherTeam(playerBody.Player.Team.Value)] };
                         }
                         return;
                     }
@@ -308,7 +308,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (_puckRaycast.PuckIsGoingToNet[stick.Player.Team.Value] && stick.Player.Role.Value == PlayerRole.Goalie) {
                         Logging.Log($"Puck has it {stick.Player.Team.Value} goalie body by {_lastPlayerOnPuckSteamId[TeamFunc.GetOtherTeam(stick.Player.Team.Value)]}", _serverConfig, true);
-                        _checkIfPuckWasSaved[stick.Player.Team.Value] = (true, _lastPlayerOnPuckSteamId[otherTeam]);
+                        _checkIfPuckWasSaved[stick.Player.Team.Value] = new SaveCheck { HasToCheck = true, ShooterSteamId = _lastPlayerOnPuckSteamId[otherTeam] };
                     }
                 }
                 catch (Exception ex) {
@@ -570,7 +570,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         // Reset puck was saved states.
                         foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys))
-                            _checkIfPuckWasSaved[key] = (false, "");
+                            _checkIfPuckWasSaved[key] = new SaveCheck();
 
                         _puckZone = ZoneFunc.GetZone(NextFaceoffSpot);
 
@@ -842,23 +842,28 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys)) {
-                        var kvp = _checkIfPuckWasSaved[key];
-                        if (!kvp.Check)
+                        SaveCheck saveCheck = _checkIfPuckWasSaved[key];
+                        if (!saveCheck.HasToCheck) {
+                            _checkIfPuckWasSaved[key] = new SaveCheck();
                             continue;
+                        }
 
-                        Logging.Log($"kvp.Check for team net {key} by {kvp.PlayerSteamId} !!!!!!!!!!", _serverConfig, true);
+                        Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId} !!!!!!!!!!", _serverConfig, true);
 
-                        _puckRaycast.Update();
                         if (!_puckRaycast.PuckIsGoingToNet[key]) {
-                            string shotPlayerSteamId = kvp.PlayerSteamId;
+                            string shotPlayerSteamId = saveCheck.ShooterSteamId;
                             if (!_sog.TryGetValue(shotPlayerSteamId, out int lastSOG))
                                 _sog.Add(shotPlayerSteamId, 0);
 
                             _sog[shotPlayerSteamId] += 1;
                             NetworkCommunication.SendDataToAll("SOG" + shotPlayerSteamId, _sog[shotPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
-                        }
 
-                        _checkIfPuckWasSaved[key] = (false, "");
+                            _checkIfPuckWasSaved[key] = new SaveCheck();
+                        }
+                        else {
+                            if (++saveCheck.FramesChecked > 200)
+                                _checkIfPuckWasSaved[key] = new SaveCheck();
+                        }
                     }
                 }
                 catch (Exception ex) {
@@ -1586,5 +1591,11 @@ namespace oomtm450PuckMod_Ruleset {
         Icing,
         HighStick,
         GoalieInt,
+    }
+
+    internal class SaveCheck {
+        internal bool HasToCheck { get; set; } = false;
+        internal string ShooterSteamId { get; set; } = "";
+        internal int FramesChecked { get; set; } = 0;
     }
 }
