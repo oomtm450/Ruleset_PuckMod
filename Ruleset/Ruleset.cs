@@ -4,6 +4,7 @@ using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -862,6 +863,20 @@ namespace oomtm450PuckMod_Ruleset {
                             _sog[shotPlayerSteamId] += 1;
                             NetworkCommunication.SendDataToAll(SOG + shotPlayerSteamId, _sog[shotPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
 
+                            // Get other team goalie.
+                            Player goalie = PlayerFunc.GetOtherTeamGoalie(PlayerManager.Instance.GetPlayerBySteamId(shotPlayerSteamId).Team.Value);
+                            if (goalie != null) {
+                                string _goaliePlayerSteamId = goalie.SteamId.Value.ToString();
+                                if (!_savePerc.TryGetValue(_goaliePlayerSteamId, out var savePercValue)) {
+                                    _savePerc.Add(_goaliePlayerSteamId, (0, 0));
+                                    savePercValue = (0, 0);
+                                }
+
+                                _savePerc[_goaliePlayerSteamId] = (++savePercValue.Saves, ++savePercValue.Shots);
+
+                                NetworkCommunication.SendDataToAll(SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+                            }
+
                             _checkIfPuckWasSaved[key] = new SaveCheck();
                         }
                         else {
@@ -949,7 +964,7 @@ namespace oomtm450PuckMod_Ruleset {
                         NetworkCommunication.SendDataToAll(SOG + _goalPlayerSteamId, _sog[_goalPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
 
                         // Get other team goalie.
-                        Player _goalie = PlayerManager.Instance.GetPlayersByTeam(TeamFunc.GetOtherTeam(goalPlayer.Team.Value)).FirstOrDefault(x => x.Role.Value == PlayerRole.Goalie);
+                        Player _goalie = PlayerFunc.GetOtherTeamGoalie(goalPlayer.Team.Value);
                         if (_goalie == null)
                             return true;
 
@@ -979,7 +994,7 @@ namespace oomtm450PuckMod_Ruleset {
                     NetworkCommunication.SendDataToAll(SOG + goalPlayerSteamId, _sog[goalPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
 
                     // Get other team goalie.
-                    Player goalie = PlayerManager.Instance.GetPlayersByTeam(TeamFunc.GetOtherTeam(goalPlayer.Team.Value)).FirstOrDefault(x => x.Role.Value == PlayerRole.Goalie);
+                    Player goalie = PlayerFunc.GetOtherTeamGoalie(goalPlayer.Team.Value);
                     if (goalie == null)
                         return true;
 
@@ -1098,6 +1113,10 @@ namespace oomtm450PuckMod_Ruleset {
                             if (!_sog.TryGetValue(playerSteamId, out int _))
                                 _sog.Add(playerSteamId, 0);
                             _sog[playerSteamId] = 0;
+
+                            if (!_savePerc.TryGetValue(playerSteamId, out (int, int) _))
+                                _savePerc.Add(playerSteamId, (0, 0));
+                            _savePerc[playerSteamId] = (0, 0);
                         }
                     }
                 }
@@ -1534,10 +1553,11 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (dataName.StartsWith(SAVEPERC)) {
                             string playerSteamId = dataName.Replace(SAVEPERC, "");
-                            Logging.Log($"Save perc : {dataStr}", _clientConfig, true);
-                            //int sog = int.Parse(dataStr);
-                            //_savePerc[playerSteamId] = sog;
-                            //_sogLabels[playerSteamId].text = sog.ToString();
+                            string[] dataStrSplitted = RemoveWhitespace(dataStr.Replace("(", "").Replace(")", "")).Split(',');
+                            int saves = int.Parse(dataStrSplitted[0]);
+                            int shots = int.Parse(dataStrSplitted[1]);
+                            _savePerc[playerSteamId] = (saves, shots);
+                            _sogLabels[playerSteamId].text = (((double)saves) / ((double)shots)).ToString("0.000", CultureInfo.InvariantCulture);
                         }
                         break;
                 }
@@ -1620,6 +1640,12 @@ namespace oomtm450PuckMod_Ruleset {
                 Logging.LogError($"Failed to disable.\n{ex}");
                 return false;
             }
+        }
+
+        public static string RemoveWhitespace(string input) {
+            return new string(input
+                .Where(c => !Char.IsWhiteSpace(c))
+                .ToArray());
         }
         #endregion
     }

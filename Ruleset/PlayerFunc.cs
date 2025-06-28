@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
     internal static class PlayerFunc {
@@ -106,6 +107,14 @@ namespace oomtm450PuckMod_Ruleset {
                 }
                 player.PlayerBody.Server_Teleport(new Vector3(faceoffDot.x + xOffset, faceoffDot.y, faceoffDot.z + zOffset), quaternion);
             }
+        }
+
+        internal static Player GetTeamGoalie(PlayerTeam team) {
+            return PlayerManager.Instance.GetPlayersByTeam(team).FirstOrDefault(x => x.Role.Value == PlayerRole.Goalie);
+        }
+
+        internal static Player GetOtherTeamGoalie(PlayerTeam team) {
+            return PlayerManager.Instance.GetPlayersByTeam(TeamFunc.GetOtherTeam(team)).FirstOrDefault(x => x.Role.Value == PlayerRole.Goalie);
         }
     }
 }
