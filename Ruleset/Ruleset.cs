@@ -73,6 +73,10 @@ namespace oomtm450PuckMod_Ruleset {
         private const float GINT_COLLISION_FORCE_THRESHOLD = 0.975f;
 
         private const int MAX_ICING_TIMER = 12000;
+
+        private const string SOG = "SOG";
+
+        private const string SAVEPERC = "SAVEPERC";
         #endregion
 
         #region Fields
@@ -856,7 +860,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 _sog.Add(shotPlayerSteamId, 0);
 
                             _sog[shotPlayerSteamId] += 1;
-                            NetworkCommunication.SendDataToAll("SOG" + shotPlayerSteamId, _sog[shotPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+                            NetworkCommunication.SendDataToAll(SOG + shotPlayerSteamId, _sog[shotPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
 
                             _checkIfPuckWasSaved[key] = new SaveCheck();
                         }
@@ -942,7 +946,22 @@ namespace oomtm450PuckMod_Ruleset {
                             _sog.Add(_goalPlayerSteamId, 0);
 
                         _sog[_goalPlayerSteamId] += 1;
-                        NetworkCommunication.SendDataToAll("SOG" + _goalPlayerSteamId, _sog[_goalPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+                        NetworkCommunication.SendDataToAll(SOG + _goalPlayerSteamId, _sog[_goalPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+
+                        // Get other team goalie.
+                        Player _goalie = PlayerManager.Instance.GetPlayersByTeam(TeamFunc.GetOtherTeam(goalPlayer.Team.Value)).FirstOrDefault(x => x.Role.Value == PlayerRole.Goalie);
+                        if (_goalie == null)
+                            return true;
+
+                        string _goaliePlayerSteamId = _goalie.SteamId.Value.ToString();
+                        if (!_savePerc.TryGetValue(_goaliePlayerSteamId, out var _savePercValue)) {
+                            _savePerc.Add(_goaliePlayerSteamId, (0, 0));
+                            _savePercValue = (0, 0);
+                        }
+
+                        _savePerc[_goaliePlayerSteamId] = (_savePercValue.Saves, ++_savePercValue.Shots);
+
+                        NetworkCommunication.SendDataToAll(SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
                         return true;
                     }
 
@@ -957,7 +976,22 @@ namespace oomtm450PuckMod_Ruleset {
                         _sog.Add(goalPlayerSteamId, 0);
 
                     _sog[goalPlayerSteamId] += 1;
-                    NetworkCommunication.SendDataToAll("SOG" + goalPlayerSteamId, _sog[goalPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+                    NetworkCommunication.SendDataToAll(SOG + goalPlayerSteamId, _sog[goalPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+
+                    // Get other team goalie.
+                    Player goalie = PlayerManager.Instance.GetPlayersByTeam(TeamFunc.GetOtherTeam(goalPlayer.Team.Value)).FirstOrDefault(x => x.Role.Value == PlayerRole.Goalie);
+                    if (goalie == null)
+                        return true;
+
+                    string goaliePlayerSteamId = goalie.SteamId.Value.ToString();
+                    if (!_savePerc.TryGetValue(goaliePlayerSteamId, out var savePercValue)) {
+                        _savePerc.Add(goaliePlayerSteamId, (0, 0));
+                        savePercValue = (0, 0);
+                    }
+
+                    _savePerc[goaliePlayerSteamId] = (savePercValue.Saves, ++savePercValue.Shots);
+
+                    NetworkCommunication.SendDataToAll(SAVEPERC + goaliePlayerSteamId, _savePerc[goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManagerController_GameManagerController_Patch Prefix().\n{ex}");
@@ -1088,12 +1122,13 @@ namespace oomtm450PuckMod_Ruleset {
                     // Reset SOG.
                     foreach (string key in new List<string>(_sog.Keys)) {
                         _sog[key] = 0;
-                        NetworkCommunication.SendDataToAll("SOG" + key, _sog[key].ToString(), Constants.FROM_SERVER, _serverConfig);
+                        NetworkCommunication.SendDataToAll(SOG + key, _sog[key].ToString(), Constants.FROM_SERVER, _serverConfig);
                     }
 
+                    // Reset s%.
                     foreach (string key in new List<string>(_savePerc.Keys)) {
                         _savePerc[key] = (0, 0);
-                        NetworkCommunication.SendDataToAll("SAVEPERC" + key, _savePerc[key].ToString(), Constants.FROM_SERVER, _serverConfig);
+                        NetworkCommunication.SendDataToAll(SAVEPERC + key, _savePerc[key].ToString(), Constants.FROM_SERVER, _serverConfig);
                     }
 
                     // Reset music.
@@ -1490,16 +1525,16 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     default:
-                        if (dataName.StartsWith("SOG")) {
-                            string playerSteamId = dataName.Replace("SOG", "");
+                        if (dataName.StartsWith(SOG)) {
+                            string playerSteamId = dataName.Replace(SOG, "");
                             int sog = int.Parse(dataStr);
                             _sog[playerSteamId] = sog;
                             _sogLabels[playerSteamId].text = sog.ToString();
                         }
 
-                        if (dataName.StartsWith("SAVEPERC")) {
-                            string playerSteamId = dataName.Replace("SAVEPERC", "");
-                            Logging.Log($"save perc : {dataStr}", _clientConfig, true);
+                        if (dataName.StartsWith(SAVEPERC)) {
+                            string playerSteamId = dataName.Replace(SAVEPERC, "");
+                            Logging.Log($"Save perc : {dataStr}", _clientConfig, true);
                             //int sog = int.Parse(dataStr);
                             //_savePerc[playerSteamId] = sog;
                             //_sogLabels[playerSteamId].text = sog.ToString();
