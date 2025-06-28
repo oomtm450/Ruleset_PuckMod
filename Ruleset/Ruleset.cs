@@ -1095,6 +1095,9 @@ namespace oomtm450PuckMod_Ruleset {
                         _savePerc[key] = (0, 0);
                         NetworkCommunication.SendDataToAll("SAVEPERC" + key, _savePerc[key].ToString(), Constants.FROM_SERVER, _serverConfig);
                     }
+
+                    // Reset music.
+                    NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.FACEOFF_MUSIC, Constants.FROM_SERVER, _serverConfig);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManager_Server_ResetGameState_Patch Postfix().\n{ex}");
