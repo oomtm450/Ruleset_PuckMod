@@ -163,6 +163,13 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static bool _hasRegisteredWithNamedMessageHandler = false;
 
+        private static PuckRaycast _puckRaycast;
+
+        private static LockDictionary<PlayerTeam, (bool Check, string PlayerSteamId)> _checkIfPuckWasSaved = new LockDictionary<PlayerTeam, (bool, string)> {
+            { PlayerTeam.Blue, (false, "") },
+            { PlayerTeam.Red, (false, "") },
+        };
+
         // Client-side and server-side.
         private static LockDictionary<string, int> _sog = new LockDictionary<string, int>();
 
@@ -173,9 +180,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static string _currentMusicPlaying = "";
 
-        private static List<string> _hasUpdatedUIScoreboard = new List<string>();
+        private readonly static List<string> _hasUpdatedUIScoreboard = new List<string>(); // TODO : Clear if player quits or client leaves
 
-        private static LockDictionary<string, Label> _sogLabels = new LockDictionary<string, Label>();
+        private readonly static LockDictionary<string, Label> _sogLabels = new LockDictionary<string, Label>(); // TODO : Clear if player quits or client leaves
 
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
@@ -231,6 +238,11 @@ namespace oomtm450PuckMod_Ruleset {
                                     ResetIcings();
                                 }
                             }
+                        }
+
+                        if (_puckRaycast.PuckIsGoingToNet[playerBody.Player.Team.Value] && playerBody.Player.Role.Value == PlayerRole.Goalie) {
+                            Logging.Log($"Puck has it {playerBody.Player.Team.Value} goalie body by {_lastPlayerOnPuckSteamId[TeamFunc.GetOtherTeam(playerBody.Player.Team.Value)]}", _serverConfig, true);
+                            _checkIfPuckWasSaved[playerBody.Player.Team.Value] = (true, _lastPlayerOnPuckSteamId[TeamFunc.GetOtherTeam(playerBody.Player.Team.Value)]);
                         }
                         return;
                     }
@@ -292,6 +304,11 @@ namespace oomtm450PuckMod_Ruleset {
                     if (_isHighStickActive[otherTeam]) {
                         _isHighStickActive[otherTeam] = false;
                         UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                    }
+
+                    if (_puckRaycast.PuckIsGoingToNet[stick.Player.Team.Value] && stick.Player.Role.Value == PlayerRole.Goalie) {
+                        Logging.Log($"Puck has it {stick.Player.Team.Value} goalie body by {_lastPlayerOnPuckSteamId[TeamFunc.GetOtherTeam(stick.Player.Team.Value)]}", _serverConfig, true);
+                        _checkIfPuckWasSaved[stick.Player.Team.Value] = (true, _lastPlayerOnPuckSteamId[otherTeam]);
                     }
                 }
                 catch (Exception ex) {
@@ -551,6 +568,10 @@ namespace oomtm450PuckMod_Ruleset {
                         ResetIcings();
                         ResetGoalieInt();
 
+                        // Reset puck was saved states.
+                        foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys))
+                            _checkIfPuckWasSaved[key] = (false, "");
+
                         _puckZone = ZoneFunc.GetZone(NextFaceoffSpot);
 
                         _lastPlayerOnPuckTeam = PlayerTeam.Blue;
@@ -635,7 +656,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     __result.gameObject.AddComponent<PuckRaycast>();
-
+                    _puckRaycast = __result.gameObject.GetComponent<PuckRaycast>();
                 }
                 catch (Exception ex)  {
                     Logging.LogError($"Error in PuckManager_Server_SpawnPuck_Patch Postfix().\n{ex}");
@@ -812,6 +833,40 @@ namespace oomtm450PuckMod_Ruleset {
 
                 return true;
             }
+
+            [HarmonyPostfix]
+            public static void Postfix() {
+                try {
+                    // If this is not the server or game is not started, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing)
+                        return;
+
+                    foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys)) {
+                        var kvp = _checkIfPuckWasSaved[key];
+                        if (!kvp.Check)
+                            continue;
+
+                        Logging.Log($"kvp.Check for team net {key} by {kvp.PlayerSteamId} !!!!!!!!!!", _serverConfig, true);
+
+                        _puckRaycast.Update();
+                        if (!_puckRaycast.PuckIsGoingToNet[key]) {
+                            string shotPlayerSteamId = kvp.PlayerSteamId;
+                            if (!_sog.TryGetValue(shotPlayerSteamId, out int lastSOG))
+                                _sog.Add(shotPlayerSteamId, 0);
+
+                            _sog[shotPlayerSteamId] += 1;
+                            NetworkCommunication.SendDataToAll("SOG" + shotPlayerSteamId, _sog[shotPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+                        }
+
+                        _checkIfPuckWasSaved[key] = (false, "");
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in ServerManager_Update_Patch Postfix().\n{ex}");
+                }
+
+                return;
+            }
         }
 
         /// <summary>
@@ -939,12 +994,12 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /// <summary>
-        /// Class that patches the UpdateServer event from UIScoreboard.
+        /// Class that patches the UpdatePlayer event from UIScoreboard.
         /// </summary>
-        [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.UpdateServer))]
-        public class UIScoreboard_UpdateServer_Patch {
+        [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.UpdatePlayer))]
+        public class UIScoreboard_UpdatePlayer_Patch {
             [HarmonyPostfix]
-            public static void Postfix(Server server, int playerCount) {
+            public static void Postfix(Player player) {
                 try {
                     // If this is the server, do not use the patch.
                     if (ServerFunc.IsDedicatedServer())
@@ -954,27 +1009,18 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (!_hasUpdatedUIScoreboard.Contains("header")) {
                         foreach (VisualElement ve in scoreboardContainer.Children()) {
-                            Logging.Log($"ve : {ve}", _clientConfig, true);
-                            if (ve is Label label)
-                                Logging.Log($"Is label {label.name}, text : {label.text}", _clientConfig, true);
-
                             if (ve is TemplateContainer && ve.childCount == 1) {
                                 VisualElement templateContainer = ve.Children().First();
 
                                 Label sogHeader = new Label("SOG/s%");
                                 sogHeader.name = "SOGHeaderLabel";
                                 templateContainer.Add(sogHeader);
-                                sogHeader.transform.position = new Vector3(sogHeader.transform.position.x - 280, sogHeader.transform.position.y + 16, sogHeader.transform.position.z);
+                                sogHeader.transform.position = new Vector3(sogHeader.transform.position.x - 260, sogHeader.transform.position.y + 15, sogHeader.transform.position.z);
 
                                 Logging.Log($"TemplateContainer children count : {templateContainer.childCount}", _clientConfig, true);
                                 foreach (VisualElement child in templateContainer.Children()) {
                                     if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
                                         child.transform.position = new Vector3(child.transform.position.x - 100, child.transform.position.y, child.transform.position.z);
-
-                                    Logging.Log($"TemplateContainer child : {child}", _clientConfig, true);
-                                    if (child is Label templateContainerChildLabel) {
-                                        Logging.Log($"Is label {templateContainerChildLabel.name}, text : {templateContainerChildLabel.text}", _clientConfig, true);
-                                    }
                                 }
                             }
                         }
@@ -993,20 +1039,22 @@ namespace oomtm450PuckMod_Ruleset {
 
                                 Label sogLabel = new Label("0");
                                 sogLabel.name = "SOGLabel";
+                                sogLabel.style.alignSelf = Align.Center;
                                 playerContainer.Add(sogLabel);
-                                sogLabel.transform.position = new Vector3(sogLabel.transform.position.x - 200, sogLabel.transform.position.y, sogLabel.transform.position.z);
+                                sogLabel.transform.position = new Vector3(sogLabel.transform.position.x - 180, sogLabel.transform.position.y, sogLabel.transform.position.z);
                                 _sogLabels.Add(playerSteamId, sogLabel);
 
                                 foreach (VisualElement child in playerContainer.Children()) {
-                                    Logging.Log($"playerVisualElement child : {child}", _clientConfig, true);
-                                    if (child is Label label)
-                                        Logging.Log($"Is label {label.name}, text : {label.text}", _clientConfig, true);
-
                                     if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
                                         child.transform.position = new Vector3(child.transform.position.x - 100, child.transform.position.y, child.transform.position.z);
                                 }
                             }
-                            _hasUpdatedUIScoreboard.Add(playerSteamId);
+                            else {
+                                Logging.Log($"Not adding player {kvp.Key.Username.Value}, childCount {kvp.Value.childCount}.", _clientConfig, true);
+                                foreach (var test in kvp.Value.Children())
+                                    Logging.Log($"{test.name}", _clientConfig, true);
+                            }
+                                _hasUpdatedUIScoreboard.Add(playerSteamId);
 
                             if (!_sog.TryGetValue(playerSteamId, out int _))
                                 _sog.Add(playerSteamId, 0);
@@ -1016,6 +1064,35 @@ namespace oomtm450PuckMod_Ruleset {
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in UIScoreboard_UpdateServer_Patch Postfix().\n{ex}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_ResetGameState event from GameManager.
+        /// </summary>
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_ResetGameState))]
+        public class GameManager_Server_ResetGameState_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(bool resetPhase) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return;
+
+                    // Reset SOG.
+                    foreach (string key in new List<string>(_sog.Keys)) {
+                        _sog[key] = 0;
+                        NetworkCommunication.SendDataToAll("SOG" + key, _sog[key].ToString(), Constants.FROM_SERVER, _serverConfig);
+                    }
+
+                    foreach (string key in new List<string>(_savePerc.Keys)) {
+                        _savePerc[key] = (0, 0);
+                        NetworkCommunication.SendDataToAll("SAVEPERC" + key, _savePerc[key].ToString(), Constants.FROM_SERVER, _serverConfig);
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in GameManager_Server_ResetGameState_Patch Postfix().\n{ex}");
                 }
             }
         }
@@ -1251,7 +1328,7 @@ namespace oomtm450PuckMod_Ruleset {
             return GetPrivateField<NetworkList<NetworkObjectCollision>>(typeof(NetworkObjectCollisionBuffer), puck.NetworkObjectCollisionBuffer, "buffer");
         }
 
-        private static T GetPrivateField<T>(Type typeContainingField, object instanceOfType, string fieldName) {
+        internal static T GetPrivateField<T>(Type typeContainingField, object instanceOfType, string fieldName) {
             return (T)typeContainingField.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(instanceOfType);
         }
         #endregion
@@ -1410,6 +1487,14 @@ namespace oomtm450PuckMod_Ruleset {
                             int sog = int.Parse(dataStr);
                             _sog[playerSteamId] = sog;
                             _sogLabels[playerSteamId].text = sog.ToString();
+                        }
+
+                        if (dataName.StartsWith("SAVEPERC")) {
+                            string playerSteamId = dataName.Replace("SAVEPERC", "");
+                            Logging.Log($"save perc : {dataStr}", _clientConfig, true);
+                            //int sog = int.Parse(dataStr);
+                            //_savePerc[playerSteamId] = sog;
+                            //_sogLabels[playerSteamId].text = sog.ToString();
                         }
                         break;
                 }
