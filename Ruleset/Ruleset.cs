@@ -1652,6 +1652,10 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        /// <summary>
+        /// Method used to modify the scoreboard to add additional stats.
+        /// </summary>
+        /// <param name="enable">Bool, true if new stats scoreboard has to added to the scoreboard. False if they need to be removed.</param>
         private static void ScoreboardModifications(bool enable) {
             VisualElement scoreboardContainer = GetPrivateField<VisualElement>(typeof(UIScoreboard), UIScoreboard.Instance, "container");
 
