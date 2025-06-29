@@ -1747,6 +1747,9 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static string GetGoalieSavePerc(int saves, int shots) {
+            if (shots == 0)
+                return "0.000";
+
             return (((double)saves) / ((double)shots)).ToString("0.000", CultureInfo.InvariantCulture);
         }
         #endregion

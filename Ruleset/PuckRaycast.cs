@@ -6,12 +6,13 @@ namespace oomtm450PuckMod_Ruleset {
     internal class PuckRaycast : MonoBehaviour {
         private readonly Vector3 TOP_VECTOR = new Vector3(0, 0.15f, 0);
         private readonly Vector3 RIGHT_VECTOR = new Vector3(Ruleset.PUCK_RADIUS + 0.01f, 0, 0);
+        private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
 
         private Ray _rayBottomLeft;
         private Ray _rayBottomRight;
         private Ray _rayTopLeft;
         private Ray _rayTopRight;
-        private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
+        
         private Vector3 _startingPosition;
 
         internal LockDictionary<PlayerTeam, bool> PuckIsGoingToNet { get; set; } = new LockDictionary<PlayerTeam, bool> {
@@ -52,16 +53,16 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!hasHit)
                             return;
                         else
-                            Logging.Log("Top right ray has hit !", Ruleset._serverConfig, true);
+                            Logging.Log("Top right ray has hit !", Ruleset._serverConfig, true); // TODO : Remove test logs.
                     }
                     else
-                        Logging.Log("Top left ray has hit !", Ruleset._serverConfig, true);
+                        Logging.Log("Top left ray has hit !", Ruleset._serverConfig, true); // TODO : Remove test logs.
                 }
                 else
-                    Logging.Log("Bottom right ray has hit !", Ruleset._serverConfig, true);
+                    Logging.Log("Bottom right ray has hit !", Ruleset._serverConfig, true); // TODO : Remove test logs.
             }
             else
-                Logging.Log("Bottom left ray has hit !", Ruleset._serverConfig, true);
+                Logging.Log("Bottom left ray has hit !", Ruleset._serverConfig, true); // TODO : Remove test logs.
 
             Goal goal = Ruleset.GetPrivateField<Goal>(typeof(GoalTrigger), hit.collider.gameObject.GetComponent<GoalTrigger>(), "goal");
             PlayerTeam team = Ruleset.GetPrivateField<PlayerTeam>(typeof(Goal), goal, "Team");
