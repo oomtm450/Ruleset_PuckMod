@@ -13,7 +13,6 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
-using static Mono.Security.X509.X520;
 
 namespace oomtm450PuckMod_Ruleset {
     /// <summary>
@@ -78,7 +77,11 @@ namespace oomtm450PuckMod_Ruleset {
 
         private const string SOG = "SOG";
 
+        private const string RESET_SOG = "RESETSOG";
+
         private const string SAVEPERC = "SAVEPERC";
+
+        private const string RESET_SAVEPERC = "RESETSAVEPERC";
 
         private const string SOG_HEADER_LABEL_NAME = "SOGHeaderLabel";
 
@@ -1099,17 +1102,15 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return;
 
-                    // Reset SOG.
-                    foreach (string key in new List<string>(_sog.Keys)) {
-                        _sog[key] = 0;
-                        NetworkCommunication.SendDataToAll(SOG + key, _sog[key].ToString(), Constants.FROM_SERVER, _serverConfig);
-                    }
-
                     // Reset s%.
-                    foreach (string key in new List<string>(_savePerc.Keys)) {
+                    foreach (string key in new List<string>(_savePerc.Keys))
                         _savePerc[key] = (0, 0);
-                        NetworkCommunication.SendDataToAll(SAVEPERC + key, _savePerc[key].ToString(), Constants.FROM_SERVER, _serverConfig);
-                    }
+                    NetworkCommunication.SendDataToAll(RESET_SAVEPERC, "1", Constants.FROM_SERVER, _serverConfig);
+
+                    // Reset SOG.
+                    foreach (string key in new List<string>(_sog.Keys))
+                        _sog[key] = 0;
+                    NetworkCommunication.SendDataToAll(RESET_SOG, "1", Constants.FROM_SERVER, _serverConfig);
 
                     // Reset music.
                     NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.FACEOFF_MUSIC, Constants.FROM_SERVER, _serverConfig);
@@ -1526,6 +1527,18 @@ namespace oomtm450PuckMod_Ruleset {
                             $"Mod is out of date. Please restart your game or unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop to update.");
                         break;
 
+                    case RESET_SOG:
+                        foreach (string key in new List<string>(_sog.Keys)) {
+                            _sog[key] = 0;
+                            _sogLabels[key].text = "0";
+                        }
+                        break;
+
+                    case RESET_SAVEPERC:
+                        foreach (string key in new List<string>(_savePerc.Keys))
+                            _savePerc[key] = (0, 0);
+                        break;
+
                     default:
                         if (dataName.StartsWith(SOG)) {
                             string playerSteamId = dataName.Replace(SOG, "");
@@ -1685,8 +1698,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         Label sogLabel = new Label("0");
                         sogLabel.name = SOG_LABEL;
-                        sogLabel.style.flexGrow = 1;
-                        sogLabel.style.width = 94;
+                        sogLabel.style.flexGrow = 1; // TODO : Find how to put the text like the GoalsLabel etc.
                         playerContainer.Add(sogLabel);
                         sogLabel.transform.position = new Vector3(sogLabel.transform.position.x - 180, sogLabel.transform.position.y, sogLabel.transform.position.z);
                         _sogLabels.Add(playerSteamId, sogLabel);
