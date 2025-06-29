@@ -1669,6 +1669,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         Label sogLabel = new Label("0");
                         sogLabel.name = SOG_LABEL;
+                        sogLabel.style.flexGrow = 1;
                         playerContainer.Add(sogLabel);
                         sogLabel.transform.position = new Vector3(sogLabel.transform.position.x - 180, sogLabel.transform.position.y, sogLabel.transform.position.z);
                         _sogLabels.Add(playerSteamId, sogLabel);
