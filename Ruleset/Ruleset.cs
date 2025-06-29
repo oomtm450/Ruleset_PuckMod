@@ -72,7 +72,7 @@ namespace oomtm450PuckMod_Ruleset {
         private const int GINT_PUSH_NO_GOAL_MILLISECONDS = 300;
         private const int GINT_HIT_NO_GOAL_MILLISECONDS = 800; // TODO : Remove when penalty is added.
 
-        private const float GINT_COLLISION_FORCE_THRESHOLD = 0.975f;
+        private const float GINT_COLLISION_FORCE_THRESHOLD = 0.97f;
 
         private const int MAX_ICING_TIMER = 12000;
 
