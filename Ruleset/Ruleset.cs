@@ -1315,7 +1315,7 @@ namespace oomtm450PuckMod_Ruleset {
             try {
                 NetworkList<NetworkObjectCollision> buffer = GetPuckBuffer();
                 if (buffer == null) {
-                    Logging.Log($"Buffer field is null !!!", _serverConfig);
+                    Logging.LogError($"Buffer field is null !!!");
                     return;
                 }
 
@@ -1476,7 +1476,7 @@ namespace oomtm450PuckMod_Ruleset {
                             _serverConfig = ServerConfig.SetConfig(dataStr);
                         break;
 
-                    case "loadsounds": // CLIENT-SIDE : Load sounds.
+                    case Sounds.LOAD_SOUNDS: // CLIENT-SIDE : Load sounds.
                         if (dataStr != "1")
                             break;
                         GameObject gameObject = new GameObject("Sounds");
