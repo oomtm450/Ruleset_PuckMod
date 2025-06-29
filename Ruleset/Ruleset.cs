@@ -261,7 +261,9 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         if (_puckRaycast.PuckIsGoingToNet[playerBody.Player.Team.Value] && playerBody.Player.Role.Value == PlayerRole.Goalie) {
-                            _checkIfPuckWasSaved[playerBody.Player.Team.Value] = new SaveCheck { HasToCheck = true, ShooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(playerBody.Player.Team.Value)] };
+                            string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(playerBody.Player.Team.Value)];
+                            if (!string.IsNullOrEmpty(shooterSteamId))
+                                _checkIfPuckWasSaved[playerBody.Player.Team.Value] = new SaveCheck { HasToCheck = true, ShooterSteamId = shooterSteamId };
                         }
                         return;
                     }
@@ -326,7 +328,9 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     if (_puckRaycast.PuckIsGoingToNet[stick.Player.Team.Value] && stick.Player.Role.Value == PlayerRole.Goalie) {
-                        _checkIfPuckWasSaved[stick.Player.Team.Value] = new SaveCheck { HasToCheck = true, ShooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[otherTeam] };
+                        string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[otherTeam];
+                        if (!string.IsNullOrEmpty(shooterSteamId))
+                            _checkIfPuckWasSaved[stick.Player.Team.Value] = new SaveCheck { HasToCheck = true, ShooterSteamId = shooterSteamId };
                     }
                 }
                 catch (Exception ex) {
@@ -875,7 +879,7 @@ namespace oomtm450PuckMod_Ruleset {
                             continue;
                         }
 
-                        Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId} !!!!!!!!!!", _serverConfig, true);
+                        Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId} !!!!!!!!!!", _serverConfig, true); // TODO : Remove test logs.
 
                         string shotPlayerSteamId = saveCheck.ShooterSteamId;
                         PlayerTeam shotPlayerTeam = PlayerManager.Instance.GetPlayerBySteamId(shotPlayerSteamId).Team.Value;
@@ -980,17 +984,9 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
+                    bool saveWasCounted = false;
                     if (goalPlayer != null) {
-                        if (!_lastShotWasCounted[goalPlayer.Team.Value]) {
-                            string _goalPlayerSteamId = goalPlayer.SteamId.Value.ToString();
-                            if (!_sog.TryGetValue(_goalPlayerSteamId, out int _))
-                                _sog.Add(_goalPlayerSteamId, 0);
-
-                            _sog[_goalPlayerSteamId] += 1;
-                            NetworkCommunication.SendDataToAll(SOG + _goalPlayerSteamId, _sog[_goalPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
-
-                            _lastShotWasCounted[goalPlayer.Team.Value] = true;
-                        }
+                        saveWasCounted = SendSOGDuringGoal(goalPlayer);
 
                         // Get other team goalie.
                         Player _goalie = PlayerFunc.GetOtherTeamGoalie(goalPlayer.Team.Value);
@@ -1003,7 +999,7 @@ namespace oomtm450PuckMod_Ruleset {
                             _savePercValue = (0, 0);
                         }
 
-                        _savePerc[_goaliePlayerSteamId] = (_savePercValue.Saves, ++_savePercValue.Shots);
+                        _savePerc[_goaliePlayerSteamId] = saveWasCounted ? (--_savePercValue.Saves, _savePercValue.Shots) : (_savePercValue.Saves, ++_savePercValue.Shots);
 
                         NetworkCommunication.SendDataToAll(SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
                         return true;
@@ -1012,18 +1008,9 @@ namespace oomtm450PuckMod_Ruleset {
                     // If own goal, add goal attribution to last player on puck on the other team.
                     UIChat.Instance.Server_SendSystemChatMessage($"OWN GOAL");
                     goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
-                    if (goalPlayer != null)
+                    if (goalPlayer != null) {
                         lastPlayer = goalPlayer;
-
-                    if (!_lastShotWasCounted[goalPlayer.Team.Value]) {
-                        string goalPlayerSteamId = goalPlayer.SteamId.Value.ToString();
-                        if (!_sog.TryGetValue(goalPlayerSteamId, out int _))
-                            _sog.Add(goalPlayerSteamId, 0);
-
-                        _sog[goalPlayerSteamId] += 1;
-                        NetworkCommunication.SendDataToAll(SOG + goalPlayerSteamId, _sog[goalPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
-
-                        _lastShotWasCounted[goalPlayer.Team.Value] = true;
+                        saveWasCounted = SendSOGDuringGoal(goalPlayer);
                     }
 
                     // Get other team goalie.
@@ -1037,7 +1024,7 @@ namespace oomtm450PuckMod_Ruleset {
                         savePercValue = (0, 0);
                     }
 
-                    _savePerc[goaliePlayerSteamId] = (savePercValue.Saves, ++savePercValue.Shots);
+                    _savePerc[goaliePlayerSteamId] = saveWasCounted ? (--savePercValue.Saves, savePercValue.Shots) : (savePercValue.Saves, ++savePercValue.Shots);
 
                     NetworkCommunication.SendDataToAll(SAVEPERC + goaliePlayerSteamId, _savePerc[goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
                 }
@@ -1542,6 +1529,8 @@ namespace oomtm450PuckMod_Ruleset {
                     default:
                         if (dataName.StartsWith(SOG)) {
                             string playerSteamId = dataName.Replace(SOG, "");
+                            if (string.IsNullOrEmpty(playerSteamId))
+                                return;
                             int sog = int.Parse(dataStr);
                             _sog[playerSteamId] = sog;
                             _sogLabels[playerSteamId].text = sog.ToString();
@@ -1549,6 +1538,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (dataName.StartsWith(SAVEPERC)) {
                             string playerSteamId = dataName.Replace(SAVEPERC, "");
+                            if (string.IsNullOrEmpty(playerSteamId))
+                                return;
                             string[] dataStrSplitted = RemoveWhitespace(dataStr.Replace("(", "").Replace(")", "")).Split(',');
                             int saves = int.Parse(dataStrSplitted[0]);
                             int shots = int.Parse(dataStrSplitted[1]);
@@ -1695,6 +1686,7 @@ namespace oomtm450PuckMod_Ruleset {
                         Label sogLabel = new Label("0");
                         sogLabel.name = SOG_LABEL;
                         sogLabel.style.flexGrow = 1;
+                        sogLabel.style.width = 94;
                         playerContainer.Add(sogLabel);
                         sogLabel.transform.position = new Vector3(sogLabel.transform.position.x - 180, sogLabel.transform.position.y, sogLabel.transform.position.z);
                         _sogLabels.Add(playerSteamId, sogLabel);
@@ -1738,6 +1730,23 @@ namespace oomtm450PuckMod_Ruleset {
                 _sogLabels.Clear();
                 _hasUpdatedUIScoreboard.Clear();
             }
+        }
+
+        private static bool SendSOGDuringGoal(Player player) {
+            if (!_lastShotWasCounted[player.Team.Value]) {
+                string playerSteamId = player.SteamId.Value.ToString();
+                if (!_sog.TryGetValue(playerSteamId, out int _))
+                    _sog.Add(playerSteamId, 0);
+
+                _sog[playerSteamId] += 1;
+                NetworkCommunication.SendDataToAll(SOG + playerSteamId, _sog[playerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+
+                _lastShotWasCounted[player.Team.Value] = true;
+
+                return false;
+            }
+
+            return true;
         }
 
         public static string RemoveWhitespace(string input) {

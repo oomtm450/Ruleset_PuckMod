@@ -4,14 +4,14 @@ using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
     internal class PuckRaycast : MonoBehaviour {
-        private readonly Vector3 TOP_VECTOR = new Vector3(0, 0.15f, 0);
+        //private readonly Vector3 TOP_VECTOR = new Vector3(0, 0.15f, 0);
         private readonly Vector3 RIGHT_VECTOR = new Vector3(Ruleset.PUCK_RADIUS + 0.01f, 0, 0);
         private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
 
         private Ray _rayBottomLeft;
         private Ray _rayBottomRight;
-        private Ray _rayTopLeft;
-        private Ray _rayTopRight;
+        //private Ray _rayTopLeft;
+        //private Ray _rayTopRight;
         
         private Vector3 _startingPosition;
 
@@ -29,8 +29,8 @@ namespace oomtm450PuckMod_Ruleset {
             foreach (PlayerTeam key in new List<PlayerTeam>(PuckIsGoingToNet.Keys))
                 PuckIsGoingToNet[key] = false;
 
-            _rayTopLeft = new Ray(transform.position + TOP_VECTOR - RIGHT_VECTOR, transform.position - _startingPosition);
-            _rayTopRight = new Ray(transform.position + TOP_VECTOR + RIGHT_VECTOR, transform.position - _startingPosition);
+            //_rayTopLeft = new Ray(transform.position + TOP_VECTOR - RIGHT_VECTOR, transform.position - _startingPosition);
+            //_rayTopRight = new Ray(transform.position + TOP_VECTOR + RIGHT_VECTOR, transform.position - _startingPosition);
             _rayBottomRight = new Ray(transform.position + RIGHT_VECTOR, transform.position - _startingPosition);
             _rayBottomLeft = new Ray(transform.position - RIGHT_VECTOR, transform.position - _startingPosition);
             CheckForColliders();
@@ -47,7 +47,8 @@ namespace oomtm450PuckMod_Ruleset {
             if (!hasHit) {
                 hasHit = Physics.Raycast(_rayBottomRight, out hit, 14f, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
                 if (!hasHit) {
-                    hasHit = Physics.Raycast(_rayTopLeft, out hit, 14f, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
+                    return;
+                    /*hasHit = Physics.Raycast(_rayTopLeft, out hit, 14f, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
                     if (!hasHit) {
                         hasHit = Physics.Raycast(_rayTopRight, out hit, 14f, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
                         if (!hasHit)
@@ -56,7 +57,7 @@ namespace oomtm450PuckMod_Ruleset {
                             Logging.Log("Top right ray has hit !", Ruleset._serverConfig, true); // TODO : Remove test logs.
                     }
                     else
-                        Logging.Log("Top left ray has hit !", Ruleset._serverConfig, true); // TODO : Remove test logs.
+                        Logging.Log("Top left ray has hit !", Ruleset._serverConfig, true); // TODO : Remove test logs.*/
                 }
                 else
                     Logging.Log("Bottom right ray has hit !", Ruleset._serverConfig, true); // TODO : Remove test logs.
