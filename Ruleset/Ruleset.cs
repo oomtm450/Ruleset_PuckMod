@@ -1432,13 +1432,13 @@ namespace oomtm450PuckMod_Ruleset {
 
             string playerSteamId = player.SteamId.Value.ToString();
 
-            if (newRole == PlayerRole.Attacker) {
+            if (newRole != PlayerRole.Goalie) {
                 if (!_sog.TryGetValue(playerSteamId, out int _))
                     _sog.Add(playerSteamId, 0);
 
                 NetworkCommunication.SendDataToAll(SOG + playerSteamId, _sog[playerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
             }
-            else if (newRole == PlayerRole.Goalie) {
+            else {
                 if (!_savePerc.TryGetValue(playerSteamId, out var _))
                     _savePerc.Add(playerSteamId, (0, 0));
 
