@@ -1411,6 +1411,8 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 Player player = (Player)message["player"];
+                if (player.OwnerClientId == 0)
+                    return;
 
                 if (NetworkManager.Singleton != null && !_hasRegisteredWithNamedMessageHandler)
                     NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
