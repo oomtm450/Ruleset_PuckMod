@@ -25,7 +25,7 @@ namespace oomtm450PuckMod_Ruleset {
             foreach (PlayerTeam key in new List<PlayerTeam>(PuckIsGoingToNet.Keys))
                 PuckIsGoingToNet[key] = false;
 
-            _rayDown = new Ray(transform.position, transform.position - _startingPosition);
+            _rayDown = new Ray(transform.position, transform.position - _startingPosition); // TODO : Change rays to corners. (Bottom left, bottom right, etc.)
             _rayUp = new Ray(transform.position + new Vector3(0, 0.15f, 0), transform.position - _startingPosition);
             _rayRight = new Ray(transform.position + new Vector3(Ruleset.PUCK_RADIUS + 0.01f, 0, Ruleset.PUCK_RADIUS + 0.01f), transform.position - _startingPosition);
             _rayLeft = new Ray(transform.position - new Vector3(Ruleset.PUCK_RADIUS + 0.01f, 0, Ruleset.PUCK_RADIUS + 0.01f), transform.position - _startingPosition);

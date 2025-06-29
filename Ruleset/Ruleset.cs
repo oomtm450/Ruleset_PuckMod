@@ -880,7 +880,7 @@ namespace oomtm450PuckMod_Ruleset {
                         string shotPlayerSteamId = saveCheck.ShooterSteamId;
                         PlayerTeam shotPlayerTeam = PlayerManager.Instance.GetPlayerBySteamId(shotPlayerSteamId).Team.Value;
                         if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastShotWasCounted[shotPlayerTeam]) {
-                            if (!_sog.TryGetValue(shotPlayerSteamId, out int lastSOG))
+                            if (!_sog.TryGetValue(shotPlayerSteamId, out int _))
                                 _sog.Add(shotPlayerSteamId, 0);
 
                             _sog[shotPlayerSteamId] += 1;
@@ -1017,7 +1017,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (!_lastShotWasCounted[goalPlayer.Team.Value]) {
                         string goalPlayerSteamId = goalPlayer.SteamId.Value.ToString();
-                        if (!_sog.TryGetValue(goalPlayerSteamId, out int lastSOG))
+                        if (!_sog.TryGetValue(goalPlayerSteamId, out int _))
                             _sog.Add(goalPlayerSteamId, 0);
 
                         _sog[goalPlayerSteamId] += 1;
@@ -1436,6 +1436,26 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        public static void Event_OnPlayerRoleChanged(Dictionary<string, object> message) {
+            Player player = (Player)message["player"];
+            PlayerRole newRole = (PlayerRole)message["newRole"];
+
+            string playerSteamId = player.SteamId.Value.ToString();
+
+            if (newRole == PlayerRole.Attacker) {
+                if (!_sog.TryGetValue(playerSteamId, out int _))
+                    _sog.Add(playerSteamId, 0);
+
+                NetworkCommunication.SendDataToAll(SOG + playerSteamId, _sog[playerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+            }
+            else if (newRole == PlayerRole.Goalie) {
+                if (!_savePerc.TryGetValue(playerSteamId, out var _))
+                    _savePerc.Add(playerSteamId, (0, 0));
+
+                NetworkCommunication.SendDataToAll(SAVEPERC + playerSteamId, _savePerc[playerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+            }
+        }
+
         /// <summary>
         /// Method that manages received data from client-server communications.
         /// </summary>
@@ -1576,6 +1596,9 @@ namespace oomtm450PuckMod_Ruleset {
                 EventManager.Instance.AddEventListener("Event_Client_OnClientStarted", Event_Client_OnClientStarted);
                 EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                 EventManager.Instance.AddEventListener("Event_OnPlayerSpawned", Event_OnPlayerSpawned);
+                
+                if (ServerFunc.IsDedicatedServer())
+                    EventManager.Instance.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
 
                 return true;
             }
@@ -1599,8 +1622,10 @@ namespace oomtm450PuckMod_Ruleset {
 
                 Logging.Log($"Disabling...", _serverConfig, true);
 
-                if (ServerFunc.IsDedicatedServer())
+                if (ServerFunc.IsDedicatedServer())  {
+                    EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT);
+                }
                 else
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER);
 
