@@ -13,6 +13,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
+using static Mono.Security.X509.X520;
 
 namespace oomtm450PuckMod_Ruleset {
     /// <summary>
@@ -78,6 +79,10 @@ namespace oomtm450PuckMod_Ruleset {
         private const string SOG = "SOG";
 
         private const string SAVEPERC = "SAVEPERC";
+
+        private const string SOG_HEADER_LABEL_NAME = "SOGHeaderLabel";
+
+        private const string SOG_LABEL = "SOGLabel";
         #endregion
 
         #region Fields
@@ -170,24 +175,24 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static PuckRaycast _puckRaycast;
 
-        private static LockDictionary<PlayerTeam, SaveCheck> _checkIfPuckWasSaved = new LockDictionary<PlayerTeam, SaveCheck> {
+        private static readonly LockDictionary<PlayerTeam, SaveCheck> _checkIfPuckWasSaved = new LockDictionary<PlayerTeam, SaveCheck> {
             { PlayerTeam.Blue, new SaveCheck() },
             { PlayerTeam.Red, new SaveCheck() },
         };
 
         // Client-side and server-side.
-        private static LockDictionary<string, int> _sog = new LockDictionary<string, int>();
+        private static readonly LockDictionary<string, int> _sog = new LockDictionary<string, int>();
 
-        private static LockDictionary<string, (int Saves, int Shots)> _savePerc = new LockDictionary<string, (int Saves, int Shots)>();
+        private static readonly LockDictionary<string, (int Saves, int Shots)> _savePerc = new LockDictionary<string, (int Saves, int Shots)>();
 
         // Client-side.
         private static Sounds _sounds = null;
 
         private static string _currentMusicPlaying = "";
 
-        private readonly static List<string> _hasUpdatedUIScoreboard = new List<string>(); // TODO : Clear if player quits or client leaves
+        private static readonly List<string> _hasUpdatedUIScoreboard = new List<string>(); // TODO : Clear if player quits or client leaves
 
-        private readonly static LockDictionary<string, Label> _sogLabels = new LockDictionary<string, Label>(); // TODO : Clear if player quits or client leaves
+        private static readonly LockDictionary<string, Label> _sogLabels = new LockDictionary<string, Label>(); // TODO : Clear if player quits or client leaves
 
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
@@ -1059,66 +1064,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (ServerFunc.IsDedicatedServer())
                         return;
 
-                    VisualElement scoreboardContainer = GetPrivateField<VisualElement>(typeof(UIScoreboard), UIScoreboard.Instance, "container");
-
-                    if (!_hasUpdatedUIScoreboard.Contains("header")) {
-                        foreach (VisualElement ve in scoreboardContainer.Children()) {
-                            if (ve is TemplateContainer && ve.childCount == 1) {
-                                VisualElement templateContainer = ve.Children().First();
-
-                                Label sogHeader = new Label("SOG/s%");
-                                sogHeader.name = "SOGHeaderLabel";
-                                templateContainer.Add(sogHeader);
-                                sogHeader.transform.position = new Vector3(sogHeader.transform.position.x - 260, sogHeader.transform.position.y + 15, sogHeader.transform.position.z);
-
-                                Logging.Log($"TemplateContainer children count : {templateContainer.childCount}", _clientConfig, true);
-                                foreach (VisualElement child in templateContainer.Children()) {
-                                    if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
-                                        child.transform.position = new Vector3(child.transform.position.x - 100, child.transform.position.y, child.transform.position.z);
-                                }
-                            }
-                        }
-
-                        _hasUpdatedUIScoreboard.Add("header");
-                    }
-
-                    foreach (var kvp in GetPrivateField<Dictionary<Player, VisualElement>>(typeof(UIScoreboard), UIScoreboard.Instance, "playerVisualElementMap")) {
-                        if (string.IsNullOrEmpty(kvp.Key.SteamId.Value.ToString()))
-                            continue;
-
-                        string playerSteamId = kvp.Key.SteamId.Value.ToString();
-                        if (!_hasUpdatedUIScoreboard.Contains(playerSteamId)) {
-                            if (kvp.Value.childCount == 1) {
-                                VisualElement playerContainer = kvp.Value.Children().First();
-
-                                Label sogLabel = new Label("0");
-                                sogLabel.name = "SOGLabel";
-                                sogLabel.style.alignSelf = Align.Center;
-                                playerContainer.Add(sogLabel);
-                                sogLabel.transform.position = new Vector3(sogLabel.transform.position.x - 180, sogLabel.transform.position.y, sogLabel.transform.position.z);
-                                _sogLabels.Add(playerSteamId, sogLabel);
-
-                                foreach (VisualElement child in playerContainer.Children()) {
-                                    if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
-                                        child.transform.position = new Vector3(child.transform.position.x - 100, child.transform.position.y, child.transform.position.z);
-                                }
-                            }
-                            else {
-                                Logging.Log($"Not adding player {kvp.Key.Username.Value}, childCount {kvp.Value.childCount}.", _clientConfig, true);
-                                foreach (var test in kvp.Value.Children())
-                                    Logging.Log($"{test.name}", _clientConfig, true);
-                            }
-                                _hasUpdatedUIScoreboard.Add(playerSteamId);
-
-                            if (!_sog.TryGetValue(playerSteamId, out int _))
-                                _sog.Add(playerSteamId, 0);
-                            _sog[playerSteamId] = 0;
-
-                            if (!_savePerc.TryGetValue(playerSteamId, out (int, int) _))
-                                _savePerc.Add(playerSteamId, (0, 0));
-                            _savePerc[playerSteamId] = (0, 0);
-                        }
-                    }
+                    ScoreboardModifications(true);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in UIScoreboard_UpdateServer_Patch Postfix().\n{ex}");
@@ -1428,6 +1374,8 @@ namespace oomtm450PuckMod_Ruleset {
                 _serverConfig = new ServerConfig();
                 if (!string.IsNullOrEmpty(_currentMusicPlaying))
                     _sounds.Stop(_currentMusicPlaying);
+
+                ScoreboardModifications(false);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_Client_OnClientStopped.\n{ex}");
@@ -1557,7 +1505,7 @@ namespace oomtm450PuckMod_Ruleset {
                             int saves = int.Parse(dataStrSplitted[0]);
                             int shots = int.Parse(dataStrSplitted[1]);
                             _savePerc[playerSteamId] = (saves, shots);
-                            _sogLabels[playerSteamId].text = (((double)saves) / ((double)shots)).ToString("0.000", CultureInfo.InvariantCulture);
+                            _sogLabels[playerSteamId].text = GetGoalieSavePerc(saves, shots);
                         }
                         break;
                 }
@@ -1631,6 +1579,9 @@ namespace oomtm450PuckMod_Ruleset {
                 _hasRegisteredWithNamedMessageHandler = false;
 
                 _getStickLocation.Disable();
+
+                ScoreboardModifications(false);
+
                 _harmony.UnpatchSelf();
 
                 Logging.Log($"Disabled.", _serverConfig, true);
@@ -1642,10 +1593,108 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        private static void ScoreboardModifications(bool enable) {
+            VisualElement scoreboardContainer = GetPrivateField<VisualElement>(typeof(UIScoreboard), UIScoreboard.Instance, "container");
+
+            if (!_hasUpdatedUIScoreboard.Contains("header") && enable) {
+                foreach (VisualElement ve in scoreboardContainer.Children()) {
+                    if (ve is TemplateContainer && ve.childCount == 1) {
+                        VisualElement templateContainer = ve.Children().First();
+
+                        Label sogHeader = new Label("SOG/s%");
+                        sogHeader.name = SOG_HEADER_LABEL_NAME;
+                        templateContainer.Add(sogHeader);
+                        sogHeader.transform.position = new Vector3(sogHeader.transform.position.x - 260, sogHeader.transform.position.y + 15, sogHeader.transform.position.z);
+
+                        foreach (VisualElement child in templateContainer.Children()) {
+                            if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
+                                child.transform.position = new Vector3(child.transform.position.x - 100, child.transform.position.y, child.transform.position.z);
+                        }
+                    }
+                }
+
+                _hasUpdatedUIScoreboard.Add("header");
+            }
+            else if (_hasUpdatedUIScoreboard.Contains("header")) {
+                foreach (VisualElement ve in scoreboardContainer.Children()) {
+                    if (ve is TemplateContainer && ve.childCount == 1) {
+                        VisualElement templateContainer = ve.Children().First();
+
+                        templateContainer.Remove(templateContainer.Children().First(x => x.name == SOG_HEADER_LABEL_NAME));
+
+                        foreach (VisualElement child in templateContainer.Children()) {
+                            if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
+                                child.transform.position = new Vector3(child.transform.position.x + 100, child.transform.position.y, child.transform.position.z);
+                        }
+                    }
+                }
+            }
+
+            foreach (var kvp in GetPrivateField<Dictionary<Player, VisualElement>>(typeof(UIScoreboard), UIScoreboard.Instance, "playerVisualElementMap")) {
+                if (string.IsNullOrEmpty(kvp.Key.SteamId.Value.ToString()))
+                    continue;
+
+                string playerSteamId = kvp.Key.SteamId.Value.ToString();
+                if (!_hasUpdatedUIScoreboard.Contains(playerSteamId) && enable) {
+                    if (kvp.Value.childCount == 1) {
+                        VisualElement playerContainer = kvp.Value.Children().First();
+
+                        Label sogLabel = new Label("0");
+                        sogLabel.name = SOG_LABEL;
+                        sogLabel.style.alignSelf = Align.Center;
+                        playerContainer.Add(sogLabel);
+                        sogLabel.transform.position = new Vector3(sogLabel.transform.position.x - 180, sogLabel.transform.position.y, sogLabel.transform.position.z);
+                        _sogLabels.Add(playerSteamId, sogLabel);
+
+                        foreach (VisualElement child in playerContainer.Children()) {
+                            if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
+                                child.transform.position = new Vector3(child.transform.position.x - 100, child.transform.position.y, child.transform.position.z);
+                        }
+
+                        _hasUpdatedUIScoreboard.Add(playerSteamId);
+
+                        if (!_sog.TryGetValue(playerSteamId, out int _))
+                            _sog.Add(playerSteamId, 0);
+                        _sog[playerSteamId] = 0;
+
+                        if (!_savePerc.TryGetValue(playerSteamId, out (int, int) _))
+                            _savePerc.Add(playerSteamId, (0, 0));
+                        _savePerc[playerSteamId] = (0, 0);
+                    }
+                    else if (_hasUpdatedUIScoreboard.Contains(playerSteamId)) {
+                        VisualElement playerContainer = kvp.Value.Children().First();
+
+                        playerContainer.Remove(playerContainer.Children().First(x => x.name == SOG_LABEL));
+
+                        foreach (VisualElement child in playerContainer.Children()) {
+                            if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
+                                child.transform.position = new Vector3(child.transform.position.x + 100, child.transform.position.y, child.transform.position.z);
+                        }
+                    }
+                    else {
+                        Logging.Log($"Not adding player {kvp.Key.Username.Value}, childCount {kvp.Value.childCount}.", _clientConfig, true);
+                        foreach (var test in kvp.Value.Children())
+                            Logging.Log($"{test.name}", _clientConfig, true);
+                    }
+                }
+            }
+
+            if (!enable) {
+                _sog.Clear();
+                _savePerc.Clear();
+                _sogLabels.Clear();
+                _hasUpdatedUIScoreboard.Clear();
+            }
+        }
+
         public static string RemoveWhitespace(string input) {
             return new string(input
                 .Where(c => !Char.IsWhiteSpace(c))
                 .ToArray());
+        }
+
+        private static string GetGoalieSavePerc(int saves, int shots) {
+            return (((double)saves) / ((double)shots)).ToString("0.000", CultureInfo.InvariantCulture);
         }
         #endregion
     }
