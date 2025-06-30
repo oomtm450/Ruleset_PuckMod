@@ -1535,6 +1535,10 @@ namespace oomtm450PuckMod_Ruleset {
                         foreach (string key in new List<string>(_sog.Keys)) {
                             _sog[key] = 0;
                             _sogLabels[key].text = "0";
+
+                            Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(key);
+                            if (currentPlayer != null && currentPlayer && currentPlayer.Role.Value == PlayerRole.Goalie)
+                                _sogLabels[key].text = "0.000";
                         }
                         break;
 
