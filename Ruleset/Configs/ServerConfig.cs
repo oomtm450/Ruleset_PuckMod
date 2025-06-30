@@ -75,6 +75,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if blue team is able to get their goal called off because of goalie interference.
         /// </summary>
         public bool BlueTeamGInt { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if deferred icing is activated. If false, icing will be called when the puck is touched.
+        /// </summary>
+        public bool DeferredIcing { get; set; } = true;
         #endregion
 
         #region Methods/Functions

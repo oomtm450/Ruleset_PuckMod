@@ -388,7 +388,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Icing logic.
                     if (IsIcing(otherTeam)) {
-                        if (stick.Player.PlayerPosition.Role != PlayerRole.Goalie) {
+                        if (!_serverConfig.DeferredIcing && stick.Player.PlayerPosition.Role != PlayerRole.Goalie) {
                             Faceoff.SetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
                             DoFaceoff();
@@ -792,7 +792,9 @@ namespace oomtm450PuckMod_Ruleset {
                         _isIcingActive[PlayerTeam.Red] = true;
                     }
                     
+                    if (_serverConfig.DeferredIcing) {
 
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}");
