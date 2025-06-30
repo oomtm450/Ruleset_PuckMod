@@ -1117,30 +1117,6 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /// <summary>
-        /// Class that patches the AddPlayer event from UIScoreboard.
-        /// </summary>
-        [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.AddPlayer))]
-        public class UIScoreboard_AddPlayer_Patch {
-            [HarmonyPostfix]
-            public static void Postfix(Player player) {
-                try {
-                    // If this is the server, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer())
-                        return;
-
-                    foreach (string key in new List<string>(_sog.Keys))
-                        NetworkCommunication.SendData(SOG + key, _sog[key].ToString(), player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
-
-                    foreach (string key in new List<string>(_savePerc.Keys))
-                        NetworkCommunication.SendData(SAVEPERC + key, _savePerc[key].ToString(), player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
-                }
-                catch (Exception ex) {
-                    Logging.LogError($"Error in UIScoreboard_AddPlayer_Patch Postfix().\n{ex}");
-                }
-            }
-        }
-
-        /// <summary>
         /// Class that patches the RemovePlayer event from UIScoreboard.
         /// </summary>
         [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.RemovePlayer))]
@@ -1511,6 +1487,12 @@ namespace oomtm450PuckMod_Ruleset {
                 NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, playerClientId, Constants.FROM_SERVER, _serverConfig);
                 NetworkCommunication.SendData(ServerConfig.CONFIG_DATA_NAME, _serverConfig.ToString(), playerClientId, Constants.FROM_SERVER, _serverConfig);
                 NetworkCommunication.SendData(Sounds.LOAD_SOUNDS, "1", playerClientId, Constants.FROM_SERVER, _serverConfig);
+
+                foreach (string key in new List<string>(_sog.Keys))
+                    NetworkCommunication.SendData(SOG + key, _sog[key].ToString(), playerClientId, Constants.FROM_SERVER, _serverConfig);
+
+                foreach (string key in new List<string>(_savePerc.Keys))
+                    NetworkCommunication.SendData(SAVEPERC + key, _savePerc[key].ToString(), playerClientId, Constants.FROM_SERVER, _serverConfig);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_OnClientConnected.\n{ex}");
