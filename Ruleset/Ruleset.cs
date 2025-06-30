@@ -1783,7 +1783,7 @@ namespace oomtm450PuckMod_Ruleset {
                         sogLabel.style.flexGrow = 1;
                         sogLabel.style.unityTextAlign = TextAnchor.UpperRight;
                         playerContainer.Add(sogLabel);
-                        sogLabel.transform.position = new Vector3(sogLabel.transform.position.x - 220, sogLabel.transform.position.y, sogLabel.transform.position.z);
+                        sogLabel.transform.position = new Vector3(sogLabel.transform.position.x - 210, sogLabel.transform.position.y, sogLabel.transform.position.z);
                         _sogLabels.Add(playerSteamId, sogLabel);
 
                         foreach (VisualElement child in playerContainer.Children()) {
