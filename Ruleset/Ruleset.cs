@@ -882,7 +882,7 @@ namespace oomtm450PuckMod_Ruleset {
                             continue;
                         }
 
-                        Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId} !!!!!!!!!!", _serverConfig, true); // TODO : Remove test logs.
+                        //Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId} !!!!!!!!!!", _serverConfig, true);
 
                         string shotPlayerSteamId = saveCheck.ShooterSteamId;
                         PlayerTeam shotPlayerTeam = PlayerManager.Instance.GetPlayerBySteamId(shotPlayerSteamId).Team.Value;
