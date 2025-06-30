@@ -800,7 +800,7 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     string playerWithPossessionSteamId = GetPlayerSteamIdInPossession();
 
-                    // Offside logic.
+                    Dictionary<Player, float> dictPlayersZPositionsForDeferredIcing = new Dictionary<Player, float>();
                     foreach (Player player in players) {
                         if (!PlayerFunc.IsPlayerPlaying(player))
                             continue;
@@ -863,16 +863,27 @@ namespace oomtm450PuckMod_Ruleset {
 
                         // Deferred icing logic.
                         if (_serverConfig.DeferredIcing && player.Role.Value != PlayerRole.Goalie) {
-                            if (IsIcing(player.Team.Value) && ZoneFunc.IsBehindHashmarks(otherTeam, player.PlayerBody.transform.position, oldPlayerZone, PLAYER_RADIUS)) {
-                                UIChat.Instance.Server_SendSystemChatMessage($"ICING {player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
-                                ResetIcings();
-                            }
+                            if (IsIcing(player.Team.Value) && ZoneFunc.IsBehindHashmarks(otherTeam, player.PlayerBody.transform.position, oldPlayerZone, PLAYER_RADIUS))
+                                dictPlayersZPositionsForDeferredIcing.Add(player, Math.Abs(player.PlayerBody.transform.position.z));
                             else if (IsIcing(otherTeam) && ZoneFunc.IsBehindHashmarks(player.Team.Value, player.PlayerBody.transform.position, oldPlayerZone, PLAYER_RADIUS)) {
+                                dictPlayersZPositionsForDeferredIcing.Add(player, Math.Abs(player.PlayerBody.transform.position.z));
                                 Faceoff.SetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
-                                UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
-                                ResetIcings();
-                                DoFaceoff();
                             }
+                        }
+                    }
+
+                    // Deferred icing logic.
+                    if (dictPlayersZPositionsForDeferredIcing.Count != 0) {
+                        Player closestPlayerToEndBoard = dictPlayersZPositionsForDeferredIcing.OrderBy(x => x.Value).First().Key;
+                        PlayerTeam closestPlayerToEndBoardOtherTeam = TeamFunc.GetOtherTeam(closestPlayerToEndBoard.Team.Value);
+                        if (IsIcing(closestPlayerToEndBoard.Team.Value)) {
+                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {closestPlayerToEndBoard.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                            ResetIcings();
+                        }
+                        else if (IsIcing(closestPlayerToEndBoardOtherTeam)) {
+                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {closestPlayerToEndBoardOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                            ResetIcings();
+                            DoFaceoff();
                         }
                     }
                 }
