@@ -874,7 +874,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Deferred icing logic.
                     if (dictPlayersZPositionsForDeferredIcing.Count != 0) {
-                        Player closestPlayerToEndBoard = dictPlayersZPositionsForDeferredIcing.OrderBy(x => x.Value).First().Key;
+                        Player closestPlayerToEndBoard = dictPlayersZPositionsForDeferredIcing.OrderByDescending(x => x.Value).First().Key;
                         PlayerTeam closestPlayerToEndBoardOtherTeam = TeamFunc.GetOtherTeam(closestPlayerToEndBoard.Team.Value);
                         if (IsIcing(closestPlayerToEndBoard.Team.Value)) {
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {closestPlayerToEndBoard.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
