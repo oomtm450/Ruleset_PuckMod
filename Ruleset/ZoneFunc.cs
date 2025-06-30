@@ -117,6 +117,22 @@ namespace oomtm450PuckMod_Ruleset {
             return Zone.BlueTeam_BehindGoalLine;
         }
 
+        internal static bool IsBehindHashmarks(PlayerTeam team, Vector3 position, Zone oldZone, float radius) {
+            float zMax = position.z + radius;
+
+            // Red team.
+            if (team == PlayerTeam.Red) {
+                if (zMax < ICE_Z_POSITIONS[ArenaElement.RedTeam_HashMarks].Start)
+                    return true;
+            }
+            else if (team == PlayerTeam.Blue) {
+                if (zMax > ICE_Z_POSITIONS[ArenaElement.BlueTeam_HashMarks].End)
+                    return true;
+            }
+
+            return false;
+        }
+
         internal static Zone GetZone(FaceoffSpot faceoffSpot) {
             switch (faceoffSpot) {
                 case FaceoffSpot.BlueteamDZoneLeft:

@@ -388,7 +388,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Icing logic.
                     if (IsIcing(otherTeam)) {
-                        if (!_serverConfig.DeferredIcing && stick.Player.PlayerPosition.Role != PlayerRole.Goalie) {
+                        if (stick.Player.PlayerPosition.Role != PlayerRole.Goalie) {
                             Faceoff.SetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
                             DoFaceoff();
@@ -791,10 +791,6 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         _isIcingActive[PlayerTeam.Red] = true;
                     }
-                    
-                    if (_serverConfig.DeferredIcing) {
-
-                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}");
@@ -827,7 +823,8 @@ namespace oomtm450PuckMod_Ruleset {
                         Zone playerZone = ZoneFunc.GetZone(player.PlayerBody.transform.position, oldPlayerZone, PLAYER_RADIUS);
                         _playersZone[playerSteamId] = (player.Team.Value, playerZone);
 
-                        List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(TeamFunc.GetOtherTeam(player.Team.Value));
+                        PlayerTeam otherTeam = TeamFunc.GetOtherTeam(player.Team.Value);
+                        List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
 
                         // Is offside.
                         if (playerWithPossessionSteamId != player.SteamId.Value.ToString() && (playerZone == otherTeamZones[0] || playerZone == otherTeamZones[1])) {
@@ -855,10 +852,23 @@ namespace oomtm450PuckMod_Ruleset {
                         // Remove offside if the other team entered the zone with the puck.
                         List<Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(_lastPlayerOnPuckTeam, true);
                         if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
-                            PlayerTeam otherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
+                            PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
                             foreach (string key in new List<string>(_isOffside.Keys)) {
-                                if (_isOffside[key].Team == otherTeam)
+                                if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam)
                                     _isOffside[key] = (_isOffside[key].Team, false);
+                            }
+                        }
+
+                        // Deferred icing logic.
+                        if (_serverConfig.DeferredIcing) {
+                            if (IsIcing(player.Team.Value) && ZoneFunc.IsBehindHashmarks(otherTeam, player.PlayerBody.transform.position, oldPlayerZone, PLAYER_RADIUS)) {
+                                UIChat.Instance.Server_SendSystemChatMessage($"ICING {player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                                ResetIcings();
+                            }
+                            else if (IsIcing(otherTeam) && ZoneFunc.IsBehindHashmarks(player.Team.Value, player.PlayerBody.transform.position, oldPlayerZone, PLAYER_RADIUS)) {
+                                Faceoff.SetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
+                                UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                                DoFaceoff();
                             }
                         }
                     }
