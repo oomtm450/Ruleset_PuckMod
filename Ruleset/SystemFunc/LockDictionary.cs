@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using static UnityEngine.Rendering.DebugUI;
 
 namespace oomtm450PuckMod_Ruleset.SystemFunc {
     /// <summary>
@@ -55,6 +56,11 @@ namespace oomtm450PuckMod_Ruleset.SystemFunc {
         public void Add(TKey key, TValue value) {
             lock (_locker)
                 _dictionary.Add(key, value);
+        }
+
+        public bool Remove(TKey key) {
+            lock (_locker)
+                return _dictionary.Remove(key);
         }
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {

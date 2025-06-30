@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEngine;
@@ -122,11 +123,13 @@ namespace oomtm450PuckMod_Ruleset {
 
             // Red team.
             if (team == PlayerTeam.Red) {
-                if (zMax < ICE_Z_POSITIONS[ArenaElement.RedTeam_HashMarks].Start)
+                double hashMarkZPosition = ICE_Z_POSITIONS[ArenaElement.RedTeam_HashMarks].Start + (ICE_Z_POSITIONS[ArenaElement.RedTeam_HashMarks].End - ICE_Z_POSITIONS[ArenaElement.RedTeam_HashMarks].Start);
+                if (zMax < hashMarkZPosition)
                     return true;
             }
             else if (team == PlayerTeam.Blue) {
-                if (zMax > ICE_Z_POSITIONS[ArenaElement.BlueTeam_HashMarks].End)
+                double hashMarkZPosition = ICE_Z_POSITIONS[ArenaElement.BlueTeam_HashMarks].End - (ICE_Z_POSITIONS[ArenaElement.BlueTeam_HashMarks].End - ICE_Z_POSITIONS[ArenaElement.BlueTeam_HashMarks].Start);
+                if (zMax > hashMarkZPosition)
                     return true;
             }
 
