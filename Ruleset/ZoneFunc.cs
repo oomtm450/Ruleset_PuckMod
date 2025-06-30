@@ -17,8 +17,8 @@ namespace oomtm450PuckMod_Ruleset {
             { ArenaElement.RedTeam_GoalLine, (-40, -39.75) },
             { ArenaElement.BlueTeam_BluePaint, (37.25, 40) },
             { ArenaElement.RedTeam_BluePaint, (-40, -37.25) },
-            { ArenaElement.BlueTeam_HashMarks, (0, 0) }, // TODO
-            { ArenaElement.RedTeam_HashMarks, (0, 0) }, // TODO
+            { ArenaElement.BlueTeam_HashMarks, (29.1, 30.4) },
+            { ArenaElement.RedTeam_HashMarks, (-30.4, -29.1) },
         };
 
         /// <summary>
@@ -115,6 +115,22 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             return Zone.BlueTeam_BehindGoalLine;
+        }
+
+        internal static bool IsBehindHashmarks(PlayerTeam team, Vector3 position, Zone oldZone, float radius) {
+            float zMax = position.z + radius;
+
+            // Red team.
+            if (team == PlayerTeam.Red) {
+                if (zMax < ICE_Z_POSITIONS[ArenaElement.RedTeam_HashMarks].Start)
+                    return true;
+            }
+            else if (team == PlayerTeam.Blue) {
+                if (zMax > ICE_Z_POSITIONS[ArenaElement.BlueTeam_HashMarks].End)
+                    return true;
+            }
+
+            return false;
         }
 
         internal static Zone GetZone(FaceoffSpot faceoffSpot) {
