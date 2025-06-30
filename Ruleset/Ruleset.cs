@@ -1607,6 +1607,9 @@ namespace oomtm450PuckMod_Ruleset {
                             string playerSteamId = dataName.Replace(SOG, "");
                             if (string.IsNullOrEmpty(playerSteamId))
                                 return;
+
+                            ScoreboardModifications(true);
+
                             int sog = int.Parse(dataStr);
                             _sog[playerSteamId] = sog;
                             _sogLabels[playerSteamId].text = sog.ToString();
