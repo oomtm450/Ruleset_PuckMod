@@ -1447,9 +1447,13 @@ namespace oomtm450PuckMod_Ruleset {
         
         public static void Event_OnPlayerRoleChanged(Dictionary<string, object> message) {
             Player player = (Player)message["player"];
-            PlayerRole newRole = (PlayerRole)message["newRole"];
 
             string playerSteamId = player.SteamId.Value.ToString();
+
+            if (string.IsNullOrEmpty(playerSteamId))
+                return;
+
+            PlayerRole newRole = (PlayerRole)message["newRole"];
 
             if (newRole != PlayerRole.Goalie) {
                 if (!_sog.TryGetValue(playerSteamId, out int _))
@@ -1752,10 +1756,11 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             foreach (var kvp in GetPrivateField<Dictionary<Player, VisualElement>>(typeof(UIScoreboard), UIScoreboard.Instance, "playerVisualElementMap")) {
-                if (string.IsNullOrEmpty(kvp.Key.SteamId.Value.ToString()))
+                string playerSteamId = kvp.Key.SteamId.Value.ToString();
+
+                if (string.IsNullOrEmpty(playerSteamId))
                     continue;
 
-                string playerSteamId = kvp.Key.SteamId.Value.ToString();
                 if (!_hasUpdatedUIScoreboard.Contains(playerSteamId) && enable) {
                     if (kvp.Value.childCount == 1) {
                         VisualElement playerContainer = kvp.Value.Children().First();
@@ -1810,6 +1815,10 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool SendSOGDuringGoal(Player player) {
             if (!_lastShotWasCounted[player.Team.Value]) {
                 string playerSteamId = player.SteamId.Value.ToString();
+
+                if (string.IsNullOrEmpty(playerSteamId))
+                    return true;
+
                 if (!_sog.TryGetValue(playerSteamId, out int _))
                     _sog.Add(playerSteamId, 0);
 
