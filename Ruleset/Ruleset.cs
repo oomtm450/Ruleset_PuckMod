@@ -1106,6 +1106,51 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /// <summary>
+        /// Class that patches the AddPlayer event from UIScoreboard.
+        /// </summary>
+        [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.AddPlayer))]
+        public class UIScoreboard_AddPlayer_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(Player player) {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return;
+
+                    foreach (string key in new List<string>(_sog.Keys))
+                        NetworkCommunication.SendData(SOG + key, _sog[key].ToString(), player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
+
+                    foreach (string key in new List<string>(_savePerc.Keys))
+                        NetworkCommunication.SendData(SAVEPERC + key, _savePerc[key].ToString(), player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in UIScoreboard_AddPlayer_Patch Postfix().\n{ex}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the RemovePlayer event from UIScoreboard.
+        /// </summary>
+        [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.RemovePlayer))]
+        public class UIScoreboard_RemovePlayer_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(Player player) {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return;
+
+                    _sogLabels.Remove(player.SteamId.Value.ToString());
+                    _hasUpdatedUIScoreboard.Remove(player.SteamId.Value.ToString());
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in UIScoreboard_RemovePlayer_Patch Postfix().\n{ex}");
+                }
+            }
+        }
+
+        /// <summary>
         /// Class that patches the Server_ResetGameState event from GameManager.
         /// </summary>
         [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_ResetGameState))]
@@ -1412,35 +1457,7 @@ namespace oomtm450PuckMod_Ruleset {
                 Logging.LogError($"Error in Event_Client_OnClientStopped.\n{ex}");
             }
         }
-
-        /// <summary>
-        /// Method called when a client has "spawned" (joined a server) on the server-side.
-        /// Used to send data to the new client that has connected (config and mod version).
-        /// </summary>
-        /// <param name="message">Dictionary of string and object, content of the event.</param>
-        public static void Event_OnPlayerSpawned(Dictionary<string, object> message) { // TODO : Find an function that doesn't get called every respawn.
-            if (!ServerFunc.IsDedicatedServer())
-                return;
-
-            Logging.Log("Event_OnPlayerSpawned", _serverConfig);
-
-            try {
-                Player player = (Player)message["player"];
-                if (player.OwnerClientId == 0)
-                    return;
-
-                if (NetworkManager.Singleton != null && !_hasRegisteredWithNamedMessageHandler)
-                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
-
-                NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
-                NetworkCommunication.SendData(ServerConfig.CONFIG_DATA_NAME, _serverConfig.ToString(), player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
-                NetworkCommunication.SendData(Sounds.LOAD_SOUNDS, "1", player.OwnerClientId, Constants.FROM_SERVER, _serverConfig);
-            }
-            catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnPlayerSpawned.\n{ex}");
-            }
-        }
-
+        
         public static void Event_OnPlayerRoleChanged(Dictionary<string, object> message) {
             Player player = (Player)message["player"];
             PlayerRole newRole = (PlayerRole)message["newRole"];
@@ -1458,6 +1475,34 @@ namespace oomtm450PuckMod_Ruleset {
                     _savePerc.Add(playerSteamId, (0, 0));
 
                 NetworkCommunication.SendDataToAll(SAVEPERC + playerSteamId, _savePerc[playerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+            }
+        }
+
+        /// <summary>
+        /// Method called when a client has connected (joined a server) on the server-side.
+        /// Used to send data to the new client that has connected (config and mod version).
+        /// </summary>
+        /// <param name="message">Dictionary of string and object, content of the event.</param>
+        public static void Event_OnClientConnected(Dictionary<string, object> message) {
+            if (!ServerFunc.IsDedicatedServer())
+                return;
+
+            Logging.Log("Event_OnClientConnected", _serverConfig);
+
+            try {
+                ulong playerClientId = (ulong)message["clientId"];
+                if (playerClientId == 0)
+                    return;
+
+                if (NetworkManager.Singleton != null && !_hasRegisteredWithNamedMessageHandler)
+                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
+
+                NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, playerClientId, Constants.FROM_SERVER, _serverConfig);
+                NetworkCommunication.SendData(ServerConfig.CONFIG_DATA_NAME, _serverConfig.ToString(), playerClientId, Constants.FROM_SERVER, _serverConfig);
+                NetworkCommunication.SendData(Sounds.LOAD_SOUNDS, "1", playerClientId, Constants.FROM_SERVER, _serverConfig);
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in Event_OnClientConnected.\n{ex}");
             }
         }
 
@@ -1620,10 +1665,11 @@ namespace oomtm450PuckMod_Ruleset {
                 Logging.Log("Subscribing to events.", _serverConfig, true);
                 EventManager.Instance.AddEventListener("Event_Client_OnClientStarted", Event_Client_OnClientStarted);
                 EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
-                EventManager.Instance.AddEventListener("Event_OnPlayerSpawned", Event_OnPlayerSpawned);
                 
-                if (ServerFunc.IsDedicatedServer())
+                if (ServerFunc.IsDedicatedServer()) {
+                    EventManager.Instance.AddEventListener("Event_OnClientConnected", Event_OnClientConnected);
                     EventManager.Instance.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
+                }
 
                 return true;
             }
@@ -1643,11 +1689,11 @@ namespace oomtm450PuckMod_Ruleset {
 
                 EventManager.Instance.RemoveEventListener("Event_Client_OnClientStarted", Event_Client_OnClientStarted);
                 EventManager.Instance.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
-                EventManager.Instance.RemoveEventListener("Event_OnPlayerSpawned", Event_OnPlayerSpawned);
 
                 Logging.Log($"Disabling...", _serverConfig, true);
 
                 if (ServerFunc.IsDedicatedServer())  {
+                    EventManager.Instance.RemoveEventListener("Event_OnClientConnected", Event_OnClientConnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT);
                 }
@@ -1738,11 +1784,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (!_sog.TryGetValue(playerSteamId, out int _))
                             _sog.Add(playerSteamId, 0);
-                        _sog[playerSteamId] = 0;
 
                         if (!_savePerc.TryGetValue(playerSteamId, out (int, int) _))
                             _savePerc.Add(playerSteamId, (0, 0));
-                        _savePerc[playerSteamId] = (0, 0);
                     }
                     else if (_hasUpdatedUIScoreboard.Contains(playerSteamId) && !enable) {
                         VisualElement playerContainer = kvp.Value.Children().First();
