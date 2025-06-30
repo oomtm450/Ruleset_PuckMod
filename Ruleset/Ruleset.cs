@@ -1534,7 +1534,7 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case Sounds.LOAD_SOUNDS: // CLIENT-SIDE : Load sounds.
-                        if (dataStr != "1")
+                        if (dataStr != "1" || _sounds != null)
                             break;
                         GameObject gameObject = new GameObject("Sounds");
                         _sounds = gameObject.AddComponent<Sounds>();
@@ -1619,6 +1619,9 @@ namespace oomtm450PuckMod_Ruleset {
                             string playerSteamId = dataName.Replace(SAVEPERC, "");
                             if (string.IsNullOrEmpty(playerSteamId))
                                 return;
+
+                            ScoreboardModifications(true);
+
                             string[] dataStrSplitted = RemoveWhitespace(dataStr.Replace("(", "").Replace(")", "")).Split(',');
                             int saves = int.Parse(dataStrSplitted[0]);
                             int shots = int.Parse(dataStrSplitted[1]);
