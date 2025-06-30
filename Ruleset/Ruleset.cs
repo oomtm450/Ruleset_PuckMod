@@ -69,7 +69,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// Const int, number of milliseconds after a push on the goalie to be considered no goal.
         /// </summary>
         private const int GINT_PUSH_NO_GOAL_MILLISECONDS = 300;
-        private const int GINT_HIT_NO_GOAL_MILLISECONDS = 800; // TODO : Remove when penalty is added.
+        private const int GINT_HIT_NO_GOAL_MILLISECONDS = 900; // TODO : Remove when penalty is added.
 
         private const float GINT_COLLISION_FORCE_THRESHOLD = 0.97f;
 
