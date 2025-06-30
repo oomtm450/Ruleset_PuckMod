@@ -861,7 +861,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         // Deferred icing logic.
-                        if (_serverConfig.DeferredIcing) {
+                        if (_serverConfig.DeferredIcing && player.Role.Value != PlayerRole.Goalie) {
                             if (IsIcing(player.Team.Value) && ZoneFunc.IsBehindHashmarks(otherTeam, player.PlayerBody.transform.position, oldPlayerZone, PLAYER_RADIUS)) {
                                 UIChat.Instance.Server_SendSystemChatMessage($"ICING {player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                                 ResetIcings();
