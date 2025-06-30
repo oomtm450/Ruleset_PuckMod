@@ -391,6 +391,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (stick.Player.PlayerPosition.Role != PlayerRole.Goalie) {
                             Faceoff.SetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                            ResetIcings();
                             DoFaceoff();
                         }
                         else if (stick.Player.PlayerPosition.Role == PlayerRole.Goalie) {
@@ -869,6 +870,7 @@ namespace oomtm450PuckMod_Ruleset {
                             else if (IsIcing(otherTeam) && ZoneFunc.IsBehindHashmarks(player.Team.Value, player.PlayerBody.transform.position, oldPlayerZone, PLAYER_RADIUS)) {
                                 Faceoff.SetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                                 UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                                ResetIcings();
                                 DoFaceoff();
                             }
                         }
