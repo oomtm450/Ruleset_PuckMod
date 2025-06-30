@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
+using SingularityGroup.HotReload;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1608,11 +1609,13 @@ namespace oomtm450PuckMod_Ruleset {
                             if (string.IsNullOrEmpty(playerSteamId))
                                 return;
 
-                            ScoreboardModifications(true);
-
                             int sog = int.Parse(dataStr);
-                            _sog[playerSteamId] = sog;
-                            _sogLabels[playerSteamId].text = sog.ToString();
+                            if (_sog.TryGetValue(playerSteamId, out int _)) {
+                                _sog[playerSteamId] = sog;
+                                _sogLabels[playerSteamId].text = sog.ToString();
+                            }
+                            else
+                                _sog.Add(playerSteamId, sog);
                         }
 
                         if (dataName.StartsWith(SAVEPERC)) {
@@ -1620,13 +1623,16 @@ namespace oomtm450PuckMod_Ruleset {
                             if (string.IsNullOrEmpty(playerSteamId))
                                 return;
 
-                            ScoreboardModifications(true);
-
                             string[] dataStrSplitted = RemoveWhitespace(dataStr.Replace("(", "").Replace(")", "")).Split(',');
                             int saves = int.Parse(dataStrSplitted[0]);
                             int shots = int.Parse(dataStrSplitted[1]);
-                            _savePerc[playerSteamId] = (saves, shots);
-                            _sogLabels[playerSteamId].text = GetGoalieSavePerc(saves, shots);
+
+                            if (_savePerc.TryGetValue(playerSteamId, out var _)) {
+                                _savePerc[playerSteamId] = (saves, shots);
+                                _sogLabels[playerSteamId].text = GetGoalieSavePerc(saves, shots);
+                            }
+                            else
+                                _savePerc.Add(playerSteamId, (saves, shots));
                         }
                         break;
                 }
