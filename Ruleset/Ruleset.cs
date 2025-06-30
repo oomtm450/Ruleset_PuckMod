@@ -1704,13 +1704,14 @@ namespace oomtm450PuckMod_Ruleset {
 
                         Label sogLabel = new Label("0");
                         sogLabel.name = SOG_LABEL;
-                        sogLabel.style.flexGrow = 1; // TODO : Find how to put the text like the GoalsLabel etc.
+                        sogLabel.style.flexGrow = 1;
+                        sogLabel.style.unityTextAlign = TextAnchor.UpperRight;
                         playerContainer.Add(sogLabel);
-                        sogLabel.transform.position = new Vector3(sogLabel.transform.position.x - 180, sogLabel.transform.position.y, sogLabel.transform.position.z);
+                        sogLabel.transform.position = new Vector3(sogLabel.transform.position.x - 220, sogLabel.transform.position.y, sogLabel.transform.position.z);
                         _sogLabels.Add(playerSteamId, sogLabel);
 
                         foreach (VisualElement child in playerContainer.Children()) {
-                            if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
+                            if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel") 
                                 child.transform.position = new Vector3(child.transform.position.x - 100, child.transform.position.y, child.transform.position.z);
                         }
 
