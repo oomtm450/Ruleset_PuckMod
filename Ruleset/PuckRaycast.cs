@@ -54,16 +54,16 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!hasHit)
                             return;
                         else
-                            Logging.Log("Top right ray has hit !", Ruleset._serverConfig, true); // TODO : Remove test logs.
+                            Logging.Log("Top right ray has hit !", Ruleset._serverConfig, true);
                     }
                     else
-                        Logging.Log("Top left ray has hit !", Ruleset._serverConfig, true); // TODO : Remove test logs.*/
+                        Logging.Log("Top left ray has hit !", Ruleset._serverConfig, true);*/
                 }
-                else
-                    Logging.Log("Bottom right ray has hit !", Ruleset._serverConfig, true); // TODO : Remove test logs.
+                //else
+                    //Logging.Log("Bottom right ray has hit !", Ruleset._serverConfig, true);
             }
-            else
-                Logging.Log("Bottom left ray has hit !", Ruleset._serverConfig, true); // TODO : Remove test logs.
+            //else
+                //Logging.Log("Bottom left ray has hit !", Ruleset._serverConfig, true);
 
             Goal goal = Ruleset.GetPrivateField<Goal>(typeof(GoalTrigger), hit.collider.gameObject.GetComponent<GoalTrigger>(), "goal");
             PlayerTeam team = Ruleset.GetPrivateField<PlayerTeam>(typeof(Goal), goal, "Team");
