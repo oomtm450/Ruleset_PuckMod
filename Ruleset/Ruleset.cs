@@ -38,7 +38,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const float, radius of a goalie.
         /// </summary>
-        private const float GOALIE_RADIUS = 0.75f;
+        private const float GOALIE_RADIUS = 0.8f;
 
         /// <summary>
         /// Const float, height of the net's crossbar.
@@ -69,7 +69,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// Const int, number of milliseconds after a push on the goalie to be considered no goal.
         /// </summary>
         private const int GINT_PUSH_NO_GOAL_MILLISECONDS = 350;
-        private const int GINT_HIT_NO_GOAL_MILLISECONDS = 900; // TODO : Remove when penalty is added.
+        private const int GINT_HIT_NO_GOAL_MILLISECONDS = 9000; // TODO : Remove when penalty is added.
 
         private const float GINT_COLLISION_FORCE_THRESHOLD = 0.965f;
 
@@ -537,7 +537,7 @@ namespace oomtm450PuckMod_Ruleset {
                     bool goalieDown = goalie.PlayerBody.IsSlipping || goalie.PlayerBody.HasSlipped;
                     _lastGoalieStateCollision[goalieOtherTeam] = goalieDown;
 
-                    if (goalieDown || force > GINT_COLLISION_FORCE_THRESHOLD && goalieIsInHisCrease) {
+                    if (goalieDown || (force > GINT_COLLISION_FORCE_THRESHOLD && goalieIsInHisCrease)) {
                         if (!_goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch))
                             return;
 
