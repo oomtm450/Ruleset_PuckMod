@@ -17,8 +17,8 @@ namespace oomtm450PuckMod_Ruleset {
             { ArenaElement.RedTeam_GoalLine, (-40, -39.75) },
             { ArenaElement.BlueTeam_BluePaint, (37.25, 40) },
             { ArenaElement.RedTeam_BluePaint, (-40, -37.25) },
-            { ArenaElement.BlueTeam_HashMarks, (0, 0) }, // TODO
-            { ArenaElement.RedTeam_HashMarks, (0, 0) }, // TODO
+            { ArenaElement.BlueTeam_HashMarks, (29.1, 30.4) },
+            { ArenaElement.RedTeam_HashMarks, (-30.4, -29.1) },
         };
 
         /// <summary>
