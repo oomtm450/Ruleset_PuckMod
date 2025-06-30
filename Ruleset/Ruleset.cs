@@ -525,18 +525,19 @@ namespace oomtm450PuckMod_Ruleset {
                         (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[ArenaElement.RedTeam_BluePaint];
                     }
 
+                    bool goalieIsInHisCrease = true;
                     if (goalie.PlayerBody.Rigidbody.transform.position.x - GOALIE_RADIUS < startX ||
                         goalie.PlayerBody.Rigidbody.transform.position.x + GOALIE_RADIUS > endX ||
                         goalie.PlayerBody.Rigidbody.transform.position.z - GOALIE_RADIUS < startZ ||
                         goalie.PlayerBody.Rigidbody.transform.position.z + GOALIE_RADIUS > endZ)
-                        return;
+                        goalieIsInHisCrease = false;
 
                     PlayerTeam goalieOtherTeam = TeamFunc.GetOtherTeam(goalie.Team.Value);
 
                     bool goalieDown = goalie.PlayerBody.IsSlipping || goalie.PlayerBody.HasSlipped;
                     _lastGoalieStateCollision[goalieOtherTeam] = goalieDown;
 
-                    if (goalieDown || force > GINT_COLLISION_FORCE_THRESHOLD) {
+                    if (goalieDown || force > GINT_COLLISION_FORCE_THRESHOLD && goalieIsInHisCrease) {
                         if (!_goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch))
                             return;
 
