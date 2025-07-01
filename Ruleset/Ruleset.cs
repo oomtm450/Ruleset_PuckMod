@@ -1151,13 +1151,22 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     // Reset s%.
-                    foreach (string key in new List<string>(_savePerc.Keys))
-                        _savePerc[key] = (0, 0);
+                    List<Player> players = PlayerManager.Instance.GetPlayers();
+                    foreach (string key in new List<string>(_savePerc.Keys)) {
+                        if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
+                            _savePerc[key] = (0, 0);
+                        else
+                            _savePerc.Remove(key);
+                    }
                     NetworkCommunication.SendDataToAll(RESET_SAVEPERC, "1", Constants.FROM_SERVER, _serverConfig);
 
                     // Reset SOG.
-                    foreach (string key in new List<string>(_sog.Keys))
-                        _sog[key] = 0;
+                    foreach (string key in new List<string>(_sog.Keys)) {
+                        if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
+                            _sog[key] = 0;
+                        else
+                            _sog.Remove(key);
+                    }
                     NetworkCommunication.SendDataToAll(RESET_SOG, "1", Constants.FROM_SERVER, _serverConfig);
 
                     // Reset music.
