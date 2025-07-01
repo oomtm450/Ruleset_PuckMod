@@ -1,7 +1,6 @@
 ﻿using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
-using SingularityGroup.HotReload;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.11.1";
+        private const string MOD_VERSION = "0.12.0DEV";
 
         /// <summary>
         /// Const float, radius of the puck.
