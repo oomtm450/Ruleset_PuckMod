@@ -1620,7 +1620,9 @@ namespace oomtm450PuckMod_Ruleset {
                             int sog = int.Parse(dataStr);
                             if (_sog.TryGetValue(playerSteamId, out int _)) {
                                 _sog[playerSteamId] = sog;
-                                _sogLabels[playerSteamId].text = sog.ToString();
+                                Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
+                                if (currentPlayer != null && currentPlayer && currentPlayer.Role.Value != PlayerRole.Goalie)
+                                    _sogLabels[playerSteamId].text = sog.ToString();
                             }
                             else
                                 _sog.Add(playerSteamId, sog);
@@ -1637,7 +1639,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                             if (_savePerc.TryGetValue(playerSteamId, out var _)) {
                                 _savePerc[playerSteamId] = (saves, shots);
-                                _sogLabels[playerSteamId].text = GetGoalieSavePerc(saves, shots);
+                                Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
+                                if (currentPlayer != null && currentPlayer && currentPlayer.Role.Value == PlayerRole.Goalie)
+                                    _sogLabels[playerSteamId].text = GetGoalieSavePerc(saves, shots);
                             }
                             else
                                 _savePerc.Add(playerSteamId, (saves, shots));
