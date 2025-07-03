@@ -9,7 +9,7 @@ using UnityEngine.UI;
 
 namespace oomtm450PuckMod_Ruleset {
     internal class RefSignals : MonoBehaviour {
-        private const string IMAGES_FOLDER_PATH = "images/refsignals";
+        private const string IMAGES_FOLDER_PATH = "images\\refsignals";
         private const string IMAGE_EXTENSION = ".png";
 
         internal const string SHOW_SIGNAL = "showrefsignal";
