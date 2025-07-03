@@ -10,7 +10,7 @@ using UnityEngine.Networking;
 
 namespace oomtm450PuckMod_Ruleset {
     internal class Sounds : MonoBehaviour {
-        private const string SOUND_FOLDER_PATH = "sounds";
+        private const string SOUNDS_FOLDER_PATH = "sounds";
         private const string SOUND_EXTENSION = ".ogg";
 
         internal const string LOAD_SOUNDS = "loadsounds";
@@ -34,7 +34,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 // You'll need to figure out the actual path to your asset bundle.
                 // It could be alongside your DLL, or in a specific mod data folder.
-                string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), SOUND_FOLDER_PATH);
+                string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), SOUNDS_FOLDER_PATH);
 
                 if (!Directory.Exists(fullPath)) {
                     Logging.LogError($"Sounds not found at: {fullPath}");
@@ -44,7 +44,7 @@ namespace oomtm450PuckMod_Ruleset {
                 StartCoroutine(GetAudioClips(fullPath));
             }
             catch (Exception ex) {
-                Logging.LogError($"Error loading AssetBundle.\n{ex}");
+                Logging.LogError($"Error loading Sounds.\n{ex}");
             }
         }
 

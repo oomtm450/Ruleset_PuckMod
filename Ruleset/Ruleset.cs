@@ -201,6 +201,8 @@ namespace oomtm450PuckMod_Ruleset {
         // Client-side.
         private static Sounds _sounds = null;
 
+        private static RefSignals _refSignals = null;
+
         private static string _currentMusicPlaying = "";
 
         private static readonly List<string> _hasUpdatedUIScoreboard = new List<string>(); // TODO : Clear if player quits server
@@ -830,12 +832,12 @@ namespace oomtm450PuckMod_Ruleset {
 
                         // Is offside.
                         if (playerWithPossessionSteamId != player.SteamId.Value.ToString() && (playerZone == otherTeamZones[0] || playerZone == otherTeamZones[1])) {
-                            if ((_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1]) || IsOffside(player.Team.Value)) {
-                                /*if (!isPlayerTeamOffside) {
-                                    _puckLastPositionBeforeCall = puck.Rigidbody.transform.position;
-                                    _puckLastZoneBeforeCall = _puckZone;
-                                    //UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM");
-                                }*/
+                            bool isPlayerTeamOffside = IsOffside(player.Team.Value);
+                            if ((_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1]) || isPlayerTeamOffside) {
+                                if (!isPlayerTeamOffside) {
+                                    NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
+                                    UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM");
+                                }
 
                                 _isOffside[playerSteamId] = (player.Team.Value, true);
                             }
@@ -844,11 +846,10 @@ namespace oomtm450PuckMod_Ruleset {
                         // Is not offside.
                         if (_playersZone[playerSteamId].Zone != otherTeamZones[0] && _playersZone[playerSteamId].Zone != otherTeamZones[1] && _isOffside[playerSteamId].IsOffside) {
                             _isOffside[playerSteamId] = (player.Team.Value, false);
-                            /*if (!IsOffside(player.Team.Value)) {
-                                _puckLastPositionBeforeOffside = puck.Rigidbody.transform.position;
-                                _puckLastZoneBeforeOffside = _puckZone;
-                                //UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
-                            }*/
+                            if (!IsOffside(player.Team.Value)) {
+                                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send hide offside signal for client-side UI.
+                                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                            }
                         }
 
                         // Remove offside if the other team entered the zone with the puck.
@@ -1235,6 +1236,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void PostDoFaceoff() {
             _doFaceoff = false;
+
+            NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
+
             GameManager.Instance.Server_Resume();
             if (GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
                 return;
@@ -1447,6 +1451,8 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!string.IsNullOrEmpty(_currentMusicPlaying))
                     _sounds.Stop(_currentMusicPlaying);
 
+                _refSignals.StopAllSignals();
+
                 ScoreboardModifications(false);
             }
             catch (Exception ex) {
@@ -1548,6 +1554,9 @@ namespace oomtm450PuckMod_Ruleset {
                         GameObject gameObject = new GameObject("Sounds");
                         _sounds = gameObject.AddComponent<Sounds>();
                         _sounds.LoadSounds();
+
+                        gameObject = new GameObject("RefSignals");
+                        _refSignals = gameObject.AddComponent<RefSignals>();
                         break;
 
                     case Sounds.PLAY_SOUND: // CLIENT-SIDE : Play sound.
@@ -1584,6 +1593,22 @@ namespace oomtm450PuckMod_Ruleset {
 
                             _currentMusicPlaying = "";
                         }
+                        break;
+
+                    case RefSignals.SHOW_SIGNAL: // CLIENT-SIDE : Show ref signal in the UI.
+                        if (_refSignals == null)
+                            break;
+                        _refSignals.ShowSignal(dataStr);
+                        break;
+
+                    case RefSignals.STOP_SIGNAL: // CLIENT-SIDE : Hide ref signal in the UI.
+                        if (_refSignals == null)
+                            break;
+
+                        if (dataStr == RefSignals.ALL)
+                            _refSignals.StopAllSignals();
+                        else
+                            _refSignals.StopSignal(dataStr);
                         break;
 
                     case Constants.MOD_NAME + "_kick": // SERVER-SIDE : Kick the client that asked to be kicked.
