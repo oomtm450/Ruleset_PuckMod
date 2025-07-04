@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.12.0DEV5";
+        private const string MOD_VERSION = "0.12.0DEV6";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -33,7 +33,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const float, radius of a player.
         /// </summary>
-        private const float PLAYER_RADIUS = 0.25f;
+        private const float PLAYER_RADIUS = 0.26f;
 
         /// <summary>
         /// Const float, radius of a goalie.
