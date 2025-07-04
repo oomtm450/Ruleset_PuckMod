@@ -741,6 +741,10 @@ namespace oomtm450PuckMod_Ruleset {
                 Puck puck = null;
                 List<Player> players = null;
                 Zone oldZone = Zone.BlueTeam_Center;
+                Dictionary<PlayerTeam, bool> icingHasToBeWarned = new Dictionary<PlayerTeam, bool> {
+                    {PlayerTeam.Blue, false},
+                    {PlayerTeam.Red, false},
+                };
 
                 try {
                     // If this is not the server or game is not started, do not use the patch.
@@ -783,7 +787,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!IsIcing(PlayerTeam.Blue)) {
                             _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
                             _isIcingActiveTimers[PlayerTeam.Blue].Change(MAX_ICING_TIMER, Timeout.Infinite);
-                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Blue.ToString().ToUpperInvariant()} TEAM");
+                            icingHasToBeWarned[PlayerTeam.Blue] = true;
                         }
                         _isIcingActive[PlayerTeam.Blue] = true;
                     }
@@ -791,7 +795,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!IsIcing(PlayerTeam.Red)) {
                             _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
                             _isIcingActiveTimers[PlayerTeam.Red].Change(MAX_ICING_TIMER, Timeout.Infinite);
-                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Red.ToString().ToUpperInvariant()} TEAM");
+                            icingHasToBeWarned[PlayerTeam.Red] = true;
                         }
                         _isIcingActive[PlayerTeam.Red] = true;
                     }
@@ -878,7 +882,10 @@ namespace oomtm450PuckMod_Ruleset {
                         Player closestPlayerToEndBoard = dictPlayersZPositionsForDeferredIcing.OrderByDescending(x => x.Value).First().Key;
                         PlayerTeam closestPlayerToEndBoardOtherTeam = TeamFunc.GetOtherTeam(closestPlayerToEndBoard.Team.Value);
                         if (IsIcing(closestPlayerToEndBoard.Team.Value)) {
-                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {closestPlayerToEndBoard.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                            if (!icingHasToBeWarned[closestPlayerToEndBoard.Team.Value])
+                                UIChat.Instance.Server_SendSystemChatMessage($"ICING {closestPlayerToEndBoard.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                            else
+                                icingHasToBeWarned[closestPlayerToEndBoard.Team.Value] = false;
                             ResetIcings();
                         }
                         else if (IsIcing(closestPlayerToEndBoardOtherTeam)) {
@@ -886,6 +893,11 @@ namespace oomtm450PuckMod_Ruleset {
                             ResetIcings();
                             DoFaceoff();
                         }
+                    }
+
+                    foreach (var kvp in icingHasToBeWarned) {
+                        if (kvp.Value)
+                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {kvp.Key.ToString().ToUpperInvariant()} TEAM");
                     }
                 }
                 catch (Exception ex) {
