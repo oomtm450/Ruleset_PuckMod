@@ -38,7 +38,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const float, radius of a goalie.
         /// </summary>
-        private const float GOALIE_RADIUS = 0.8f;
+        private const float GOALIE_RADIUS = 0.785f;
 
         /// <summary>
         /// Const float, height of the net's crossbar.
