@@ -56,9 +56,9 @@ namespace oomtm450PuckMod_Ruleset {
         private const int MAX_TIPPED_MILLISECONDS = 92;
 
         /// <summary>
-        /// Const int, number of milliseconds for a possession to be considered with challenging.
+        /// Const int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        private const int MIN_POSSESSION_MILLISECONDS = 240;
+        private const int MIN_POSSESSION_MILLISECONDS = 235;
 
         /// <summary>
         /// Const int, number of milliseconds for a possession to be considered without challenging.
