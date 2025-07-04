@@ -1,10 +1,11 @@
 ﻿using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 namespace oomtm450PuckMod_Ruleset {
@@ -18,15 +19,23 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string ALL = "all";
         internal const string OFFSIDE_LINESMAN = "offside_linesman";
 
-        private readonly Dictionary<string, Sprite> _sprites = new Dictionary<string, Sprite>();
+        private readonly Dictionary<string, Image> _images = new Dictionary<string, Image>();
+        internal List<string> _errors = new List<string>();
+        private Canvas _canvas;
 
-        internal void Start() {
-            LoadImages();
+        internal void Update() {
+            Player localPlayer = PlayerManager.Instance.GetLocalPlayer();
+            if (!localPlayer || !localPlayer.IsCharacterFullySpawned)
+                return;
+
+            //_canvas.transform.position = new Vector3(localPlayer.PlayerCamera.transform.position.x, localPlayer.PlayerCamera.transform.position.y,
+                //localPlayer.PlayerCamera.transform.position.z + 1);
+            //_canvas.transform.rotation = Quaternion.LookRotation(transform.position - localPlayer.PlayerCamera.transform.position);
         }
 
-        private void LoadImages() {
+        internal void LoadImages() {
             try {
-                if (_sprites.Count != 0)
+                if (_images.Count != 0)
                     return;
 
                 string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), IMAGES_FOLDER_PATH);
@@ -36,36 +45,60 @@ namespace oomtm450PuckMod_Ruleset {
                     return;
                 }
 
-                GetSprites(fullPath);
+                _canvas = gameObject.AddComponent<Canvas>();
+                _canvas.name = "RefSignalsCanvas";
+                _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                _canvas.sortingOrder = 100;
+
+                StartCoroutine(GetSprites(fullPath));
             }
             catch (Exception ex) {
                 Logging.LogError($"Error loading Images.\n{ex}");
             }
         }
 
-        private void GetSprites(string path) {
+        private IEnumerator GetSprites(string path) {
             foreach (string file in Directory.GetFiles(path, "*" + IMAGE_EXTENSION, SearchOption.AllDirectories)) {
                 string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
+                UnityWebRequest webRequest = UnityWebRequestTexture.GetTexture(filePath);
+                yield return webRequest.SendWebRequest();
 
-                string fileName = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(IMAGE_EXTENSION, "");
-                _sprites.Add(fileName, Resources.Load<Sprite>(filePath));
+                if (webRequest.result != UnityWebRequest.Result.Success)
+                    _errors.Add(webRequest.error);
+                else {
+                    try {
+                        string fileName = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(IMAGE_EXTENSION, "");
+                        Texture2D texture = DownloadHandlerTexture.GetContent(webRequest);
 
-                Component component = gameObject.AddComponent(typeof(Image));
-                component.name = fileName;
+                        Image image = gameObject.AddComponent<Image>();
+                        image.name = fileName + "_Image";
+                        image.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(1f, 0.6f));
+                        image.preserveAspect = true;
+
+                        RectTransform rectTranform = image.GetComponent<RectTransform>();
+                        rectTranform.localScale = new Vector3(0.005f, 0.005f);
+
+                        _images.Add(fileName, image);
+                    }
+                    catch (Exception ex) {
+                        _errors.Add(ex.ToString());
+                    }
+                }
             }
         }
 
         internal void ShowSignal(string signal) {
-            gameObject.GetComponents<Image>().First(x => x.name == signal).sprite = _sprites[signal];
+            _images[signal].enabled = true;
+            Logging.Log($"Image name : {_images[signal].name}", Ruleset._serverConfig, true); // TODO : Remove debug log.
         }
 
         internal void StopSignal(string signal) {
-            gameObject.GetComponents<Image>().First(x => x.name == signal).sprite = null;
+            _images[signal].enabled = false;
         }
 
         internal void StopAllSignals() {
-            foreach (Image component in gameObject.GetComponents<Image>())
-                component.sprite = null;
+            foreach (Image image in _images.Values)
+                image.enabled = false;
         }
     }
 }

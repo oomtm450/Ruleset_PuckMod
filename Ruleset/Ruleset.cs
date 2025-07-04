@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.12.0DEV";
+        private const string MOD_VERSION = "0.12.0DEV5";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1551,12 +1551,12 @@ namespace oomtm450PuckMod_Ruleset {
                     case Sounds.LOAD_SOUNDS: // CLIENT-SIDE : Load sounds.
                         if (dataStr != "1" || _sounds != null)
                             break;
-                        GameObject gameObject = new GameObject("Sounds");
-                        _sounds = gameObject.AddComponent<Sounds>();
+                        GameObject soundsGameObject = new GameObject("Sounds");
+                        _sounds = soundsGameObject.AddComponent<Sounds>();
                         _sounds.LoadSounds();
 
-                        gameObject = new GameObject("RefSignals");
-                        _refSignals = gameObject.AddComponent<RefSignals>();
+                        _refSignals = PlayerManager.Instance.GetLocalPlayer().gameObject.AddComponent<RefSignals>();
+                        _refSignals.LoadImages();
                         break;
 
                     case Sounds.PLAY_SOUND: // CLIENT-SIDE : Play sound.
@@ -1598,17 +1598,29 @@ namespace oomtm450PuckMod_Ruleset {
                     case RefSignals.SHOW_SIGNAL: // CLIENT-SIDE : Show ref signal in the UI.
                         if (_refSignals == null)
                             break;
-                        _refSignals.ShowSignal(dataStr);
+
+                        if (_refSignals._errors.Count != 0) {
+                            foreach (string error in _refSignals._errors)
+                                Logging.LogError(error);
+                        }
+                        else
+                            _refSignals.ShowSignal(dataStr);
                         break;
 
                     case RefSignals.STOP_SIGNAL: // CLIENT-SIDE : Hide ref signal in the UI.
                         if (_refSignals == null)
                             break;
 
-                        if (dataStr == RefSignals.ALL)
-                            _refSignals.StopAllSignals();
-                        else
-                            _refSignals.StopSignal(dataStr);
+                        if (_refSignals._errors.Count != 0) {
+                            foreach (string error in _refSignals._errors)
+                                Logging.LogError(error);
+                        }
+                        else {
+                            if (dataStr == RefSignals.ALL)
+                                _refSignals.StopAllSignals();
+                            else
+                                _refSignals.StopSignal(dataStr);
+                        }
                         break;
 
                     case Constants.MOD_NAME + "_kick": // SERVER-SIDE : Kick the client that asked to be kicked.
