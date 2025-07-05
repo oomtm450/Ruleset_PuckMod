@@ -587,9 +587,19 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
+                    if (_paused) {
+                        GameManager.Instance.Server_Resume();
+                        _changedPhase = false;
+                    }
+                            
                     _paused = false;
+                    _doFaceoff = false;
 
-                    if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) {
+                    if (phase == GamePhase.BlueScore)
+                        NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.BLUE_GOAL_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                    else if (phase == GamePhase.RedScore)
+                        NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.RED_GOAL_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                    else if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) {
                         // Reset players zone.
                         _playersZone.Clear();
 
@@ -631,18 +641,10 @@ namespace oomtm450PuckMod_Ruleset {
                             _lastPlayerOnPuckTipIncludedSteamId[key] = "";
 
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
-
-                        if (_paused) {
-                            GameManager.Instance.Server_Resume();
-                            _changedPhase = false;
-                        }
-                            
-                        _paused = false;
-                        _doFaceoff = false;
                     }
 
                     if (!_changedPhase)  {
-                        if (phase == GamePhase.FaceOff)
+                        if (phase == GamePhase.FaceOff && string.IsNullOrEmpty(_currentMusicPlaying))
                             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FACEOFF_MUSIC, Constants.FROM_SERVER, _serverConfig);
 
                         return true;
@@ -676,7 +678,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
                     }
                     else if (phase == GamePhase.Playing) {
-                        NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.FACEOFF_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                        NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.MUSIC, Constants.FROM_SERVER, _serverConfig);
                         return;
                     }
                 }
@@ -1215,7 +1217,7 @@ namespace oomtm450PuckMod_Ruleset {
                     NetworkCommunication.SendDataToAll(RESET_SOG, "1", Constants.FROM_SERVER, _serverConfig);
 
                     // Reset music.
-                    NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.FACEOFF_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                    NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.MUSIC, Constants.FROM_SERVER, _serverConfig);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManager_Server_ResetGameState_Patch Postfix().\n{ex}");
@@ -1638,12 +1640,20 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         else {
                             if (dataStr == Sounds.FACEOFF_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomFaceoffSound();
+                                _currentMusicPlaying = Sounds.GetRandomSound(Sounds.FaceoffMusicList);
                                 _sounds.Play(_currentMusicPlaying);
                             }
                             else if (dataStr == Sounds.FACEOFF_MUSIC_DELAYED) {
-                                _currentMusicPlaying = Sounds.GetRandomFaceoffSound();
+                                _currentMusicPlaying = Sounds.GetRandomSound(Sounds.FaceoffMusicList);
                                 _sounds.Play(_currentMusicPlaying, 1f);
+                            }
+                            else if (dataName == Sounds.BLUE_GOAL_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(Sounds.BlueGoalMusicList);
+                                _sounds.Play(_currentMusicPlaying, 2.5f);
+                            }
+                            else if (dataName == Sounds.RED_GOAL_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(Sounds.RedGoalMusicList);
+                                _sounds.Play(_currentMusicPlaying, 2.5f);
                             }
                             else if (dataStr == Sounds.WHISTLE)
                                 _sounds.Play(Sounds.WHISTLE);
@@ -1658,7 +1668,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 Logging.LogError(error);
                         }
                         else {
-                            if (dataStr == Sounds.FACEOFF_MUSIC)
+                            if (dataStr == Sounds.MUSIC)
                                 _sounds.Stop(_currentMusicPlaying);
 
                             _currentMusicPlaying = "";
@@ -1857,8 +1867,9 @@ namespace oomtm450PuckMod_Ruleset {
                     if (ve is TemplateContainer && ve.childCount == 1) {
                         VisualElement templateContainer = ve.Children().First();
 
-                        Label sogHeader = new Label("SOG/s%");
-                        sogHeader.name = SOG_HEADER_LABEL_NAME;
+                        Label sogHeader = new Label("SOG/s%") {
+                            name = SOG_HEADER_LABEL_NAME
+                        };
                         templateContainer.Add(sogHeader);
                         sogHeader.transform.position = new Vector3(sogHeader.transform.position.x - 260, sogHeader.transform.position.y + 15, sogHeader.transform.position.z);
 
@@ -1896,8 +1907,9 @@ namespace oomtm450PuckMod_Ruleset {
                     if (kvp.Value.childCount == 1) {
                         VisualElement playerContainer = kvp.Value.Children().First();
 
-                        Label sogLabel = new Label("0");
-                        sogLabel.name = SOG_LABEL;
+                        Label sogLabel = new Label("0") {
+                            name = SOG_LABEL
+                        };
                         sogLabel.style.flexGrow = 1;
                         sogLabel.style.unityTextAlign = TextAnchor.UpperRight;
                         playerContainer.Add(sogLabel);

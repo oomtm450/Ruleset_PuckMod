@@ -17,11 +17,16 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string PLAY_SOUND = "playsound";
         internal const string STOP_SOUND = "stopsound";
 
+        internal const string MUSIC = "music";
         internal const string WHISTLE = "whistle";
         internal const string FACEOFF_MUSIC = "faceoffmusic";
         internal const string FACEOFF_MUSIC_DELAYED = "faceoffmusicdelayed";
+        internal const string BLUE_GOAL_MUSIC = "bluegoalmusic";
+        internal const string RED_GOAL_MUSIC = "redgoalmusic";
 
-        internal static List<string> faceoffMusicList = new List<string>();
+        internal static List<string> FaceoffMusicList { get; set; } = new List<string>();
+        internal static List<string> BlueGoalMusicList { get; set; } = new List<string>();
+        internal static List<string> RedGoalMusicList { get; set; } = new List<string>();
 
         private readonly Dictionary<string, GameObject> _soundObjects = new Dictionary<string, GameObject>();
         private readonly List<AudioClip> _audioClips = new List<AudioClip>();
@@ -62,7 +67,11 @@ namespace oomtm450PuckMod_Ruleset {
                         clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
                         _audioClips.Add(clip);
                         if (clip.name.Contains(FACEOFF_MUSIC))
-                            faceoffMusicList.Add(clip.name);
+                            FaceoffMusicList.Add(clip.name);
+                        if (clip.name.Contains(BLUE_GOAL_MUSIC))
+                            BlueGoalMusicList.Add(clip.name);
+                        if (clip.name.Contains(RED_GOAL_MUSIC))
+                            RedGoalMusicList.Add(clip.name);
                     }
                     catch (Exception ex) {
                         _errors.Add(ex.ToString());
@@ -98,9 +107,9 @@ namespace oomtm450PuckMod_Ruleset {
             soundObject.GetComponent<AudioSource>().Stop();
         }
 
-        internal static string GetRandomFaceoffSound() {
-            if (faceoffMusicList.Count != 0)
-                return faceoffMusicList[new System.Random().Next(0, faceoffMusicList.Count)];
+        internal static string GetRandomSound(List<string> musicList) {
+            if (musicList.Count != 0)
+                return musicList[new System.Random().Next(0, musicList.Count)];
 
             return "";
         }
