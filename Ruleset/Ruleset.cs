@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.12.0DEV2";
+        private const string MOD_VERSION = "0.12.0DEV3";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1506,6 +1506,9 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 _serverConfig = new ServerConfig();
+                if (_refSignals == null && _sounds == null)
+                    return;
+
                 if (!string.IsNullOrEmpty(_currentMusicPlaying))
                     _sounds.Stop(_currentMusicPlaying);
 
