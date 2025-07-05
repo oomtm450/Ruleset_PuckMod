@@ -906,8 +906,10 @@ namespace oomtm450PuckMod_Ruleset {
                         if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
                             PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
                             foreach (string key in new List<string>(_isOffside.Keys)) {
-                                if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam)
+                                if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam && _isOffside[key].IsOffside) {
+                                    offsideHasToBeWarned[_isOffside[key].Team] = false;
                                     _isOffside[key] = (_isOffside[key].Team, false);
+                                }
                             }
                         }
 
