@@ -1214,6 +1214,29 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
         }
+
+        /// <summary>
+        /// Class that patches the AddChatMessage event from UIChat.
+        /// </summary>
+        [HarmonyPatch(typeof(UIChat), nameof(UIChat.AddChatMessage))]
+        public class UIChat_AddChatMessage_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(string message) {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if ((message.StartsWith("HIGH STICK") || message.StartsWith("OFFSIDE") || message.StartsWith("ICING")) && (!message.EndsWith("CALLED") || !message.EndsWith("CALLED OFF")))
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in UIChat_AddChatMessage_Patch Prefix().\n{ex}");
+                }
+
+                return true;
+            }
+        }
         #endregion
 
         #region Methods/Functions
