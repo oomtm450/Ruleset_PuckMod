@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.12.0DEV4";
+        private const string MOD_VERSION = "0.12.0DEV5";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1598,11 +1598,11 @@ namespace oomtm450PuckMod_Ruleset {
             try {
                 string dataName, dataStr;
                 if (clientId == 0) { // If client Id is 0, we received data from the server, so we are client-sided.
-                    Logging.Log("ReceiveData", _clientConfig);
+                    //Logging.Log("ReceiveData", _clientConfig);
                     (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, _clientConfig);
                 }
                 else {
-                    Logging.Log("ReceiveData", _serverConfig);
+                    //Logging.Log("ReceiveData", _serverConfig);
                     (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, _serverConfig);
                 }
 
