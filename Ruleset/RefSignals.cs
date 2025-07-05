@@ -45,10 +45,12 @@ namespace oomtm450PuckMod_Ruleset {
                     return;
                 }
 
+                CanvasRenderer _canvasRenderer = gameObject.AddComponent<CanvasRenderer>();
+
                 _canvas = gameObject.AddComponent<Canvas>();
                 _canvas.name = "RefSignalsCanvas";
                 _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                _canvas.sortingOrder = 100;
+                _canvas.sortingOrder = 0;
 
                 StartCoroutine(GetSprites(fullPath));
             }
@@ -70,13 +72,18 @@ namespace oomtm450PuckMod_Ruleset {
                         string fileName = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(IMAGE_EXTENSION, "");
                         Texture2D texture = DownloadHandlerTexture.GetContent(webRequest);
 
-                        Image image = gameObject.AddComponent<Image>();
-                        image.name = fileName + "_Image";
-                        image.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(1f, 0.6f));
-                        image.preserveAspect = true;
+                        GameObject _gameObject = new GameObject("ImagesTest");
 
-                        RectTransform rectTranform = image.GetComponent<RectTransform>();
-                        rectTranform.localScale = new Vector3(0.005f, 0.005f);
+                        Image image = _gameObject.AddComponent<Image>();
+                        image.name = fileName + "_Image";
+                        image.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                        image.preserveAspect = true;
+                        image.transform.SetParent(_canvas.transform, false);
+                        image.enabled = false;
+
+                        RectTransform rectTransform = image.GetComponent<RectTransform>();
+                        rectTransform.sizeDelta = new Vector2(300, 300);
+                        rectTransform.pivot = new Vector2(-9.1f, 0.8f);
 
                         _images.Add(fileName, image);
                     }

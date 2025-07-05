@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.12.0DEV6";
+        private const string MOD_VERSION = "0.12.0DEV18";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -615,6 +615,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckTipIncludedSteamId.Keys))
                             _lastPlayerOnPuckTipIncludedSteamId[key] = "";
+
+                        NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
                     }
 
                     if (!_changedPhase)  {
@@ -1249,8 +1251,6 @@ namespace oomtm450PuckMod_Ruleset {
         private static void PostDoFaceoff() {
             _doFaceoff = false;
 
-            NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
-
             GameManager.Instance.Server_Resume();
             if (GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
                 return;
@@ -1567,7 +1567,8 @@ namespace oomtm450PuckMod_Ruleset {
                         _sounds = soundsGameObject.AddComponent<Sounds>();
                         _sounds.LoadSounds();
 
-                        _refSignals = PlayerManager.Instance.GetLocalPlayer().gameObject.AddComponent<RefSignals>();
+                        GameObject refSignalsGameObject = new GameObject("RefSignals");
+                        _refSignals = refSignalsGameObject.AddComponent<RefSignals>();
                         _refSignals.LoadImages();
                         break;
 
