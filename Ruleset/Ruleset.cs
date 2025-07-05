@@ -1297,7 +1297,7 @@ namespace oomtm450PuckMod_Ruleset {
             GameManager.Instance.Server_Pause();
 
             _ = Task.Run(() => {
-                Thread.Sleep(new System.Random().Next(millisecondsPauseMin, millisecondsPauseMax));
+                Thread.Sleep(new System.Random().Next(millisecondsPauseMin, millisecondsPauseMax + 1));
                 _doFaceoff = true;
             });
         }
