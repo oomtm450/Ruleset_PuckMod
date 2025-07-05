@@ -631,6 +631,14 @@ namespace oomtm450PuckMod_Ruleset {
                             _lastPlayerOnPuckTipIncludedSteamId[key] = "";
 
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
+
+                        if (_paused) {
+                            GameManager.Instance.Server_Resume();
+                            _changedPhase = false;
+                        }
+                            
+                        _paused = false;
+                        _doFaceoff = false;
                     }
 
                     if (!_changedPhase)  {
