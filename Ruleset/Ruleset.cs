@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.12.0DEV5";
+        private const string MOD_VERSION = "0.12.0DEV6";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1224,6 +1224,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Reset music.
                     NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.MUSIC, Constants.FROM_SERVER, _serverConfig);
+
+                    NextFaceoffSpot = FaceoffSpot.Center;
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManager_Server_ResetGameState_Patch Postfix().\n{ex}");
