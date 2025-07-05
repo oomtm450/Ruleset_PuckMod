@@ -24,9 +24,9 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string BLUE_GOAL_MUSIC = "bluegoalmusic";
         internal const string RED_GOAL_MUSIC = "redgoalmusic";
 
-        internal static List<string> FaceoffMusicList { get; set; } = new List<string>();
-        internal static List<string> BlueGoalMusicList { get; set; } = new List<string>();
-        internal static List<string> RedGoalMusicList { get; set; } = new List<string>();
+        internal List<string> FaceoffMusicList { get; set; } = new List<string>();
+        internal List<string> BlueGoalMusicList { get; set; } = new List<string>();
+        internal List<string> RedGoalMusicList { get; set; } = new List<string>();
 
         private readonly Dictionary<string, GameObject> _soundObjects = new Dictionary<string, GameObject>();
         private readonly List<AudioClip> _audioClips = new List<AudioClip>();
