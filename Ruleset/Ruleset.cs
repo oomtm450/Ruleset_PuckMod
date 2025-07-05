@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.12.0DEV";
+        private const string MOD_VERSION = "0.12.0DEV2";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1227,7 +1227,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (ServerFunc.IsDedicatedServer())
                         return true;
 
-                    if ((message.StartsWith("HIGH STICK") || message.StartsWith("OFFSIDE") || message.StartsWith("ICING")) && (!message.EndsWith("CALLED") || !message.EndsWith("CALLED OFF")))
+                    if ((message.StartsWith("HIGH STICK") || message.StartsWith("OFFSIDE") || message.StartsWith("ICING")) && !message.EndsWith("CALLED"))
                         return false;
                 }
                 catch (Exception ex) {
