@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.12.0DEV6";
+        private const string MOD_VERSION = "0.12.0DEV7";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1655,19 +1655,19 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         else {
                             if (dataStr == Sounds.FACEOFF_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(Sounds.FaceoffMusicList);
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList);
                                 _sounds.Play(_currentMusicPlaying);
                             }
                             else if (dataStr == Sounds.FACEOFF_MUSIC_DELAYED) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(Sounds.FaceoffMusicList);
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList);
                                 _sounds.Play(_currentMusicPlaying, 1f);
                             }
                             else if (dataStr == Sounds.BLUE_GOAL_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(Sounds.BlueGoalMusicList);
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BlueGoalMusicList);
                                 _sounds.Play(_currentMusicPlaying, 2.25f);
                             }
                             else if (dataStr == Sounds.RED_GOAL_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(Sounds.RedGoalMusicList);
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.RedGoalMusicList);
                                 _sounds.Play(_currentMusicPlaying, 2.25f);
                             }
                             else if (dataStr == Sounds.WHISTLE)
