@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.12.0DEV7";
+        private const string MOD_VERSION = "0.12.0DEV8";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -783,14 +783,14 @@ namespace oomtm450PuckMod_Ruleset {
                 Puck puck = null;
                 List<Player> players = null;
                 Zone oldZone = Zone.BlueTeam_Center;
-                Dictionary<PlayerTeam, bool> icingHasToBeWarned = new Dictionary<PlayerTeam, bool> {
-                    {PlayerTeam.Blue, false},
-                    {PlayerTeam.Red, false},
+                Dictionary<PlayerTeam, bool?> icingHasToBeWarned = new Dictionary<PlayerTeam, bool?> {
+                    {PlayerTeam.Blue, null},
+                    {PlayerTeam.Red, null},
                 };
 
-                Dictionary<PlayerTeam, bool> offsideHasToBeWarned = new Dictionary<PlayerTeam, bool> {
-                    {PlayerTeam.Blue, false},
-                    {PlayerTeam.Red, false},
+                Dictionary<PlayerTeam, bool?> offsideHasToBeWarned = new Dictionary<PlayerTeam, bool?> {
+                    {PlayerTeam.Blue, null},
+                    {PlayerTeam.Red, null},
                 };
 
                 try {
@@ -927,7 +927,7 @@ namespace oomtm450PuckMod_Ruleset {
                         Player closestPlayerToEndBoard = dictPlayersZPositionsForDeferredIcing.OrderByDescending(x => x.Value).First().Key;
                         PlayerTeam closestPlayerToEndBoardOtherTeam = TeamFunc.GetOtherTeam(closestPlayerToEndBoard.Team.Value);
                         if (IsIcing(closestPlayerToEndBoard.Team.Value)) {
-                            if (!icingHasToBeWarned[closestPlayerToEndBoard.Team.Value]) {
+                            if (icingHasToBeWarned[closestPlayerToEndBoard.Team.Value] == null) {
                                 NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI
                                 UIChat.Instance.Server_SendSystemChatMessage($"ICING {closestPlayerToEndBoard.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                             }
@@ -943,20 +943,22 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     foreach (var kvp in icingHasToBeWarned) {
-                        if (kvp.Value) {
+                        if (kvp.Value != null && (bool)kvp.Value) {
                             NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show icing signal for client-side UI.
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {kvp.Key.ToString().ToUpperInvariant()} TEAM");
                         }
                     }
 
                     foreach (var kvp in offsideHasToBeWarned) {
-                        if (kvp.Value) {
-                            NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
-                            UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {kvp.Key.ToString().ToUpperInvariant()} TEAM");
-                        }
-                        else {
-                            NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
-                            UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {kvp.Key.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                        if (kvp.Value != null) {
+                            if ((bool)kvp.Value) {
+                                NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
+                                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {kvp.Key.ToString().ToUpperInvariant()} TEAM");
+                            }
+                            else if (!(bool)kvp.Value) {
+                                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
+                                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {kvp.Key.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                            }
                         }
                     }
                 }
