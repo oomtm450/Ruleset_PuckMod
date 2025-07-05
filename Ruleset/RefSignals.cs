@@ -89,6 +89,7 @@ namespace oomtm450PuckMod_Ruleset {
                         rectTransform.sizeDelta = new Vector2(300, 300);
                         rectTransform.pivot = new Vector2(0.5f, 0.5f);
                         rectTransform.anchorMin = new Vector2(0.925f, 0.42f);
+                        rectTransform.anchorMax = new Vector2(0.925f, 0.42f);
 
                         _images.Add(fileName, image);
                     }
