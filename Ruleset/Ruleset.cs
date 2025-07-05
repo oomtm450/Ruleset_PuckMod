@@ -1326,17 +1326,17 @@ namespace oomtm450PuckMod_Ruleset {
 
             _paused = true;
 
-            _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
-            GameManager.Instance.Server_Pause();
-
             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
             _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
-            if (!_hasPlayedLastMinuteMusic && _periodTimeRemaining <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
+            if (!_hasPlayedLastMinuteMusic && GameManager.Instance.GameState.Value.Time <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
                 _hasPlayedLastMinuteMusic = true;
                 NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.LAST_MINUTE_MUSIC, Constants.FROM_SERVER, _serverConfig);
             }
             else
                 NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FACEOFF_MUSIC_DELAYED, Constants.FROM_SERVER, _serverConfig);
+
+            _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
+            GameManager.Instance.Server_Pause();
 
             _ = Task.Run(() => {
                 Thread.Sleep(new System.Random().Next(millisecondsPauseMin, millisecondsPauseMax + 1));
@@ -1346,6 +1346,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void PostDoFaceoff() {
             _doFaceoff = false;
+            _paused = false;
 
             GameManager.Instance.Server_Resume();
             if (GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
@@ -1697,7 +1698,7 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             else if (dataStr == Sounds.BETWEEN_PERIODS_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BetweenPeriodsMusicList);
-                                _sounds.Play(_currentMusicPlaying, 1f);
+                                _sounds.Play(_currentMusicPlaying, 1.5f);
                             }
                             else if (dataStr == Sounds.WARMUP_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList);
