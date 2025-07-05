@@ -24,11 +24,17 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string BLUE_GOAL_MUSIC = "bluegoalmusic";
         internal const string RED_GOAL_MUSIC = "redgoalmusic";
         internal const string BETWEEN_PERIODS_MUSIC = "betweenperiodsmusic";
+        internal const string WARMUP_MUSIC = "warmupmusic";
+        internal const string LAST_MINUTE_MUSIC = "lastminutemusic";
+        internal const string GAMEOVER_MUSIC = "gameovermusic";
 
         internal List<string> FaceoffMusicList { get; set; } = new List<string>();
         internal List<string> BlueGoalMusicList { get; set; } = new List<string>();
         internal List<string> RedGoalMusicList { get; set; } = new List<string>();
         internal List<string> BetweenPeriodsMusicList { get; set; } = new List<string>();
+        internal List<string> WarmupMusicList { get; set; } = new List<string>();
+        internal List<string> LastMinuteMusicList { get; set; } = new List<string>();
+        internal List<string> GameOverMusicList { get; set; } = new List<string>();
 
         private readonly Dictionary<string, GameObject> _soundObjects = new Dictionary<string, GameObject>();
         private readonly List<AudioClip> _audioClips = new List<AudioClip>();
@@ -76,6 +82,12 @@ namespace oomtm450PuckMod_Ruleset {
                             RedGoalMusicList.Add(clip.name);
                         if (clip.name.Contains(BETWEEN_PERIODS_MUSIC))
                             BetweenPeriodsMusicList.Add(clip.name);
+                        if (clip.name.Contains(WARMUP_MUSIC))
+                            WarmupMusicList.Add(clip.name);
+                        if (clip.name.Contains(LAST_MINUTE_MUSIC))
+                            LastMinuteMusicList.Add(clip.name);
+                        if (clip.name.Contains(GAMEOVER_MUSIC))
+                            GameOverMusicList.Add(clip.name);
                     }
                     catch (Exception ex) {
                         _errors.Add(ex.ToString());

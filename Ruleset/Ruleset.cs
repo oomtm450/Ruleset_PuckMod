@@ -193,6 +193,8 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, new SaveCheck() },
         };
 
+        private static bool _hasPlayedLastMinuteMusic = false;
+
         // Client-side and server-side.
         private static readonly LockDictionary<string, int> _sog = new LockDictionary<string, int>();
 
@@ -655,7 +657,10 @@ namespace oomtm450PuckMod_Ruleset {
                         if (phase == GamePhase.FaceOff && string.IsNullOrEmpty(_currentMusicPlaying)) {
                             _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
                             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
+                            return true;
                         }
+                        if (phase == GamePhase.Warmup)
+                            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WARMUP_MUSIC, Constants.FROM_SERVER, _serverConfig);
 
                         return true;
                     }
@@ -1242,6 +1247,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // Reset music.
                     NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.MUSIC, Constants.FROM_SERVER, _serverConfig);
                     _currentMusicPlaying = "";
+                    _hasPlayedLastMinuteMusic = false;
 
                     NextFaceoffSpot = FaceoffSpot.Center;
                 }
@@ -1318,12 +1324,17 @@ namespace oomtm450PuckMod_Ruleset {
 
             _paused = true;
 
-            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
-            _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
-            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FACEOFF_MUSIC_DELAYED, Constants.FROM_SERVER, _serverConfig);
-
             _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
             GameManager.Instance.Server_Pause();
+
+            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
+            _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
+            if (!_hasPlayedLastMinuteMusic && _periodTimeRemaining <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
+                _hasPlayedLastMinuteMusic = true;
+                NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.LAST_MINUTE_MUSIC, Constants.FROM_SERVER, _serverConfig);
+            }
+            else
+                NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FACEOFF_MUSIC_DELAYED, Constants.FROM_SERVER, _serverConfig);
 
             _ = Task.Run(() => {
                 Thread.Sleep(new System.Random().Next(millisecondsPauseMin, millisecondsPauseMax + 1));
@@ -1684,6 +1695,20 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             else if (dataStr == Sounds.BETWEEN_PERIODS_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BetweenPeriodsMusicList);
+                                _sounds.Play(_currentMusicPlaying, 1f);
+                            }
+                            else if (dataStr == Sounds.WARMUP_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList);
+                                _sounds.Play(_currentMusicPlaying);
+                            }
+                            else if (dataStr == Sounds.LAST_MINUTE_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList);
+                                if (string.IsNullOrEmpty(_currentMusicPlaying))
+                                    _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList);
+                                _sounds.Play(_currentMusicPlaying, 1f);
+                            }
+                            else if (dataStr == Sounds.GAMEOVER_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.GameOverMusicList);
                                 _sounds.Play(_currentMusicPlaying, 1f);
                             }
                             else if (dataStr == Sounds.WHISTLE)
