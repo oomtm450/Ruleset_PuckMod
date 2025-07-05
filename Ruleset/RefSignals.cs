@@ -19,6 +19,9 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string ALL = "all";
         internal const string OFFSIDE_LINESMAN = "offside_linesman";
         internal const string ICING_LINESMAN = "icing_linesman";
+        internal const string HIGHSTICK_LINESMAN = "highstick_linesman";
+        internal const string HIGHSTICK_REF = "highstick_ref";
+        internal const string INTERFERENCE_REF = "interference_ref";
 
         private readonly Dictionary<string, Image> _images = new Dictionary<string, Image>();
         internal List<string> _errors = new List<string>();

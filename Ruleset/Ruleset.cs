@@ -321,12 +321,15 @@ namespace oomtm450PuckMod_Ruleset {
                                 _isHighStickActive[stick.Player.Team.Value] = true;
                                 _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
                                 UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM");
+                                NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
                             }
                         }
                         else if (puck.IsGrounded) {
                             if (_isHighStickActive[stick.Player.Team.Value]) {
                                 Faceoff.SetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
                                 UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
+                                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
+                                NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig);
                                 DoFaceoff();
                             }
                         }
@@ -336,6 +339,8 @@ namespace oomtm450PuckMod_Ruleset {
                     if (_isHighStickActive[otherTeam]) {
                         _isHighStickActive[otherTeam] = false;
                         UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                        NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
+
                     }
 
                     if (_puckRaycast.PuckIsGoingToNet[stick.Player.Team.Value] && stick.Player.Role.Value == PlayerRole.Goalie) {
@@ -1013,10 +1018,13 @@ namespace oomtm450PuckMod_Ruleset {
                         else if (isHighStick) {
                             Faceoff.SetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
                             UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                            NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig);
+                            NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig);
                         }
                         else if (isGoalieInt) {
                             Faceoff.SetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
                             UIChat.Instance.Server_SendSystemChatMessage($"GOALIE INT {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                            NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.INTERFERENCE_REF, Constants.FROM_SERVER, _serverConfig);
                         }
                         
                         DoFaceoff();
