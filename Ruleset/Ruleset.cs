@@ -603,6 +603,10 @@ namespace oomtm450PuckMod_Ruleset {
                         _currentMusicPlaying = Sounds.RED_GOAL_MUSIC;
                         NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
                     }
+                    else if (phase == GamePhase.PeriodOver) {
+                        _currentMusicPlaying = Sounds.BETWEEN_PERIODS_MUSIC;
+                        NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
+                    }
                     else if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) {
                         // Reset players zone.
                         _playersZone.Clear();

@@ -23,10 +23,12 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string FACEOFF_MUSIC_DELAYED = "faceoffmusicdelayed";
         internal const string BLUE_GOAL_MUSIC = "bluegoalmusic";
         internal const string RED_GOAL_MUSIC = "redgoalmusic";
+        internal const string BETWEEN_PERIODS_MUSIC = "betweenperiodsmusic";
 
         internal List<string> FaceoffMusicList { get; set; } = new List<string>();
         internal List<string> BlueGoalMusicList { get; set; } = new List<string>();
         internal List<string> RedGoalMusicList { get; set; } = new List<string>();
+        internal List<string> BetweenPeriodsMusicList { get; set; } = new List<string>();
 
         private readonly Dictionary<string, GameObject> _soundObjects = new Dictionary<string, GameObject>();
         private readonly List<AudioClip> _audioClips = new List<AudioClip>();
@@ -72,6 +74,8 @@ namespace oomtm450PuckMod_Ruleset {
                             BlueGoalMusicList.Add(clip.name);
                         if (clip.name.Contains(RED_GOAL_MUSIC))
                             RedGoalMusicList.Add(clip.name);
+                        if (clip.name.Contains(BETWEEN_PERIODS_MUSIC))
+                            BetweenPeriodsMusicList.Add(clip.name);
                     }
                     catch (Exception ex) {
                         _errors.Add(ex.ToString());
