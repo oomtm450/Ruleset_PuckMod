@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.12.0DEV18";
+        private const string MOD_VERSION = "0.12.0DEV";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -244,22 +244,28 @@ namespace oomtm450PuckMod_Ruleset {
                             if (playerBody.Player.Role.Value != PlayerRole.Goalie) {
                                 if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var result)) {
                                     if (result.Zone != ZoneFunc.GetTeamZones(playerBody.Player.Team.Value)[1]) {
-                                        if (IsIcing(playerOtherTeam))
+                                        if (IsIcing(playerOtherTeam)) {
+                                            NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                                        }
                                         ResetIcings();
                                     }
                                 }
                             }
 
-                            if (IsIcing(playerOtherTeam))
+                            if (IsIcing(playerOtherTeam)) {
+                                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                                 UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                            }
                             ResetIcings();
                         }
                         else if (IsIcingPossible(playerBody.Player.Team.Value)) {
                             if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var result)) {
                                 if (ZoneFunc.GetTeamZones(playerOtherTeam, true).Any(x => x == result.Zone)) {
-                                    if (IsIcing(playerBody.Player.Team.Value))
+                                    if (IsIcing(playerBody.Player.Team.Value)) {
+                                        NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                                         UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerBody.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                                    }
                                     ResetIcings();
                                 }
                             }
@@ -397,13 +403,16 @@ namespace oomtm450PuckMod_Ruleset {
                             DoFaceoff();
                         }
                         else if (stick.Player.PlayerPosition.Role == PlayerRole.Goalie) {
+                            NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                             ResetIcings();
                         }
                     }
                     else {
-                        if (IsIcing(stick.Player.Team.Value))
+                        if (IsIcing(stick.Player.Team.Value)) {
+                            NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                        }
                         ResetIcings();
                     }
                 }
@@ -778,10 +787,12 @@ namespace oomtm450PuckMod_Ruleset {
                     // Icing logic.
                     if (!_isIcingPossible[PlayerTeam.Blue] && _isIcingActive[PlayerTeam.Blue]) {
                         _isIcingActive[PlayerTeam.Blue] = false;
+                        NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                         UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Blue.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                     }
                     if (!_isIcingPossible[PlayerTeam.Red] && _isIcingActive[PlayerTeam.Red]) {
                         _isIcingActive[PlayerTeam.Red] = false;
+                        NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                         UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Red.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                     }
 
@@ -884,8 +895,10 @@ namespace oomtm450PuckMod_Ruleset {
                         Player closestPlayerToEndBoard = dictPlayersZPositionsForDeferredIcing.OrderByDescending(x => x.Value).First().Key;
                         PlayerTeam closestPlayerToEndBoardOtherTeam = TeamFunc.GetOtherTeam(closestPlayerToEndBoard.Team.Value);
                         if (IsIcing(closestPlayerToEndBoard.Team.Value)) {
-                            if (!icingHasToBeWarned[closestPlayerToEndBoard.Team.Value])
+                            if (!icingHasToBeWarned[closestPlayerToEndBoard.Team.Value]) {
+                                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI
                                 UIChat.Instance.Server_SendSystemChatMessage($"ICING {closestPlayerToEndBoard.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                            }
                             else
                                 icingHasToBeWarned[closestPlayerToEndBoard.Team.Value] = false;
                             ResetIcings();
@@ -898,8 +911,10 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     foreach (var kvp in icingHasToBeWarned) {
-                        if (kvp.Value)
+                        if (kvp.Value) {
+                            NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show icing signal for client-side UI.
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {kvp.Key.ToString().ToUpperInvariant()} TEAM");
+                        }
                     }
                 }
                 catch (Exception ex) {
