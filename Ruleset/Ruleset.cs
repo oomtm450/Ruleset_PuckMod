@@ -1622,11 +1622,11 @@ namespace oomtm450PuckMod_Ruleset {
                     case Sounds.LOAD_SOUNDS: // CLIENT-SIDE : Load sounds.
                         if (dataStr != "1" || _sounds != null)
                             break;
-                        GameObject soundsGameObject = new GameObject("Sounds");
+                        GameObject soundsGameObject = new GameObject(Constants.MOD_NAME + "_Sounds");
                         _sounds = soundsGameObject.AddComponent<Sounds>();
                         _sounds.LoadSounds();
 
-                        GameObject refSignalsGameObject = new GameObject("RefSignals");
+                        GameObject refSignalsGameObject = new GameObject(Constants.MOD_NAME + "RefSignals");
                         _refSignals = refSignalsGameObject.AddComponent<RefSignals>();
                         _refSignals.LoadImages();
                         break;
@@ -1647,13 +1647,13 @@ namespace oomtm450PuckMod_Ruleset {
                                 _currentMusicPlaying = Sounds.GetRandomSound(Sounds.FaceoffMusicList);
                                 _sounds.Play(_currentMusicPlaying, 1f);
                             }
-                            else if (dataName == Sounds.BLUE_GOAL_MUSIC) {
+                            else if (dataStr == Sounds.BLUE_GOAL_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(Sounds.BlueGoalMusicList);
-                                _sounds.Play(_currentMusicPlaying, 2.5f);
+                                _sounds.Play(_currentMusicPlaying, 2.25f);
                             }
-                            else if (dataName == Sounds.RED_GOAL_MUSIC) {
+                            else if (dataStr == Sounds.RED_GOAL_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(Sounds.RedGoalMusicList);
-                                _sounds.Play(_currentMusicPlaying, 2.5f);
+                                _sounds.Play(_currentMusicPlaying, 2.25f);
                             }
                             else if (dataStr == Sounds.WHISTLE)
                                 _sounds.Play(Sounds.WHISTLE);
