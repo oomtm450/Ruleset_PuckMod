@@ -100,7 +100,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static string GetRandomFaceoffSound() {
             if (faceoffMusicList.Count != 0)
-                return faceoffMusicList[new System.Random().Next(0, faceoffMusicList.Count - 1)];
+                return faceoffMusicList[new System.Random().Next(0, faceoffMusicList.Count)];
 
             return "";
         }
