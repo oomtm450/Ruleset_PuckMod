@@ -42,7 +42,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal void LoadSounds() {
             try {
-                if (_audioClips.Count != 0)
+                if (_audioClips.Count != 0 || !Ruleset._clientConfig.Music)
                     return;
 
                 // You'll need to figure out the actual path to your asset bundle.
