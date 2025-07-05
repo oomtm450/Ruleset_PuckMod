@@ -685,6 +685,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                     else if (phase == GamePhase.Playing) {
                         NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.MUSIC, Constants.FROM_SERVER, _serverConfig);
+                        _currentMusicPlaying = "";
                         return;
                     }
                 }
@@ -1224,6 +1225,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Reset music.
                     NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.MUSIC, Constants.FROM_SERVER, _serverConfig);
+                    _currentMusicPlaying = "";
 
                     NextFaceoffSpot = FaceoffSpot.Center;
                 }
