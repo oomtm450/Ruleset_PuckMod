@@ -14,13 +14,11 @@ namespace oomtm450PuckMod_Ruleset.SystemFunc {
         #endregion
 
         #region Properties
-        public Dictionary<TKey, TValue>.KeyCollection Keys {
-            get => _dictionary.Keys;
-        }
+        public Dictionary<TKey, TValue>.KeyCollection Keys {get => _dictionary.Keys; }
 
-        public Dictionary<TKey, TValue>.ValueCollection Values {
-            get => _dictionary.Values;
-        }
+        public Dictionary<TKey, TValue>.ValueCollection Values { get => _dictionary.Values; }
+
+        public int Count { get => _dictionary.Count; }
         #endregion
 
         #region Constructors

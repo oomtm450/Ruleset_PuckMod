@@ -10,18 +10,31 @@ using UnityEngine.Networking;
 
 namespace oomtm450PuckMod_Ruleset {
     internal class Sounds : MonoBehaviour {
-        private const string SOUND_FOLDER_PATH = "sounds";
+        private const string SOUNDS_FOLDER_PATH = "sounds";
         private const string SOUND_EXTENSION = ".ogg";
 
         internal const string LOAD_SOUNDS = "loadsounds";
         internal const string PLAY_SOUND = "playsound";
         internal const string STOP_SOUND = "stopsound";
 
+        internal const string MUSIC = "music";
         internal const string WHISTLE = "whistle";
         internal const string FACEOFF_MUSIC = "faceoffmusic";
         internal const string FACEOFF_MUSIC_DELAYED = "faceoffmusicdelayed";
+        internal const string BLUE_GOAL_MUSIC = "bluegoalmusic";
+        internal const string RED_GOAL_MUSIC = "redgoalmusic";
+        internal const string BETWEEN_PERIODS_MUSIC = "betweenperiodsmusic";
+        internal const string WARMUP_MUSIC = "warmupmusic";
+        internal const string LAST_MINUTE_MUSIC = "lastminutemusic";
+        internal const string GAMEOVER_MUSIC = "gameovermusic";
 
-        internal static List<string> faceoffMusicList = new List<string>();
+        internal List<string> FaceoffMusicList { get; set; } = new List<string>();
+        internal List<string> BlueGoalMusicList { get; set; } = new List<string>();
+        internal List<string> RedGoalMusicList { get; set; } = new List<string>();
+        internal List<string> BetweenPeriodsMusicList { get; set; } = new List<string>();
+        internal List<string> WarmupMusicList { get; set; } = new List<string>();
+        internal List<string> LastMinuteMusicList { get; set; } = new List<string>();
+        internal List<string> GameOverMusicList { get; set; } = new List<string>();
 
         private readonly Dictionary<string, GameObject> _soundObjects = new Dictionary<string, GameObject>();
         private readonly List<AudioClip> _audioClips = new List<AudioClip>();
@@ -29,12 +42,12 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal void LoadSounds() {
             try {
-                if (_audioClips.Count != 0)
+                if (_audioClips.Count != 0 || !Ruleset._clientConfig.Music)
                     return;
 
                 // You'll need to figure out the actual path to your asset bundle.
                 // It could be alongside your DLL, or in a specific mod data folder.
-                string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), SOUND_FOLDER_PATH);
+                string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), SOUNDS_FOLDER_PATH);
 
                 if (!Directory.Exists(fullPath)) {
                     Logging.LogError($"Sounds not found at: {fullPath}");
@@ -44,7 +57,7 @@ namespace oomtm450PuckMod_Ruleset {
                 StartCoroutine(GetAudioClips(fullPath));
             }
             catch (Exception ex) {
-                Logging.LogError($"Error loading AssetBundle.\n{ex}");
+                Logging.LogError($"Error loading Sounds.\n{ex}");
             }
         }
 
@@ -62,7 +75,19 @@ namespace oomtm450PuckMod_Ruleset {
                         clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
                         _audioClips.Add(clip);
                         if (clip.name.Contains(FACEOFF_MUSIC))
-                            faceoffMusicList.Add(clip.name);
+                            FaceoffMusicList.Add(clip.name);
+                        if (clip.name.Contains(BLUE_GOAL_MUSIC))
+                            BlueGoalMusicList.Add(clip.name);
+                        if (clip.name.Contains(RED_GOAL_MUSIC))
+                            RedGoalMusicList.Add(clip.name);
+                        if (clip.name.Contains(BETWEEN_PERIODS_MUSIC))
+                            BetweenPeriodsMusicList.Add(clip.name);
+                        if (clip.name.Contains(WARMUP_MUSIC))
+                            WarmupMusicList.Add(clip.name);
+                        if (clip.name.Contains(LAST_MINUTE_MUSIC))
+                            LastMinuteMusicList.Add(clip.name);
+                        if (clip.name.Contains(GAMEOVER_MUSIC))
+                            GameOverMusicList.Add(clip.name);
                     }
                     catch (Exception ex) {
                         _errors.Add(ex.ToString());
@@ -98,9 +123,9 @@ namespace oomtm450PuckMod_Ruleset {
             soundObject.GetComponent<AudioSource>().Stop();
         }
 
-        internal static string GetRandomFaceoffSound() {
-            if (faceoffMusicList.Count != 0)
-                return faceoffMusicList[new System.Random().Next(0, faceoffMusicList.Count - 1)];
+        internal static string GetRandomSound(List<string> musicList) {
+            if (musicList.Count != 0)
+                return musicList[new System.Random().Next(0, musicList.Count)];
 
             return "";
         }
