@@ -783,6 +783,11 @@ namespace oomtm450PuckMod_Ruleset {
                     {PlayerTeam.Red, false},
                 };
 
+                Dictionary<PlayerTeam, bool> offsideHasToBeWarned = new Dictionary<PlayerTeam, bool> {
+                    {PlayerTeam.Blue, false},
+                    {PlayerTeam.Red, false},
+                };
+
                 try {
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing)
@@ -877,10 +882,8 @@ namespace oomtm450PuckMod_Ruleset {
                         if (playerWithPossessionSteamId != player.SteamId.Value.ToString() && (playerZone == otherTeamZones[0] || playerZone == otherTeamZones[1])) {
                             bool isPlayerTeamOffside = IsOffside(player.Team.Value);
                             if ((_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1]) || isPlayerTeamOffside) {
-                                if (!isPlayerTeamOffside) {
-                                    NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
-                                    UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM");
-                                }
+                                if (!isPlayerTeamOffside)
+                                    offsideHasToBeWarned[player.Team.Value] = true;
 
                                 _isOffside[playerSteamId] = (player.Team.Value, true);
                             }
@@ -889,10 +892,8 @@ namespace oomtm450PuckMod_Ruleset {
                         // Is not offside.
                         if (_playersZone[playerSteamId].Zone != otherTeamZones[0] && _playersZone[playerSteamId].Zone != otherTeamZones[1] && _isOffside[playerSteamId].IsOffside) {
                             _isOffside[playerSteamId] = (player.Team.Value, false);
-                            if (!IsOffside(player.Team.Value)) {
-                                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send hide offside signal for client-side UI.
-                                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
-                            }
+                            if (!IsOffside(player.Team.Value))
+                                offsideHasToBeWarned[player.Team.Value] = false;
                         }
 
                         // Remove offside if the other team entered the zone with the puck.
@@ -940,6 +941,17 @@ namespace oomtm450PuckMod_Ruleset {
                         if (kvp.Value) {
                             NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show icing signal for client-side UI.
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {kvp.Key.ToString().ToUpperInvariant()} TEAM");
+                        }
+                    }
+
+                    foreach (var kvp in offsideHasToBeWarned) {
+                        if (kvp.Value) {
+                            NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
+                            UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {kvp.Key.ToString().ToUpperInvariant()} TEAM");
+                        }
+                        else {
+                            NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
+                            UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {kvp.Key.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                         }
                     }
                 }
@@ -1669,6 +1681,10 @@ namespace oomtm450PuckMod_Ruleset {
                             else if (dataStr == Sounds.RED_GOAL_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.RedGoalMusicList);
                                 _sounds.Play(_currentMusicPlaying, 2.25f);
+                            }
+                            else if (dataStr == Sounds.BETWEEN_PERIODS_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BetweenPeriodsMusicList);
+                                _sounds.Play(_currentMusicPlaying, 1f);
                             }
                             else if (dataStr == Sounds.WHISTLE)
                                 _sounds.Play(Sounds.WHISTLE);
