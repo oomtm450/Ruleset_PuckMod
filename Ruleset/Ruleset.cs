@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.12.0";
+        private const string MOD_VERSION = "0.12.1DEV";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -906,8 +906,10 @@ namespace oomtm450PuckMod_Ruleset {
                         if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
                             PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
                             foreach (string key in new List<string>(_isOffside.Keys)) {
-                                if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam)
+                                if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam && _isOffside[key].IsOffside) {
+                                    offsideHasToBeWarned[_isOffside[key].Team] = false;
                                     _isOffside[key] = (_isOffside[key].Team, false);
+                                }
                             }
                         }
 
