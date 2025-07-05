@@ -595,10 +595,14 @@ namespace oomtm450PuckMod_Ruleset {
                     _paused = false;
                     _doFaceoff = false;
 
-                    if (phase == GamePhase.BlueScore)
-                        NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.BLUE_GOAL_MUSIC, Constants.FROM_SERVER, _serverConfig);
-                    else if (phase == GamePhase.RedScore)
-                        NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.RED_GOAL_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                    if (phase == GamePhase.BlueScore) {
+                        _currentMusicPlaying = Sounds.BLUE_GOAL_MUSIC;
+                        NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
+                    }
+                    else if (phase == GamePhase.RedScore) {
+                        _currentMusicPlaying = Sounds.RED_GOAL_MUSIC;
+                        NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
+                    }
                     else if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) {
                         // Reset players zone.
                         _playersZone.Clear();
@@ -644,8 +648,10 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     if (!_changedPhase)  {
-                        if (phase == GamePhase.FaceOff && string.IsNullOrEmpty(_currentMusicPlaying))
-                            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FACEOFF_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                        if (phase == GamePhase.FaceOff && string.IsNullOrEmpty(_currentMusicPlaying)) {
+                            _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
+                            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
+                        }
 
                         return true;
                     }
@@ -1293,6 +1299,7 @@ namespace oomtm450PuckMod_Ruleset {
             _paused = true;
 
             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
+            _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FACEOFF_MUSIC_DELAYED, Constants.FROM_SERVER, _serverConfig);
 
             _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
