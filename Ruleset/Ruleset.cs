@@ -1653,7 +1653,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 switch (dataName) {
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
-                        if (MOD_VERSION == dataStr || "0.12.0" == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
+                        if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
                             break;
 
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_kick", "1", clientId, Constants.FROM_CLIENT, _clientConfig);
