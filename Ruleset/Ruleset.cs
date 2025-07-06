@@ -1077,6 +1077,8 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.LogError($"Error in GameManagerController_GameManagerController_Patch Prefix().\n{ex}");
                 }
 
+                NextFaceoffSpot = FaceoffSpot.Center;
+
                 return true;
             }
         }
@@ -1153,8 +1155,8 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(Vector3 position, Quaternion rotation, PlayerRole role) {
                 try {
-                    // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.FaceOff)
+                    // If this is not the server, game is not started or faceoff is on the default dot (center), do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.FaceOff || NextFaceoffSpot == FaceoffSpot.Center)
                         return;
 
                     // Reteleport player on faceoff to the correct faceoff.
