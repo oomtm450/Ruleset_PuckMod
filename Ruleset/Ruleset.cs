@@ -1414,6 +1414,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (watch.ElapsedMilliseconds >= HIGH_STICK_MAX_MILLISECONDS) {
                 _isHighStickActive[team] = false;
                 NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
+                UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {team.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                 _highStickTimer[team] = null;
                 return false;
             }
