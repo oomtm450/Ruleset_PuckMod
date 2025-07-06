@@ -1413,6 +1413,7 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log($"High stick timer {team} team : high sticked {((double)watch.ElapsedMilliseconds) / 1000d} seconds ago.", _serverConfig);
             if (watch.ElapsedMilliseconds >= HIGH_STICK_MAX_MILLISECONDS) {
                 _isHighStickActive[team] = false;
+                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
                 _highStickTimer[team] = null;
                 return false;
             }
