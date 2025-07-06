@@ -330,12 +330,11 @@ namespace oomtm450PuckMod_Ruleset {
                     Puck puck = PuckManager.Instance.GetPuck();
                     if (puck) {
                         if (stick.Player.Role.Value != PlayerRole.Goalie && puck.Rigidbody.transform.position.y > _serverConfig.HighStickHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
-                            if (!_highStickTimer.TryGetValue(stick.Player.Team.Value, out Stopwatch highStickWatch))
-                                return;
+                            _highStickTimer.TryGetValue(stick.Player.Team.Value, out Stopwatch highStickWatch);
 
                             if (highStickWatch == null) {
                                 highStickWatch = new Stopwatch();
-                                _goalieIntTimer[stick.Player.Team.Value] = highStickWatch;
+                                _highStickTimer[stick.Player.Team.Value] = highStickWatch;
                             }
 
                             highStickWatch.Restart();
@@ -1414,6 +1413,7 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log($"High stick timer {team} team : high sticked {((double)watch.ElapsedMilliseconds) / 1000d} seconds ago.", _serverConfig);
             if (watch.ElapsedMilliseconds >= HIGH_STICK_MAX_MILLISECONDS) {
                 _isHighStickActive[team] = false;
+                _highStickTimer[team] = null;
                 return false;
             }
 
