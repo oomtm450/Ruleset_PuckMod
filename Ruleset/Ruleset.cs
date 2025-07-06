@@ -719,7 +719,6 @@ namespace oomtm450PuckMod_Ruleset {
                     Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
                     position = new Vector3(dot.x, 1.1f, dot.z);
                     NextFaceoffSpot = FaceoffSpot.Center;
-
                 }
                 catch (Exception ex)  {
                     Logging.LogError($"Error in PuckManager_Server_SpawnPuck_Patch Prefix().\n{ex}");
@@ -1072,6 +1071,8 @@ namespace oomtm450PuckMod_Ruleset {
                         DoFaceoff();
                         return false;
                     }
+
+                    NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManagerController_GameManagerController_Patch Prefix().\n{ex}");
