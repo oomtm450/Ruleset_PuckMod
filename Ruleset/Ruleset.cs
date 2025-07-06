@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Utilities;
 using UnityEngine.UIElements;
 
 namespace oomtm450PuckMod_Ruleset {
@@ -23,7 +24,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.12.0";
+        private const string MOD_VERSION = "0.12.1";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -70,6 +71,11 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private const int GINT_PUSH_NO_GOAL_MILLISECONDS = 3500;
         private const int GINT_HIT_NO_GOAL_MILLISECONDS = 9000; // TODO : Remove when penalty is added.
+
+        /// <summary>
+        /// Const int, number of milliseconds after a high stick to not be considered.
+        /// </summary>
+        private const int HIGH_STICK_MAX_MILLISECONDS = 5000;
 
         private const float GINT_COLLISION_FORCE_THRESHOLD = 0.965f;
 
@@ -127,6 +133,11 @@ namespace oomtm450PuckMod_Ruleset {
         };
 
         private static readonly LockDictionary<PlayerTeam, Stopwatch> _goalieIntTimer = new LockDictionary<PlayerTeam, Stopwatch> {
+            { PlayerTeam.Blue, null },
+            { PlayerTeam.Red, null },
+        };
+
+        private static readonly LockDictionary<PlayerTeam, Stopwatch> _highStickTimer = new LockDictionary<PlayerTeam, Stopwatch> {
             { PlayerTeam.Blue, null },
             { PlayerTeam.Red, null },
         };
@@ -319,7 +330,15 @@ namespace oomtm450PuckMod_Ruleset {
                     Puck puck = PuckManager.Instance.GetPuck();
                     if (puck) {
                         if (stick.Player.Role.Value != PlayerRole.Goalie && puck.Rigidbody.transform.position.y > _serverConfig.HighStickHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
-                            if (!_isHighStickActive[stick.Player.Team.Value]) {
+                            _highStickTimer.TryGetValue(stick.Player.Team.Value, out Stopwatch highStickWatch);
+
+                            if (highStickWatch == null) {
+                                highStickWatch = new Stopwatch();
+                                _highStickTimer[stick.Player.Team.Value] = highStickWatch;
+                            }
+
+                            highStickWatch.Restart();
+                            if (!IsHighStick(stick.Player.Team.Value)) {
                                 _isHighStickActive[stick.Player.Team.Value] = true;
                                 _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
                                 UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM");
@@ -327,7 +346,7 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                         }
                         else if (puck.IsGrounded) {
-                            if (_isHighStickActive[stick.Player.Team.Value]) {
+                            if (IsHighStick(stick.Player.Team.Value)) {
                                 Faceoff.SetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
                                 UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
                                 NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
@@ -338,11 +357,10 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(stick.Player.Team.Value);
-                    if (_isHighStickActive[otherTeam]) {
+                    if (IsHighStick(otherTeam)) {
                         _isHighStickActive[otherTeam] = false;
                         UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
-
                     }
 
                     if (_puckRaycast.PuckIsGoingToNet[stick.Player.Team.Value] && stick.Player.Role.Value == PlayerRole.Goalie) {
@@ -719,7 +737,6 @@ namespace oomtm450PuckMod_Ruleset {
                     Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
                     position = new Vector3(dot.x, 1.1f, dot.z);
                     NextFaceoffSpot = FaceoffSpot.Center;
-
                 }
                 catch (Exception ex)  {
                     Logging.LogError($"Error in PuckManager_Server_SpawnPuck_Patch Prefix().\n{ex}");
@@ -906,8 +923,10 @@ namespace oomtm450PuckMod_Ruleset {
                         if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
                             PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
                             foreach (string key in new List<string>(_isOffside.Keys)) {
-                                if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam)
+                                if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam && _isOffside[key].IsOffside) {
+                                    offsideHasToBeWarned[_isOffside[key].Team] = false;
                                     _isOffside[key] = (_isOffside[key].Team, false);
+                                }
                             }
                         }
 
@@ -1070,10 +1089,14 @@ namespace oomtm450PuckMod_Ruleset {
                         DoFaceoff();
                         return false;
                     }
+
+                    NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManagerController_GameManagerController_Patch Prefix().\n{ex}");
                 }
+
+                NextFaceoffSpot = FaceoffSpot.Center;
 
                 return true;
             }
@@ -1151,8 +1174,8 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(Vector3 position, Quaternion rotation, PlayerRole role) {
                 try {
-                    // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.FaceOff)
+                    // If this is not the server, game is not started or faceoff is on the default dot (center), do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.FaceOff || NextFaceoffSpot == FaceoffSpot.Center)
                         return;
 
                     // Reteleport player on faceoff to the correct faceoff.
@@ -1316,6 +1339,9 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void ResetHighSticks() {
+            foreach (PlayerTeam key in new List<PlayerTeam>(_highStickTimer.Keys))
+                _highStickTimer[key] = null;
+
             foreach (PlayerTeam key in new List<PlayerTeam>(_isHighStickActive.Keys))
                 _isHighStickActive[key] = false;
         }
@@ -1377,10 +1403,22 @@ namespace oomtm450PuckMod_Ruleset {
             else
                 highStickActivated = _serverConfig.RedTeamHighStick;
 
-            if (!highStickActivated)
+            if (!highStickActivated || !_isHighStickActive[team])
                 return false;
 
-            return _isHighStickActive[team];
+            Stopwatch watch = _highStickTimer[team];
+            if (watch == null)
+                return false;
+
+            Logging.Log($"High stick timer {team} team : high sticked {((double)watch.ElapsedMilliseconds) / 1000d} seconds ago.", _serverConfig);
+            if (watch.ElapsedMilliseconds >= HIGH_STICK_MAX_MILLISECONDS) {
+                _isHighStickActive[team] = false;
+                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
+                _highStickTimer[team] = null;
+                return false;
+            }
+
+            return true;
         }
 
         private static bool IsIcing(PlayerTeam team) {
@@ -1418,8 +1456,8 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log($"Goalie was last touched : {((double)watch.ElapsedMilliseconds) / 1000d} seconds ago.", _serverConfig);
             if (_lastGoalieStateCollision[team])
                 return watch.ElapsedMilliseconds < GINT_HIT_NO_GOAL_MILLISECONDS;
-            else
-                return watch.ElapsedMilliseconds < GINT_PUSH_NO_GOAL_MILLISECONDS;
+
+            return watch.ElapsedMilliseconds < GINT_PUSH_NO_GOAL_MILLISECONDS;
         }
 
         /// <summary>
@@ -1649,7 +1687,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 switch (dataName) {
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
-                        if (MOD_VERSION == dataStr) // TODO : Move the kick later so that it doesn't break anything. Maybe even add a chat message and a 3-5 sec wait.
+                        if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
                             break;
 
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_kick", "1", clientId, Constants.FROM_CLIENT, _clientConfig);
@@ -1767,8 +1805,9 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         Logging.Log($"Kicking client {clientId}.", _serverConfig);
-                        NetworkManager.Singleton.DisconnectClient(clientId,
-                            $"Mod is out of date. Please restart your game or unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop to update.");
+                        //NetworkManager.Singleton.DisconnectClient(clientId,
+                            //$"Mod is out of date. Please restart your game or unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop to update.");
+                        UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : Mod is out of date. Please restart your game or unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop to update.");
                         break;
 
                     case RESET_SOG:
