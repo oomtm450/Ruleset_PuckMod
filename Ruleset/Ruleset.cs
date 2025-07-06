@@ -24,7 +24,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.12.1DEV";
+        private const string MOD_VERSION = "0.12.1DEV2";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -75,7 +75,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const int, number of milliseconds after a high stick to not be considered.
         /// </summary>
-        private const int HIGH_STICK_MAX_MILLISECONDS = 4000;
+        private const int HIGH_STICK_MAX_MILLISECONDS = 5000;
 
         private const float GINT_COLLISION_FORCE_THRESHOLD = 0.965f;
 
