@@ -242,7 +242,7 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(Collision collision) {
                 // If this is not the server or game is not started, do not use the patch.
-                if (_paused || !ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
                     return;
 
                 try {
@@ -384,7 +384,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (_paused || !ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                    if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
                         return;
 
                     Stick stick = GetStick(collision.gameObject);
@@ -456,7 +456,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (_paused || !ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                    if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
                         return;
 
                     Stick stick = GetStick(collision.gameObject);
@@ -511,7 +511,7 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(Collision collision) {
                 // If this is not the server or game is not started, do not use the patch.
-                if (_paused || !ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.Playing)
+                if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
                     return;
 
                 try {
@@ -797,6 +797,10 @@ namespace oomtm450PuckMod_Ruleset {
         public class ServerManager_Update_Patch {
             [HarmonyPrefix]
             public static bool Prefix() {
+                // If this is not the server or game is not started, do not use the patch.
+                if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing)
+                    return true;
+
                 Puck puck = null;
                 List<Player> players = null;
                 Zone oldZone = Zone.BlueTeam_Center;
@@ -811,10 +815,6 @@ namespace oomtm450PuckMod_Ruleset {
                 };
 
                 try {
-                    // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing)
-                        return true;
-
                     if (_paused) {
                         if (_doFaceoff)
                             PostDoFaceoff();
@@ -827,7 +827,7 @@ namespace oomtm450PuckMod_Ruleset {
                     players = PlayerManager.Instance.GetPlayers();
                     puck = PuckManager.Instance.GetPuck();
 
-                    if (players.Count == 0 || puck == null)
+                    if (players.Count == 0 || puck == null || _paused)
                         return true;
                 }
                 catch (Exception ex) {
@@ -992,7 +992,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix() {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing)
+                    if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing || _paused)
                         return;
 
                     foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys)) {
@@ -1002,7 +1002,7 @@ namespace oomtm450PuckMod_Ruleset {
                             continue;
                         }
 
-                        //Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId} !!!!!!!!!!", _serverConfig, true);
+                        //Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId}.", _serverConfig, true);
 
                         string shotPlayerSteamId = saveCheck.ShooterSteamId;
                         PlayerTeam shotPlayerTeam = PlayerManager.Instance.GetPlayerBySteamId(shotPlayerSteamId).Team.Value;
