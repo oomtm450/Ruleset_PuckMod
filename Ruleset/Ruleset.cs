@@ -1626,6 +1626,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 if (!string.IsNullOrEmpty(_currentMusicPlaying))
                     _sounds.Stop(_currentMusicPlaying);
+                _currentMusicPlaying = "";
 
                 _refSignals.StopAllSignals();
 
@@ -1767,7 +1768,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 Logging.LogError(error);
                         }
                         else {
-                            if (dataStr == Sounds.MUSIC)
+                            if (dataStr == Sounds.MUSIC && !string.IsNullOrEmpty(_currentMusicPlaying))
                                 _sounds.Stop(_currentMusicPlaying);
 
                             _currentMusicPlaying = "";
