@@ -42,6 +42,8 @@ namespace oomtm450PuckMod_Ruleset {
                 if (_images.Count != 0)
                     return;
 
+                DontDestroyOnLoad(gameObject);
+
                 string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), IMAGES_FOLDER_PATH);
 
                 if (!Directory.Exists(fullPath)) {
@@ -77,6 +79,7 @@ namespace oomtm450PuckMod_Ruleset {
                         Texture2D texture = DownloadHandlerTexture.GetContent(webRequest);
 
                         GameObject _gameObject = new GameObject("ImagesTest");
+                        DontDestroyOnLoad(_gameObject);
 
                         Image image = _gameObject.AddComponent<Image>();
                         image.name = fileName + "_Image";

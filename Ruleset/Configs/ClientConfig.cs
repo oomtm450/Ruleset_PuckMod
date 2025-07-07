@@ -43,21 +43,26 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         internal static ClientConfig ReadConfig() {
             ClientConfig config = new ClientConfig();
 
-            string rootPath = Path.GetFullPath(".");
-            string configPath = Path.Combine(rootPath, Constants.MOD_NAME + "_clientconfig.json");
-            if (File.Exists(configPath)) {
-                string configFileContent = File.ReadAllText(configPath);
-                config = SetConfig(configFileContent);
-            }
-
             try {
-                File.WriteAllText(configPath, config.ToString());
+                string rootPath = Path.GetFullPath(".");
+                string configPath = Path.Combine(rootPath, Constants.MOD_NAME + "_clientconfig.json");
+                if (File.Exists(configPath)) {
+                    string configFileContent = File.ReadAllText(configPath);
+                    config = SetConfig(configFileContent);
+                }
+
+                try {
+                    File.WriteAllText(configPath, config.ToString());
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Can't write the client config file. (Permission error ?)\n{ex}");
+                }
+
+                Logging.Log($"Wrote client config : {config}", config);
             }
             catch (Exception ex) {
-                Logging.LogError($"Can't write the client config file. (Permission error ?)\n{ex}");
+                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}");
             }
-
-            Logging.Log($"Writing client config : {config}", config);
 
             return config;
         }
