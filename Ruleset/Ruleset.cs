@@ -24,7 +24,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.13.0DEV";
+        private const string MOD_VERSION = "0.13.0DEV9";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -81,17 +81,19 @@ namespace oomtm450PuckMod_Ruleset {
 
         private const int MAX_ICING_TIMER = 12000;
 
-        private const string SOG = "SOG";
+        private const string SOG = Constants.MOD_NAME + "SOG";
 
-        private const string RESET_SOG = "RESETSOG";
+        private const string RESET_SOG = Constants.MOD_NAME + "RESETSOG";
 
-        private const string SAVEPERC = "SAVEPERC";
+        private const string SAVEPERC = Constants.MOD_NAME + "SAVEPERC";
 
-        private const string RESET_SAVEPERC = "RESETSAVEPERC";
+        private const string RESET_SAVEPERC = Constants.MOD_NAME + "RESETSAVEPERC";
 
         private const string SOG_HEADER_LABEL_NAME = "SOGHeaderLabel";
 
         private const string SOG_LABEL = "SOGLabel";
+
+        private const string ASK_SERVER_FOR_DATA = Constants.MOD_NAME + "ASKDATA";
         #endregion
 
         #region Fields
@@ -157,7 +159,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly LockDictionary<string, Stopwatch> _playersLastTimePuckPossession = new LockDictionary<string, Stopwatch>();
 
-        private static InputAction _getStickLocation;
+        //private static InputAction _getStickLocation;
 
         private static readonly LockDictionary<string, Stopwatch> _lastTimeOnCollisionExitWasCalled = new LockDictionary<string, Stopwatch>();
 
@@ -1210,9 +1212,17 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(Player player) {
                 try {
-                    // If this is the server or server doesn't use the mod, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer() || !_serverConfig.SentByServer)
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
                         return;
+
+                    if (!_hasRegisteredWithNamedMessageHandler || !_serverConfig.SentByServer) {
+                        Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_SERVER}.", _clientConfig);
+                        NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_SERVER, ReceiveData);
+                        _hasRegisteredWithNamedMessageHandler = true;
+
+                        NetworkCommunication.SendData(ASK_SERVER_FOR_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT, _clientConfig);
+                    }
 
                     ScoreboardModifications(true);
                 }
@@ -1231,7 +1241,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(Player player) {
                 try {
                     // If this is the server or server doesn't use the mod, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer() || !_serverConfig.SentByServer)
+                    if (ServerFunc.IsDedicatedServer())
                         return;
 
                     _sogLabels.Remove(player.SteamId.Value.ToString());
@@ -1577,15 +1587,21 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
         public static void Event_Client_OnClientStarted(Dictionary<string, object> message) {
-            if (NetworkManager.Singleton == null || ServerFunc.IsDedicatedServer())
+            if (ServerFunc.IsDedicatedServer() || NetworkManager.Singleton == null || NetworkManager.Singleton.CustomMessagingManager == null)
                 return;
 
             Logging.Log("Event_Client_OnClientStarted", _clientConfig);
 
             try {
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_SERVER, ReceiveData);
-                _hasRegisteredWithNamedMessageHandler = true;
+                if (!_hasRegisteredWithNamedMessageHandler || !_serverConfig.SentByServer) {
+                    Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_SERVER}.", _clientConfig);
+                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_SERVER, ReceiveData);
+                    _hasRegisteredWithNamedMessageHandler = true;
+                }
                 LoadAssets();
+
+                if (!_serverConfig.SentByServer)
+                    NetworkCommunication.SendData(ASK_SERVER_FOR_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT, _clientConfig);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_Client_OnClientStarted.\n{ex}");
@@ -1656,21 +1672,11 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log("Event_OnClientConnected", _serverConfig);
 
             try {
-                ulong playerClientId = (ulong)message["clientId"];
-                if (playerClientId == 0)
-                    return;
-
-                if (NetworkManager.Singleton != null && !_hasRegisteredWithNamedMessageHandler)
+                if (NetworkManager.Singleton != null && !_hasRegisteredWithNamedMessageHandler) {
+                    Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT}.", _serverConfig);
                     NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
-
-                NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, playerClientId, Constants.FROM_SERVER, _serverConfig);
-                NetworkCommunication.SendData(ServerConfig.CONFIG_DATA_NAME, _serverConfig.ToString(), playerClientId, Constants.FROM_SERVER, _serverConfig);
-
-                foreach (string key in new List<string>(_sog.Keys))
-                    NetworkCommunication.SendData(SOG + key, _sog[key].ToString(), playerClientId, Constants.FROM_SERVER, _serverConfig);
-
-                foreach (string key in new List<string>(_savePerc.Keys))
-                    NetworkCommunication.SendData(SAVEPERC + key, _savePerc[key].ToString(), playerClientId, Constants.FROM_SERVER, _serverConfig);
+                    _hasRegisteredWithNamedMessageHandler = true;
+                }
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_OnClientConnected.\n{ex}");
@@ -1685,7 +1691,7 @@ namespace oomtm450PuckMod_Ruleset {
         public static void ReceiveData(ulong clientId, FastBufferReader reader) {
             try {
                 string dataName, dataStr;
-                if (clientId == 0) { // If client Id is 0, we received data from the server, so we are client-sided.
+                if (clientId == NetworkManager.ServerClientId) { // If client Id is 0, we received data from the server, so we are client-sided.
                     //Logging.Log("ReceiveData", _clientConfig);
                     (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, _clientConfig);
                 }
@@ -1703,8 +1709,7 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case ServerConfig.CONFIG_DATA_NAME: // CLIENT-SIDE : Set the server config on the client to use later if needed.
-                        if (!_serverConfig.SentByServer)
-                            _serverConfig = ServerConfig.SetConfig(dataStr);
+                        _serverConfig = ServerConfig.SetConfig(dataStr);
                         break;
 
                     case Sounds.PLAY_SOUND: // CLIENT-SIDE : Play sound.
@@ -1807,6 +1812,20 @@ namespace oomtm450PuckMod_Ruleset {
                         UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : Mod is out of date. Please restart your game or unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop to update.");
                         break;
 
+                    case ASK_SERVER_FOR_DATA: // SERVER-SIDE : Send the necessary data to client.
+                        if (dataStr != "1")
+                            break;
+
+                        NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, clientId, Constants.FROM_SERVER, _serverConfig);
+                        NetworkCommunication.SendData(ServerConfig.CONFIG_DATA_NAME, _serverConfig.ToString(), clientId, Constants.FROM_SERVER, _serverConfig);
+
+                        foreach (string key in new List<string>(_sog.Keys))
+                            NetworkCommunication.SendData(SOG + key, _sog[key].ToString(), clientId, Constants.FROM_SERVER, _serverConfig);
+
+                        foreach (string key in new List<string>(_savePerc.Keys))
+                            NetworkCommunication.SendData(SAVEPERC + key, _savePerc[key].ToString(), clientId, Constants.FROM_SERVER, _serverConfig);
+                        break;
+
                     case RESET_SOG:
                         if (dataStr != "1")
                             break;
@@ -1893,6 +1912,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (ServerFunc.IsDedicatedServer()) {
                     Logging.Log("Setting server sided config.", _serverConfig, true);
                     if (NetworkManager.Singleton != null) {
+                        Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT}.", _serverConfig);
                         NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
                         _hasRegisteredWithNamedMessageHandler = true;
                     }
@@ -1903,8 +1923,8 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.Log("Setting client sided config.", _serverConfig, true);
                     _clientConfig = ClientConfig.ReadConfig();
 
-                    _getStickLocation = new InputAction(binding: "<keyboard>/#(o)");
-                    _getStickLocation.Enable();
+                    //_getStickLocation = new InputAction(binding: "<keyboard>/#(o)");
+                    //_getStickLocation.Enable();
                 }
 
                 Logging.Log("Subscribing to events.", _serverConfig, true);
@@ -1947,7 +1967,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 _hasRegisteredWithNamedMessageHandler = false;
 
-                _getStickLocation.Disable();
+                //_getStickLocation.Disable();
 
                 ScoreboardModifications(false);
 

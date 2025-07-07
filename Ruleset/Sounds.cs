@@ -45,6 +45,8 @@ namespace oomtm450PuckMod_Ruleset {
                 if (_audioClips.Count != 0 || !Ruleset._clientConfig.Music)
                     return;
 
+                DontDestroyOnLoad(gameObject);
+
                 // You'll need to figure out the actual path to your asset bundle.
                 // It could be alongside your DLL, or in a specific mod data folder.
                 string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), SOUNDS_FOLDER_PATH);
@@ -73,6 +75,7 @@ namespace oomtm450PuckMod_Ruleset {
                     try {
                         AudioClip clip = DownloadHandlerAudioClip.GetContent(webRequest);
                         clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
+                        DontDestroyOnLoad(clip);
                         _audioClips.Add(clip);
                         if (clip.name.Contains(FACEOFF_MUSIC))
                             FaceoffMusicList.Add(clip.name);
@@ -106,8 +109,10 @@ namespace oomtm450PuckMod_Ruleset {
                     return;
 
                 soundObject = new GameObject(name);
+                DontDestroyOnLoad(soundObject);
                 soundObject.AddComponent<AudioSource>();
                 soundObject.GetComponent<AudioSource>().clip = clip;
+                DontDestroyOnLoad(soundObject.GetComponent<AudioSource>());
                 _soundObjects.Add(name, soundObject);
             }
             soundObject.GetComponent<AudioSource>().volume = SettingsManager.Instance.GlobalVolume;
