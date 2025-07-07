@@ -698,6 +698,10 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(GamePhase phase, int time) {
                 try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return;
+
                     if (phase == GamePhase.FaceOff) {
                         if (NextFaceoffSpot == FaceoffSpot.Center)
                             return;
@@ -761,7 +765,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        /// <summary>
+        /*/// <summary>
         /// Class that patches the Update event from PlayerInput.
         /// </summary>
         [HarmonyPatch(typeof(PlayerInput), "Update")]
@@ -769,6 +773,7 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPrefix]
             public static bool Prefix() {
                 try {
+                    // If this is the server, do not use the patch.
                     if (ServerFunc.IsDedicatedServer())
                         return true;
 
@@ -788,7 +793,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 return true;
             }
-        }
+        }*/
 
         /// <summary>
         /// Class that patches the Update event from ServerManager.
@@ -1205,8 +1210,8 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(Player player) {
                 try {
-                    // If this is the server, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer())
+                    // If this is the server or server doesn't use the mod, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer() || !_serverConfig.SentByServer)
                         return;
 
                     ScoreboardModifications(true);
@@ -1225,8 +1230,8 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(Player player) {
                 try {
-                    // If this is the server, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer())
+                    // If this is the server or server doesn't use the mod, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer() || !_serverConfig.SentByServer)
                         return;
 
                     _sogLabels.Remove(player.SteamId.Value.ToString());
@@ -1290,8 +1295,8 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPrefix]
             public static bool Prefix(string message) {
                 try {
-                    // If this is the server, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer())
+                    // If this is the server or server doesn't use the mod, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer() || !_serverConfig.SentByServer)
                         return true;
 
                     if ((message.StartsWith("HIGH STICK") || message.StartsWith("OFFSIDE") || message.StartsWith("ICING")) && !message.EndsWith("CALLED"))
