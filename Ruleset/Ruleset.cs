@@ -1814,11 +1814,13 @@ namespace oomtm450PuckMod_Ruleset {
                     case RESET_SOG:
                         foreach (string key in new List<string>(_sog.Keys)) {
                             _sog[key] = 0;
-                            _sogLabels[key].text = "0";
+                            if (_sogLabels.TryGetValue(key, out Label label)) {
+                                label.text = "0";
 
-                            Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(key);
-                            if (currentPlayer != null && currentPlayer && currentPlayer.Role.Value == PlayerRole.Goalie)
-                                _sogLabels[key].text = "0.000";
+                                Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(key);
+                                if (currentPlayer != null && currentPlayer && currentPlayer.Role.Value == PlayerRole.Goalie)
+                                    label.text = "0.000";
+                            }
                         }
                         break;
 
