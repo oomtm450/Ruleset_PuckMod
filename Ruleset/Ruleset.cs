@@ -1812,6 +1812,9 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RESET_SOG:
+                        if (dataStr != "1")
+                            break;
+
                         foreach (string key in new List<string>(_sog.Keys)) {
                             if (_sogLabels.TryGetValue(key, out Label label)) {
                                 _sog[key] = 0;
@@ -1829,6 +1832,9 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RESET_SAVEPERC:
+                        if (dataStr != "1")
+                            break;
+
                         foreach (string key in new List<string>(_savePerc.Keys))
                             _savePerc[key] = (0, 0);
                         break;
