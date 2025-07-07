@@ -1813,8 +1813,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                     case RESET_SOG:
                         foreach (string key in new List<string>(_sog.Keys)) {
-                            _sog[key] = 0;
                             if (_sogLabels.TryGetValue(key, out Label label)) {
+                                _sog[key] = 0;
                                 label.text = "0";
 
                                 Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(key);
