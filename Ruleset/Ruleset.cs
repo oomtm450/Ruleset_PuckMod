@@ -1912,7 +1912,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 if (ServerFunc.IsDedicatedServer()) {
                     Logging.Log("Setting server sided config.", _serverConfig, true);
-                    if (NetworkManager.Singleton != null) {
+                    if (NetworkManager.Singleton != null && NetworkManager.Singleton.CustomMessagingManager != null) {
                         Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT}.", _serverConfig);
                         NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
                         _hasRegisteredWithNamedMessageHandler = true;
