@@ -1821,6 +1821,10 @@ namespace oomtm450PuckMod_Ruleset {
                                 if (currentPlayer != null && currentPlayer && currentPlayer.Role.Value == PlayerRole.Goalie)
                                     label.text = "0.000";
                             }
+                            else {
+                                _sog.Remove(key);
+                                _savePerc.Remove(key);
+                            }
                         }
                         break;
 
