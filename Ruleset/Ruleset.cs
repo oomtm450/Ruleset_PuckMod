@@ -1053,12 +1053,12 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPrefix]
             public static bool Prefix(Dictionary<string, object> message) {
                 try {
-                    if (_paused)
-                        return false;
-
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing)
                         return true;
+
+                    if (_paused)
+                        return false;
 
                     PlayerTeam playerTeam = (PlayerTeam)message["team"];
                     playerTeam = TeamFunc.GetOtherTeam(playerTeam);
