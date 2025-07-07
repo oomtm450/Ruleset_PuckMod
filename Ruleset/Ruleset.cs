@@ -1911,13 +1911,13 @@ namespace oomtm450PuckMod_Ruleset {
                 Logging.Log($"Enabled.", _serverConfig, true);
 
                 if (ServerFunc.IsDedicatedServer()) {
-                    Logging.Log("Setting server sided config.", _serverConfig, true);
                     if (NetworkManager.Singleton != null && NetworkManager.Singleton.CustomMessagingManager != null) {
                         Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT}.", _serverConfig);
                         NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
                         _hasRegisteredWithNamedMessageHandler = true;
                     }
 
+                    Logging.Log("Setting server sided config.", _serverConfig, true);
                     _serverConfig = ServerConfig.ReadConfig(ServerManager.Instance.AdminSteamIds);
                 }
                 else {
