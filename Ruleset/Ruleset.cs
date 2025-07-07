@@ -1585,6 +1585,7 @@ namespace oomtm450PuckMod_Ruleset {
             try {
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_SERVER, ReceiveData);
                 _hasRegisteredWithNamedMessageHandler = true;
+                LoadAssets();
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_Client_OnClientStarted.\n{ex}");
@@ -1600,6 +1601,9 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log("Event_Client_OnClientStopped", _clientConfig);
 
             try {
+                if (!_serverConfig.SentByServer)
+                    return;
+
                 _serverConfig = new ServerConfig();
                 if (_refSignals == null && _sounds == null)
                     return;
@@ -1661,7 +1665,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                 NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, playerClientId, Constants.FROM_SERVER, _serverConfig);
                 NetworkCommunication.SendData(ServerConfig.CONFIG_DATA_NAME, _serverConfig.ToString(), playerClientId, Constants.FROM_SERVER, _serverConfig);
-                NetworkCommunication.SendData(Sounds.LOAD_SOUNDS, "1", playerClientId, Constants.FROM_SERVER, _serverConfig);
 
                 foreach (string key in new List<string>(_sog.Keys))
                     NetworkCommunication.SendData(SOG + key, _sog[key].ToString(), playerClientId, Constants.FROM_SERVER, _serverConfig);
@@ -1702,18 +1705,6 @@ namespace oomtm450PuckMod_Ruleset {
                     case ServerConfig.CONFIG_DATA_NAME: // CLIENT-SIDE : Set the server config on the client to use later if needed.
                         if (!_serverConfig.SentByServer)
                             _serverConfig = ServerConfig.SetConfig(dataStr);
-                        break;
-
-                    case Sounds.LOAD_SOUNDS: // CLIENT-SIDE : Load sounds.
-                        if (dataStr != "1" || _sounds != null)
-                            break;
-                        GameObject soundsGameObject = new GameObject(Constants.MOD_NAME + "_Sounds");
-                        _sounds = soundsGameObject.AddComponent<Sounds>();
-                        _sounds.LoadSounds();
-
-                        GameObject refSignalsGameObject = new GameObject(Constants.MOD_NAME + "RefSignals");
-                        _refSignals = refSignalsGameObject.AddComponent<RefSignals>();
-                        _refSignals.LoadImages();
                         break;
 
                     case Sounds.PLAY_SOUND: // CLIENT-SIDE : Play sound.
@@ -1968,6 +1959,23 @@ namespace oomtm450PuckMod_Ruleset {
             catch (Exception ex) {
                 Logging.LogError($"Failed to disable.\n{ex}");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Method that loads the assets for the client-side (sounds and ref UI).
+        /// </summary>
+        private static void LoadAssets() {
+            if (_sounds == null) {
+                GameObject soundsGameObject = new GameObject(Constants.MOD_NAME + "_Sounds");
+                _sounds = soundsGameObject.AddComponent<Sounds>();
+                _sounds.LoadSounds();
+            }
+
+            if (_refSignals == null) {
+                GameObject refSignalsGameObject = new GameObject(Constants.MOD_NAME + "RefSignals");
+                _refSignals = refSignalsGameObject.AddComponent<RefSignals>();
+                _refSignals.LoadImages();
             }
         }
 
