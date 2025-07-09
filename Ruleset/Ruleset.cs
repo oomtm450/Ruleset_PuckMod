@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.13.0DEV3";
+        private const string MOD_VERSION = "0.13.0DEV4";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -115,7 +115,12 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly LockDictionary<string, (PlayerTeam Team, bool IsOffside)> _isOffside = new LockDictionary<string, (PlayerTeam, bool)>();
 
-        private static readonly LockDictionary<PlayerTeam, Stopwatch> _isIcingPossible = new LockDictionary<PlayerTeam, Stopwatch>{
+        private static readonly LockDictionary<PlayerTeam, bool> _callOffHighStick = new LockDictionary<PlayerTeam, bool> {
+            { PlayerTeam.Blue, false },
+            { PlayerTeam.Red, false },
+        };
+
+        private static readonly LockDictionary<PlayerTeam, Stopwatch> _isIcingPossible = new LockDictionary<PlayerTeam, Stopwatch> {
             { PlayerTeam.Blue, null },
             { PlayerTeam.Red, null },
         };
@@ -832,6 +837,14 @@ namespace oomtm450PuckMod_Ruleset {
                 };
 
                 try {
+                    foreach (PlayerTeam callOffHighStickTeam in new List<PlayerTeam>(_callOffHighStick.Keys)) {
+                        if (_callOffHighStick[callOffHighStickTeam]) {
+                            _callOffHighStick[callOffHighStickTeam] = false;
+                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, callOffHighStickTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
+                            UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {callOffHighStickTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                        }
+                    }
+
                     if (_paused) {
                         if (_doFaceoff)
                             PostDoFaceoff();
@@ -1360,9 +1373,8 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             _isHighStickActive[team] = false;
-            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
-            UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {team.ToString().ToUpperInvariant()} TEAM CALLED OFF");
             _isHighStickActiveTimers[team].Change(Timeout.Infinite, Timeout.Infinite);
+            _callOffHighStick[team] = true;
         }
 
         private static void ResetGoalieInt() {
