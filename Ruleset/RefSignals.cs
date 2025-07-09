@@ -13,8 +13,10 @@ namespace oomtm450PuckMod_Ruleset {
         private const string IMAGES_FOLDER_PATH = "images\\refsignals";
         private const string IMAGE_EXTENSION = ".png";
 
-        internal const string SHOW_SIGNAL = "showrefsignal";
-        internal const string STOP_SIGNAL = "stoprefsignal";
+        internal const string SHOW_SIGNAL_BLUE = "showrefsignalb";
+        internal const string STOP_SIGNAL_BLUE = "stoprefsignalb";
+        internal const string SHOW_SIGNAL_RED = "showrefsignalr";
+        internal const string STOP_SIGNAL_RED = "stoprefsignalr";
 
         internal const string ALL = "all";
         internal const string OFFSIDE_LINESMAN = "offside_linesman";
@@ -37,7 +39,7 @@ namespace oomtm450PuckMod_Ruleset {
             //_canvas.transform.rotation = Quaternion.LookRotation(transform.position - localPlayer.PlayerCamera.transform.position);
         }
 
-        internal void LoadImages() {
+        internal void LoadImages(PlayerTeam team) {
             try {
                 if (_images.Count != 0)
                     return;
@@ -54,18 +56,18 @@ namespace oomtm450PuckMod_Ruleset {
                 CanvasRenderer _canvasRenderer = gameObject.AddComponent<CanvasRenderer>();
 
                 _canvas = gameObject.AddComponent<Canvas>();
-                _canvas.name = "RefSignalsCanvas";
+                _canvas.name = $"RefSignals_{team}Team_Canvas";
                 _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 _canvas.sortingOrder = 0;
 
-                StartCoroutine(GetSprites(fullPath));
+                StartCoroutine(GetSprites(fullPath, team));
             }
             catch (Exception ex) {
                 Logging.LogError($"Error loading Images.\n{ex}");
             }
         }
 
-        private IEnumerator GetSprites(string path) {
+        private IEnumerator GetSprites(string path, PlayerTeam team) {
             foreach (string file in Directory.GetFiles(path, "*" + IMAGE_EXTENSION, SearchOption.AllDirectories)) {
                 string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
                 UnityWebRequest webRequest = UnityWebRequestTexture.GetTexture(filePath);
@@ -78,7 +80,7 @@ namespace oomtm450PuckMod_Ruleset {
                         string fileName = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(IMAGE_EXTENSION, "");
                         Texture2D texture = DownloadHandlerTexture.GetContent(webRequest);
 
-                        GameObject _gameObject = new GameObject("ImagesTest");
+                        GameObject _gameObject = new GameObject($"RefSignals_{team}Team_Images");
                         DontDestroyOnLoad(_gameObject);
 
                         Image image = _gameObject.AddComponent<Image>();
@@ -88,11 +90,20 @@ namespace oomtm450PuckMod_Ruleset {
                         image.transform.SetParent(_canvas.transform, false);
                         image.enabled = false;
 
-                        RectTransform rectTransform = image.GetComponent<RectTransform>();
-                        rectTransform.sizeDelta = new Vector2(300, 300);
-                        rectTransform.pivot = new Vector2(0.5f, 0.5f);
-                        rectTransform.anchorMin = new Vector2(0.925f, 0.37f);
-                        rectTransform.anchorMax = new Vector2(0.925f, 0.37f);
+                        if (team == PlayerTeam.Red) {
+                            RectTransform rectTransform = image.GetComponent<RectTransform>();
+                            rectTransform.sizeDelta = new Vector2(300, 300);
+                            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                            rectTransform.anchorMin = new Vector2(0.925f, 0.37f);
+                            rectTransform.anchorMax = new Vector2(0.925f, 0.37f);
+                        }
+                        else {
+                            RectTransform rectTransform = image.GetComponent<RectTransform>();
+                            rectTransform.sizeDelta = new Vector2(300, 300);
+                            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                            rectTransform.anchorMin = new Vector2(0.075f, 0.37f);
+                            rectTransform.anchorMax = new Vector2(0.075f, 0.37f);
+                        }
 
                         _images.Add(fileName, image);
                     }
@@ -105,7 +116,6 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal void ShowSignal(string signal) {
             _images[signal].enabled = true;
-            Logging.Log($"Image name : {_images[signal].name}", Ruleset._serverConfig, true); // TODO : Remove debug log.
         }
 
         internal void StopSignal(string signal) {
@@ -115,6 +125,18 @@ namespace oomtm450PuckMod_Ruleset {
         internal void StopAllSignals() {
             foreach (Image image in _images.Values)
                 image.enabled = false;
+        }
+
+        internal static string GetSignalConstant(bool showSignal, PlayerTeam team) {
+            if (showSignal) {
+                if (team == PlayerTeam.Blue)
+                    return SHOW_SIGNAL_BLUE;
+                return SHOW_SIGNAL_RED;
+            }
+
+            if (team == PlayerTeam.Blue)
+                return STOP_SIGNAL_BLUE;
+            return STOP_SIGNAL_RED;
         }
     }
 }

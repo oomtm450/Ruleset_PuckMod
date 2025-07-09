@@ -19,6 +19,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool Music { get; set; } = true;
 
         /// <summary>
+        /// Bool, true if the custom goal horns must be set.
+        /// </summary>
+        public bool CustomGoalHorns { get; set; } = true;
+
+        /// <summary>
         /// Function that serialize the ClientConfig object.
         /// </summary>
         /// <returns>String, serialized ClientConfig.</returns>
