@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.13.0DEV4";
+        private const string MOD_VERSION = "0.13.0DEV5";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -356,6 +356,10 @@ namespace oomtm450PuckMod_Ruleset {
                                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, stick.Player.Team.Value), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
                                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig);
                                 UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
+
+                                _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
+                                highStickTimer.Change(Timeout.Infinite, Timeout.Infinite);
+
                                 DoFaceoff();
                             }
                         }
