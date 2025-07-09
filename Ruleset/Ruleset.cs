@@ -1593,7 +1593,7 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log("Event_Client_OnClientStarted", _clientConfig);
 
             try {
-                if (!_hasRegisteredWithNamedMessageHandler || !_serverConfig.SentByServer) {
+                if (!_hasRegisteredWithNamedMessageHandler) {
                     Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_SERVER}.", _clientConfig);
                     NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_SERVER, ReceiveData);
                     _hasRegisteredWithNamedMessageHandler = true;
