@@ -1707,15 +1707,18 @@ namespace oomtm450PuckMod_Ruleset {
                     return;
 
                 _serverConfig = new ServerConfig();
+
+                if (_sounds != null) {
+                    if (!string.IsNullOrEmpty(_currentMusicPlaying))
+                        _sounds.Stop(_currentMusicPlaying);
+                    _currentMusicPlaying = "";
+                }
+
+                _refSignalsBlueTeam?.StopAllSignals();
+                _refSignalsRedTeam?.StopAllSignals();
+
                 if (_refSignalsBlueTeam == null && _refSignalsRedTeam == null && _sounds == null)
                     return;
-
-                if (!string.IsNullOrEmpty(_currentMusicPlaying))
-                    _sounds.Stop(_currentMusicPlaying);
-                _currentMusicPlaying = "";
-
-                _refSignalsBlueTeam.StopAllSignals();
-                _refSignalsRedTeam.StopAllSignals();
 
                 ScoreboardModifications(false);
             }
@@ -2092,8 +2095,10 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT);
                 }
-                else
+                else {
+                    Event_Client_OnClientStopped(new Dictionary<string, object>());
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER);
+                }
 
                 _hasRegisteredWithNamedMessageHandler = false;
 
