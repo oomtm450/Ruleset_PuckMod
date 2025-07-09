@@ -931,8 +931,8 @@ namespace oomtm450PuckMod_Ruleset {
                             PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
                             foreach (string key in new List<string>(_isOffside.Keys)) {
                                 if (_isOffside[key].IsOffside && _isOffside[key].Team == lastPlayerOnPuckOtherTeam) {
-                                    offsideHasToBeWarned[_isOffside[key].Team] = false;
-                                    _isOffside[key] = (_isOffside[key].Team, false);
+                                    offsideHasToBeWarned[lastPlayerOnPuckOtherTeam] = false;
+                                    _isOffside[key] = (lastPlayerOnPuckOtherTeam, false);
                                 }
                             }
                         }
