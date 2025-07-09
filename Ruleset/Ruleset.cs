@@ -821,6 +821,11 @@ namespace oomtm450PuckMod_Ruleset {
                     {PlayerTeam.Red, null},
                 };
 
+                Dictionary<PlayerTeam, bool?> offsideHasToBeWarnedForce = new Dictionary<PlayerTeam, bool?> {
+                    {PlayerTeam.Blue, null},
+                    {PlayerTeam.Red, null},
+                };
+
                 try {
                     if (_paused) {
                         if (_doFaceoff)
@@ -931,7 +936,7 @@ namespace oomtm450PuckMod_Ruleset {
                             PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
                             foreach (string key in new List<string>(_isOffside.Keys)) {
                                 if (_isOffside[key].IsOffside && _isOffside[key].Team == lastPlayerOnPuckOtherTeam) {
-                                    offsideHasToBeWarned[lastPlayerOnPuckOtherTeam] = false;
+                                    offsideHasToBeWarnedForce[lastPlayerOnPuckOtherTeam] = false;
                                     _isOffside[key] = (lastPlayerOnPuckOtherTeam, false);
                                 }
                             }
@@ -975,17 +980,11 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
 
-                    foreach (var kvp in offsideHasToBeWarned) {
-                        if (kvp.Value != null) {
-                            if ((bool)kvp.Value) {
-                                NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
-                                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {kvp.Key.ToString().ToUpperInvariant()} TEAM");
-                            }
-                            else if (!(bool)kvp.Value) {
-                                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
-                                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {kvp.Key.ToString().ToUpperInvariant()} TEAM CALLED OFF");
-                            }
-                        }
+                    foreach (var kvp in offsideHasToBeWarnedForce) {
+                        if (kvp.Value != null)
+                            SignalOffside((bool)kvp.Value, kvp.Key);
+                        else if (offsideHasToBeWarned[kvp.Key] != null)
+                            SignalOffside((bool)offsideHasToBeWarned[kvp.Key], kvp.Key);
                     }
                 }
                 catch (Exception ex) {
@@ -1322,6 +1321,17 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Methods/Functions
+        private static void SignalOffside(bool called, PlayerTeam team) {
+            if (called) {
+                NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
+                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {team.ToString().ToUpperInvariant()} TEAM");
+            }
+            else {
+                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
+                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {team.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+            }
+        }
+
         private static void ResetIcings() {
             foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingPossible.Keys))
                 _isIcingPossible[key] = false;
