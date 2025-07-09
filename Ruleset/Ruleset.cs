@@ -78,7 +78,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private const float GINT_COLLISION_FORCE_THRESHOLD = 0.97f;
 
-        private const int MAX_ICING_POSSIBLE_TIMER = 5000;
+        private const int MAX_ICING_POSSIBLE_TIMER = 7000;
 
         private const int MAX_ICING_TIMER = 12000;
 
@@ -1398,6 +1398,9 @@ namespace oomtm450PuckMod_Ruleset {
 
             foreach (PlayerTeam key in new List<PlayerTeam>(_isHighStickActive.Keys))
                 _isHighStickActive[key] = false;
+
+            foreach (PlayerTeam key in new List<PlayerTeam>(_callOffHighStick.Keys))
+                _callOffHighStick[key] = false;
         }
 
         private static void DoFaceoff(int millisecondsPauseMin = 3500, int millisecondsPauseMax = 5000) {
