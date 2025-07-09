@@ -158,7 +158,7 @@ namespace oomtm450PuckMod_Ruleset {
             AudioSource blueGoalAudioSource = blueGoalObj.GetComponent<AudioSource>();
             blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == REDGOALHORN);
             blueGoalAudioSource.pitch = 1f;
-            redGoalAudioSource.maxDistance = 400f;
+            blueGoalAudioSource.maxDistance = 400f;
 
             GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
 
