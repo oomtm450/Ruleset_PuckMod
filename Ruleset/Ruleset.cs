@@ -1833,7 +1833,7 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             else if (dataStr == Sounds.WARMUP_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList);
-                                _sounds.Play(_currentMusicPlaying);
+                                _sounds.Play(_currentMusicPlaying, 0, true);
                             }
                             else if (dataStr == Sounds.LAST_MINUTE_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList);

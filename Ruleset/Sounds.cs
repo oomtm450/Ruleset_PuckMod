@@ -104,7 +104,7 @@ namespace oomtm450PuckMod_Ruleset {
                 SetGoalHorns();
         }
 
-        internal void Play(string name, float delay = 0) {
+        internal void Play(string name, float delay = 0, bool loop = false) {
             if (string.IsNullOrEmpty(name))
                 return;
 
@@ -120,11 +120,14 @@ namespace oomtm450PuckMod_Ruleset {
                 DontDestroyOnLoad(soundObject.GetComponent<AudioSource>());
                 _soundObjects.Add(name, soundObject);
             }
-            soundObject.GetComponent<AudioSource>().volume = SettingsManager.Instance.GlobalVolume;
+
+            AudioSource audioSource = soundObject.GetComponent<AudioSource>();
+            audioSource.loop = loop;
+            audioSource.volume = SettingsManager.Instance.GlobalVolume;
             if (delay == 0)
-                soundObject.GetComponent<AudioSource>().Play();
+                audioSource.Play();
             else
-                soundObject.GetComponent<AudioSource>().PlayDelayed(delay);
+                audioSource.PlayDelayed(delay);
         }
 
         internal void Stop(string name) {
