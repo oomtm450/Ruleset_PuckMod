@@ -56,7 +56,7 @@ namespace oomtm450PuckMod_Ruleset {
                 CanvasRenderer _canvasRenderer = gameObject.AddComponent<CanvasRenderer>();
 
                 _canvas = gameObject.AddComponent<Canvas>();
-                _canvas.name = "RefSignalsCanvas";
+                _canvas.name = $"RefSignals_{team}Team_Canvas";
                 _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 _canvas.sortingOrder = 0;
 
@@ -101,8 +101,8 @@ namespace oomtm450PuckMod_Ruleset {
                             RectTransform rectTransform = image.GetComponent<RectTransform>();
                             rectTransform.sizeDelta = new Vector2(300, 300);
                             rectTransform.pivot = new Vector2(0.5f, 0.5f);
-                            rectTransform.anchorMin = new Vector2(-0.925f, -0.37f); // TODO : Change the values for the blue team. (Left side)
-                            rectTransform.anchorMax = new Vector2(-0.925f, -0.37f);
+                            rectTransform.anchorMin = new Vector2(0.075f, 0.37f);
+                            rectTransform.anchorMax = new Vector2(0.075f, 0.37f);
                         }
 
                         _images.Add(fileName, image);
