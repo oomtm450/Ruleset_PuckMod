@@ -19,6 +19,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal const string MUSIC = "music";
         internal const string WHISTLE = "whistle";
+        internal const string BLUEGOALHORN = "bluegoalhorn";
+        internal const string REDGOALHORN = "redgoalhorn";
         internal const string FACEOFF_MUSIC = "faceoffmusic";
         internal const string FACEOFF_MUSIC_DELAYED = "faceoffmusicdelayed";
         internal const string BLUE_GOAL_MUSIC = "bluegoalmusic";
@@ -97,6 +99,8 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
             }
+
+            SetGoalHorns();
         }
 
         internal void Play(string name, float delay = 0) {
@@ -133,6 +137,35 @@ namespace oomtm450PuckMod_Ruleset {
                 return musicList[new System.Random().Next(0, musicList.Count)];
 
             return "";
+        }
+
+        private void SetGoalHorns() {
+            GameObject levelGameObj = GameObject.Find("Level");
+            if (!levelGameObj)
+                return;
+
+            GameObject soundsGameObj = levelGameObj.transform.Find("Sounds").gameObject;
+
+            if (!soundsGameObj)
+                return;
+
+            GameObject blueGoalObj = soundsGameObj.transform.Find("Blue Goal").gameObject;
+
+            if (!blueGoalObj)
+                return;
+
+            AudioSource blueGoalAudioSource = blueGoalObj.GetComponent<AudioSource>();
+            blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == REDGOALHORN);
+            blueGoalAudioSource.pitch = 1f;
+
+            GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
+
+            if (!redGoalObj)
+                return;
+
+            AudioSource redGoalAudioSource = redGoalObj.GetComponent<AudioSource>();
+            redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == BLUEGOALHORN);
+            redGoalAudioSource.pitch = 1f;
         }
     }
 }
