@@ -76,7 +76,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private const int HIGH_STICK_MAX_MILLISECONDS = 5000;
 
-        private const float GINT_COLLISION_FORCE_THRESHOLD = 0.965f;
+        private const float GINT_COLLISION_FORCE_THRESHOLD = 0.97f;
 
         private const int MAX_ICING_POSSIBLE_TIMER = 5000;
 
