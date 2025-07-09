@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.13.0DEV7";
+        private const string MOD_VERSION = "0.13.0DEV8";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1354,7 +1354,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
-                    GetPrivateField<SynchronizedAudio>(typeof(LevelManager), LevelManager.Instance, "blueGoalAudioSource").Server_Play(-1f, 1f, true);
+                    GetPrivateField<SynchronizedAudio>(typeof(LevelManager), LevelManager.Instance, "blueGoalAudioSource").Server_Play(1f, 1f, true);
 
                     return false;
                 }
@@ -1378,7 +1378,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
-                    GetPrivateField<SynchronizedAudio>(typeof(LevelManager), LevelManager.Instance, "redGoalAudioSource").Server_Play(-1f, 1f, true);
+                    GetPrivateField<SynchronizedAudio>(typeof(LevelManager), LevelManager.Instance, "redGoalAudioSource").Server_Play(1f, 1f, true);
 
                     return false;
                 }
