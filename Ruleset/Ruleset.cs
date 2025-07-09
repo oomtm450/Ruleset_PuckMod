@@ -913,8 +913,8 @@ namespace oomtm450PuckMod_Ruleset {
                         List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
 
                         // Is offside.
-                        if (playerWithPossessionSteamId != player.SteamId.Value.ToString() && (playerZone == otherTeamZones[0] || playerZone == otherTeamZones[1])) {
-                            bool isPlayerTeamOffside = IsOffside(player.Team.Value);
+                        bool isPlayerTeamOffside = IsOffside(player.Team.Value);
+                        if ((playerWithPossessionSteamId != player.SteamId.Value.ToString() || isPlayerTeamOffside) && (playerZone == otherTeamZones[0] || playerZone == otherTeamZones[1])) {
                             if ((_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1]) || isPlayerTeamOffside) {
                                 if (!isPlayerTeamOffside)
                                     offsideHasToBeWarned[player.Team.Value] = true;
