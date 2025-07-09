@@ -981,9 +981,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                     foreach (var kvp in offsideHasToBeWarnedForce) {
                         if (kvp.Value != null)
-                            SignalOffside((bool)kvp.Value, kvp.Key);
+                            WarnOffside((bool)kvp.Value, kvp.Key);
                         else if (offsideHasToBeWarned[kvp.Key] != null)
-                            SignalOffside((bool)offsideHasToBeWarned[kvp.Key], kvp.Key);
+                            WarnOffside((bool)offsideHasToBeWarned[kvp.Key], kvp.Key);
                     }
                 }
                 catch (Exception ex) {
@@ -1320,8 +1320,8 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Methods/Functions
-        private static void SignalOffside(bool called, PlayerTeam team) {
-            if (called) {
+        private static void WarnOffside(bool active, PlayerTeam team) {
+            if (active) {
                 NetworkCommunication.SendDataToAll(RefSignals.SHOW_SIGNAL, RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
                 UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {team.ToString().ToUpperInvariant()} TEAM");
             }
