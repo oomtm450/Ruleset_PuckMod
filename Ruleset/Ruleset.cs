@@ -78,6 +78,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private const float GINT_COLLISION_FORCE_THRESHOLD = 0.965f;
 
+        private const int MAX_ICING_POSSIBLE_TIMER = 5000;
+
         private const int MAX_ICING_TIMER = 12000;
 
         private const string SOG = Constants.MOD_NAME + "SOG";
@@ -113,9 +115,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly LockDictionary<string, (PlayerTeam Team, bool IsOffside)> _isOffside = new LockDictionary<string, (PlayerTeam, bool)>();
 
-        private static readonly LockDictionary<PlayerTeam, bool> _isIcingPossible = new LockDictionary<PlayerTeam, bool>{
-            { PlayerTeam.Blue, false },
-            { PlayerTeam.Red, false },
+        private static readonly LockDictionary<PlayerTeam, Stopwatch> _isIcingPossible = new LockDictionary<PlayerTeam, Stopwatch>{
+            { PlayerTeam.Blue, null },
+            { PlayerTeam.Red, null },
         };
 
         private static readonly LockDictionary<PlayerTeam, bool> _isIcingActive = new LockDictionary<PlayerTeam, bool> {
@@ -133,12 +135,12 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, false },
         };
 
-        private static readonly LockDictionary<PlayerTeam, Stopwatch> _goalieIntTimer = new LockDictionary<PlayerTeam, Stopwatch> {
-            { PlayerTeam.Blue, null },
-            { PlayerTeam.Red, null },
+        private static readonly LockDictionary<PlayerTeam, Timer> _isHighStickActiveTimers = new LockDictionary<PlayerTeam, Timer> {
+            { PlayerTeam.Blue, new Timer(ResetHighStickCallback, PlayerTeam.Blue, Timeout.Infinite, Timeout.Infinite) },
+            { PlayerTeam.Red, new Timer(ResetHighStickCallback, PlayerTeam.Red, Timeout.Infinite, Timeout.Infinite) },
         };
 
-        private static readonly LockDictionary<PlayerTeam, Stopwatch> _highStickTimer = new LockDictionary<PlayerTeam, Stopwatch> {
+        private static readonly LockDictionary<PlayerTeam, Stopwatch> _goalieIntTimer = new LockDictionary<PlayerTeam, Stopwatch> {
             { PlayerTeam.Blue, null },
             { PlayerTeam.Red, null },
         };
@@ -333,14 +335,9 @@ namespace oomtm450PuckMod_Ruleset {
                     Puck puck = PuckManager.Instance.GetPuck();
                     if (puck) {
                         if (stick.Player.Role.Value != PlayerRole.Goalie && puck.Rigidbody.transform.position.y > _serverConfig.HighStickHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
-                            _highStickTimer.TryGetValue(stick.Player.Team.Value, out Stopwatch highStickWatch);
+                            _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
 
-                            if (highStickWatch == null) {
-                                highStickWatch = new Stopwatch();
-                                _highStickTimer[stick.Player.Team.Value] = highStickWatch;
-                            }
-
-                            highStickWatch.Restart();
+                            highStickTimer.Change(HIGH_STICK_MAX_MILLISECONDS, Timeout.Infinite);
                             if (!IsHighStick(stick.Player.Team.Value)) {
                                 _isHighStickActive[stick.Player.Team.Value] = true;
                                 _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
@@ -494,7 +491,13 @@ namespace oomtm450PuckMod_Ruleset {
                     if (ZoneFunc.GetTeamZones(stick.Player.Team.Value, true).Any(x => x == _puckZone))
                         icingPossible = true;
 
-                    _isIcingPossible[stick.Player.Team.Value] = icingPossible;
+                    if (icingPossible) {
+                        Stopwatch icingPossibleWatch = new Stopwatch();
+                        icingPossibleWatch.Start();
+                        _isIcingPossible[stick.Player.Team.Value] = icingPossibleWatch;
+                    }
+                    else
+                        _isIcingPossible[stick.Player.Team.Value] = null;
 
                     _lastShotWasCounted[stick.Player.Team.Value] = false;
                 }
@@ -852,18 +855,18 @@ namespace oomtm450PuckMod_Ruleset {
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PUCK_RADIUS);
 
                     // Icing logic.
-                    if (!_isIcingPossible[PlayerTeam.Blue] && _isIcingActive[PlayerTeam.Blue]) {
+                    if (!IsIcingPossible(PlayerTeam.Blue) && _isIcingActive[PlayerTeam.Blue]) {
                         _isIcingActive[PlayerTeam.Blue] = false;
                         NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, PlayerTeam.Blue), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                         UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Blue.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                     }
-                    if (!_isIcingPossible[PlayerTeam.Red] && _isIcingActive[PlayerTeam.Red]) {
+                    if (!IsIcingPossible(PlayerTeam.Red) && _isIcingActive[PlayerTeam.Red]) {
                         _isIcingActive[PlayerTeam.Red] = false;
                         NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, PlayerTeam.Red), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                         UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Red.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                     }
 
-                    if (_isIcingPossible[PlayerTeam.Blue] && _puckZone == Zone.RedTeam_BehindGoalLine) {
+                    if (IsIcingPossible(PlayerTeam.Blue) && _puckZone == Zone.RedTeam_BehindGoalLine) {
                         if (!IsIcing(PlayerTeam.Blue)) {
                             _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
                             _isIcingActiveTimers[PlayerTeam.Blue].Change(MAX_ICING_TIMER, Timeout.Infinite);
@@ -871,7 +874,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         _isIcingActive[PlayerTeam.Blue] = true;
                     }
-                    if (_isIcingPossible[PlayerTeam.Red] && _puckZone == Zone.BlueTeam_BehindGoalLine) {
+                    if (IsIcingPossible(PlayerTeam.Red) && _puckZone == Zone.BlueTeam_BehindGoalLine) {
                         if (!IsIcing(PlayerTeam.Red)) {
                             _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
                             _isIcingActiveTimers[PlayerTeam.Red].Change(MAX_ICING_TIMER, Timeout.Infinite);
@@ -1337,7 +1340,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void ResetIcings() {
             foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingPossible.Keys))
-                _isIcingPossible[key] = false;
+                _isIcingPossible[key] = null;
 
             foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingActive.Keys))
                 _isIcingActive[key] = false;
@@ -1348,7 +1351,18 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void ResetIcingCallback(object stateInfo) {
             PlayerTeam team = (PlayerTeam)stateInfo;
-            _isIcingPossible[team] = false;
+            _isIcingPossible[team] = null;
+        }
+
+        private static void ResetHighStickCallback(object stateInfo) {
+            PlayerTeam team = (PlayerTeam)stateInfo;
+            if (!_isHighStickActive[team])
+                return;
+
+            _isHighStickActive[team] = false;
+            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
+            UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {team.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+            _isHighStickActiveTimers[team].Change(Timeout.Infinite, Timeout.Infinite);
         }
 
         private static void ResetGoalieInt() {
@@ -1367,8 +1381,8 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void ResetHighSticks() {
-            foreach (PlayerTeam key in new List<PlayerTeam>(_highStickTimer.Keys))
-                _highStickTimer[key] = null;
+            foreach (PlayerTeam key in new List<PlayerTeam>(_isHighStickActiveTimers.Keys))
+                _isHighStickActiveTimers[key].Change(Timeout.Infinite, Timeout.Infinite);
 
             foreach (PlayerTeam key in new List<PlayerTeam>(_isHighStickActive.Keys))
                 _isHighStickActive[key] = false;
@@ -1434,19 +1448,6 @@ namespace oomtm450PuckMod_Ruleset {
             if (!highStickActivated || !_isHighStickActive[team])
                 return false;
 
-            Stopwatch watch = _highStickTimer[team];
-            if (watch == null)
-                return false;
-
-            Logging.Log($"High stick timer {team} team : high sticked {((double)watch.ElapsedMilliseconds) / 1000d} seconds ago.", _serverConfig);
-            if (watch.ElapsedMilliseconds >= HIGH_STICK_MAX_MILLISECONDS) {
-                _isHighStickActive[team] = false;
-                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
-                UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {team.ToString().ToUpperInvariant()} TEAM CALLED OFF");
-                _highStickTimer[team] = null;
-                return false;
-            }
-
             return true;
         }
 
@@ -1464,7 +1465,10 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static bool IsIcingPossible(PlayerTeam team) {
-            return _isIcingPossible[team];
+            if (_isIcingPossible[team] != null && _isIcingPossible[team].ElapsedMilliseconds < MAX_ICING_POSSIBLE_TIMER)
+                return true;
+
+            return false;
         }
 
         private static bool IsGoalieInt(PlayerTeam team) {
