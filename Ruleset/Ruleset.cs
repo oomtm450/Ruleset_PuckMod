@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V" + Assembly.GetEntryAssembly().GetName().Version.ToString() + "DEV";
+        private static readonly string MOD_VERSION = "V0.14.0DEV5";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1700,9 +1700,6 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log("Event_Client_OnClientStopped", _clientConfig);
 
             try {
-                if (!_serverConfig.SentByServer)
-                    return;
-
                 _serverConfig = new ServerConfig();
 
                 if (_sounds != null) {
@@ -2058,12 +2055,14 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 Logging.Log("Subscribing to events.", _serverConfig, true);
-                EventManager.Instance.AddEventListener("Event_Client_OnClientStarted", Event_Client_OnClientStarted);
-                EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                 
                 if (ServerFunc.IsDedicatedServer()) {
                     EventManager.Instance.AddEventListener("Event_OnClientConnected", Event_OnClientConnected);
                     EventManager.Instance.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
+                }
+                else {
+                    EventManager.Instance.AddEventListener("Event_Client_OnClientStarted", Event_Client_OnClientStarted);
+                    EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                 }
 
                 return true;
@@ -2080,19 +2079,17 @@ namespace oomtm450PuckMod_Ruleset {
         /// <returns>Bool, true if the mod successfully disabled.</returns>
         public bool OnDisable() {
             try {
-                Logging.Log("Unsubscribing from events.", _serverConfig, true);
-
-                EventManager.Instance.RemoveEventListener("Event_Client_OnClientStarted", Event_Client_OnClientStarted);
-                EventManager.Instance.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
-
                 Logging.Log($"Disabling...", _serverConfig, true);
 
-                if (ServerFunc.IsDedicatedServer())  {
+                Logging.Log("Unsubscribing from events.", _serverConfig, true);
+                if (ServerFunc.IsDedicatedServer()) {
                     EventManager.Instance.RemoveEventListener("Event_OnClientConnected", Event_OnClientConnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT);
                 }
                 else {
+                    EventManager.Instance.RemoveEventListener("Event_Client_OnClientStarted", Event_Client_OnClientStarted);
+                    EventManager.Instance.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                     Event_Client_OnClientStopped(new Dictionary<string, object>());
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER);
                 }
@@ -2103,8 +2100,10 @@ namespace oomtm450PuckMod_Ruleset {
 
                 ScoreboardModifications(false);
 
-                _sounds.DestroyGameObjects();
-                _sounds = null;
+                if (_sounds != null) {
+                    _sounds.DestroyGameObjects();
+                    _sounds = null;
+                }
 
                 _harmony.UnpatchSelf();
 
@@ -2124,8 +2123,8 @@ namespace oomtm450PuckMod_Ruleset {
             if (_sounds == null) {
                 GameObject soundsGameObject = new GameObject(Constants.MOD_NAME + "_Sounds");
                 _sounds = soundsGameObject.AddComponent<Sounds>();
-                _sounds.LoadSounds();
             }
+            _sounds.LoadSounds();
 
             if (_refSignalsBlueTeam == null) {
                 GameObject refSignalsBlueTeamGameObject = new GameObject(Constants.MOD_NAME + "RefSignalsBlueTeam");
@@ -2145,6 +2144,9 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         /// <param name="enable">Bool, true if new stats scoreboard has to added to the scoreboard. False if they need to be removed.</param>
         private static void ScoreboardModifications(bool enable) {
+            if (UIScoreboard.Instance == null)
+                return;
+
             VisualElement scoreboardContainer = GetPrivateField<VisualElement>(typeof(UIScoreboard), UIScoreboard.Instance, "container");
 
             if (!_hasUpdatedUIScoreboard.Contains("header") && enable) {
