@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <returns>String, serialized ClientConfig.</returns>
         public override string ToString() {
-            return JsonConvert.SerializeObject(this);
+            return JsonConvert.SerializeObject(this, Formatting.Indented);
         }
 
         /// <summary>
