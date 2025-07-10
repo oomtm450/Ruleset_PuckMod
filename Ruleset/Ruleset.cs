@@ -1685,9 +1685,6 @@ namespace oomtm450PuckMod_Ruleset {
                     _hasRegisteredWithNamedMessageHandler = true;
                 }
                 LoadAssets();
-
-                if (!_serverConfig.SentByServer)
-                    NetworkCommunication.SendData(ASK_SERVER_FOR_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT, _clientConfig);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_Client_OnClientStarted.\n{ex}");
@@ -2105,6 +2102,9 @@ namespace oomtm450PuckMod_Ruleset {
                 //_getStickLocation.Disable();
 
                 ScoreboardModifications(false);
+
+                _sounds.DestroyGameObjects();
+                _sounds = null;
 
                 _harmony.UnpatchSelf();
 

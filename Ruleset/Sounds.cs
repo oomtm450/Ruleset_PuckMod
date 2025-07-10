@@ -65,6 +65,22 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        internal void DestroyGameObjects() {
+            while (_soundObjects.Count != 0) {
+                var soundObject = _soundObjects.First();
+                _soundObjects.Remove(soundObject.Key);
+                Destroy(soundObject.Value);
+            }
+
+            while (_audioClips.Count != 0) {
+                var audioClip = _audioClips.First();
+                _audioClips.Remove(audioClip);
+                Destroy(audioClip);
+            }
+
+            Destroy(gameObject);
+        }
+
         private IEnumerator GetAudioClips(string path) {
             foreach (string file in Directory.GetFiles(path, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
                 string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
