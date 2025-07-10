@@ -115,6 +115,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 if (File.Exists(configPath)) {
                     string configFileContent = File.ReadAllText(configPath);
                     config = SetConfig(configFileContent);
+                    Logging.Log($"Server config read.", config, true);
                 }
 
                 try {
@@ -124,7 +125,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                     Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}");
                 }
 
-                Logging.Log($"Wrote server config : {config}", config);
+                Logging.Log($"Wrote server config : {config}", config, true);
             }
             catch (Exception ex) {
                 Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}");
