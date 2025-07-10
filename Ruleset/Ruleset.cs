@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.14.0DEV5";
+        private static readonly string MOD_VERSION = "V0.14.0DEV6";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1243,7 +1243,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     if (!_hasRegisteredWithNamedMessageHandler || !_serverConfig.SentByServer) {
-                        Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_SERVER}.", _clientConfig);
+                        //Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_SERVER}.", _clientConfig);
                         NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_SERVER, ReceiveData);
                         _hasRegisteredWithNamedMessageHandler = true;
 
@@ -1686,7 +1686,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 if (!_hasRegisteredWithNamedMessageHandler) {
-                    Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_SERVER}.", _clientConfig);
+                    //Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_SERVER}.", _clientConfig);
                     NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_SERVER, ReceiveData);
                     _hasRegisteredWithNamedMessageHandler = true;
                 }
@@ -1709,9 +1709,13 @@ namespace oomtm450PuckMod_Ruleset {
                 _serverConfig = new ServerConfig();
 
                 if (_sounds != null) {
-                    if (!string.IsNullOrEmpty(_currentMusicPlaying))
+                    if (!string.IsNullOrEmpty(_currentMusicPlaying)) {
                         _sounds.Stop(_currentMusicPlaying);
-                    _currentMusicPlaying = "";
+                        _currentMusicPlaying = "";
+                    }
+
+                    _sounds.DestroyGameObjects();
+                    _sounds = null;
                 }
 
                 _refSignalsBlueTeam?.StopAllSignals();
