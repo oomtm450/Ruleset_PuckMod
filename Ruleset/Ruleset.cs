@@ -234,6 +234,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly LockDictionary<string, Label> _sogLabels = new LockDictionary<string, Label>(); // TODO : Clear if player quits server
 
+        private static DateTime _lastDateTimeAskData = DateTime.MinValue;
+
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
 
@@ -1245,7 +1247,11 @@ namespace oomtm450PuckMod_Ruleset {
                         NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_SERVER, ReceiveData);
                         _hasRegisteredWithNamedMessageHandler = true;
 
-                        NetworkCommunication.SendData(ASK_SERVER_FOR_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT, _clientConfig);
+                        DateTime now = DateTime.UtcNow;
+                        if (_lastDateTimeAskData + TimeSpan.FromSeconds(1) < now) {
+                            _lastDateTimeAskData = now;
+                            NetworkCommunication.SendData(ASK_SERVER_FOR_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT, _clientConfig);
+                        }
                     }
 
                     ScoreboardModifications(true);
