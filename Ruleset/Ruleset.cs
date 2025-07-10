@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private const string MOD_VERSION = "0.13.0";
+        private const string MOD_VERSION = "0.13.1";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -164,6 +164,8 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly LockDictionary<string, Stopwatch> _playersCurrentPuckTouch = new LockDictionary<string, Stopwatch>();
 
         private static readonly LockDictionary<string, Stopwatch> _playersLastTimePuckPossession = new LockDictionary<string, Stopwatch>();
+
+        private static readonly LockDictionary<ulong, DateTime> _sentOutOfDateMessage = new LockDictionary<ulong, DateTime>();
 
         //private static InputAction _getStickLocation;
 
@@ -1683,9 +1685,6 @@ namespace oomtm450PuckMod_Ruleset {
                     _hasRegisteredWithNamedMessageHandler = true;
                 }
                 LoadAssets();
-
-                if (!_serverConfig.SentByServer)
-                    NetworkCommunication.SendData(ASK_SERVER_FOR_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT, _clientConfig);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_Client_OnClientStarted.\n{ex}");
@@ -1705,15 +1704,18 @@ namespace oomtm450PuckMod_Ruleset {
                     return;
 
                 _serverConfig = new ServerConfig();
+
+                if (_sounds != null) {
+                    if (!string.IsNullOrEmpty(_currentMusicPlaying))
+                        _sounds.Stop(_currentMusicPlaying);
+                    _currentMusicPlaying = "";
+                }
+
+                _refSignalsBlueTeam?.StopAllSignals();
+                _refSignalsRedTeam?.StopAllSignals();
+
                 if (_refSignalsBlueTeam == null && _refSignalsRedTeam == null && _sounds == null)
                     return;
-
-                if (!string.IsNullOrEmpty(_currentMusicPlaying))
-                    _sounds.Stop(_currentMusicPlaying);
-                _currentMusicPlaying = "";
-
-                _refSignalsBlueTeam.StopAllSignals();
-                _refSignalsRedTeam.StopAllSignals();
 
                 ScoreboardModifications(false);
             }
@@ -1828,7 +1830,7 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             else if (dataStr == Sounds.WARMUP_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList);
-                                _sounds.Play(_currentMusicPlaying);
+                                _sounds.Play(_currentMusicPlaying, 0, true);
                             }
                             else if (dataStr == Sounds.LAST_MINUTE_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList);
@@ -1927,7 +1929,17 @@ namespace oomtm450PuckMod_Ruleset {
                         Logging.Log($"Kicking client {clientId}.", _serverConfig);
                         //NetworkManager.Singleton.DisconnectClient(clientId,
                             //$"Mod is out of date. Please restart your game or unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop to update.");
-                        UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : Mod is out of date. Please restart your game or unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop to update.");
+
+                        DateTime utcNow = DateTime.UtcNow;
+                        if (!_sentOutOfDateMessage.TryGetValue(clientId, out DateTime lastCheckTime)) {
+                            lastCheckTime = DateTime.MinValue;
+                            _sentOutOfDateMessage.Add(clientId, utcNow);
+                        }
+
+                        if (lastCheckTime + TimeSpan.FromSeconds(2) < utcNow) {
+                            UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
+                            _sentOutOfDateMessage[clientId] = utcNow;
+                        }
                         break;
 
                     case ASK_SERVER_FOR_DATA: // SERVER-SIDE : Send the necessary data to client.
@@ -2080,14 +2092,19 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT);
                 }
-                else
+                else {
+                    Event_Client_OnClientStopped(new Dictionary<string, object>());
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER);
+                }
 
                 _hasRegisteredWithNamedMessageHandler = false;
 
                 //_getStickLocation.Disable();
 
                 ScoreboardModifications(false);
+
+                _sounds.DestroyGameObjects();
+                _sounds = null;
 
                 _harmony.UnpatchSelf();
 

@@ -65,6 +65,22 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        internal void DestroyGameObjects() {
+            while (_soundObjects.Count != 0) {
+                var soundObject = _soundObjects.First();
+                _soundObjects.Remove(soundObject.Key);
+                Destroy(soundObject.Value);
+            }
+
+            while (_audioClips.Count != 0) {
+                var audioClip = _audioClips.First();
+                _audioClips.Remove(audioClip);
+                Destroy(audioClip);
+            }
+
+            Destroy(gameObject);
+        }
+
         private IEnumerator GetAudioClips(string path) {
             foreach (string file in Directory.GetFiles(path, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
                 string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
@@ -104,7 +120,7 @@ namespace oomtm450PuckMod_Ruleset {
                 SetGoalHorns();
         }
 
-        internal void Play(string name, float delay = 0) {
+        internal void Play(string name, float delay = 0, bool loop = false) {
             if (string.IsNullOrEmpty(name))
                 return;
 
@@ -120,11 +136,14 @@ namespace oomtm450PuckMod_Ruleset {
                 DontDestroyOnLoad(soundObject.GetComponent<AudioSource>());
                 _soundObjects.Add(name, soundObject);
             }
-            soundObject.GetComponent<AudioSource>().volume = SettingsManager.Instance.GlobalVolume;
+
+            AudioSource audioSource = soundObject.GetComponent<AudioSource>();
+            audioSource.loop = loop;
+            audioSource.volume = SettingsManager.Instance.GlobalVolume;
             if (delay == 0)
-                soundObject.GetComponent<AudioSource>().Play();
+                audioSource.Play();
             else
-                soundObject.GetComponent<AudioSource>().PlayDelayed(delay);
+                audioSource.PlayDelayed(delay);
         }
 
         internal void Stop(string name) {
