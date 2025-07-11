@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.14.0DEV11";
+        private static readonly string MOD_VERSION = "V0.14.0DEV12";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -676,7 +676,10 @@ namespace oomtm450PuckMod_Ruleset {
                             _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
                             return true;
                         }
-                        if (phase == GamePhase.Warmup)
+
+                        if (phase == GamePhase.GameOver)
+                            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.GAMEOVER_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                        else if (phase == GamePhase.Warmup)
                             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WARMUP_MUSIC, Constants.FROM_SERVER, _serverConfig);
 
                         return true;
@@ -813,16 +816,6 @@ namespace oomtm450PuckMod_Ruleset {
                     {PlayerTeam.Red, null},
                 };
 
-                Dictionary<PlayerTeam, bool?> offsideHasToBeWarned = new Dictionary<PlayerTeam, bool?> {
-                    {PlayerTeam.Blue, null},
-                    {PlayerTeam.Red, null},
-                };
-
-                Dictionary<PlayerTeam, bool?> offsideHasToBeWarnedForce = new Dictionary<PlayerTeam, bool?> {
-                    {PlayerTeam.Blue, null},
-                    {PlayerTeam.Red, null},
-                };
-
                 try {
                     foreach (PlayerTeam callOffHighStickTeam in new List<PlayerTeam>(_callOffHighStick.Keys)) {
                         if (_callOffHighStick[callOffHighStickTeam]) {
@@ -888,6 +881,10 @@ namespace oomtm450PuckMod_Ruleset {
                 }
                 try {
                     string playerWithPossessionSteamId = GetPlayerSteamIdInPossession();
+                    Dictionary<PlayerTeam, bool> isTeamOffside = new Dictionary<PlayerTeam, bool> {
+                        { PlayerTeam.Blue, IsOffside(PlayerTeam.Blue) },
+                        { PlayerTeam.Red, IsOffside(PlayerTeam.Red) },
+                    };
 
                     Dictionary<Player, float> dictPlayersZPositionsForDeferredIcing = new Dictionary<Player, float>();
                     foreach (Player player in players) {
@@ -918,34 +915,15 @@ namespace oomtm450PuckMod_Ruleset {
                         List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
 
                         // Is offside.
-                        bool isPlayerTeamOffside = IsOffside(player.Team.Value);
-                        if ((playerWithPossessionSteamId != player.SteamId.Value.ToString() || isPlayerTeamOffside) && (playerZone == otherTeamZones[0] || playerZone == otherTeamZones[1])) {
-                            if ((_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1]) || isPlayerTeamOffside) {
-                                if (!isPlayerTeamOffside)
-                                    offsideHasToBeWarned[player.Team.Value] = true;
-
+                        bool isPlayerTeamOffside = isTeamOffside[player.Team.Value];
+                        if ((playerWithPossessionSteamId != playerSteamId || isPlayerTeamOffside) && (playerZone == otherTeamZones[0] || playerZone == otherTeamZones[1])) {
+                            if ((_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1]) || isPlayerTeamOffside)
                                 _isOffside[playerSteamId] = (player.Team.Value, true);
-                            }
                         }
 
                         // Is not offside.
-                        if (_playersZone[playerSteamId].Zone != otherTeamZones[0] && _playersZone[playerSteamId].Zone != otherTeamZones[1] && _isOffside[playerSteamId].IsOffside) {
+                        if (playerZone != otherTeamZones[0] && playerZone != otherTeamZones[1] && _isOffside[playerSteamId].IsOffside)
                             _isOffside[playerSteamId] = (player.Team.Value, false);
-                            if (!IsOffside(player.Team.Value))
-                                offsideHasToBeWarned[player.Team.Value] = false;
-                        }
-
-                        // Remove offside if the other team entered the zone with the puck.
-                        List<Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(_lastPlayerOnPuckTeam, true);
-                        if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
-                            PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
-                            foreach (string key in new List<string>(_isOffside.Keys)) {
-                                if (_isOffside[key].IsOffside && _isOffside[key].Team == lastPlayerOnPuckOtherTeam) {
-                                    offsideHasToBeWarnedForce[lastPlayerOnPuckOtherTeam] = false;
-                                    _isOffside[key] = (lastPlayerOnPuckOtherTeam, false);
-                                }
-                            }
-                        }
 
                         // Deferred icing logic.
                         if (_serverConfig.DeferredIcing && player.Role.Value != PlayerRole.Goalie) {
@@ -955,6 +933,16 @@ namespace oomtm450PuckMod_Ruleset {
                                 dictPlayersZPositionsForDeferredIcing.Add(player, Math.Abs(player.PlayerBody.transform.position.z));
                                 Faceoff.SetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             }
+                        }
+                    }
+
+                    // Remove offside if the other team entered the zone with the puck.
+                    List<Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(_lastPlayerOnPuckTeam, true);
+                    if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
+                        PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
+                        foreach (string key in new List<string>(_isOffside.Keys)) {
+                            if (_isOffside[key].IsOffside && _isOffside[key].Team == lastPlayerOnPuckOtherTeam)
+                                _isOffside[key] = (lastPlayerOnPuckOtherTeam, false);
                         }
                     }
 
@@ -985,11 +973,11 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
 
-                    foreach (var kvp in offsideHasToBeWarnedForce) {
-                        if (kvp.Value != null)
-                            WarnOffside((bool)kvp.Value, kvp.Key);
-                        else if (offsideHasToBeWarned[kvp.Key] != null)
-                            WarnOffside((bool)offsideHasToBeWarned[kvp.Key], kvp.Key);
+                    foreach (var kvp in isTeamOffside) {
+                        if (!kvp.Value && IsOffside(kvp.Key))
+                            WarnOffside(true, kvp.Key);
+                        else if (kvp.Value && !IsOffside(kvp.Key))
+                            WarnOffside(false, kvp.Key);
                     }
                 }
                 catch (Exception ex) {
