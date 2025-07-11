@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.14.0DEV8";
+        private static readonly string MOD_VERSION = "V0.14.0DEV10";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1311,47 +1311,27 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /// <summary>
-        /// Class that patches the Server_PlayTeamBlueGoalSound event from LevelManager.
+        /// Class that patches the Server_PlayRpc event from SynchronizedAudio.
         /// </summary>
-        [HarmonyPatch(typeof(LevelManager), nameof(LevelManager.Server_PlayTeamBlueGoalSound))]
-        public class LevelManager_Server_PlayTeamBlueGoalSound_Patch {
+        [HarmonyPatch(typeof(SynchronizedAudio), "Server_PlayRpc")]
+        public class SynchronizedAudio_Server_PlayRpc_Patch {
             [HarmonyPrefix]
-            public static bool Prefix() {
+            public static bool Prefix(SynchronizedAudio __instance, ref float volume, ref float pitch, ref bool isOneShot, int clipIndex, float time, bool fadeIn, float fadeInDuration, bool fadeOut, float fadeOutDuration, float duration, RpcParams rpcParams) {
                 try {
-                    // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer())
+                    // If this is the server or the custom goal horns are turned off, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer() || !_clientConfig.CustomGoalHorns)
                         return true;
 
-                    GetPrivateField<SynchronizedAudio>(typeof(LevelManager), LevelManager.Instance, "blueGoalAudioSource").Server_Play(1f, 1f, true);
+                    string audioSourceName = GetPrivateField<AudioSource>(typeof(SynchronizedAudio), __instance, "audioSource").name;
 
-                    return false;
+                    if (audioSourceName == "Blue Goal" || audioSourceName == "Red Goal") {
+                        volume = 1f;
+                        pitch = 1f;
+                        isOneShot = true;
+                    }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in LevelManager_Server_PlayTeamBlueGoalSound_Patch Prefix().\n{ex}");
-                }
-
-                return true;
-            }
-        }
-
-        /// <summary>
-        /// Class that patches the Server_PlayTeamRedGoalSound event from LevelManager.
-        /// </summary>
-        [HarmonyPatch(typeof(LevelManager), nameof(LevelManager.Server_PlayTeamRedGoalSound))]
-        public class LevelManager_Server_PlayTeamRedGoalSound_Patch {
-            [HarmonyPrefix]
-            public static bool Prefix() {
-                try {
-                    // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer())
-                        return true;
-
-                    GetPrivateField<SynchronizedAudio>(typeof(LevelManager), LevelManager.Instance, "redGoalAudioSource").Server_Play(1f, 1f, true);
-
-                    return false;
-                }
-                catch (Exception ex) {
-                    Logging.LogError($"Error in LevelManager_Server_PlayTeamRedGoalSound_Patch Prefix().\n{ex}");
+                    Logging.LogError($"Error in SynchronizedAudio_Server_PlayRpc_Patch Prefix().\n{ex}");
                 }
 
                 return true;

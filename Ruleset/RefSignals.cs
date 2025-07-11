@@ -28,7 +28,6 @@ namespace oomtm450PuckMod_Ruleset {
 
         private readonly Dictionary<string, Image> _images = new Dictionary<string, Image>();
         private List<GameObject> _imageGameObjects = new List<GameObject>();
-        private List<RectTransform> _imageRectTranforms = new List<RectTransform>();
         internal List<string> _errors = new List<string>();
         private Canvas _canvas;
 
@@ -43,12 +42,6 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal void DestroyGameObjects() {
-            while (_imageRectTranforms.Count != 0) {
-                var imageObject = _imageRectTranforms.First();
-                _imageRectTranforms.Remove(imageObject);
-                Destroy(imageObject);
-            }
-
             while (_images.Count != 0) {
                 var imageObject = _images.First();
                 _images.Remove(imageObject.Key);
@@ -120,8 +113,6 @@ namespace oomtm450PuckMod_Ruleset {
                         RectTransform rectTransform = image.GetComponent<RectTransform>();
                         rectTransform.sizeDelta = new Vector2(300, 300);
                         rectTransform.pivot = new Vector2(0.5f, 0.5f);
-                        DontDestroyOnLoad(rectTransform);
-                        _imageRectTranforms.Add(rectTransform);
 
                         if (team == PlayerTeam.Red) {
                             rectTransform.anchorMin = new Vector2(0.925f, 0.37f);
