@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -26,6 +27,8 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string INTERFERENCE_REF = "interference_ref";
 
         private readonly Dictionary<string, Image> _images = new Dictionary<string, Image>();
+        private List<GameObject> _imageGameObjects = new List<GameObject>();
+        private List<RectTransform> _imageRectTranforms = new List<RectTransform>();
         internal List<string> _errors = new List<string>();
         private Canvas _canvas;
 
@@ -37,6 +40,28 @@ namespace oomtm450PuckMod_Ruleset {
             //_canvas.transform.position = new Vector3(localPlayer.PlayerCamera.transform.position.x, localPlayer.PlayerCamera.transform.position.y,
                 //localPlayer.PlayerCamera.transform.position.z + 1);
             //_canvas.transform.rotation = Quaternion.LookRotation(transform.position - localPlayer.PlayerCamera.transform.position);
+        }
+
+        internal void DestroyGameObjects() {
+            while (_imageRectTranforms.Count != 0) {
+                var imageObject = _imageRectTranforms.First();
+                _imageRectTranforms.Remove(imageObject);
+                Destroy(imageObject);
+            }
+
+            while (_images.Count != 0) {
+                var imageObject = _images.First();
+                _images.Remove(imageObject.Key);
+                Destroy(imageObject.Value);
+            }
+
+            while (_imageGameObjects.Count != 0) {
+                var imageObject = _imageGameObjects.First();
+                _imageGameObjects.Remove(imageObject);
+                Destroy(imageObject);
+            }
+
+            Destroy(gameObject);
         }
 
         internal void LoadImages(PlayerTeam team) {
@@ -82,25 +107,27 @@ namespace oomtm450PuckMod_Ruleset {
 
                         GameObject _gameObject = new GameObject($"RefSignals_{team}Team_Images");
                         DontDestroyOnLoad(_gameObject);
+                        _imageGameObjects.Add(_gameObject);
 
                         Image image = _gameObject.AddComponent<Image>();
+                        DontDestroyOnLoad(image);
                         image.name = fileName + "_Image";
                         image.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
                         image.preserveAspect = true;
                         image.transform.SetParent(_canvas.transform, false);
                         image.enabled = false;
 
+                        RectTransform rectTransform = image.GetComponent<RectTransform>();
+                        rectTransform.sizeDelta = new Vector2(300, 300);
+                        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                        DontDestroyOnLoad(rectTransform);
+                        _imageRectTranforms.Add(rectTransform);
+
                         if (team == PlayerTeam.Red) {
-                            RectTransform rectTransform = image.GetComponent<RectTransform>();
-                            rectTransform.sizeDelta = new Vector2(300, 300);
-                            rectTransform.pivot = new Vector2(0.5f, 0.5f);
                             rectTransform.anchorMin = new Vector2(0.925f, 0.37f);
                             rectTransform.anchorMax = new Vector2(0.925f, 0.37f);
                         }
                         else {
-                            RectTransform rectTransform = image.GetComponent<RectTransform>();
-                            rectTransform.sizeDelta = new Vector2(300, 300);
-                            rectTransform.pivot = new Vector2(0.5f, 0.5f);
                             rectTransform.anchorMin = new Vector2(0.075f, 0.37f);
                             rectTransform.anchorMax = new Vector2(0.075f, 0.37f);
                         }

@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.14.0DEV7";
+        private static readonly string MOD_VERSION = "V0.14.0DEV8";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1645,11 +1645,6 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log("Event_Client_OnClientStarted", _clientConfig);
 
             try {
-                if (!_hasRegisteredWithNamedMessageHandler) {
-                    //Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_SERVER}.", _clientConfig);
-                    NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_SERVER, ReceiveData);
-                    _hasRegisteredWithNamedMessageHandler = true;
-                }
                 LoadAssets();
             }
             catch (Exception ex) {
@@ -1666,7 +1661,12 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log("Event_Client_OnClientStopped", _clientConfig);
 
             try {
-                _serverConfig = new ServerConfig();
+                _serverHasResponded = false;
+
+                if (_refSignalsBlueTeam == null && _refSignalsRedTeam == null && _sounds == null)
+                    return;
+
+                ScoreboardModifications(false);
 
                 if (_sounds != null) {
                     if (!string.IsNullOrEmpty(_currentMusicPlaying)) {
@@ -1678,13 +1678,17 @@ namespace oomtm450PuckMod_Ruleset {
                     _sounds = null;
                 }
 
-                _refSignalsBlueTeam?.StopAllSignals();
-                _refSignalsRedTeam?.StopAllSignals();
+                if (_refSignalsBlueTeam != null) {
+                    _refSignalsBlueTeam.StopAllSignals();
+                    _refSignalsBlueTeam.DestroyGameObjects();
+                    _refSignalsBlueTeam = null;
+                }
 
-                if (_refSignalsBlueTeam == null && _refSignalsRedTeam == null && _sounds == null)
-                    return;
-
-                ScoreboardModifications(false);
+                if (_refSignalsRedTeam != null) {
+                    _refSignalsRedTeam.StopAllSignals();
+                    _refSignalsRedTeam.DestroyGameObjects();
+                    _refSignalsRedTeam = null;
+                }
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_Client_OnClientStopped.\n{ex}");
