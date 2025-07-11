@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.14.0DEV12";
+        private static readonly string MOD_VERSION = "V0.14.0DEV14";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -848,33 +848,8 @@ namespace oomtm450PuckMod_Ruleset {
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PUCK_RADIUS);
 
                     // Icing logic.
-                    if (!IsIcingPossible(PlayerTeam.Blue) && _isIcingActive[PlayerTeam.Blue]) { // TODO : Generalize the code blocks (NO DUPLICATE CODE).
-                        _isIcingActive[PlayerTeam.Blue] = false;
-                        NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, PlayerTeam.Blue), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
-                        UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Blue.ToString().ToUpperInvariant()} TEAM CALLED OFF");
-                    }
-                    if (!IsIcingPossible(PlayerTeam.Red) && _isIcingActive[PlayerTeam.Red]) {
-                        _isIcingActive[PlayerTeam.Red] = false;
-                        NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, PlayerTeam.Red), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
-                        UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Red.ToString().ToUpperInvariant()} TEAM CALLED OFF");
-                    }
-
-                    if (IsIcingPossible(PlayerTeam.Blue) && _puckZone == Zone.RedTeam_BehindGoalLine) {
-                        if (!IsIcing(PlayerTeam.Blue)) {
-                            _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
-                            _isIcingActiveTimers[PlayerTeam.Blue].Change(_serverConfig.MaxIcingTime, Timeout.Infinite);
-                            icingHasToBeWarned[PlayerTeam.Blue] = true;
-                        }
-                        _isIcingActive[PlayerTeam.Blue] = true;
-                    }
-                    if (IsIcingPossible(PlayerTeam.Red) && _puckZone == Zone.BlueTeam_BehindGoalLine) {
-                        if (!IsIcing(PlayerTeam.Red)) {
-                            _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
-                            _isIcingActiveTimers[PlayerTeam.Red].Change(_serverConfig.MaxIcingTime, Timeout.Infinite);
-                            icingHasToBeWarned[PlayerTeam.Red] = true;
-                        }
-                        _isIcingActive[PlayerTeam.Red] = true;
-                    }
+                    ServerManager_Update_IcingLogic(PlayerTeam.Blue, puck, icingHasToBeWarned);
+                    ServerManager_Update_IcingLogic(PlayerTeam.Red, puck, icingHasToBeWarned);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}");
@@ -1502,8 +1477,8 @@ namespace oomtm450PuckMod_Ruleset {
             return _isIcingActive[team];
         }
 
-        private static bool IsIcingPossible(PlayerTeam team) {
-            if (_isIcingPossible[team] != null && _isIcingPossible[team].ElapsedMilliseconds < _serverConfig.MaxIcingPossibleTime)
+        private static bool IsIcingPossible(PlayerTeam team, bool checkPossibleTime = true) {
+            if (_isIcingPossible[team] != null && (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < _serverConfig.MaxIcingPossibleTime))
                 return true;
 
             return false;
@@ -2025,6 +2000,20 @@ namespace oomtm450PuckMod_Ruleset {
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in ReceiveData.\n{ex}");
+            }
+        }
+
+        private static void ServerManager_Update_IcingLogic(PlayerTeam team, Puck puck, Dictionary<PlayerTeam, bool?> icingHasToBeWarned) {
+            if (!IsIcingPossible(team, false) && _isIcingActive[team]) {
+                _isIcingActive[team] = false;
+                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
+                UIChat.Instance.Server_SendSystemChatMessage($"ICING {team.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+            }
+            else if (!_isIcingActive[team] && IsIcingPossible(team) && _puckZone == ZoneFunc.GetTeamZones(TeamFunc.GetOtherTeam(team))[1]) {
+                _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
+                _isIcingActiveTimers[team].Change(_serverConfig.MaxIcingTime, Timeout.Infinite);
+                icingHasToBeWarned[team] = true;
+                _isIcingActive[team] = true;
             }
         }
 
