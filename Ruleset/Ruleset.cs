@@ -1425,15 +1425,15 @@ namespace oomtm450PuckMod_Ruleset {
 
             if (!_hasPlayedLastMinuteMusic && GameManager.Instance.GameState.Value.Time <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
                 _hasPlayedLastMinuteMusic = true;
-                _currentMusicPlaying = Sounds.LAST_MINUTE_MUSIC;
+                _currentMusicPlaying = Sounds.LAST_MINUTE_MUSIC_DELAYED;
             }
             else if (!_hasPlayedFirstFaceoffMusic) {
                 _hasPlayedFirstFaceoffMusic = true;
-                _currentMusicPlaying = Sounds.FIRST_FACEOFF_MUSIC;
+                _currentMusicPlaying = Sounds.FIRST_FACEOFF_MUSIC_DELAYED;
             }
             else if (!_hasPlayedSecondFaceoffMusic) {
                 _hasPlayedSecondFaceoffMusic = true;
-                _currentMusicPlaying = Sounds.SECOND_FACEOFF_MUSIC;
+                _currentMusicPlaying = Sounds.SECOND_FACEOFF_MUSIC_DELAYED;
             }
             else
                 _currentMusicPlaying = Sounds.FACEOFF_MUSIC_DELAYED;
@@ -1780,13 +1780,15 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         else {
                             bool isFaceoffMusic = false;
+                            float delay = 0;
                             if (dataStr == Sounds.FACEOFF_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList);
-                                _sounds.Play(_currentMusicPlaying);
+                                isFaceoffMusic = true;
                             }
                             else if (dataStr == Sounds.FACEOFF_MUSIC_DELAYED) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList);
-                                _sounds.Play(_currentMusicPlaying, 1f);
+                                isFaceoffMusic = true;
+                                delay = 1f;
                             }
                             else if (dataStr == Sounds.BLUE_GOAL_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BlueGoalMusicList);
@@ -1816,9 +1818,24 @@ namespace oomtm450PuckMod_Ruleset {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.SecondFaceoffMusicList);
                                 isFaceoffMusic = true;
                             }
+                            else if (dataStr == Sounds.LAST_MINUTE_MUSIC_DELAYED) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList);
+                                isFaceoffMusic = true;
+                                delay = 1f;
+                            }
+                            else if (dataStr == Sounds.FIRST_FACEOFF_MUSIC_DELAYED) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FirstFaceoffMusicList);
+                                isFaceoffMusic = true;
+                                delay = 1f;
+                            }
+                            else if (dataStr == Sounds.SECOND_FACEOFF_MUSIC_DELAYED) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.SecondFaceoffMusicList);
+                                isFaceoffMusic = true;
+                                delay = 1f;
+                            }
                             else if (dataStr == Sounds.GAMEOVER_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.GameOverMusicList);
-                                _sounds.Play(_currentMusicPlaying, 1f);
+                                _sounds.Play(_currentMusicPlaying, 0.5f);
                             }
                             else if (dataStr == Sounds.WHISTLE)
                                 _sounds.Play(Sounds.WHISTLE);
@@ -1826,7 +1843,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (isFaceoffMusic) {
                                 if (string.IsNullOrEmpty(_currentMusicPlaying))
                                     _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList);
-                                _sounds.Play(_currentMusicPlaying, 1f);
+                                _sounds.Play(_currentMusicPlaying, delay);
                             }
                         }
                         break;
