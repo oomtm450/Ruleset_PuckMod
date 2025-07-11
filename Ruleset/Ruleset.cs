@@ -36,19 +36,9 @@ namespace oomtm450PuckMod_Ruleset {
         private const float PLAYER_RADIUS = 0.26f;
 
         /// <summary>
-        /// Const float, radius of a goalie.
-        /// </summary>
-        private const float GOALIE_RADIUS = 0.785f;
-
-        /// <summary>
         /// Const float, height of the net's crossbar.
         /// </summary>
         private const float CROSSBAR_HEIGHT = 1.8f;
-
-        /// <summary>
-        /// Const float, height of the player's shoulders.
-        /// </summary>
-        internal const float SHOULDERS_HEIGHT = 1.78f;
 
         /// <summary>
         /// Const int, number of milliseconds for a puck to not be considered tipped by a player's stick.
@@ -574,10 +564,10 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     bool goalieIsInHisCrease = true;
-                    if (goalie.PlayerBody.Rigidbody.transform.position.x - GOALIE_RADIUS < startX ||
-                        goalie.PlayerBody.Rigidbody.transform.position.x + GOALIE_RADIUS > endX ||
-                        goalie.PlayerBody.Rigidbody.transform.position.z - GOALIE_RADIUS < startZ ||
-                        goalie.PlayerBody.Rigidbody.transform.position.z + GOALIE_RADIUS > endZ)
+                    if (goalie.PlayerBody.Rigidbody.transform.position.x - _serverConfig.GoalieRadius < startX ||
+                        goalie.PlayerBody.Rigidbody.transform.position.x + _serverConfig.GoalieRadius > endX ||
+                        goalie.PlayerBody.Rigidbody.transform.position.z - _serverConfig.GoalieRadius < startZ ||
+                        goalie.PlayerBody.Rigidbody.transform.position.z + _serverConfig.GoalieRadius > endZ)
                         goalieIsInHisCrease = false;
 
                     PlayerTeam goalieOtherTeam = TeamFunc.GetOtherTeam(goalie.Team.Value);

@@ -64,7 +64,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
         /// </summary>
-        public float HighStickHeight { get; set; } = Ruleset.SHOULDERS_HEIGHT;
+        public float HighStickHeight { get; set; } = 1.78f;
 
         /// <summary>
         /// Bool, true if red team is able to get their goal called off because of goalie interference.
@@ -90,6 +90,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
         public float GIntCollisionForceThreshold { get; set; } = 0.97f;
+
+        /// <summary>
+        /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
+        /// </summary>
+        public float GoalieRadius { get; set; } = 0.785f;
 
         /// <summary>
         /// Bool, true if deferred icing is activated. If false, icing will be called when the puck is touched.
