@@ -1322,9 +1322,12 @@ namespace oomtm450PuckMod_Ruleset {
                     if (ServerFunc.IsDedicatedServer() || !_clientConfig.CustomGoalHorns)
                         return true;
 
-                    string audioSourceName = GetPrivateField<AudioSource>(typeof(SynchronizedAudio), __instance, "audioSource").name;
+                    AudioSource audioSource = GetPrivateField<AudioSource>(typeof(SynchronizedAudio), __instance, "audioSource");
 
-                    if (audioSourceName == "Blue Goal" || audioSourceName == "Red Goal") {
+                    if (audioSource.name == "Blue Goal" || audioSource.name == "Red Goal") {
+                        if (audioSource.clip == null)
+                            return false;
+
                         volume = 1f;
                         pitch = 1f;
                         isOneShot = true;
