@@ -22,16 +22,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool LogInfo { get; set; } = true;
 
         /// <summary>
-        /// Bool, true if the config has been sent by the server.
-        /// </summary>
-        public bool SentByServer { get; set; } = false;
-
-        /// <summary>
-        /// String array, all admin steam Ids of the server.
-        /// </summary>
-        public string[] AdminSteamIds { get; set; }
-
-        /// <summary>
         /// Bool, true if red team offsides are activated.
         /// </summary>
         public bool RedTeamOffsides { get; set; } = true;
@@ -52,6 +42,21 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool BlueTeamIcings { get; set; } = true;
 
         /// <summary>
+        /// Bool, true if deferred icing is activated. If false, icing will be called when the puck is touched.
+        /// </summary>
+        public bool DeferredIcing { get; set; } = true;
+
+        /// <summary>
+        /// Int, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing.
+        /// </summary>
+        public int MaxIcingPossibleTime { get; set; } = 7000;
+
+        /// <summary>
+        /// Int, number of milliseconds for icing to be called off if it has not being called.
+        /// </summary>
+        public int MaxIcingTime { get; set; } = 12000;
+
+        /// <summary>
         /// Bool, true if red team high stick are activated.
         /// </summary>
         public bool RedTeamHighStick { get; set; } = true;
@@ -64,7 +69,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
         /// </summary>
-        public float HighStickHeight { get; set; } = Ruleset.SHOULDERS_HEIGHT;
+        public float HighStickHeight { get; set; } = 1.78f;
 
         /// <summary>
         /// Bool, true if red team is able to get their goal called off because of goalie interference.
@@ -77,9 +82,44 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool BlueTeamGInt { get; set; } = true;
 
         /// <summary>
-        /// Bool, true if deferred icing is activated. If false, icing will be called when the puck is touched.
+        /// Int, number of milliseconds after a push on the goalie to be considered no goal.
         /// </summary>
-        public bool DeferredIcing { get; set; } = true;
+        public int GIntPushNoGoalMilliseconds { get; set; } = 3500;
+
+        /// <summary>
+        /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
+        /// </summary>
+        public int GIntHitNoGoalMilliseconds { get; set; } = 9000; // TODO : Remove when penalty is added.
+
+        /// <summary>
+        /// Float, force threshold for a push on the goalie to be considered for goalie interference.
+        /// </summary>
+        public float GIntCollisionForceThreshold { get; set; } = 0.97f;
+
+        /// <summary>
+        /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
+        /// </summary>
+        public float GoalieRadius { get; set; } = 0.785f;
+
+        /// <summary>
+        /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
+        /// </summary>
+        public int MaxTippedMilliseconds { get; set; } = 92;
+
+        /// <summary>
+        /// Int, number of milliseconds for a possession to be considered with challenge.
+        /// </summary>
+        public int MinPossessionMilliseconds { get; set; } = 235;
+
+        /// <summary>
+        /// Int, number of milliseconds for a possession to be considered without challenging.
+        /// </summary>
+        public int MaxPossessionMilliseconds { get; set; } = 500;
+
+        /// <summary>
+        /// Int, number of milliseconds after a high stick to not be considered.
+        /// </summary>
+        public int HighStickMaxMilliseconds { get; set; } = 5000;
         #endregion
 
         #region Methods/Functions
@@ -88,7 +128,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <returns>String, serialized config.</returns>
         public override string ToString() {
-            return JsonConvert.SerializeObject(this);
+            return JsonConvert.SerializeObject(this, Formatting.Indented);
         }
 
         /// <summary>
@@ -115,6 +155,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 if (File.Exists(configPath)) {
                     string configFileContent = File.ReadAllText(configPath);
                     config = SetConfig(configFileContent);
+                    Logging.Log($"Server config read.", config, true);
                 }
 
                 try {
@@ -124,14 +165,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                     Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}");
                 }
 
-                Logging.Log($"Wrote server config : {config}", config);
+                Logging.Log($"Wrote server config : {config}", config, true);
             }
             catch (Exception ex) {
                 Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}");
             }
 
-            config.SentByServer = true;
-            config.AdminSteamIds = adminSteamIds;
             return config;
         }
         #endregion

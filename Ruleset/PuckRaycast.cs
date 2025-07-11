@@ -15,6 +15,8 @@ namespace oomtm450PuckMod_Ruleset {
         
         private Vector3 _startingPosition;
 
+        private int _increment;
+
         internal LockDictionary<PlayerTeam, bool> PuckIsGoingToNet { get; set; } = new LockDictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, false },
             { PlayerTeam.Red, false },
@@ -22,24 +24,28 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal void Start() {
             ResetStartingPosition();
+            _increment = 2;
             Update();
         }
 
         internal void Update() {
-            foreach (PlayerTeam key in new List<PlayerTeam>(PuckIsGoingToNet.Keys))
-                PuckIsGoingToNet[key] = false;
+            if (++_increment == 3) {
+                foreach (PlayerTeam key in new List<PlayerTeam>(PuckIsGoingToNet.Keys))
+                    PuckIsGoingToNet[key] = false;
 
-            //_rayTopLeft = new Ray(transform.position + TOP_VECTOR - RIGHT_VECTOR, transform.position - _startingPosition);
-            //_rayTopRight = new Ray(transform.position + TOP_VECTOR + RIGHT_VECTOR, transform.position - _startingPosition);
-            _rayBottomRight = new Ray(transform.position + RIGHT_VECTOR, transform.position - _startingPosition);
-            _rayBottomLeft = new Ray(transform.position - RIGHT_VECTOR, transform.position - _startingPosition);
-            CheckForColliders();
+                //_rayTopLeft = new Ray(transform.position + TOP_VECTOR - RIGHT_VECTOR, transform.position - _startingPosition);
+                //_rayTopRight = new Ray(transform.position + TOP_VECTOR + RIGHT_VECTOR, transform.position - _startingPosition);
+                _rayBottomRight = new Ray(transform.position + RIGHT_VECTOR, transform.position - _startingPosition);
+                _rayBottomLeft = new Ray(transform.position - RIGHT_VECTOR, transform.position - _startingPosition);
+                CheckForColliders();
 
-            ResetStartingPosition();
+                ResetStartingPosition();
+            }
         }
 
         private void ResetStartingPosition() {
             _startingPosition = transform.position;
+            _increment = 0;
         }
 
         private void CheckForColliders() {

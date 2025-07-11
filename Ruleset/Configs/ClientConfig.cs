@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <returns>String, serialized ClientConfig.</returns>
         public override string ToString() {
-            return JsonConvert.SerializeObject(this);
+            return JsonConvert.SerializeObject(this, Formatting.Indented);
         }
 
         /// <summary>
@@ -54,6 +54,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 if (File.Exists(configPath)) {
                     string configFileContent = File.ReadAllText(configPath);
                     config = SetConfig(configFileContent);
+                    Logging.Log($"Client config read.", config, true);
                 }
 
                 try {
@@ -63,7 +64,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                     Logging.LogError($"Can't write the client config file. (Permission error ?)\n{ex}");
                 }
 
-                Logging.Log($"Wrote client config : {config}", config);
+                Logging.Log($"Wrote client config : {config}", config, true);
             }
             catch (Exception ex) {
                 Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}");
