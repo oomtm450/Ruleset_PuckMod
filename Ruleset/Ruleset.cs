@@ -1913,6 +1913,8 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         if (lastCheckTime + TimeSpan.FromSeconds(930) < utcNow) {
+                            if (string.IsNullOrEmpty(PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value.ToString()))
+                                break;
                             UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
                             _sentOutOfDateMessage[clientId] = utcNow;
                         }
