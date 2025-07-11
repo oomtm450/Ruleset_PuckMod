@@ -28,6 +28,8 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string BETWEEN_PERIODS_MUSIC = "betweenperiodsmusic";
         internal const string WARMUP_MUSIC = "warmupmusic";
         internal const string LAST_MINUTE_MUSIC = "lastminutemusic";
+        internal const string FIRST_FACEOFF_MUSIC = "faceofffirstmusic";
+        internal const string SECOND_FACEOFF_MUSIC = "faceoffsecondmusic";
         internal const string GAMEOVER_MUSIC = "gameovermusic";
 
         internal List<string> FaceoffMusicList { get; set; } = new List<string>();
@@ -36,6 +38,8 @@ namespace oomtm450PuckMod_Ruleset {
         internal List<string> BetweenPeriodsMusicList { get; set; } = new List<string>();
         internal List<string> WarmupMusicList { get; set; } = new List<string>();
         internal List<string> LastMinuteMusicList { get; set; } = new List<string>();
+        internal List<string> FirstFaceoffMusicList { get; set; } = new List<string>();
+        internal List<string> SecondFaceoffMusicList { get; set; } = new List<string>();
         internal List<string> GameOverMusicList { get; set; } = new List<string>();
 
         private readonly Dictionary<string, GameObject> _soundObjects = new Dictionary<string, GameObject>();
@@ -106,6 +110,10 @@ namespace oomtm450PuckMod_Ruleset {
                                 WarmupMusicList.Add(clip.name);
                             if (clip.name.Contains(LAST_MINUTE_MUSIC))
                                 LastMinuteMusicList.Add(clip.name);
+                            if (clip.name.Contains(FIRST_FACEOFF_MUSIC))
+                                FirstFaceoffMusicList.Add(clip.name);
+                            if (clip.name.Contains(SECOND_FACEOFF_MUSIC))
+                                SecondFaceoffMusicList.Add(clip.name);
                             if (clip.name.Contains(GAMEOVER_MUSIC))
                                 GameOverMusicList.Add(clip.name);
                         }
@@ -159,6 +167,9 @@ namespace oomtm450PuckMod_Ruleset {
             return "";
         }
 
+        /// <summary>
+        /// Method that sets the custom goal horns.
+        /// </summary>
         private void SetGoalHorns() {
             GameObject levelGameObj = GameObject.Find("Level");
             if (!levelGameObj)

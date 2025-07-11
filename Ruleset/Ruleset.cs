@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.14.0DEV10";
+        private static readonly string MOD_VERSION = "V0.14.0DEV11";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -173,6 +173,10 @@ namespace oomtm450PuckMod_Ruleset {
         };
 
         private static bool _hasPlayedLastMinuteMusic = false;
+
+        private static bool _hasPlayedFirstFaceoffMusic = false;
+
+        private static bool _hasPlayedSecondFaceoffMusic = false;
 
         // Client-side and server-side.
         private static readonly LockDictionary<string, int> _sog = new LockDictionary<string, int>();
@@ -653,8 +657,23 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (!_changedPhase)  {
                         if (phase == GamePhase.FaceOff && string.IsNullOrEmpty(_currentMusicPlaying)) {
-                            _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
+                            if (!_hasPlayedLastMinuteMusic && GameManager.Instance.GameState.Value.Time <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
+                                _hasPlayedLastMinuteMusic = true;
+                                _currentMusicPlaying = Sounds.LAST_MINUTE_MUSIC;
+                            }
+                            else if (!_hasPlayedFirstFaceoffMusic) {
+                                _hasPlayedFirstFaceoffMusic = true;
+                                _currentMusicPlaying = Sounds.FIRST_FACEOFF_MUSIC;
+                            }
+                            else if (!_hasPlayedSecondFaceoffMusic) {
+                                _hasPlayedSecondFaceoffMusic = true;
+                                _currentMusicPlaying = Sounds.SECOND_FACEOFF_MUSIC;
+                            }
+                            else
+                                _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
+
                             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
+                            _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
                             return true;
                         }
                         if (phase == GamePhase.Warmup)
@@ -1278,6 +1297,8 @@ namespace oomtm450PuckMod_Ruleset {
                     NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.MUSIC, Constants.FROM_SERVER, _serverConfig);
                     _currentMusicPlaying = "";
                     _hasPlayedLastMinuteMusic = false;
+                    _hasPlayedFirstFaceoffMusic = false;
+                    _hasPlayedSecondFaceoffMusic = false;
 
                     NextFaceoffSpot = FaceoffSpot.Center;
                 }
@@ -1413,13 +1434,24 @@ namespace oomtm450PuckMod_Ruleset {
             _paused = true;
 
             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WHISTLE, Constants.FROM_SERVER, _serverConfig);
-            _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
+
             if (!_hasPlayedLastMinuteMusic && GameManager.Instance.GameState.Value.Time <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
                 _hasPlayedLastMinuteMusic = true;
-                NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.LAST_MINUTE_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                _currentMusicPlaying = Sounds.LAST_MINUTE_MUSIC;
+            }
+            else if (!_hasPlayedFirstFaceoffMusic) {
+                _hasPlayedFirstFaceoffMusic = true;
+                _currentMusicPlaying = Sounds.FIRST_FACEOFF_MUSIC;
+            }
+            else if (!_hasPlayedSecondFaceoffMusic) {
+                _hasPlayedSecondFaceoffMusic = true;
+                _currentMusicPlaying = Sounds.SECOND_FACEOFF_MUSIC;
             }
             else
-                NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FACEOFF_MUSIC_DELAYED, Constants.FROM_SERVER, _serverConfig);
+                _currentMusicPlaying = Sounds.FACEOFF_MUSIC_DELAYED;
+
+            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
+            _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
 
             _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
             GameManager.Instance.Server_Pause();
@@ -1759,6 +1791,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 Logging.LogError(error);
                         }
                         else {
+                            bool isFaceoffMusic = false;
                             if (dataStr == Sounds.FACEOFF_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList);
                                 _sounds.Play(_currentMusicPlaying);
@@ -1785,9 +1818,15 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             else if (dataStr == Sounds.LAST_MINUTE_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList);
-                                if (string.IsNullOrEmpty(_currentMusicPlaying))
-                                    _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList);
-                                _sounds.Play(_currentMusicPlaying, 1f);
+                                isFaceoffMusic = true;
+                            }
+                            else if (dataStr == Sounds.FIRST_FACEOFF_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FirstFaceoffMusicList);
+                                isFaceoffMusic = true;
+                            }
+                            else if (dataStr == Sounds.SECOND_FACEOFF_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.SecondFaceoffMusicList);
+                                isFaceoffMusic = true;
                             }
                             else if (dataStr == Sounds.GAMEOVER_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.GameOverMusicList);
@@ -1795,6 +1834,12 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             else if (dataStr == Sounds.WHISTLE)
                                 _sounds.Play(Sounds.WHISTLE);
+
+                            if (isFaceoffMusic) {
+                                if (string.IsNullOrEmpty(_currentMusicPlaying))
+                                    _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList);
+                                _sounds.Play(_currentMusicPlaying, 1f);
+                            }
                         }
                         break;
 
