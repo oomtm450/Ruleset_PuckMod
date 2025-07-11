@@ -1789,14 +1789,11 @@ namespace oomtm450PuckMod_Ruleset {
 
                 switch (dataName) {
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
+                        _serverConfig.SentByServer = true;
                         if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
                             break;
 
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_kick", "1", clientId, Constants.FROM_CLIENT, _clientConfig);
-                        break;
-
-                    case ServerConfig.CONFIG_DATA_NAME: // CLIENT-SIDE : Set the server config on the client to use later if needed.
-                        _serverConfig = ServerConfig.SetConfig(dataStr);
                         break;
 
                     case Sounds.PLAY_SOUND: // CLIENT-SIDE : Play sound.
@@ -1946,7 +1943,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, clientId, Constants.FROM_SERVER, _serverConfig);
-                        NetworkCommunication.SendData(ServerConfig.CONFIG_DATA_NAME, _serverConfig.ToString(), clientId, Constants.FROM_SERVER, _serverConfig);
+                        //NetworkCommunication.SendData(ServerConfig.CONFIG_DATA_NAME, _serverConfig.ToString(), clientId, Constants.FROM_SERVER, _serverConfig);
 
                         foreach (string key in new List<string>(_sog.Keys))
                             NetworkCommunication.SendData(SOG + key, _sog[key].ToString(), clientId, Constants.FROM_SERVER, _serverConfig);
