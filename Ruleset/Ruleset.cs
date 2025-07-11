@@ -1105,7 +1105,7 @@ namespace oomtm450PuckMod_Ruleset {
                     NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_RED, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManagerController_GameManagerController_Patch Prefix().\n{ex}");
+                    Logging.LogError($"Error in GameManagerController_Event_Server_OnPuckEnterTeamGoal_Patch Prefix().\n{ex}");
                 }
 
                 NextFaceoffSpot = FaceoffSpot.Center;
@@ -1131,7 +1131,7 @@ namespace oomtm450PuckMod_Ruleset {
                         saveWasCounted = SendSOGDuringGoal(goalPlayer);
 
                         // Get other team goalie.
-                        Player _goalie = PlayerFunc.GetOtherTeamGoalie(goalPlayer.Team.Value);
+                        Player _goalie = PlayerFunc.GetOtherTeamGoalie(team);
                         if (_goalie == null)
                             return true;
 
@@ -1156,7 +1156,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // Get other team goalie.
-                    Player goalie = PlayerFunc.GetOtherTeamGoalie(goalPlayer.Team.Value);
+                    Player goalie = PlayerFunc.GetOtherTeamGoalie(team);
                     if (goalie == null)
                         return true;
 
@@ -1171,7 +1171,7 @@ namespace oomtm450PuckMod_Ruleset {
                     NetworkCommunication.SendDataToAll(SAVEPERC + goaliePlayerSteamId, _savePerc[goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManagerController_GameManagerController_Patch Prefix().\n{ex}");
+                    Logging.LogError($"Error in GameManager_Server_GoalScored_Patch Prefix().\n{ex}");
                 }
 
                 return true;
