@@ -22,16 +22,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool LogInfo { get; set; } = true;
 
         /// <summary>
-        /// Bool, true if the config has been sent by the server.
-        /// </summary>
-        public bool SentByServer { get; set; } = false;
-
-        /// <summary>
-        /// String array, all admin steam Ids of the server.
-        /// </summary>
-        public string[] AdminSteamIds { get; set; }
-
-        /// <summary>
         /// Bool, true if red team offsides are activated.
         /// </summary>
         public bool RedTeamOffsides { get; set; } = true;
@@ -50,6 +40,21 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if blue team icings are activated.
         /// </summary>
         public bool BlueTeamIcings { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if deferred icing is activated. If false, icing will be called when the puck is touched.
+        /// </summary>
+        public bool DeferredIcing { get; set; } = true;
+
+        /// <summary>
+        /// Int, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing.
+        /// </summary>
+        public int MaxIcingPossibleTime { get; set; } = 7000;
+
+        /// <summary>
+        /// Int, number of milliseconds for icing to be called off if it has not being called.
+        /// </summary>
+        public int MaxIcingTime { get; set; } = 12000;
 
         /// <summary>
         /// Bool, true if red team high stick are activated.
@@ -97,9 +102,24 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float GoalieRadius { get; set; } = 0.785f;
 
         /// <summary>
-        /// Bool, true if deferred icing is activated. If false, icing will be called when the puck is touched.
+        /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public bool DeferredIcing { get; set; } = true;
+        public int MaxTippedMilliseconds { get; set; } = 92;
+
+        /// <summary>
+        /// Int, number of milliseconds for a possession to be considered with challenge.
+        /// </summary>
+        public int MinPossessionMilliseconds { get; set; } = 235;
+
+        /// <summary>
+        /// Int, number of milliseconds for a possession to be considered without challenging.
+        /// </summary>
+        public int MaxPossessionMilliseconds { get; set; } = 500;
+
+        /// <summary>
+        /// Int, number of milliseconds after a high stick to not be considered.
+        /// </summary>
+        public int HighStickMaxMilliseconds { get; set; } = 5000;
         #endregion
 
         #region Methods/Functions
@@ -151,8 +171,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}");
             }
 
-            config.SentByServer = true;
-            config.AdminSteamIds = adminSteamIds;
             return config;
         }
         #endregion

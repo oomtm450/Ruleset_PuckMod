@@ -40,30 +40,6 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private const float CROSSBAR_HEIGHT = 1.8f;
 
-        /// <summary>
-        /// Const int, number of milliseconds for a puck to not be considered tipped by a player's stick.
-        /// </summary>
-        private const int MAX_TIPPED_MILLISECONDS = 92;
-
-        /// <summary>
-        /// Const int, number of milliseconds for a possession to be considered with challenge.
-        /// </summary>
-        private const int MIN_POSSESSION_MILLISECONDS = 235;
-
-        /// <summary>
-        /// Const int, number of milliseconds for a possession to be considered without challenging.
-        /// </summary>
-        private const int MAX_POSSESSION_MILLISECONDS = 500;
-
-        /// <summary>
-        /// Const int, number of milliseconds after a high stick to not be considered.
-        /// </summary>
-        private const int HIGH_STICK_MAX_MILLISECONDS = 5000;
-
-        private const int MAX_ICING_POSSIBLE_TIMER = 7000;
-
-        private const int MAX_ICING_TIMER = 12000;
-
         private const string SOG = Constants.MOD_NAME + "SOG";
 
         private const string RESET_SOG = Constants.MOD_NAME + "RESETSOG";
@@ -218,6 +194,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static DateTime _lastDateTimeAskData = DateTime.MinValue;
 
+        private static bool _serverHasResponded = false;
+
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
 
@@ -309,7 +287,7 @@ namespace oomtm450PuckMod_Ruleset {
                         lastTimeCollisionExitWatch.Start();
                         _lastTimeOnCollisionExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionExitWatch);
                     }
-                    else if (lastTimeCollisionExitWatch.ElapsedMilliseconds > MAX_TIPPED_MILLISECONDS || lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId) {
+                    else if (lastTimeCollisionExitWatch.ElapsedMilliseconds > _serverConfig.MaxTippedMilliseconds || lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId) {
                         //if (lastPlayerOnPuckSteamId == currentPlayerSteamId || string.IsNullOrEmpty(lastPlayerOnPuckSteamId))
                             //Logging.Log($"{stick.Player.Username.Value} had the puck for {((double)(watch.ElapsedMilliseconds - lastTimeCollisionExitWatch.ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
                         watch.Restart();
@@ -328,7 +306,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (stick.Player.Role.Value != PlayerRole.Goalie && puck.Rigidbody.transform.position.y > _serverConfig.HighStickHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
                             _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
 
-                            highStickTimer.Change(HIGH_STICK_MAX_MILLISECONDS, Timeout.Infinite);
+                            highStickTimer.Change(_serverConfig.HighStickMaxMilliseconds, Timeout.Infinite);
                             if (!IsHighStick(stick.Player.Team.Value)) {
                                 _isHighStickActive[stick.Player.Team.Value] = true;
                                 _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
@@ -858,7 +836,7 @@ namespace oomtm450PuckMod_Ruleset {
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PUCK_RADIUS);
 
                     // Icing logic.
-                    if (!IsIcingPossible(PlayerTeam.Blue) && _isIcingActive[PlayerTeam.Blue]) {
+                    if (!IsIcingPossible(PlayerTeam.Blue) && _isIcingActive[PlayerTeam.Blue]) { // TODO : Generalize the code blocks (NO DUPLICATE CODE).
                         _isIcingActive[PlayerTeam.Blue] = false;
                         NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, PlayerTeam.Blue), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                         UIChat.Instance.Server_SendSystemChatMessage($"ICING {PlayerTeam.Blue.ToString().ToUpperInvariant()} TEAM CALLED OFF");
@@ -872,7 +850,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsIcingPossible(PlayerTeam.Blue) && _puckZone == Zone.RedTeam_BehindGoalLine) {
                         if (!IsIcing(PlayerTeam.Blue)) {
                             _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
-                            _isIcingActiveTimers[PlayerTeam.Blue].Change(MAX_ICING_TIMER, Timeout.Infinite);
+                            _isIcingActiveTimers[PlayerTeam.Blue].Change(_serverConfig.MaxIcingTime, Timeout.Infinite);
                             icingHasToBeWarned[PlayerTeam.Blue] = true;
                         }
                         _isIcingActive[PlayerTeam.Blue] = true;
@@ -880,7 +858,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsIcingPossible(PlayerTeam.Red) && _puckZone == Zone.BlueTeam_BehindGoalLine) {
                         if (!IsIcing(PlayerTeam.Red)) {
                             _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
-                            _isIcingActiveTimers[PlayerTeam.Red].Change(MAX_ICING_TIMER, Timeout.Infinite);
+                            _isIcingActiveTimers[PlayerTeam.Red].Change(_serverConfig.MaxIcingTime, Timeout.Infinite);
                             icingHasToBeWarned[PlayerTeam.Red] = true;
                         }
                         _isIcingActive[PlayerTeam.Red] = true;
@@ -1224,7 +1202,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (ServerFunc.IsDedicatedServer())
                         return;
 
-                    if (!_hasRegisteredWithNamedMessageHandler || !_serverConfig.SentByServer) {
+                    if (!_hasRegisteredWithNamedMessageHandler || !_serverHasResponded) {
                         //Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_SERVER}.", _clientConfig);
                         NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_SERVER, ReceiveData);
                         _hasRegisteredWithNamedMessageHandler = true;
@@ -1318,7 +1296,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static bool Prefix(string message) {
                 try {
                     // If this is the server or server doesn't use the mod, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer() || !_serverConfig.SentByServer)
+                    if (ServerFunc.IsDedicatedServer() || !_serverHasResponded)
                         return true;
 
                     if ((message.StartsWith("HIGH STICK") || message.StartsWith("OFFSIDE") || message.StartsWith("ICING")) && !message.EndsWith("CALLED"))
@@ -1522,7 +1500,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static bool IsIcingPossible(PlayerTeam team) {
-            if (_isIcingPossible[team] != null && _isIcingPossible[team].ElapsedMilliseconds < MAX_ICING_POSSIBLE_TIMER)
+            if (_isIcingPossible[team] != null && _isIcingPossible[team].ElapsedMilliseconds < _serverConfig.MaxIcingPossibleTime)
                 return true;
 
             return false;
@@ -1575,7 +1553,7 @@ namespace oomtm450PuckMod_Ruleset {
         private static string GetPlayerSteamIdInPossession() {
             Dictionary<string, Stopwatch> dict;
             dict = _playersLastTimePuckPossession
-                .Where(x => x.Value.ElapsedMilliseconds < MIN_POSSESSION_MILLISECONDS && x.Value.ElapsedMilliseconds > MAX_TIPPED_MILLISECONDS)
+                .Where(x => x.Value.ElapsedMilliseconds < _serverConfig.MinPossessionMilliseconds && x.Value.ElapsedMilliseconds > _serverConfig.MaxTippedMilliseconds)
                 .ToDictionary(x => x.Key, x => x.Value);
 
             if (dict.Count > 1) // Puck possession is challenged.
@@ -1585,7 +1563,7 @@ namespace oomtm450PuckMod_Ruleset {
                 return dict.First().Key;
 
             List<string> steamIds = _playersLastTimePuckPossession
-                .Where(x => x.Value.ElapsedMilliseconds < MAX_POSSESSION_MILLISECONDS && x.Value.ElapsedMilliseconds > MAX_TIPPED_MILLISECONDS)
+                .Where(x => x.Value.ElapsedMilliseconds < _serverConfig.MaxPossessionMilliseconds && x.Value.ElapsedMilliseconds > _serverConfig.MaxTippedMilliseconds)
                 .OrderBy(x => x.Value.ElapsedMilliseconds)
                 .Select(x => x.Key).ToList();
 
@@ -1602,7 +1580,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(playerSteamId, out Stopwatch lastPuckExitWatch))
                 return false;
 
-            if (currentPuckTouchWatch.ElapsedMilliseconds - lastPuckExitWatch.ElapsedMilliseconds < MAX_TIPPED_MILLISECONDS)
+            if (currentPuckTouchWatch.ElapsedMilliseconds - lastPuckExitWatch.ElapsedMilliseconds < _serverConfig.MaxTippedMilliseconds)
                 return true;
 
             return false;
@@ -1779,7 +1757,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 switch (dataName) {
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
-                        _serverConfig.SentByServer = true;
+                        _serverHasResponded = true;
                         if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
                             break;
 

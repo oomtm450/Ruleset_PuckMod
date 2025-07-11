@@ -28,24 +28,6 @@ namespace oomtm450PuckMod_Ruleset.SystemFunc {
         internal const string RIGHT_DEFENDER_POSITION = "RD";
 
         /// <summary>
-        /// Function that checks if the current client is an admin using the config.
-        /// </summary>
-        /// <param name="serverConfig">ServerConfig, config to use to check the admin steam Ids.</param>
-        /// <param name="currentConfig">IConfig, config to use to check if info must be logged.</param>
-        /// <returns>Bool, true if the client is an admin of the server.</returns>
-        internal static bool IsAdmin(ServerConfig serverConfig, IConfig currentConfig) {
-            Player currentPlayer = PlayerManager.Instance.GetLocalPlayer();
-            foreach (string adminSteamId in serverConfig.AdminSteamIds) {
-                if (adminSteamId == currentPlayer.SteamId.Value.ToString()) {
-                    Logging.Log($"{adminSteamId} is an admin.", currentConfig);
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
         /// Function that returns true if the PlayerPosition has the given role, and if it is claimed depending on hasToBeClaimed.
         /// </summary>
         /// <param name="pPosition">PlayerPosition, object to check.</param>
