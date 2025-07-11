@@ -77,6 +77,21 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool BlueTeamGInt { get; set; } = true;
 
         /// <summary>
+        /// Int, number of milliseconds after a push on the goalie to be considered no goal.
+        /// </summary>
+        public int GIntPushNoGoalMilliseconds { get; set; } = 3500;
+
+        /// <summary>
+        /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
+        /// </summary>
+        public int GIntHitNoGoalMilliseconds { get; set; } = 9000; // TODO : Remove when penalty is added.
+
+        /// <summary>
+        /// Float, force threshold for a push on the goalie to be considered for goalie interference.
+        /// </summary>
+        public float GIntCollisionForceThreshold { get; set; } = 0.97f;
+
+        /// <summary>
         /// Bool, true if deferred icing is activated. If false, icing will be called when the puck is touched.
         /// </summary>
         public bool DeferredIcing { get; set; } = true;

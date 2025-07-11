@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.14.0DEV6";
+        private static readonly string MOD_VERSION = "V0.14.0DEV7";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -66,17 +66,9 @@ namespace oomtm450PuckMod_Ruleset {
         private const int MAX_POSSESSION_MILLISECONDS = 500;
 
         /// <summary>
-        /// Const int, number of milliseconds after a push on the goalie to be considered no goal.
-        /// </summary>
-        private const int GINT_PUSH_NO_GOAL_MILLISECONDS = 3500;
-        private const int GINT_HIT_NO_GOAL_MILLISECONDS = 9000; // TODO : Remove when penalty is added.
-
-        /// <summary>
         /// Const int, number of milliseconds after a high stick to not be considered.
         /// </summary>
         private const int HIGH_STICK_MAX_MILLISECONDS = 5000;
-
-        private const float GINT_COLLISION_FORCE_THRESHOLD = 0.97f;
 
         private const int MAX_ICING_POSSIBLE_TIMER = 7000;
 
@@ -593,7 +585,7 @@ namespace oomtm450PuckMod_Ruleset {
                     bool goalieDown = goalie.PlayerBody.IsSlipping || goalie.PlayerBody.HasSlipped;
                     _lastGoalieStateCollision[goalieOtherTeam] = goalieDown;
 
-                    if (goalieDown || (force > GINT_COLLISION_FORCE_THRESHOLD && goalieIsInHisCrease)) {
+                    if (goalieDown || (force > _serverConfig.GIntCollisionForceThreshold && goalieIsInHisCrease)) {
                         if (!_goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch))
                             return;
 
@@ -1563,9 +1555,9 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log($"Goalie is down : {_lastGoalieStateCollision[team]}.", _serverConfig);
             Logging.Log($"Goalie was last touched : {((double)watch.ElapsedMilliseconds) / 1000d} seconds ago.", _serverConfig);
             if (_lastGoalieStateCollision[team])
-                return watch.ElapsedMilliseconds < GINT_HIT_NO_GOAL_MILLISECONDS;
+                return watch.ElapsedMilliseconds < _serverConfig.GIntHitNoGoalMilliseconds;
 
-            return watch.ElapsedMilliseconds < GINT_PUSH_NO_GOAL_MILLISECONDS;
+            return watch.ElapsedMilliseconds < _serverConfig.GIntPushNoGoalMilliseconds;
         }
 
         /// <summary>
