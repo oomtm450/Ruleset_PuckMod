@@ -655,7 +655,7 @@ namespace oomtm450PuckMod_Ruleset {
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_RED, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
                     }
 
-                    if (!_changedPhase)  {
+                    if (!_changedPhase) {
                         if (phase == GamePhase.FaceOff && string.IsNullOrEmpty(_currentMusicPlaying)) {
                             if (!_hasPlayedLastMinuteMusic && GameManager.Instance.GameState.Value.Time <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
                                 _hasPlayedLastMinuteMusic = true;
