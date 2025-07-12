@@ -503,17 +503,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                     PlayerBodyV2 playerBody = GetPlayerBodyV2(collision.gameObject);
 
-                    if (!playerBody) {
-                        /*PlayerLegPad playerLegPad = GetPlayerLegPad(collision.gameObject);
-                        if (!playerLegPad)
-                            return;
-
-                        playerBody = playerLegPad.GetComponentInParent<PlayerBodyV2>();
-                        Logging.Log($"This is a pad !!!", _serverConfig);
-                        if (playerBody == null || !playerBody)
-                            return;*/
+                    if (!playerBody)
                         return;
-                    }
 
                     float force = Utils.GetCollisionForce(collision);
 
@@ -537,12 +528,12 @@ namespace oomtm450PuckMod_Ruleset {
                     (double startX, double endX) = (0, 0);
                     (double startZ, double endZ) = (0, 0);
                     if (goalie.Team.Value == PlayerTeam.Blue) {
-                        (startX, endX) = ZoneFunc.ICE_X_POSITIONS[ArenaElement.BlueTeam_BluePaint];
-                        (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[ArenaElement.BlueTeam_BluePaint];
+                        (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.BlueTeam_BluePaint];
+                        (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BluePaint];
                     }
                     else {
-                        (startX, endX) = ZoneFunc.ICE_X_POSITIONS[ArenaElement.RedTeam_BluePaint];
-                        (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[ArenaElement.RedTeam_BluePaint];
+                        (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.RedTeam_BluePaint];
+                        (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[IceElement.RedTeam_BluePaint];
                     }
 
                     bool goalieIsInHisCrease = true;
@@ -902,9 +893,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                         // Deferred icing logic.
                         if (_serverConfig.DeferredIcing && player.Role.Value != PlayerRole.Goalie) {
-                            if (IsIcing(player.Team.Value) && ZoneFunc.IsBehindHashmarks(otherTeam, player.PlayerBody.transform.position, oldPlayerZone, PLAYER_RADIUS))
+                            if (IsIcing(player.Team.Value) && ZoneFunc.IsBehindHashmarks(otherTeam, player.PlayerBody.transform.position, PLAYER_RADIUS))
                                 dictPlayersZPositionsForDeferredIcing.Add(player, Math.Abs(player.PlayerBody.transform.position.z));
-                            else if (IsIcing(otherTeam) && ZoneFunc.IsBehindHashmarks(player.Team.Value, player.PlayerBody.transform.position, oldPlayerZone, PLAYER_RADIUS)) {
+                            else if (IsIcing(otherTeam) && ZoneFunc.IsBehindHashmarks(player.Team.Value, player.PlayerBody.transform.position, PLAYER_RADIUS)) {
                                 dictPlayersZPositionsForDeferredIcing.Add(player, Math.Abs(player.PlayerBody.transform.position.z));
                                 Faceoff.SetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             }
