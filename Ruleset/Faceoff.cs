@@ -89,8 +89,8 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Function that returns the position of the faceoff dot linked to the faceoff spot.
         /// </summary>
-        /// <param name="faceoffSpot"></param>
-        /// <returns></returns>
+        /// <param name="faceoffSpot">FaceoffSpot, faceoff spot.</param>
+        /// <returns>Vector3, position of the faceoff dot.</returns>
         internal static Vector3 GetFaceoffDot(FaceoffSpot faceoffSpot) {
             switch (faceoffSpot) {
                 case FaceoffSpot.BlueteamBLLeft:
