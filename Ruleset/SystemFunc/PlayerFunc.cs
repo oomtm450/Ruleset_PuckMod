@@ -1,4 +1,7 @@
-﻿namespace oomtm450PuckMod_Ruleset.SystemFunc {
+﻿namespace oomtm450PuckMod_Ruleset {
+    /// <summary>
+    /// Class containing code for player functions.
+    /// </summary>
     internal class PlayerFunc {
         /// <summary>
         /// Const string, position name for the goalie.
@@ -58,6 +61,15 @@
         /// <returns>Bool, true if the PlayerPosition is a goalie, and is claimed or not depending of hasToBeClaimed.</returns>
         internal static bool IsGoalie(PlayerPosition pPosition, bool hasToBeClaimed = true) {
             return IsRole(pPosition, PlayerRole.Goalie, hasToBeClaimed);
+        }
+
+        /// <summary>
+        /// Function that returns true if the player is a goalie.
+        /// </summary>
+        /// <param name="player">Player, player to check.</param>
+        /// <returns>Bool, true if the player is a goalie.</returns>
+        internal static bool IsGoalie(Player player) {
+            return player.Role.Value == PlayerRole.Goalie;
         }
     }
 }

@@ -4,7 +4,7 @@ using System.Text;
 using Unity.Collections;
 using Unity.Netcode;
 
-namespace oomtm450PuckMod_Ruleset.SystemFunc {
+namespace oomtm450PuckMod_Ruleset {
     internal static class NetworkCommunication {
         /// <summary>
         /// Method that sends data to the listener.

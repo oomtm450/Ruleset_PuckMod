@@ -1,7 +1,7 @@
 ﻿using oomtm450PuckMod_Ruleset.Configs;
 using UnityEngine;
 
-namespace oomtm450PuckMod_Ruleset.SystemFunc {
+namespace oomtm450PuckMod_Ruleset {
     internal class Logging {
         /// <summary>
         /// Function that logs information to the debug console.

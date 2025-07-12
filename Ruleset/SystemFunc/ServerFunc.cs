@@ -1,7 +1,10 @@
 ﻿using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace oomtm450PuckMod_Ruleset.SystemFunc {
+namespace oomtm450PuckMod_Ruleset {
+    /// <summary>
+    /// Class containing code for server functions.
+    /// </summary>
     internal static class ServerFunc {
         /// <summary>
         /// Function that returns true if the instance is a dedicated server.

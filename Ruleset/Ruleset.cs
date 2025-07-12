@@ -2,6 +2,7 @@
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -230,7 +231,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         PlayerTeam playerOtherTeam = TeamFunc.GetOtherTeam(playerBody.Player.Team.Value);
                         if (IsIcingPossible(playerOtherTeam)) {
-                            if (playerBody.Player.Role.Value != PlayerRole.Goalie) {
+                            if (!PlayerFunc.IsGoalie(playerBody.Player)) {
                                 if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var result)) {
                                     if (result.Zone != ZoneFunc.GetTeamZones(playerBody.Player.Team.Value)[1]) {
                                         if (IsIcing(playerOtherTeam)) {
@@ -260,7 +261,7 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                         }
 
-                        if (_puckRaycast.PuckIsGoingToNet[playerBody.Player.Team.Value] && playerBody.Player.Role.Value == PlayerRole.Goalie) {
+                        if (_puckRaycast.PuckIsGoingToNet[playerBody.Player.Team.Value] && PlayerFunc.IsGoalie(playerBody.Player)) {
                             string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(playerBody.Player.Team.Value)];
                             if (!string.IsNullOrEmpty(shooterSteamId))
                                 _checkIfPuckWasSaved[playerBody.Player.Team.Value] = new SaveCheck { HasToCheck = true, ShooterSteamId = shooterSteamId };
@@ -305,7 +306,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // High stick logic.
                     Puck puck = PuckManager.Instance.GetPuck();
                     if (puck) {
-                        if (stick.Player.Role.Value != PlayerRole.Goalie && puck.Rigidbody.transform.position.y > _serverConfig.HighStickHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
+                        if (!PlayerFunc.IsGoalie(stick.Player) && puck.Rigidbody.transform.position.y > _serverConfig.HighStickHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
                             _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
 
                             highStickTimer.Change(_serverConfig.HighStickMaxMilliseconds, Timeout.Infinite);
@@ -338,7 +339,7 @@ namespace oomtm450PuckMod_Ruleset {
                         UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                     }
 
-                    if (_puckRaycast.PuckIsGoingToNet[stick.Player.Team.Value] && stick.Player.Role.Value == PlayerRole.Goalie) {
+                    if (_puckRaycast.PuckIsGoingToNet[stick.Player.Team.Value] && PlayerFunc.IsGoalie(stick.Player)) {
                         string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[otherTeam];
                         if (!string.IsNullOrEmpty(shooterSteamId))
                             _checkIfPuckWasSaved[stick.Player.Team.Value] = new SaveCheck { HasToCheck = true, ShooterSteamId = shooterSteamId };
@@ -370,7 +371,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (!PuckIsTipped(playerSteamId)) {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
-                        if (stick.Player.Role.Value != PlayerRole.Goalie)
+                        if (!PlayerFunc.IsGoalie(stick.Player))
                             ResetAssists(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
                         _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = playerSteamId;
                     }
@@ -396,13 +397,13 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Icing logic.
                     if (IsIcing(otherTeam)) {
-                        if (stick.Player.PlayerPosition.Role != PlayerRole.Goalie) {
+                        if (!PlayerFunc.IsGoalie(stick.Player)) {
                             _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
                             ResetIcings();
                             DoFaceoff();
                         }
-                        else if (stick.Player.PlayerPosition.Role == PlayerRole.Goalie) {
+                        else {
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, otherTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                             ResetIcings();
@@ -450,7 +451,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (!PuckIsTipped(currentPlayerSteamId)) {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
-                        if (stick.Player.Role.Value != PlayerRole.Goalie)
+                        if (!PlayerFunc.IsGoalie(stick.Player))
                             ResetAssists(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
                         _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
 
@@ -518,7 +519,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     Player goalie;
-                    if (playerBody.Player.Role.Value == PlayerRole.Goalie)
+                    if (PlayerFunc.IsGoalie(playerBody.Player))
                         goalie = playerBody.Player;
                     else
                         goalie = lastPlayerHit;
@@ -890,7 +891,7 @@ namespace oomtm450PuckMod_Ruleset {
                             _isOffside[playerSteamId] = (player.Team.Value, false);
 
                         // Deferred icing logic.
-                        if (_serverConfig.DeferredIcing && player.Role.Value != PlayerRole.Goalie) {
+                        if (_serverConfig.DeferredIcing && !PlayerFunc.IsGoalie(player)) {
                             if (IsIcing(player.Team.Value) && ZoneFunc.IsBehindHashmarks(otherTeam, player.PlayerBody.transform.position, PLAYER_RADIUS))
                                 dictPlayersZPositionsForDeferredIcing.Add(player, Math.Abs(player.PlayerBody.transform.position.z));
                             else if (IsIcing(otherTeam) && ZoneFunc.IsBehindHashmarks(player.Team.Value, player.PlayerBody.transform.position, PLAYER_RADIUS)) {
@@ -1933,7 +1934,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 label.text = "0";
 
                                 Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(key);
-                                if (currentPlayer != null && currentPlayer && currentPlayer.Role.Value == PlayerRole.Goalie)
+                                if (currentPlayer != null && currentPlayer && PlayerFunc.IsGoalie(currentPlayer))
                                     label.text = "0.000";
                             }
                             else {
@@ -1961,7 +1962,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (_sog.TryGetValue(playerSteamId, out int _)) {
                                 _sog[playerSteamId] = sog;
                                 Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-                                if (currentPlayer != null && currentPlayer && currentPlayer.Role.Value != PlayerRole.Goalie)
+                                if (currentPlayer != null && currentPlayer && !PlayerFunc.IsGoalie(currentPlayer))
                                     _sogLabels[playerSteamId].text = sog.ToString();
                             }
                             else
@@ -1980,7 +1981,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (_savePerc.TryGetValue(playerSteamId, out var _)) {
                                 _savePerc[playerSteamId] = (saves, shots);
                                 Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-                                if (currentPlayer != null && currentPlayer && currentPlayer.Role.Value == PlayerRole.Goalie)
+                                if (currentPlayer != null && currentPlayer && PlayerFunc.IsGoalie(currentPlayer))
                                     _sogLabels[playerSteamId].text = GetGoalieSavePerc(saves, shots);
                             }
                             else
