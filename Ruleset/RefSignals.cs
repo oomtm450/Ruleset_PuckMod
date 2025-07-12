@@ -14,20 +14,27 @@ namespace oomtm450PuckMod_Ruleset {
         private const string IMAGES_FOLDER_PATH = "images\\refsignals";
         private const string IMAGE_EXTENSION = ".png";
 
-        internal const string SHOW_SIGNAL_BLUE = "showrefsignalb";
-        internal const string STOP_SIGNAL_BLUE = "stoprefsignalb";
-        internal const string SHOW_SIGNAL_RED = "showrefsignalr";
-        internal const string STOP_SIGNAL_RED = "stoprefsignalr";
+        private const string REF_SIGNAL = "refsignal";
+        private const string SHOW_SIGNAL = "show" + REF_SIGNAL;
+        private const string STOP_SIGNAL = "stop" + REF_SIGNAL;
+        private const string RED = "r";
+        private const string BLUE = "b";
+        internal const string SHOW_SIGNAL_BLUE = SHOW_SIGNAL + BLUE;
+        internal const string STOP_SIGNAL_BLUE = STOP_SIGNAL + BLUE;
+        internal const string SHOW_SIGNAL_RED = SHOW_SIGNAL + RED;
+        internal const string STOP_SIGNAL_RED = STOP_SIGNAL + RED;
 
+        private const string LINESMAN = "linesman";
+        private const string REF = "ref";
         internal const string ALL = "all";
-        internal const string OFFSIDE_LINESMAN = "offside_linesman";
-        internal const string ICING_LINESMAN = "icing_linesman";
-        internal const string HIGHSTICK_LINESMAN = "highstick_linesman";
-        internal const string HIGHSTICK_REF = "highstick_ref";
-        internal const string INTERFERENCE_REF = "interference_ref";
+        internal const string OFFSIDE_LINESMAN = "offside_" + LINESMAN;
+        internal const string ICING_LINESMAN = "icing_" + LINESMAN;
+        internal const string HIGHSTICK_LINESMAN = "highstick_" + LINESMAN;
+        internal const string HIGHSTICK_REF = "highstick_" + REF;
+        internal const string INTERFERENCE_REF = "interference_" + REF;
 
         private readonly Dictionary<string, Image> _images = new Dictionary<string, Image>();
-        private List<GameObject> _imageGameObjects = new List<GameObject>();
+        private readonly List<GameObject> _imageGameObjects = new List<GameObject>();
         internal List<string> _errors = new List<string>();
         private Canvas _canvas;
 
