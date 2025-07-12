@@ -38,16 +38,6 @@ namespace oomtm450PuckMod_Ruleset {
         internal List<string> _errors = new List<string>();
         private Canvas _canvas;
 
-        internal void Update() {
-            Player localPlayer = PlayerManager.Instance.GetLocalPlayer();
-            if (!localPlayer || !localPlayer.IsCharacterFullySpawned)
-                return;
-
-            //_canvas.transform.position = new Vector3(localPlayer.PlayerCamera.transform.position.x, localPlayer.PlayerCamera.transform.position.y,
-                //localPlayer.PlayerCamera.transform.position.z + 1);
-            //_canvas.transform.rotation = Quaternion.LookRotation(transform.position - localPlayer.PlayerCamera.transform.position);
-        }
-
         internal void DestroyGameObjects() {
             while (_images.Count != 0) {
                 var imageObject = _images.First();

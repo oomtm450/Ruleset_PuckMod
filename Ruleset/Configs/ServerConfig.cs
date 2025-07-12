@@ -144,9 +144,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Function that reads the config file for the mod and create a ServerConfig object with it.
         /// Also creates the file with the default values, if it doesn't exists.
         /// </summary>
-        /// <param name="adminSteamIds">String array, all admin steam Ids of the server.</param>
         /// <returns>ServerConfig, parsed config.</returns>
-        internal static ServerConfig ReadConfig(string[] adminSteamIds) {
+        internal static ServerConfig ReadConfig() {
             ServerConfig config = new ServerConfig();
 
             try {

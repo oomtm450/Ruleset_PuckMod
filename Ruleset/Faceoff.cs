@@ -1,8 +1,18 @@
 ﻿using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
+    /// <summary>
+    /// Class containing the code for faceoffs.
+    /// </summary>
     internal static class Faceoff {
-        internal static void SetNextFaceoffPosition(PlayerTeam team, bool isIcing, (Vector3 Position, Zone Zone) puckLastState) {
+        /// <summary>
+        /// Function that returns the next faceoff position.
+        /// </summary>
+        /// <param name="team">PlayerTeam, team linked to the faceoff being called.</param>
+        /// <param name="isIcing">Bool, was icing called or not.</param>
+        /// <param name="puckLastState">(Vector3, Zone), puck's last position and zone.</param>
+        /// <returns>FaceoffSpot, next faceoff position.</returns>
+        internal static FaceoffSpot GetNextFaceoffPosition(PlayerTeam team, bool isIcing, (Vector3 Position, Zone Zone) puckLastState) {
             ushort teamOffset;
             if (team == PlayerTeam.Red)
                 teamOffset = 2;
@@ -11,107 +21,111 @@ namespace oomtm450PuckMod_Ruleset {
 
             if (puckLastState.Position.x < 0) {
                 if (isIcing)
-                    Ruleset.NextFaceoffSpot = FaceoffSpot.BlueteamDZoneLeft + teamOffset;
+                    return FaceoffSpot.BlueteamDZoneLeft + teamOffset;
                 else
-                    SetNextFaceoffPositionFromLastTouch(team, true, puckLastState);
+                    return SetNextFaceoffPositionFromLastTouch(team, true, puckLastState);
             }
             else {
                 if (isIcing)
-                    Ruleset.NextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight + teamOffset;
+                    return FaceoffSpot.BlueteamDZoneRight + teamOffset;
                 else
-                    SetNextFaceoffPositionFromLastTouch(team, false, puckLastState);
+                    return SetNextFaceoffPositionFromLastTouch(team, false, puckLastState);
             }
         }
 
-        private static void SetNextFaceoffPositionFromLastTouch(PlayerTeam team, bool left, (Vector3 Position, Zone Zone) puckLastState) {
+        /// <summary>
+        /// Function that returns the next faceoff position from the last touch.
+        /// </summary>
+        /// <param name="team">PlayerTeam, team linked to the faceoff being called.</param>
+        /// <param name="left">Bool, true if the faceoff has to be on the left.</param>
+        /// <param name="puckLastState">(Vector3, Zone), puck's last position and zone.</param>
+        /// <returns>FaceoffSpot, next faceoff position.</returns>
+        private static FaceoffSpot SetNextFaceoffPositionFromLastTouch(PlayerTeam team, bool left, (Vector3 Position, Zone Zone) puckLastState) {
             Zone puckZone = ZoneFunc.GetZone(puckLastState.Position, puckLastState.Zone, Ruleset.PUCK_RADIUS);
             if (puckZone == Zone.BlueTeam_BehindGoalLine || puckZone == Zone.BlueTeam_Zone) {
                 if (team == PlayerTeam.Blue) {
                     if (left)
-                        Ruleset.NextFaceoffSpot = FaceoffSpot.BlueteamDZoneLeft;
+                        return FaceoffSpot.BlueteamDZoneLeft;
                     else
-                        Ruleset.NextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight;
+                        return FaceoffSpot.BlueteamDZoneRight;
                 }
                 else {
                     if (left)
-                        Ruleset.NextFaceoffSpot = FaceoffSpot.BlueteamBLLeft;
+                        return FaceoffSpot.BlueteamBLLeft;
                     else
-                        Ruleset.NextFaceoffSpot = FaceoffSpot.BlueteamBLRight;
+                        return FaceoffSpot.BlueteamBLRight;
                 }
             }
             else if (puckZone == Zone.RedTeam_BehindGoalLine || puckZone == Zone.RedTeam_Zone) {
                 if (team == PlayerTeam.Red) {
                     if (left)
-                        Ruleset.NextFaceoffSpot = FaceoffSpot.RedteamDZoneLeft;
+                        return FaceoffSpot.RedteamDZoneLeft;
                     else
-                        Ruleset.NextFaceoffSpot = FaceoffSpot.RedteamDZoneRight;
+                        return FaceoffSpot.RedteamDZoneRight;
                 }
                 else {
                     if (left)
-                        Ruleset.NextFaceoffSpot = FaceoffSpot.RedteamBLLeft;
+                        return FaceoffSpot.RedteamBLLeft;
                     else
-                        Ruleset.NextFaceoffSpot = FaceoffSpot.RedteamBLRight;
+                        return FaceoffSpot.RedteamBLRight;
                 }
             }
             else if (puckZone == Zone.BlueTeam_Center) {
                 if (left)
-                    Ruleset.NextFaceoffSpot = FaceoffSpot.BlueteamBLLeft;
+                    return FaceoffSpot.BlueteamBLLeft;
                 else
-                    Ruleset.NextFaceoffSpot = FaceoffSpot.BlueteamBLRight;
+                    return FaceoffSpot.BlueteamBLRight;
             }
             else if (puckZone == Zone.RedTeam_Center) {
                 if (left)
-                    Ruleset.NextFaceoffSpot = FaceoffSpot.RedteamBLLeft;
+                    return FaceoffSpot.RedteamBLLeft;
                 else
-                    Ruleset.NextFaceoffSpot = FaceoffSpot.RedteamBLRight;
+                    return FaceoffSpot.RedteamBLRight;
             }
+
+            return FaceoffSpot.Center;
         }
 
-        internal static Vector3 GetFaceoffDot(FaceoffSpot nextFaceoffSpot) {
-            Vector3 dot;
-
-            switch (nextFaceoffSpot) {
+        /// <summary>
+        /// Function that returns the position of the faceoff dot linked to the faceoff spot.
+        /// </summary>
+        /// <param name="faceoffSpot"></param>
+        /// <returns></returns>
+        internal static Vector3 GetFaceoffDot(FaceoffSpot faceoffSpot) {
+            switch (faceoffSpot) {
                 case FaceoffSpot.BlueteamBLLeft:
-                    dot = new Vector3(-9.97f, 0.01f, 11f);
-                    break;
+                    return new Vector3(-9.97f, 0.01f, 11f);
 
                 case FaceoffSpot.BlueteamBLRight:
-                    dot = new Vector3(9.97f, 0.01f, 11f);
-                    break;
+                    return new Vector3(9.97f, 0.01f, 11f);
 
                 case FaceoffSpot.RedteamBLLeft:
-                    dot = new Vector3(-9.97f, 0.01f, -11f);
-                    break;
+                    return new Vector3(-9.97f, 0.01f, -11f);
 
                 case FaceoffSpot.RedteamBLRight:
-                    dot = new Vector3(9.97f, 0.01f, -11f);
-                    break;
+                    return new Vector3(9.97f, 0.01f, -11f);
 
                 case FaceoffSpot.BlueteamDZoneLeft:
-                    dot = new Vector3(-9.95f, 0.01f, 29.75f);
-                    break;
+                    return new Vector3(-9.95f, 0.01f, 29.75f);
 
                 case FaceoffSpot.BlueteamDZoneRight:
-                    dot = new Vector3(9.95f, 0.01f, 29.75f);
-                    break;
+                    return new Vector3(9.95f, 0.01f, 29.75f);
 
                 case FaceoffSpot.RedteamDZoneLeft:
-                    dot = new Vector3(-9.95f, 0.01f, -29.75f);
-                    break;
+                    return new Vector3(-9.95f, 0.01f, -29.75f);
 
                 case FaceoffSpot.RedteamDZoneRight:
-                    dot = new Vector3(9.95f, 0.01f, -29.75f);
-                    break;
+                    return new Vector3(9.95f, 0.01f, -29.75f);
 
                 default:
-                    dot = new Vector3(0f, 0.01f, 0f);
-                    break;
+                    return new Vector3(0f, 0.01f, 0f);
             }
-
-            return dot;
         }
     }
 
+    /// <summary>
+    /// Enum of the faceoff locations.
+    /// </summary>
     public enum FaceoffSpot : ushort {
         Center,
         BlueteamBLLeft,

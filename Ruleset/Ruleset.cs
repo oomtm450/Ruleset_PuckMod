@@ -178,6 +178,11 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static bool _hasPlayedSecondFaceoffMusic = false;
 
+        /// <summary>
+        /// FaceoffSpot, where the next faceoff has to be taken.
+        /// </summary>
+        private static FaceoffSpot _nextFaceoffSpot = FaceoffSpot.Center;
+
         // Client-side and server-side.
         private static readonly LockDictionary<string, int> _sog = new LockDictionary<string, int>();
 
@@ -201,13 +206,6 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool _serverHasResponded = false;
 
         // Barrier collider, position 0 -19 0 is realistic.
-        #endregion
-
-        #region Properties
-        /// <summary>
-        /// FaceoffSpot, where the next faceoff has to be taken.
-        /// </summary>
-        internal static FaceoffSpot NextFaceoffSpot { get; set; } = FaceoffSpot.Center;
         #endregion
 
         #region Harmony Patches
@@ -320,7 +318,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         else if (puck.IsGrounded) {
                             if (IsHighStick(stick.Player.Team.Value)) {
-                                Faceoff.SetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                                _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
                                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, stick.Player.Team.Value), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
                                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig);
                                 UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
@@ -391,7 +389,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // Offside logic.
                     List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == otherTeamZones[0] || _puckZone == otherTeamZones[1])) {
-                        Faceoff.SetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.Offside]);
+                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.Offside]);
                         UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
                         DoFaceoff();
                     }
@@ -399,7 +397,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // Icing logic.
                     if (IsIcing(otherTeam)) {
                         if (stick.Player.PlayerPosition.Role != PlayerRole.Goalie) {
-                            Faceoff.SetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
+                            _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
                             ResetIcings();
                             DoFaceoff();
@@ -633,7 +631,7 @@ namespace oomtm450PuckMod_Ruleset {
                         foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys))
                             _checkIfPuckWasSaved[key] = new SaveCheck();
 
-                        _puckZone = ZoneFunc.GetZone(NextFaceoffSpot);
+                        _puckZone = ZoneFunc.GetZone(_nextFaceoffSpot);
 
                         _lastPlayerOnPuckTeam = PlayerTeam.Blue;
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckSteamId.Keys))
@@ -696,14 +694,14 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     if (phase == GamePhase.FaceOff) {
-                        if (NextFaceoffSpot == FaceoffSpot.Center)
+                        if (_nextFaceoffSpot == FaceoffSpot.Center)
                             return;
 
-                        Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
+                        Vector3 dot = Faceoff.GetFaceoffDot(_nextFaceoffSpot);
 
                         List<Player> players = PlayerManager.Instance.GetPlayers();
                         foreach (Player player in players)
-                            PlayerFunc.TeleportOnFaceoff(player, dot, NextFaceoffSpot);
+                            PlayerFunc.TeleportOnFaceoff(player, dot, _nextFaceoffSpot);
 
                         return;
                     }
@@ -731,9 +729,9 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff))
                         return true;
 
-                    Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
+                    Vector3 dot = Faceoff.GetFaceoffDot(_nextFaceoffSpot);
                     position = new Vector3(dot.x, 1.1f, dot.z);
-                    NextFaceoffSpot = FaceoffSpot.Center;
+                    _nextFaceoffSpot = FaceoffSpot.Center;
                 }
                 catch (Exception ex)  {
                     Logging.LogError($"Error in PuckManager_Server_SpawnPuck_Patch Prefix().\n{ex}");
@@ -897,7 +895,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 dictPlayersZPositionsForDeferredIcing.Add(player, Math.Abs(player.PlayerBody.transform.position.z));
                             else if (IsIcing(otherTeam) && ZoneFunc.IsBehindHashmarks(player.Team.Value, player.PlayerBody.transform.position, PLAYER_RADIUS)) {
                                 dictPlayersZPositionsForDeferredIcing.Add(player, Math.Abs(player.PlayerBody.transform.position.z));
-                                Faceoff.SetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
+                                _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             }
                         }
                     }
@@ -1036,17 +1034,17 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (isOffside || isHighStick || isGoalieInt) {
                         if (isOffside) {
-                            Faceoff.SetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.Offside]);
+                            _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.Offside]);
                             UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
                         }
                         else if (isHighStick) {
-                            Faceoff.SetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                            _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
                             UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerTeam), RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig);
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, playerTeam), RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig);
                         }
                         else if (isGoalieInt) {
-                            Faceoff.SetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
+                            _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
                             UIChat.Instance.Server_SendSystemChatMessage($"GOALIE INT {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, playerTeam), RefSignals.INTERFERENCE_REF, Constants.FROM_SERVER, _serverConfig);
                         }
@@ -1062,7 +1060,7 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.LogError($"Error in GameManagerController_Event_Server_OnPuckEnterTeamGoal_Patch Prefix().\n{ex}");
                 }
 
-                NextFaceoffSpot = FaceoffSpot.Center;
+                _nextFaceoffSpot = FaceoffSpot.Center;
 
                 return true;
             }
@@ -1141,7 +1139,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(Vector3 position, Quaternion rotation, PlayerRole role) {
                 try {
                     // If this is not the server, game is not started or faceoff is on the default dot (center), do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.FaceOff || NextFaceoffSpot == FaceoffSpot.Center)
+                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.FaceOff || _nextFaceoffSpot == FaceoffSpot.Center)
                         return;
 
                     // Reteleport player on faceoff to the correct faceoff.
@@ -1155,7 +1153,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!player)
                         return;
 
-                    PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(NextFaceoffSpot), NextFaceoffSpot);
+                    PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(_nextFaceoffSpot), _nextFaceoffSpot);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Player_Server_RespawnCharacter_Patch Postfix().\n{ex}");
@@ -1254,7 +1252,7 @@ namespace oomtm450PuckMod_Ruleset {
                     _hasPlayedFirstFaceoffMusic = false;
                     _hasPlayedSecondFaceoffMusic = false;
 
-                    NextFaceoffSpot = FaceoffSpot.Center;
+                    _nextFaceoffSpot = FaceoffSpot.Center;
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManager_Server_ResetGameState_Patch Postfix().\n{ex}");
@@ -2030,7 +2028,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     Logging.Log("Setting server sided config.", _serverConfig, true);
-                    _serverConfig = ServerConfig.ReadConfig(ServerManager.Instance.AdminSteamIds);
+                    _serverConfig = ServerConfig.ReadConfig();
                 }
                 else {
                     Logging.Log("Setting client sided config.", _serverConfig, true);
