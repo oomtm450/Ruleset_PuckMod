@@ -1737,8 +1737,8 @@ namespace oomtm450PuckMod_Ruleset {
                     case Sounds.PLAY_SOUND: // CLIENT-SIDE : Play sound.
                         if (_sounds == null)
                             break;
-                        if (_sounds._errors.Count != 0) {
-                            foreach (string error in _sounds._errors)
+                        if (_sounds.Errors.Count != 0) {
+                            foreach (string error in _sounds.Errors)
                                 Logging.LogError(error);
                         }
                         else {
@@ -1814,8 +1814,9 @@ namespace oomtm450PuckMod_Ruleset {
                     case Sounds.STOP_SOUND: // CLIENT-SIDE : Stop sound.
                         if (_sounds == null)
                             break;
-                        if (_sounds._errors.Count != 0) {
-                            foreach (string error in _sounds._errors)
+                        if (_sounds.Errors.Count != 0) {
+                            Logging.LogError("There was an error when initializing _sounds.");
+                            foreach (string error in _sounds.Errors)
                                 Logging.LogError(error);
                         }
                         else {
@@ -1830,9 +1831,9 @@ namespace oomtm450PuckMod_Ruleset {
                         if (_refSignalsBlueTeam == null)
                             break;
 
-                        if (_refSignalsBlueTeam._errors.Count != 0) {
+                        if (_refSignalsBlueTeam.Errors.Count != 0) {
                             Logging.LogError("There was an error when initializing _refSignalsBlueTeam.");
-                            foreach (string error in _refSignalsBlueTeam._errors)
+                            foreach (string error in _refSignalsBlueTeam.Errors)
                                 Logging.LogError(error);
                         }
                         else
@@ -1843,9 +1844,9 @@ namespace oomtm450PuckMod_Ruleset {
                         if (_refSignalsBlueTeam == null)
                             break;
 
-                        if (_refSignalsBlueTeam._errors.Count != 0) {
+                        if (_refSignalsBlueTeam.Errors.Count != 0) {
                             Logging.LogError("There was an error when initializing _refSignalsBlueTeam.");
-                            foreach (string error in _refSignalsBlueTeam._errors)
+                            foreach (string error in _refSignalsBlueTeam.Errors)
                                 Logging.LogError(error);
                         }
                         else {
@@ -1860,9 +1861,9 @@ namespace oomtm450PuckMod_Ruleset {
                         if (_refSignalsRedTeam == null)
                             break;
 
-                        if (_refSignalsRedTeam._errors.Count != 0) {
+                        if (_refSignalsRedTeam.Errors.Count != 0) {
                             Logging.LogError("There was an error when initializing _refSignalsRedTeam.");
-                            foreach (string error in _refSignalsRedTeam._errors)
+                            foreach (string error in _refSignalsRedTeam.Errors)
                                 Logging.LogError(error);
                         }
                         else
@@ -1873,9 +1874,9 @@ namespace oomtm450PuckMod_Ruleset {
                         if (_refSignalsRedTeam == null)
                             break;
 
-                        if (_refSignalsRedTeam._errors.Count != 0) {
+                        if (_refSignalsRedTeam.Errors.Count != 0) {
                             Logging.LogError("There was an error when initializing _refSignalsRedTeam.");
-                            foreach (string error in _refSignalsRedTeam._errors)
+                            foreach (string error in _refSignalsRedTeam.Errors)
                                 Logging.LogError(error);
                         }
                         else {

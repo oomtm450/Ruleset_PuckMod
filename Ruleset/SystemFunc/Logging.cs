@@ -2,7 +2,10 @@
 using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
-    internal class Logging {
+    /// <summary>
+    /// Class containing code for logging.
+    /// </summary>
+    internal static class Logging {
         /// <summary>
         /// Function that logs information to the debug console.
         /// </summary>

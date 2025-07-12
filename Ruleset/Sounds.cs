@@ -9,6 +9,7 @@ using UnityEngine.Networking;
 
 namespace oomtm450PuckMod_Ruleset {
     internal class Sounds : MonoBehaviour {
+        #region Constants
         private const string SOUNDS_FOLDER_PATH = "sounds";
         private const string SOUND_EXTENSION = ".ogg";
 
@@ -38,7 +39,14 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string SECOND_FACEOFF_MUSIC_DELAYED = SECOND_FACEOFF_MUSIC + "d";
 
         internal const string GAMEOVER_MUSIC = "gameovermusic";
+        #endregion
 
+        #region Fields
+        private readonly Dictionary<string, GameObject> _soundObjects = new Dictionary<string, GameObject>();
+        private readonly List<AudioClip> _audioClips = new List<AudioClip>();
+        #endregion
+
+        #region Properties
         internal List<string> FaceoffMusicList { get; set; } = new List<string>();
         internal List<string> BlueGoalMusicList { get; set; } = new List<string>();
         internal List<string> RedGoalMusicList { get; set; } = new List<string>();
@@ -48,11 +56,11 @@ namespace oomtm450PuckMod_Ruleset {
         internal List<string> FirstFaceoffMusicList { get; set; } = new List<string>();
         internal List<string> SecondFaceoffMusicList { get; set; } = new List<string>();
         internal List<string> GameOverMusicList { get; set; } = new List<string>();
+        
+        internal List<string> Errors { get; } = new List<string>();
+        #endregion
 
-        private readonly Dictionary<string, GameObject> _soundObjects = new Dictionary<string, GameObject>();
-        private readonly List<AudioClip> _audioClips = new List<AudioClip>();
-        internal List<string> _errors = new List<string>();
-
+        #region Methods/Functions
         internal void LoadSounds() {
             try {
                 string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), SOUNDS_FOLDER_PATH);
@@ -98,7 +106,7 @@ namespace oomtm450PuckMod_Ruleset {
                     yield return webRequest.SendWebRequest();
 
                     if (webRequest.result != UnityWebRequest.Result.Success)
-                        _errors.Add(webRequest.error);
+                        Errors.Add(webRequest.error);
                     else {
                         try {
                             AudioClip clip = DownloadHandlerAudioClip.GetContent(webRequest);
@@ -125,7 +133,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 GameOverMusicList.Add(clip.name);
                         }
                         catch (Exception ex) {
-                            _errors.Add(ex.ToString());
+                            Errors.Add(ex.ToString());
                         }
                     }
                 }
@@ -205,5 +213,6 @@ namespace oomtm450PuckMod_Ruleset {
             redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == BLUEGOALHORN);
             redGoalAudioSource.maxDistance = 400f;
         }
+        #endregion
     }
 }
