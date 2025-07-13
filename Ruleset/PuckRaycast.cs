@@ -9,13 +9,16 @@ namespace oomtm450PuckMod_Ruleset {
         private const int CHECK_EVERY_X_FRAMES = 4;
         //private readonly Vector3 TOP_VECTOR = new Vector3(0, 0.15f, 0);
         private readonly Vector3 RIGHT_VECTOR = new Vector3(Ruleset.PUCK_RADIUS + 0.01f, 0, 0);
+        private readonly Vector3 DOWN_VECTOR = new Vector3(0, -0.5f, 0);
+        private Vector3 DOWN_RIGHT_VECTOR;
+        private Vector3 DOWN_LEFT_VECTOR;
         private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
 
         private Ray _rayBottomLeft;
         private Ray _rayBottomRight;
-        //private Ray _rayTopLeft;
-        //private Ray _rayTopRight;
-        
+        private Ray _rayFarBottomLeft;
+        private Ray _rayFarBottomRight;
+
         private Vector3 _startingPosition;
 
         private int _increment;
@@ -26,6 +29,9 @@ namespace oomtm450PuckMod_Ruleset {
         };
 
         internal void Start() {
+            DOWN_RIGHT_VECTOR = DOWN_VECTOR + RIGHT_VECTOR;
+            DOWN_LEFT_VECTOR = DOWN_VECTOR - RIGHT_VECTOR;
+
             ResetStartingPosition();
             _increment = CHECK_EVERY_X_FRAMES - 1;
             Update();
@@ -39,10 +45,10 @@ namespace oomtm450PuckMod_Ruleset {
                 foreach (PlayerTeam key in new List<PlayerTeam>(PuckIsGoingToNet.Keys))
                     PuckIsGoingToNet[key] = false;
 
-                //_rayTopLeft = new Ray(transform.position + TOP_VECTOR - RIGHT_VECTOR, transform.position - _startingPosition);
-                //_rayTopRight = new Ray(transform.position + TOP_VECTOR + RIGHT_VECTOR, transform.position - _startingPosition);
-                _rayBottomRight = new Ray(transform.position + RIGHT_VECTOR, transform.position - _startingPosition);
                 _rayBottomLeft = new Ray(transform.position - RIGHT_VECTOR, transform.position - _startingPosition);
+                _rayBottomRight = new Ray(transform.position + RIGHT_VECTOR, transform.position - _startingPosition);
+                _rayFarBottomLeft = new Ray(transform.position + DOWN_LEFT_VECTOR, transform.position - _startingPosition);
+                _rayFarBottomRight = new Ray(transform.position + DOWN_RIGHT_VECTOR, transform.position - _startingPosition);
                 CheckForColliders();
 
                 ResetStartingPosition();
@@ -62,23 +68,22 @@ namespace oomtm450PuckMod_Ruleset {
             if (!hasHit) {
                 hasHit = Physics.Raycast(_rayBottomRight, out hit, 14f, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
                 if (!hasHit) {
-                    return;
-                    /*hasHit = Physics.Raycast(_rayTopLeft, out hit, 14f, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
+                    hasHit = Physics.Raycast(_rayFarBottomLeft, out hit, 14f, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
                     if (!hasHit) {
-                        hasHit = Physics.Raycast(_rayTopRight, out hit, 14f, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
+                        hasHit = Physics.Raycast(_rayFarBottomRight, out hit, 14f, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
                         if (!hasHit)
                             return;
                         else
-                            Logging.Log("Top right ray has hit !", Ruleset._serverConfig, true);
+                            Logging.Log("Far bottom right ray has hit !", Ruleset._serverConfig, true);
                     }
                     else
-                        Logging.Log("Top left ray has hit !", Ruleset._serverConfig, true);*/
+                        Logging.Log("Far bottom left ray has hit !", Ruleset._serverConfig, true);
                 }
-                //else
-                    //Logging.Log("Bottom right ray has hit !", Ruleset._serverConfig, true);
+                else
+                    Logging.Log("Bottom right ray has hit !", Ruleset._serverConfig, true);
             }
-            //else
-                //Logging.Log("Bottom left ray has hit !", Ruleset._serverConfig, true);
+            else
+                Logging.Log("Bottom left ray has hit !", Ruleset._serverConfig, true);
 
             Goal goal = Ruleset.GetPrivateField<Goal>(typeof(GoalTrigger), hit.collider.gameObject.GetComponent<GoalTrigger>(), "goal");
             PlayerTeam team = Ruleset.GetPrivateField<PlayerTeam>(typeof(Goal), goal, "Team");
