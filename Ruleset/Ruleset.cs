@@ -134,6 +134,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static PlayerTeam _lastPlayerOnPuckTeam = PlayerTeam.Blue;
 
+        private static PlayerTeam _lastPlayerOnPuckTeamTipIncluded = PlayerTeam.Blue;
+
         private static readonly LockDictionary<PlayerTeam, string> _lastPlayerOnPuckSteamId = new LockDictionary<PlayerTeam, string> {
             { PlayerTeam.Blue, "" },
             { PlayerTeam.Red, "" },
@@ -281,7 +283,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _playersCurrentPuckTouch.Add(currentPlayerSteamId, watch);
                     }
 
-                    string lastPlayerOnPuckTipIncludedSteamId = _lastPlayerOnPuckTipIncludedSteamId[_lastPlayerOnPuckTeam];
+                    string lastPlayerOnPuckTipIncludedSteamId = _lastPlayerOnPuckTipIncludedSteamId[_lastPlayerOnPuckTeamTipIncluded];
 
                     if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionExitWatch)) {
                         lastTimeCollisionExitWatch = new Stopwatch();
@@ -374,6 +376,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = playerSteamId;
                     }
 
+                    _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = playerSteamId;
 
                     if (!_playersLastTimePuckPossession.TryGetValue(playerSteamId, out Stopwatch watch)) {
@@ -458,6 +461,7 @@ namespace oomtm450PuckMod_Ruleset {
                             _puckLastStateBeforeCall[Rule.GoalieInt] = _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
                     }
 
+                    _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
 
                     // Icing logic.
@@ -633,6 +637,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _puckZone = ZoneFunc.GetZone(_nextFaceoffSpot);
 
                         _lastPlayerOnPuckTeam = PlayerTeam.Blue;
+                        _lastPlayerOnPuckTeamTipIncluded = PlayerTeam.Blue;
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckSteamId.Keys))
                             _lastPlayerOnPuckSteamId[key] = "";
 
@@ -900,9 +905,9 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // Remove offside if the other team entered the zone with the puck.
-                    List<Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(_lastPlayerOnPuckTeam, true);
+                    List<Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(_lastPlayerOnPuckTeamTipIncluded, true);
                     if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
-                        PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
+                        PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeamTipIncluded);
                         foreach (string key in new List<string>(_isOffside.Keys)) {
                             if (_isOffside[key].IsOffside && _isOffside[key].Team == lastPlayerOnPuckOtherTeam)
                                 _isOffside[key] = (lastPlayerOnPuckOtherTeam, false);
