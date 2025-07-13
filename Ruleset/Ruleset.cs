@@ -674,13 +674,15 @@ namespace oomtm450PuckMod_Ruleset {
                             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.GAMEOVER_MUSIC, Constants.FROM_SERVER, _serverConfig);
                         else if (phase == GamePhase.Warmup)
                             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WARMUP_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                        else if (phase == GamePhase.Playing)
+                            time += 1;
 
                         return true;
                     }
 
                     if (phase == GamePhase.Playing) {
                         _changedPhase = false;
-                        time = _periodTimeRemaining;
+                        time = _periodTimeRemaining + 1;
                     }
                 }
                 catch (Exception ex) {
@@ -1409,7 +1411,7 @@ namespace oomtm450PuckMod_Ruleset {
             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
             _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
 
-            _periodTimeRemaining = GameManager.Instance.GameState.Value.Time + 1;
+            _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
             GameManager.Instance.Server_Pause();
 
             _ = Task.Run(() => {
