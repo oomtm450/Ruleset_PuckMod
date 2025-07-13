@@ -98,7 +98,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
-        public float GoalieRadius { get; set; } = 0.785f;
+        public float GoalieRadius { get; set; } = 0.784f;
 
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
