@@ -2,7 +2,11 @@
 using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
+    /// <summary>
+    /// Class containing code for the puck raycasts with the goal trigger to know if the puck is going towards the net or not.
+    /// </summary>
     internal class PuckRaycast : MonoBehaviour {
+        private const int CHECK_EVERY_X_FRAMES = 4;
         //private readonly Vector3 TOP_VECTOR = new Vector3(0, 0.15f, 0);
         private readonly Vector3 RIGHT_VECTOR = new Vector3(Ruleset.PUCK_RADIUS + 0.01f, 0, 0);
         private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
@@ -23,12 +27,15 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal void Start() {
             ResetStartingPosition();
-            _increment = 2;
+            _increment = CHECK_EVERY_X_FRAMES - 1;
             Update();
         }
 
+        /// <summary>
+        /// Method that updates every frame to check for collision with the puck's raycasts and a goal trigger.
+        /// </summary>
         internal void Update() {
-            if (++_increment == 3) {
+            if (++_increment == CHECK_EVERY_X_FRAMES) {
                 foreach (PlayerTeam key in new List<PlayerTeam>(PuckIsGoingToNet.Keys))
                     PuckIsGoingToNet[key] = false;
 
@@ -42,6 +49,9 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        /// <summary>
+        /// Method that resets the starting position of the puck.
+        /// </summary>
         private void ResetStartingPosition() {
             _startingPosition = transform.position;
             _increment = 0;
