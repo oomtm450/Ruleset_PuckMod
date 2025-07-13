@@ -1404,7 +1404,7 @@ namespace oomtm450PuckMod_Ruleset {
             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
             _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
 
-            _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
+            _periodTimeRemaining = GameManager.Instance.GameState.Value.Time + 1;
             GameManager.Instance.Server_Pause();
 
             _ = Task.Run(() => {
