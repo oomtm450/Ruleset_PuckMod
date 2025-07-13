@@ -1899,14 +1899,14 @@ namespace oomtm450PuckMod_Ruleset {
                         Logging.Log($"Kicking client {clientId}.", _serverConfig);
                         //NetworkManager.Singleton.DisconnectClient(clientId,
                             //$"Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update."");
-
-                        DateTime utcNow = DateTime.UtcNow;
+                        
                         if (!_sentOutOfDateMessage.TryGetValue(clientId, out DateTime lastCheckTime)) {
                             lastCheckTime = DateTime.MinValue;
-                            _sentOutOfDateMessage.Add(clientId, utcNow);
+                            _sentOutOfDateMessage.Add(clientId, lastCheckTime);
                         }
 
-                        if (lastCheckTime + TimeSpan.FromSeconds(930) < utcNow) {
+                        DateTime utcNow = DateTime.UtcNow;
+                        if (lastCheckTime + TimeSpan.FromSeconds(900) < utcNow) {
                             if (string.IsNullOrEmpty(PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value.ToString()))
                                 break;
                             UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
