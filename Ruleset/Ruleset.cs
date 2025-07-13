@@ -590,23 +590,19 @@ namespace oomtm450PuckMod_Ruleset {
                     _paused = false;
                     _doFaceoff = false;
 
-                    if (phase == GamePhase.BlueScore)
-                    {
+                    if (phase == GamePhase.BlueScore) {
                         _currentMusicPlaying = Sounds.BLUE_GOAL_MUSIC;
                         NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
                     }
-                    else if (phase == GamePhase.RedScore)
-                    {
+                    else if (phase == GamePhase.RedScore) {
                         _currentMusicPlaying = Sounds.RED_GOAL_MUSIC;
                         NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
                     }
-                    else if (phase == GamePhase.PeriodOver)
-                    {
+                    else if (phase == GamePhase.PeriodOver) {
                         _currentMusicPlaying = Sounds.BETWEEN_PERIODS_MUSIC;
                         NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
                     }
-                    else if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver || phase == GamePhase.PeriodOver)
-                    {
+                    else if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) {
                         // Reset players zone.
                         _playersZone.Clear();
 
@@ -655,31 +651,41 @@ namespace oomtm450PuckMod_Ruleset {
                         time += 1;
 
                     if (!_changedPhase) {
-                        if (phase == GamePhase.FaceOff && string.IsNullOrEmpty(_currentMusicPlaying)) {
-                            if (!_hasPlayedLastMinuteMusic && GameManager.Instance.GameState.Value.Time <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
-                                _hasPlayedLastMinuteMusic = true;
-                                _currentMusicPlaying = Sounds.LAST_MINUTE_MUSIC;
-                            }
-                            else if (!_hasPlayedFirstFaceoffMusic) {
-                                _hasPlayedFirstFaceoffMusic = true;
-                                _currentMusicPlaying = Sounds.FIRST_FACEOFF_MUSIC;
-                            }
-                            else if (!_hasPlayedSecondFaceoffMusic) {
-                                _hasPlayedSecondFaceoffMusic = true;
-                                _currentMusicPlaying = Sounds.SECOND_FACEOFF_MUSIC;
-                            }
-                            else
-                                _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
+                        if (string.IsNullOrEmpty(_currentMusicPlaying)) {
+                            NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.ALL, Constants.FROM_SERVER, _serverConfig);
 
-                            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
-                            _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
-                            return true;
+                            if (phase == GamePhase.FaceOff) {
+                                if (!_hasPlayedLastMinuteMusic && GameManager.Instance.GameState.Value.Time <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
+                                    _hasPlayedLastMinuteMusic = true;
+                                    _currentMusicPlaying = Sounds.LAST_MINUTE_MUSIC;
+                                }
+                                else if (!_hasPlayedFirstFaceoffMusic) {
+                                    _hasPlayedFirstFaceoffMusic = true;
+                                    _currentMusicPlaying = Sounds.FIRST_FACEOFF_MUSIC;
+                                }
+                                else if (!_hasPlayedSecondFaceoffMusic) {
+                                    _hasPlayedSecondFaceoffMusic = true;
+                                    _currentMusicPlaying = Sounds.SECOND_FACEOFF_MUSIC;
+                                }
+                                else
+                                    _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
+
+                                NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
+                                _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
+                                return true;
+                            }
                         }
 
-                        if (phase == GamePhase.GameOver)
+                        if (phase == GamePhase.GameOver) {
+                            NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.ALL, Constants.FROM_SERVER, _serverConfig);
+                            _currentMusicPlaying = "";
                             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.GAMEOVER_MUSIC, Constants.FROM_SERVER, _serverConfig);
-                        else if (phase == GamePhase.Warmup)
+                        }
+                        else if (phase == GamePhase.Warmup) {
+                            NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.ALL, Constants.FROM_SERVER, _serverConfig);
+                            _currentMusicPlaying = "";
                             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WARMUP_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                        }
 
                         return true;
                     }
@@ -1831,8 +1837,12 @@ namespace oomtm450PuckMod_Ruleset {
                                 Logging.LogError(error);
                         }
                         else {
-                            if (dataStr == Sounds.MUSIC && !string.IsNullOrEmpty(_currentMusicPlaying))
-                                _sounds.Stop(_currentMusicPlaying);
+                            if (dataStr == Sounds.MUSIC) {
+                                if (!string.IsNullOrEmpty(_currentMusicPlaying))
+                                    _sounds.Stop(_currentMusicPlaying);
+                            }
+                            else if (dataStr == Sounds.ALL)
+                                _sounds.StopAll();
 
                             _currentMusicPlaying = "";
                         }

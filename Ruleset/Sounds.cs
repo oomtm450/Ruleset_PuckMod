@@ -17,6 +17,7 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string PLAY_SOUND = "playsound";
         internal const string STOP_SOUND = "stopsound";
 
+        internal const string ALL = "all";
         internal const string MUSIC = "music";
         internal const string WHISTLE = "whistle";
         internal const string BLUEGOALHORN = "bluegoalhorn";
@@ -42,7 +43,7 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Fields
-        private readonly Dictionary<string, GameObject> _soundObjects = new Dictionary<string, GameObject>();
+        private readonly LockDictionary<string, GameObject> _soundObjects = new LockDictionary<string, GameObject>();
         private readonly List<AudioClip> _audioClips = new List<AudioClip>();
         #endregion
 
@@ -173,6 +174,14 @@ namespace oomtm450PuckMod_Ruleset {
             if (string.IsNullOrEmpty(name) || !_soundObjects.TryGetValue(name, out GameObject soundObject))
                 return;
             soundObject.GetComponent<AudioSource>().Stop();
+        }
+
+        /// <summary>
+        /// Method that stops all sound and music.
+        /// </summary>
+        internal void StopAll() {
+            foreach (GameObject soundObject in _soundObjects.Values)
+                soundObject.GetComponent<AudioSource>().Stop();
         }
 
         internal static string GetRandomSound(List<string> musicList) {
