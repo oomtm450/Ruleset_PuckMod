@@ -22,7 +22,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.15.0DEV";
+        private static readonly string MOD_VERSION = "V0.15.0DEV2";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -647,8 +647,10 @@ namespace oomtm450PuckMod_Ruleset {
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_BLUE, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_RED, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
                     }
-                    else if (phase == GamePhase.Playing)
-                        time += 1;
+                    else if (phase == GamePhase.Playing) {
+                        if (time == -1)
+                            time = GetPrivateField<int>(typeof(GameManager), GameManager.Instance, "remainingPlayTime") + 1;
+                    }
 
                     if (!_changedPhase) {
                         if (string.IsNullOrEmpty(_currentMusicPlaying)) {
@@ -692,7 +694,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (phase == GamePhase.Playing) {
                         _changedPhase = false;
-                        time = _periodTimeRemaining;
+                        time = _periodTimeRemaining + 1;
                     }
                 }
                 catch (Exception ex) {
