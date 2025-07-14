@@ -195,32 +195,37 @@ namespace oomtm450PuckMod_Ruleset {
         /// Method that sets the custom goal horns.
         /// </summary>
         private void SetGoalHorns() {
-            GameObject levelGameObj = GameObject.Find("Level");
-            if (!levelGameObj)
-                return;
+            try {
+                GameObject levelGameObj = GameObject.Find("Level");
+                if (!levelGameObj)
+                    return;
 
-            GameObject soundsGameObj = levelGameObj.transform.Find("Sounds").gameObject;
+                GameObject soundsGameObj = levelGameObj.transform.Find("Sounds").gameObject;
 
-            if (!soundsGameObj)
-                return;
+                if (!soundsGameObj)
+                    return;
 
-            GameObject blueGoalObj = soundsGameObj.transform.Find("Blue Goal").gameObject;
+                GameObject blueGoalObj = soundsGameObj.transform.Find("Blue Goal").gameObject;
 
-            if (!blueGoalObj)
-                return;
+                if (!blueGoalObj)
+                    return;
 
-            AudioSource blueGoalAudioSource = blueGoalObj.GetComponent<AudioSource>();
-            blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == REDGOALHORN);
-            blueGoalAudioSource.maxDistance = 400f;
+                AudioSource blueGoalAudioSource = blueGoalObj.GetComponent<AudioSource>();
+                blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == REDGOALHORN);
+                blueGoalAudioSource.maxDistance = 400f;
 
-            GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
+                GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
 
-            if (!redGoalObj)
-                return;
+                if (!redGoalObj)
+                    return;
 
-            AudioSource redGoalAudioSource = redGoalObj.GetComponent<AudioSource>();
-            redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == BLUEGOALHORN);
-            redGoalAudioSource.maxDistance = 400f;
+                AudioSource redGoalAudioSource = redGoalObj.GetComponent<AudioSource>();
+                redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == BLUEGOALHORN);
+                redGoalAudioSource.maxDistance = 400f;
+            }
+            catch (Exception ex) {
+                Errors.Add(ex.ToString());
+            }
         }
         #endregion
     }
