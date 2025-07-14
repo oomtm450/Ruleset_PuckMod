@@ -10,7 +10,7 @@ namespace oomtm450PuckMod_Ruleset {
     internal static class ZoneFunc {
         #region Constants
         /// <summary>
-        /// Const Zone, default zone to use for initializing variables.
+        /// Const Zone, default zone for initializing variables.
         /// </summary>
         internal const Zone DEFAULT_ZONE = Zone.BlueTeam_Center;
 

@@ -151,9 +151,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static int _periodTimeRemaining = 0;
 
-        private static PlayerTeam _lastPlayerOnPuckTeam = PlayerTeam.Blue;
+        private static PlayerTeam _lastPlayerOnPuckTeam = TeamFunc.DEFAULT_TEAM;
 
-        private static PlayerTeam _lastPlayerOnPuckTeamTipIncluded = PlayerTeam.Blue;
+        private static PlayerTeam _lastPlayerOnPuckTeamTipIncluded = TeamFunc.DEFAULT_TEAM;
 
         private static readonly LockDictionary<PlayerTeam, string> _lastPlayerOnPuckSteamId = new LockDictionary<PlayerTeam, string> {
             { PlayerTeam.Blue, "" },
@@ -669,8 +669,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                         _puckZone = ZoneFunc.GetZone(_nextFaceoffSpot);
 
-                        _lastPlayerOnPuckTeam = PlayerTeam.Blue;
-                        _lastPlayerOnPuckTeamTipIncluded = PlayerTeam.Blue;
+                        _lastPlayerOnPuckTeam = TeamFunc.DEFAULT_TEAM;
+                        _lastPlayerOnPuckTeamTipIncluded = TeamFunc.DEFAULT_TEAM;
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckSteamId.Keys))
                             _lastPlayerOnPuckSteamId[key] = "";
 
