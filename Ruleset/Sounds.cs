@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -196,6 +197,9 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private void SetGoalHorns() {
             try {
+                if (GameObject.Find("Changing Room"))
+                    return;
+
                 GameObject levelGameObj = GameObject.Find("Level");
                 if (!levelGameObj) {
                     Errors.Add("Cant't find GameObject \"Level\" !");

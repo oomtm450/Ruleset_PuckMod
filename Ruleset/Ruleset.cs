@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 namespace oomtm450PuckMod_Ruleset {
@@ -22,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.15.0DEV7";
+        private static readonly string MOD_VERSION = "V0.15.0DEV11";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1629,8 +1630,30 @@ namespace oomtm450PuckMod_Ruleset {
 
         #region Events
         /// <summary>
+        /// Method called when a scene has being loaded by Unity.
+        /// Used to load assets.
+        /// </summary>
+        /// <param name="message">Dictionary of string and object, content of the event.</param>
+        public static void Event_OnSceneLoaded(Dictionary<string, object> message) {
+            try {
+                // If this is the server, do not use the patch.
+                if (ServerFunc.IsDedicatedServer())
+                    return;
+
+                Scene scene = (Scene)message["scene"];
+                if (scene == null || scene.buildIndex != 2)
+                    return;
+
+                LoadAssets();
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in Event_OnSceneLoaded.\n{ex}");
+            }
+        }
+
+        /*/// <summary>
         /// Method called when the client has started on the client-side.
-        /// Used to register to the server messaging (config sync and version check).
+        /// Used to register to load assets.
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
         public static void Event_Client_OnClientStarted(Dictionary<string, object> message) {
@@ -1645,7 +1668,7 @@ namespace oomtm450PuckMod_Ruleset {
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_Client_OnClientStarted.\n{ex}");
             }
-        }
+        }*/
 
         /// <summary>
         /// Method called when the client has stopped on the client-side.
@@ -2090,7 +2113,8 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.Instance.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                 }
                 else {
-                    EventManager.Instance.AddEventListener("Event_Client_OnClientStarted", Event_Client_OnClientStarted);
+                    //EventManager.Instance.AddEventListener("Event_Client_OnClientStarted", Event_Client_OnClientStarted);
+                    EventManager.Instance.AddEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
                     EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                 }
 
@@ -2117,7 +2141,8 @@ namespace oomtm450PuckMod_Ruleset {
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT);
                 }
                 else {
-                    EventManager.Instance.RemoveEventListener("Event_Client_OnClientStarted", Event_Client_OnClientStarted);
+                    //EventManager.Instance.RemoveEventListener("Event_Client_OnClientStarted", Event_Client_OnClientStarted);
+                    EventManager.Instance.RemoveEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
                     EventManager.Instance.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                     Event_Client_OnClientStopped(new Dictionary<string, object>());
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER);
