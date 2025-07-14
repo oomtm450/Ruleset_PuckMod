@@ -196,28 +196,15 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private void SetGoalHorns() {
             try {
-                GameObject levelGameObj = GameObject.Find("Level");
-                if (!levelGameObj)
-                    return;
-
-                GameObject soundsGameObj = levelGameObj.transform.Find("Sounds").gameObject;
-
-                if (!soundsGameObj)
-                    return;
+                GameObject soundsGameObj = GameObject.Find("Level").transform.Find("Sounds").gameObject;
 
                 GameObject blueGoalObj = soundsGameObj.transform.Find("Blue Goal").gameObject;
-
-                if (!blueGoalObj)
-                    return;
 
                 AudioSource blueGoalAudioSource = blueGoalObj.GetComponent<AudioSource>();
                 blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == REDGOALHORN);
                 blueGoalAudioSource.maxDistance = 400f;
 
                 GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
-
-                if (!redGoalObj)
-                    return;
 
                 AudioSource redGoalAudioSource = redGoalObj.GetComponent<AudioSource>();
                 redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == BLUEGOALHORN);
