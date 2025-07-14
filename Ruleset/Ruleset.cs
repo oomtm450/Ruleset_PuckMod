@@ -22,7 +22,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.15.0DEV2";
+        private static readonly string MOD_VERSION = "V0.15.0DEV3";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1133,49 +1133,22 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
-                    bool saveWasCounted = false;
                     if (goalPlayer != null) {
-                        saveWasCounted = SendSOGDuringGoal(goalPlayer);
-
-                        // Get other team goalie.
-                        Player _goalie = PlayerFunc.GetOtherTeamGoalie(team);
-                        if (_goalie == null)
-                            return true;
-
-                        string _goaliePlayerSteamId = _goalie.SteamId.Value.ToString();
-                        if (!_savePerc.TryGetValue(_goaliePlayerSteamId, out var _savePercValue)) {
-                            _savePerc.Add(_goaliePlayerSteamId, (0, 0));
-                            _savePercValue = (0, 0);
-                        }
-
-                        _savePerc[_goaliePlayerSteamId] = saveWasCounted ? (--_savePercValue.Saves, _savePercValue.Shots) : (_savePercValue.Saves, ++_savePercValue.Shots);
-
-                        NetworkCommunication.SendDataToAll(SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+                        SendSavePercDuringGoal(team, SendSOGDuringGoal(goalPlayer));
                         return true;
                     }
 
                     // If own goal, add goal attribution to last player on puck on the other team.
-                    UIChat.Instance.Server_SendSystemChatMessage($"OWN GOAL");
+                    UIChat.Instance.Server_SendSystemChatMessage($"OWN GOAL BY {PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(team)]).Username.Value}");
                     goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
+
+                    bool saveWasCounted = false;
                     if (goalPlayer != null) {
                         lastPlayer = goalPlayer;
                         saveWasCounted = SendSOGDuringGoal(goalPlayer);
                     }
 
-                    // Get other team goalie.
-                    Player goalie = PlayerFunc.GetOtherTeamGoalie(team);
-                    if (goalie == null)
-                        return true;
-
-                    string goaliePlayerSteamId = goalie.SteamId.Value.ToString();
-                    if (!_savePerc.TryGetValue(goaliePlayerSteamId, out var savePercValue)) {
-                        _savePerc.Add(goaliePlayerSteamId, (0, 0));
-                        savePercValue = (0, 0);
-                    }
-
-                    _savePerc[goaliePlayerSteamId] = saveWasCounted ? (--savePercValue.Saves, savePercValue.Shots) : (savePercValue.Saves, ++savePercValue.Shots);
-
-                    NetworkCommunication.SendDataToAll(SAVEPERC + goaliePlayerSteamId, _savePerc[goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+                    SendSavePercDuringGoal(team, saveWasCounted);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManager_Server_GoalScored_Patch Prefix().\n{ex}");
@@ -2286,6 +2259,11 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        /// <summary>
+        /// Function that sends and sets the SOG for a player when a goal is scored.
+        /// </summary>
+        /// <param name="player">Player, player that scored.</param>
+        /// <returns>Bool, true if it was already sent and set.</returns>
         private static bool SendSOGDuringGoal(Player player) {
             if (!_lastShotWasCounted[player.Team.Value]) {
                 string playerSteamId = player.SteamId.Value.ToString();
@@ -2305,6 +2283,28 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Function that sends and sets the s% for a goalie when a goal is scored.
+        /// </summary>
+        /// <param name="team">PlayerTeam, team that scored the goal.</param>
+        /// <param name="saveWasCounted">Bool, true if a save was already counted for that shot.</param>
+        private static void SendSavePercDuringGoal(PlayerTeam team, bool saveWasCounted) {
+            // Get other team goalie.
+            Player goalie = PlayerFunc.GetOtherTeamGoalie(team);
+            if (goalie == null)
+                return;
+
+            string _goaliePlayerSteamId = goalie.SteamId.Value.ToString();
+            if (!_savePerc.TryGetValue(_goaliePlayerSteamId, out var _savePercValue)) {
+                _savePerc.Add(_goaliePlayerSteamId, (0, 0));
+                _savePercValue = (0, 0);
+            }
+
+            _savePerc[_goaliePlayerSteamId] = saveWasCounted ? (--_savePercValue.Saves, _savePercValue.Shots) : (_savePercValue.Saves, ++_savePercValue.Shots);
+
+            NetworkCommunication.SendDataToAll(SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
         }
 
         public static string RemoveWhitespace(string input) {
