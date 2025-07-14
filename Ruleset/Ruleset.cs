@@ -22,7 +22,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.15.0DEV3";
+        private static readonly string MOD_VERSION = "V0.15.0DEV4";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1869,8 +1869,12 @@ namespace oomtm450PuckMod_Ruleset {
                             foreach (string error in _refSignalsBlueTeam.Errors)
                                 Logging.LogError(error);
                         }
-                        else
-                            _refSignalsBlueTeam.ShowSignal(dataStr);
+                        else {
+                            if (_clientConfig.TeamColor2DRefs)
+                                _refSignalsBlueTeam.ShowSignal(dataStr + "_" + RefSignals.BLUE);
+                            else
+                                _refSignalsBlueTeam.ShowSignal(dataStr);
+                        }
                         break;
 
                     case RefSignals.STOP_SIGNAL_BLUE: // CLIENT-SIDE : Hide blue team ref signal in the UI.
@@ -1885,6 +1889,8 @@ namespace oomtm450PuckMod_Ruleset {
                         else {
                             if (dataStr == RefSignals.ALL)
                                 _refSignalsBlueTeam.StopAllSignals();
+                            else if (_clientConfig.TeamColor2DRefs)
+                                _refSignalsBlueTeam.StopSignal(dataStr + "_" + RefSignals.BLUE);
                             else
                                 _refSignalsBlueTeam.StopSignal(dataStr);
                         }
@@ -1899,8 +1905,12 @@ namespace oomtm450PuckMod_Ruleset {
                             foreach (string error in _refSignalsRedTeam.Errors)
                                 Logging.LogError(error);
                         }
-                        else
-                            _refSignalsRedTeam.ShowSignal(dataStr);
+                        else {
+                            if (_clientConfig.TeamColor2DRefs)
+                                _refSignalsRedTeam.ShowSignal(dataStr + "_" + RefSignals.RED);
+                            else
+                                _refSignalsRedTeam.ShowSignal(dataStr);
+                        }
                         break;
 
                     case RefSignals.STOP_SIGNAL_RED: // CLIENT-SIDE : Hide red team ref signal in the UI.
@@ -1915,6 +1925,8 @@ namespace oomtm450PuckMod_Ruleset {
                         else {
                             if (dataStr == RefSignals.ALL)
                                 _refSignalsRedTeam.StopAllSignals();
+                            else if (_clientConfig.TeamColor2DRefs)
+                                _refSignalsRedTeam.StopSignal(dataStr + "_" + RefSignals.RED);
                             else
                                 _refSignalsRedTeam.StopSignal(dataStr);
                         }

@@ -20,8 +20,8 @@ namespace oomtm450PuckMod_Ruleset {
         private const string REF_SIGNAL = "refsignal";
         private const string SHOW_SIGNAL = "show" + REF_SIGNAL;
         private const string STOP_SIGNAL = "stop" + REF_SIGNAL;
-        private const string RED = "r";
-        private const string BLUE = "b";
+        internal const string RED = "r";
+        internal const string BLUE = "b";
         internal const string SHOW_SIGNAL_BLUE = SHOW_SIGNAL + BLUE;
         internal const string STOP_SIGNAL_BLUE = STOP_SIGNAL + BLUE;
         internal const string SHOW_SIGNAL_RED = SHOW_SIGNAL + RED;
@@ -30,6 +30,7 @@ namespace oomtm450PuckMod_Ruleset {
         private const string LINESMAN = "linesman";
         private const string REF = "ref";
         internal const string ALL = "all";
+
         internal const string OFFSIDE_LINESMAN = "offside_" + LINESMAN;
         internal const string ICING_LINESMAN = "icing_" + LINESMAN;
         internal const string HIGHSTICK_LINESMAN = "highstick_" + LINESMAN;

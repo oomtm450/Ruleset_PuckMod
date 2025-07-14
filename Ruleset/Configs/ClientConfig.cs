@@ -23,6 +23,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool CustomGoalHorns { get; set; } = true;
 
         /// <summary>
+        /// Bool, true if the refs has to be team color coded.
+        /// </summary>
+        public bool TeamColor2DRefs { get; set; } = true;
+
+        /// <summary>
         /// Function that serialize the ClientConfig object.
         /// </summary>
         /// <returns>String, serialized ClientConfig.</returns>
