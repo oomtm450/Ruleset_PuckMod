@@ -251,8 +251,8 @@ namespace oomtm450PuckMod_Ruleset {
                         PlayerTeam playerOtherTeam = TeamFunc.GetOtherTeam(playerBody.Player.Team.Value);
                         if (IsIcingPossible(playerOtherTeam)) {
                             if (!PlayerFunc.IsGoalie(playerBody.Player)) {
-                                if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var result)) {
-                                    if (result.Zone != ZoneFunc.GetTeamZones(playerBody.Player.Team.Value)[1]) {
+                                if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var playerZone)) {
+                                    if (playerZone.Zone != ZoneFunc.GetTeamZones(playerBody.Player.Team.Value)[1]) {
                                         if (IsIcing(playerOtherTeam)) {
                                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerOtherTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                                             UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
@@ -269,8 +269,8 @@ namespace oomtm450PuckMod_Ruleset {
                             ResetIcings();
                         }
                         else if (IsIcingPossible(playerBody.Player.Team.Value)) {
-                            if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var result)) {
-                                if (ZoneFunc.GetTeamZones(playerOtherTeam, true).Any(x => x == result.Zone)) {
+                            if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var playerZone)) {
+                                if (ZoneFunc.GetTeamZones(playerOtherTeam, true).Any(x => x == playerZone.Zone)) {
                                     if (IsIcing(playerBody.Player.Team.Value)) {
                                         NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerBody.Player.Team.Value), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                                         UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerBody.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
@@ -280,10 +280,17 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                         }
 
-                        if (_puckRaycast.PuckIsGoingToNet[playerBody.Player.Team.Value] && PlayerFunc.IsGoalie(playerBody.Player)) {
-                            string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(playerBody.Player.Team.Value)];
-                            if (!string.IsNullOrEmpty(shooterSteamId))
-                                _checkIfPuckWasSaved[playerBody.Player.Team.Value] = new SaveCheck { HasToCheck = true, ShooterSteamId = shooterSteamId };
+                        if (_puckRaycast.PuckIsGoingToNet[playerBody.Player.Team.Value]) {
+                            if (PlayerFunc.IsGoalie(playerBody.Player)) {
+                                string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(playerBody.Player.Team.Value)];
+                                if (!string.IsNullOrEmpty(shooterSteamId)) {
+                                    _checkIfPuckWasSaved[playerBody.Player.Team.Value] = new SaveCheck {
+                                        HasToCheck = true,
+                                        ShooterSteamId = shooterSteamId,
+                                    };
+                                }
+                            }
+                            // Use else condition here to add a shot blocked stat.
                         }
                         return;
                     }
@@ -358,10 +365,17 @@ namespace oomtm450PuckMod_Ruleset {
                         UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                     }
 
-                    if (_puckRaycast.PuckIsGoingToNet[stick.Player.Team.Value] && PlayerFunc.IsGoalie(stick.Player)) {
-                        string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[otherTeam];
-                        if (!string.IsNullOrEmpty(shooterSteamId))
-                            _checkIfPuckWasSaved[stick.Player.Team.Value] = new SaveCheck { HasToCheck = true, ShooterSteamId = shooterSteamId };
+                    if (_puckRaycast.PuckIsGoingToNet[stick.Player.Team.Value]) {
+                        if (PlayerFunc.IsGoalie(stick.Player)) {
+                            string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[otherTeam];
+                            if (!string.IsNullOrEmpty(shooterSteamId)) {
+                                _checkIfPuckWasSaved[stick.Player.Team.Value] = new SaveCheck {
+                                    HasToCheck = true,
+                                    ShooterSteamId = shooterSteamId,
+                                };
+                            }
+                        }
+                        // Use else condition here to add a shot blocked stat.
                     }
                 }
                 catch (Exception ex) {
@@ -869,6 +883,7 @@ namespace oomtm450PuckMod_Ruleset {
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 1.\n{ex}");
                 }
+
                 try {
                     oldZone = _puckZone;
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PUCK_RADIUS);
@@ -880,6 +895,7 @@ namespace oomtm450PuckMod_Ruleset {
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}");
                 }
+
                 try {
                     string playerWithPossessionSteamId = GetPlayerSteamIdInPossession();
                     Dictionary<PlayerTeam, bool> isTeamOffside = new Dictionary<PlayerTeam, bool> {
@@ -923,7 +939,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         // Is not offside.
-                        if (playerZone != otherTeamZones[0] && playerZone != otherTeamZones[1] && _isOffside[playerSteamId].IsOffside)
+                        if (playerZone != otherTeamZones[0] && playerZone != otherTeamZones[1])
                             _isOffside[playerSteamId] = (player.Team.Value, false);
 
                         // Deferred icing logic.
@@ -942,7 +958,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
                         PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeamTipIncluded);
                         foreach (string key in new List<string>(_isOffside.Keys)) {
-                            if (_isOffside[key].IsOffside && _isOffside[key].Team == lastPlayerOnPuckOtherTeam)
+                            if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam)
                                 _isOffside[key] = (lastPlayerOnPuckOtherTeam, false);
                         }
                     }
@@ -967,6 +983,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
 
+                    // Warn icings.
                     foreach (var kvp in icingHasToBeWarned) {
                         if (kvp.Value != null && (bool)kvp.Value) {
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, kvp.Key), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show icing signal for client-side UI.
@@ -974,6 +991,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
 
+                    // Warn or call off offsides.
                     foreach (var kvp in isTeamOffside) {
                         if (!kvp.Value && IsOffside(kvp.Key))
                             WarnOffside(true, kvp.Key);
