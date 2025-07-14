@@ -70,18 +70,31 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         internal static ClientConfig _clientConfig = new ClientConfig();
 
+        /// <summary>
+        /// LockDictionary of string and (PlayerTeam and bool), dictionary of offside status of each player with steam Id as a key.
+        /// </summary>
         private static readonly LockDictionary<string, (PlayerTeam Team, bool IsOffside)> _isOffside = new LockDictionary<string, (PlayerTeam, bool)>();
 
-        private static readonly LockDictionary<PlayerTeam, bool> _callOffHighStick = new LockDictionary<PlayerTeam, bool> {
+        /// <summary>
+        /// LockDictionary of PlayerTeam and bool, dictionary for teams if high stick has to be called off next frame.
+        /// </summary>
+        private static readonly LockDictionary<PlayerTeam, bool> _callOffHighStickNextFrame = new LockDictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, false },
             { PlayerTeam.Red, false },
         };
 
+        /// <summary>
+        /// LockDictionary of PlayerTeam and Stopwatch, dictionary for teams if icing is possible if it reaches the end of the ice.
+        /// Stopwatch is null if it is not possible.
+        /// </summary>
         private static readonly LockDictionary<PlayerTeam, Stopwatch> _isIcingPossible = new LockDictionary<PlayerTeam, Stopwatch> {
             { PlayerTeam.Blue, null },
             { PlayerTeam.Red, null },
         };
 
+        /// <summary>
+        /// LockDictionary of PlayerTeam and bool, dictionary for teams if icing is active.
+        /// </summary>
         private static readonly LockDictionary<PlayerTeam, bool> _isIcingActive = new LockDictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, false },
             { PlayerTeam.Red, false },
@@ -108,14 +121,20 @@ namespace oomtm450PuckMod_Ruleset {
         };
 
         private static readonly LockDictionary<Rule, (Vector3 Position, Zone Zone)> _puckLastStateBeforeCall = new LockDictionary<Rule, (Vector3, Zone)> {
-            { Rule.Offside, (Vector3.zero, Zone.BlueTeam_Center) },
-            { Rule.Icing, (Vector3.zero, Zone.BlueTeam_Center) },
-            { Rule.HighStick, (Vector3.zero, Zone.BlueTeam_Center) },
-            { Rule.GoalieInt, (Vector3.zero, Zone.BlueTeam_Center) },
+            { Rule.Offside, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
+            { Rule.Icing, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
+            { Rule.HighStick, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
+            { Rule.GoalieInt, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
         };
 
-        private static Zone _puckZone = Zone.BlueTeam_Center;
+        /// <summary>
+        /// Zone, current zone of the puck.
+        /// </summary>
+        private static Zone _puckZone = ZoneFunc.DEFAULT_ZONE;
 
+        /// <summary>
+        /// LockDictionary of string and (PlayerTeam and Zone), dictionary of all the players' zone by steam Id.
+        /// </summary>
         private static readonly LockDictionary<string, (PlayerTeam Team, Zone Zone)> _playersZone = new LockDictionary<string, (PlayerTeam, Zone)>();
 
         private static readonly LockDictionary<string, Stopwatch> _playersCurrentPuckTouch = new LockDictionary<string, Stopwatch>();
@@ -623,7 +642,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         // Reset puck rule states.
                         foreach (Rule key in new List<Rule>(_puckLastStateBeforeCall.Keys))
-                            _puckLastStateBeforeCall[key] = (Vector3.zero, Zone.BlueTeam_Center);
+                            _puckLastStateBeforeCall[key] = (Vector3.zero, ZoneFunc.DEFAULT_ZONE);
 
                         ResetOffsides();
                         ResetHighSticks();
@@ -817,28 +836,28 @@ namespace oomtm450PuckMod_Ruleset {
 
                 Puck puck = null;
                 List<Player> players = null;
-                Zone oldZone = Zone.BlueTeam_Center;
+                Zone oldZone = ZoneFunc.DEFAULT_ZONE;
                 Dictionary<PlayerTeam, bool?> icingHasToBeWarned = new Dictionary<PlayerTeam, bool?> {
                     {PlayerTeam.Blue, null},
                     {PlayerTeam.Red, null},
                 };
 
                 try {
-                    foreach (PlayerTeam callOffHighStickTeam in new List<PlayerTeam>(_callOffHighStick.Keys)) {
-                        if (_callOffHighStick[callOffHighStickTeam]) {
-                            _callOffHighStick[callOffHighStickTeam] = false;
+                    // Check if high stick has been cancelled by an event that cannot call it off by itself.
+                    foreach (PlayerTeam callOffHighStickTeam in new List<PlayerTeam>(_callOffHighStickNextFrame.Keys)) {
+                        if (_callOffHighStickNextFrame[callOffHighStickTeam]) {
+                            _callOffHighStickNextFrame[callOffHighStickTeam] = false;
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, callOffHighStickTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
                             UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {callOffHighStickTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
                         }
                     }
 
-                    if (_paused) {
-                        if (_doFaceoff)
-                            PostDoFaceoff();
-                        else
-                            return true;
-                    }
-                    else if (_doFaceoff)
+                    // If game was paused by the mod, don't do anything if faceoff hasn't being set yet.
+                    if (_paused && !_doFaceoff)
+                        return true;
+
+                    // Unpause game and set faceoff.
+                    if (_doFaceoff)
                         PostDoFaceoff();
 
                     players = PlayerManager.Instance.GetPlayers();
@@ -1368,7 +1387,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             _isHighStickActive[team] = false;
             _isHighStickActiveTimers[team].Change(Timeout.Infinite, Timeout.Infinite);
-            _callOffHighStick[team] = true;
+            _callOffHighStickNextFrame[team] = true;
         }
 
         private static void ResetGoalieInt() {
@@ -1393,8 +1412,8 @@ namespace oomtm450PuckMod_Ruleset {
             foreach (PlayerTeam key in new List<PlayerTeam>(_isHighStickActive.Keys))
                 _isHighStickActive[key] = false;
 
-            foreach (PlayerTeam key in new List<PlayerTeam>(_callOffHighStick.Keys))
-                _callOffHighStick[key] = false;
+            foreach (PlayerTeam key in new List<PlayerTeam>(_callOffHighStickNextFrame.Keys))
+                _callOffHighStickNextFrame[key] = false;
         }
 
         private static void DoFaceoff(int millisecondsPauseMin = 3500, int millisecondsPauseMax = 5000) {

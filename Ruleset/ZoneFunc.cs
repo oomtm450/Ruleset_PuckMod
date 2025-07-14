@@ -10,6 +10,11 @@ namespace oomtm450PuckMod_Ruleset {
     internal static class ZoneFunc {
         #region Constants
         /// <summary>
+        /// Const Zone, default zone to use for initializing variables.
+        /// </summary>
+        internal const Zone DEFAULT_ZONE = Zone.BlueTeam_Center;
+
+        /// <summary>
         /// ReadOnlyDictionary of IceElement and (double Start, double End), dictionary containing all the start and end Z positions of all the lines on the ice for the zones.
         /// </summary>
         internal static ReadOnlyDictionary<IceElement, (double Start, double End)> ICE_Z_POSITIONS { get; } = new ReadOnlyDictionary<IceElement, (double, double)>(
@@ -188,7 +193,7 @@ namespace oomtm450PuckMod_Ruleset {
                     return Zone.RedTeam_Center;
 
                 default:
-                    return Zone.BlueTeam_Center;
+                    return DEFAULT_ZONE;
             }
         }
 
