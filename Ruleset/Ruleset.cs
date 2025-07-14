@@ -22,7 +22,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.15.0DEV4";
+        private static readonly string MOD_VERSION = "V0.15.0DEV5";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -332,10 +332,10 @@ namespace oomtm450PuckMod_Ruleset {
                     // High stick logic.
                     Puck puck = PuckManager.Instance.GetPuck();
                     if (puck) {
-                        if (!PlayerFunc.IsGoalie(stick.Player) && puck.Rigidbody.transform.position.y > _serverConfig.HighStickHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
+                        if (!PlayerFunc.IsGoalie(stick.Player) && puck.Rigidbody.transform.position.y > _serverConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
                             _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
 
-                            highStickTimer.Change(_serverConfig.HighStickMaxMilliseconds, Timeout.Infinite);
+                            highStickTimer.Change(_serverConfig.HighStick.MaxMilliseconds, Timeout.Infinite);
                             if (!IsHighStick(stick.Player.Team.Value)) {
                                 _isHighStickActive[stick.Player.Team.Value] = true;
                                 _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
@@ -571,10 +571,10 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     bool goalieIsInHisCrease = true;
-                    if (goalie.PlayerBody.Rigidbody.transform.position.x - _serverConfig.GoalieRadius < startX ||
-                        goalie.PlayerBody.Rigidbody.transform.position.x + _serverConfig.GoalieRadius > endX ||
-                        goalie.PlayerBody.Rigidbody.transform.position.z - _serverConfig.GoalieRadius < startZ ||
-                        goalie.PlayerBody.Rigidbody.transform.position.z + _serverConfig.GoalieRadius > endZ)
+                    if (goalie.PlayerBody.Rigidbody.transform.position.x - _serverConfig.GInt.GoalieRadius < startX ||
+                        goalie.PlayerBody.Rigidbody.transform.position.x + _serverConfig.GInt.GoalieRadius > endX ||
+                        goalie.PlayerBody.Rigidbody.transform.position.z - _serverConfig.GInt.GoalieRadius < startZ ||
+                        goalie.PlayerBody.Rigidbody.transform.position.z + _serverConfig.GInt.GoalieRadius > endZ)
                         goalieIsInHisCrease = false;
 
                     PlayerTeam goalieOtherTeam = TeamFunc.GetOtherTeam(goalie.Team.Value);
@@ -582,7 +582,7 @@ namespace oomtm450PuckMod_Ruleset {
                     bool goalieDown = goalie.PlayerBody.IsSlipping || goalie.PlayerBody.HasSlipped;
                     _lastGoalieStateCollision[goalieOtherTeam] = goalieDown;
 
-                    if (goalieDown || (force > _serverConfig.GIntCollisionForceThreshold && goalieIsInHisCrease)) {
+                    if (goalieDown || (force > _serverConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease)) {
                         if (!_goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch))
                             return;
 
@@ -943,7 +943,7 @@ namespace oomtm450PuckMod_Ruleset {
                             _isOffside[playerSteamId] = (player.Team.Value, false);
 
                         // Deferred icing logic.
-                        if (_serverConfig.DeferredIcing && !PlayerFunc.IsGoalie(player)) {
+                        if (_serverConfig.Icing.Deferred && !PlayerFunc.IsGoalie(player)) {
                             if (IsIcing(player.Team.Value) && ZoneFunc.IsBehindHashmarks(otherTeam, player.PlayerBody.transform.position, PLAYER_RADIUS))
                                 dictPlayersZPositionsForDeferredIcing.Add(player, Math.Abs(player.PlayerBody.transform.position.z));
                             else if (IsIcing(otherTeam) && ZoneFunc.IsBehindHashmarks(player.Team.Value, player.PlayerBody.transform.position, PLAYER_RADIUS)) {
@@ -1458,9 +1458,9 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool IsOffside(PlayerTeam team) {
             bool offsidesActivated;
             if (team == PlayerTeam.Blue)
-                offsidesActivated = _serverConfig.BlueTeamOffsides;
+                offsidesActivated = _serverConfig.Offside.BlueTeam;
             else
-                offsidesActivated = _serverConfig.RedTeamOffsides;
+                offsidesActivated = _serverConfig.Offside.RedTeam;
 
             if (!offsidesActivated)
                 return false;
@@ -1471,9 +1471,9 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool IsHighStick(PlayerTeam team) {
             bool highStickActivated;
             if (team == PlayerTeam.Blue)
-                highStickActivated = _serverConfig.BlueTeamHighStick;
+                highStickActivated = _serverConfig.HighStick.BlueTeam;
             else
-                highStickActivated = _serverConfig.RedTeamHighStick;
+                highStickActivated = _serverConfig.HighStick.RedTeam;
 
             if (!highStickActivated || !_isHighStickActive[team])
                 return false;
@@ -1484,9 +1484,9 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool IsIcing(PlayerTeam team) {
             bool icingsActivated;
             if (team == PlayerTeam.Blue)
-                icingsActivated = _serverConfig.BlueTeamIcings;
+                icingsActivated = _serverConfig.Icing.BlueTeam;
             else
-                icingsActivated = _serverConfig.RedTeamIcings;
+                icingsActivated = _serverConfig.Icing.RedTeam;
 
             if (!icingsActivated)
                 return false;
@@ -1495,7 +1495,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static bool IsIcingPossible(PlayerTeam team, bool checkPossibleTime = true) {
-            if (_isIcingPossible[team] != null && (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < _serverConfig.MaxIcingPossibleTime))
+            if (_isIcingPossible[team] != null && (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < _serverConfig.Icing.MaxPossibleTime))
                 return true;
 
             return false;
@@ -1504,9 +1504,9 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool IsGoalieInt(PlayerTeam team) {
             bool goalieIntActivated;
             if (team == PlayerTeam.Blue)
-                goalieIntActivated = _serverConfig.BlueTeamGInt;
+                goalieIntActivated = _serverConfig.GInt.BlueTeam;
             else
-                goalieIntActivated = _serverConfig.RedTeamGInt;
+                goalieIntActivated = _serverConfig.GInt.RedTeam;
 
             if (!goalieIntActivated)
                 return false;
@@ -1518,9 +1518,9 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log($"Goalie is down : {_lastGoalieStateCollision[team]}.", _serverConfig);
             Logging.Log($"Goalie was last touched : {((double)watch.ElapsedMilliseconds) / 1000d} seconds ago.", _serverConfig);
             if (_lastGoalieStateCollision[team])
-                return watch.ElapsedMilliseconds < _serverConfig.GIntHitNoGoalMilliseconds;
+                return watch.ElapsedMilliseconds < _serverConfig.GInt.HitNoGoalMilliseconds;
 
-            return watch.ElapsedMilliseconds < _serverConfig.GIntPushNoGoalMilliseconds;
+            return watch.ElapsedMilliseconds < _serverConfig.GInt.PushNoGoalMilliseconds;
         }
 
         /// <summary>
@@ -2047,7 +2047,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
             else if (!_isIcingActive[team] && IsIcingPossible(team) && _puckZone == ZoneFunc.GetTeamZones(TeamFunc.GetOtherTeam(team))[1]) {
                 _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
-                _isIcingActiveTimers[team].Change(_serverConfig.MaxIcingTime, Timeout.Infinite);
+                _isIcingActiveTimers[team].Change(_serverConfig.Icing.MaxActiveTime, Timeout.Infinite);
                 icingHasToBeWarned[team] = true;
                 _isIcingActive[team] = true;
             }

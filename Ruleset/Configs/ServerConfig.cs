@@ -21,84 +21,24 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool LogInfo { get; set; } = true;
 
         /// <summary>
-        /// Bool, true if red team offsides are activated.
+        /// OffsideConfig, config related to offsides.
         /// </summary>
-        public bool RedTeamOffsides { get; set; } = true;
+        public OffsideConfig Offside { get; set; } = new OffsideConfig();
 
         /// <summary>
-        /// Bool, true if blue team offsides are activated.
+        /// IcingConfig, config related to icings.
         /// </summary>
-        public bool BlueTeamOffsides { get; set; } = true;
+        public IcingConfig Icing { get; set; } = new IcingConfig();
 
         /// <summary>
-        /// Bool, true if red team icings are activated.
+        /// HighStickConfig, config related to high sticks.
         /// </summary>
-        public bool RedTeamIcings { get; set; } = true;
+        public HighStickConfig HighStick { get; set; } = new HighStickConfig();
 
         /// <summary>
-        /// Bool, true if blue team icings are activated.
+        /// GIntConfig, config related to goalie interferences.
         /// </summary>
-        public bool BlueTeamIcings { get; set; } = true;
-
-        /// <summary>
-        /// Bool, true if deferred icing is activated. If false, icing will be called when the puck is touched.
-        /// </summary>
-        public bool DeferredIcing { get; set; } = true;
-
-        /// <summary>
-        /// Int, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing.
-        /// </summary>
-        public int MaxIcingPossibleTime { get; set; } = 7000;
-
-        /// <summary>
-        /// Int, number of milliseconds for icing to be called off if it has not being called.
-        /// </summary>
-        public int MaxIcingTime { get; set; } = 12000;
-
-        /// <summary>
-        /// Bool, true if red team high stick are activated.
-        /// </summary>
-        public bool RedTeamHighStick { get; set; } = true;
-
-        /// <summary>
-        /// Bool, true if blue team high stick are activated.
-        /// </summary>
-        public bool BlueTeamHighStick { get; set; } = true;
-
-        /// <summary>
-        /// Float, base height before hitting the puck with a stick is considered high stick.
-        /// </summary>
-        public float HighStickHeight { get; set; } = 1.78f;
-
-        /// <summary>
-        /// Bool, true if red team is able to get their goal called off because of goalie interference.
-        /// </summary>
-        public bool RedTeamGInt { get; set; } = true;
-
-        /// <summary>
-        /// Bool, true if blue team is able to get their goal called off because of goalie interference.
-        /// </summary>
-        public bool BlueTeamGInt { get; set; } = true;
-
-        /// <summary>
-        /// Int, number of milliseconds after a push on the goalie to be considered no goal.
-        /// </summary>
-        public int GIntPushNoGoalMilliseconds { get; set; } = 3500;
-
-        /// <summary>
-        /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
-        /// </summary>
-        public int GIntHitNoGoalMilliseconds { get; set; } = 9000; // TODO : Remove when penalty is added.
-
-        /// <summary>
-        /// Float, force threshold for a push on the goalie to be considered for goalie interference.
-        /// </summary>
-        public float GIntCollisionForceThreshold { get; set; } = 0.97f;
-
-        /// <summary>
-        /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
-        /// </summary>
-        public float GoalieRadius { get; set; } = 0.784f;
+        public GIntConfig GInt { get; set; } = new GIntConfig();
 
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
@@ -114,11 +54,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
         public int MaxPossessionMilliseconds { get; set; } = 500;
-
-        /// <summary>
-        /// Int, number of milliseconds after a high stick to not be considered.
-        /// </summary>
-        public int HighStickMaxMilliseconds { get; set; } = 5000;
         #endregion
 
         #region Methods/Functions
@@ -172,5 +107,110 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             return config;
         }
         #endregion
+    }
+
+    /// <summary>
+    /// Class containing the config for offsides.
+    /// </summary>
+    public class OffsideConfig {
+        /// <summary>
+        /// Bool, true if red team offsides are activated.
+        /// </summary>
+        public bool RedTeam { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if blue team offsides are activated.
+        /// </summary>
+        public bool BlueTeam { get; set; } = true;
+    }
+
+    /// <summary>
+    /// Class containing the config for icings.
+    /// </summary>
+    public class IcingConfig {
+        /// <summary>
+        /// Bool, true if red team icings are activated.
+        /// </summary>
+        public bool RedTeam { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if blue team icings are activated.
+        /// </summary>
+        public bool BlueTeam { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if deferred icing is activated. If false, icing will be called when the puck is touched.
+        /// </summary>
+        public bool Deferred { get; set; } = true;
+
+        /// <summary>
+        /// Int, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing.
+        /// </summary>
+        public int MaxPossibleTime { get; set; } = 7000;
+
+        /// <summary>
+        /// Int, number of milliseconds for icing to be called off if it has not being called.
+        /// </summary>
+        public int MaxActiveTime { get; set; } = 12000;
+    }
+
+    /// <summary>
+    /// Class containing the config for high sticks.
+    /// </summary>
+    public class HighStickConfig {
+        /// <summary>
+        /// Bool, true if red team high stick are activated.
+        /// </summary>
+        public bool RedTeam { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if blue team high stick are activated.
+        /// </summary>
+        public bool BlueTeam { get; set; } = true;
+
+        /// <summary>
+        /// Float, base height before hitting the puck with a stick is considered high stick.
+        /// </summary>
+        public float MaxHeight { get; set; } = 1.78f;
+
+        /// <summary>
+        /// Int, number of milliseconds after a high stick to not be considered.
+        /// </summary>
+        public int MaxMilliseconds { get; set; } = 5000;
+    }
+
+    /// <summary>
+    /// Class containing the config for goalie interferences.
+    /// </summary>
+    public class GIntConfig {
+        /// <summary>
+        /// Bool, true if red team is able to get their goal called off because of goalie interference.
+        /// </summary>
+        public bool RedTeam { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if blue team is able to get their goal called off because of goalie interference.
+        /// </summary>
+        public bool BlueTeam { get; set; } = true;
+
+        /// <summary>
+        /// Int, number of milliseconds after a push on the goalie to be considered no goal.
+        /// </summary>
+        public int PushNoGoalMilliseconds { get; set; } = 3500;
+
+        /// <summary>
+        /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
+        /// </summary>
+        public int HitNoGoalMilliseconds { get; set; } = 9000; // TODO : Remove when penalty is added.
+
+        /// <summary>
+        /// Float, force threshold for a push on the goalie to be considered for goalie interference.
+        /// </summary>
+        public float CollisionForceThreshold { get; set; } = 0.97f;
+
+        /// <summary>
+        /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
+        /// </summary>
+        public float GoalieRadius { get; set; } = 0.784f;
     }
 }
