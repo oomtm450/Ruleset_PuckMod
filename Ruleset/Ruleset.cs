@@ -1637,7 +1637,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (ServerFunc.IsDedicatedServer() || NetworkManager.Singleton == null || NetworkManager.Singleton.CustomMessagingManager == null)
                 return;
 
-            Logging.Log("Event_Client_OnClientStarted", _clientConfig);
+            //Logging.Log("Event_Client_OnClientStarted", _clientConfig);
 
             try {
                 LoadAssets();
@@ -1653,7 +1653,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
         public static void Event_Client_OnClientStopped(Dictionary<string, object> message) {
-            Logging.Log("Event_Client_OnClientStopped", _clientConfig);
+            //Logging.Log("Event_Client_OnClientStopped", _clientConfig);
 
             try {
                 _serverHasResponded = false;
