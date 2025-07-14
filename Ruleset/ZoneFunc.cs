@@ -4,30 +4,42 @@ using System.Linq;
 using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
+    /// <summary>
+    /// Class containing the code for the zones and ice elements.
+    /// </summary>
     internal static class ZoneFunc {
         #region Constants
         /// <summary>
-        /// Dictionary of ArenaElement and (double Start, double End), dictionary containing all the start and end Z positions of all the lines on the ice for the zones.
+        /// Const Zone, default zone for initializing variables.
         /// </summary>
-        internal static Dictionary<ArenaElement, (double Start, double End)> ICE_Z_POSITIONS { get; } = new Dictionary<ArenaElement, (double Start, double End)> {
-            { ArenaElement.BlueTeam_BlueLine, (13.0, 13.5) },
-            { ArenaElement.RedTeam_BlueLine, (-13.5, -13.0) },
-            { ArenaElement.CenterLine, (-0.25, 0.25) },
-            { ArenaElement.BlueTeam_GoalLine, (39.75, 40) },
-            { ArenaElement.RedTeam_GoalLine, (-40, -39.75) },
-            { ArenaElement.BlueTeam_BluePaint, (37.25, 40) },
-            { ArenaElement.RedTeam_BluePaint, (-40, -37.25) },
-            { ArenaElement.BlueTeam_HashMarks, (29.1, 30.4) },
-            { ArenaElement.RedTeam_HashMarks, (-30.4, -29.1) },
-        };
+        internal const Zone DEFAULT_ZONE = Zone.BlueTeam_Center;
 
         /// <summary>
-        /// Dictionary of ArenaElement and (double Start, double End), dictionary containing all the start and end Z positions of all the lines on the ice for the zones.
+        /// ReadOnlyDictionary of IceElement and (double Start, double End), dictionary containing all the start and end Z positions of all the lines on the ice for the zones.
         /// </summary>
-        internal static Dictionary<ArenaElement, (double Start, double End)> ICE_X_POSITIONS { get; } = new Dictionary<ArenaElement, (double Start, double End)> {
-            { ArenaElement.BlueTeam_BluePaint, (-2.5, 2.5) },
-            { ArenaElement.RedTeam_BluePaint, (-2.5, 2.5) },
-        };
+        internal static ReadOnlyDictionary<IceElement, (double Start, double End)> ICE_Z_POSITIONS { get; } = new ReadOnlyDictionary<IceElement, (double, double)>(
+            new Dictionary<IceElement, (double, double)> {
+                { IceElement.BlueTeam_BlueLine, (13.0, 13.5) },
+                { IceElement.RedTeam_BlueLine, (-13.5, -13.0) },
+                { IceElement.CenterLine, (-0.25, 0.25) },
+                { IceElement.BlueTeam_GoalLine, (39.75, 40) },
+                { IceElement.RedTeam_GoalLine, (-40, -39.75) },
+                { IceElement.BlueTeam_BluePaint, (37.25, 40) },
+                { IceElement.RedTeam_BluePaint, (-40, -37.25) },
+                { IceElement.BlueTeam_HashMarks, (29.1, 30.4) },
+                { IceElement.RedTeam_HashMarks, (-30.4, -29.1) },
+            }
+        );
+
+        /// <summary>
+        /// ReadOnlyDictionary of IceElement and (double Start, double End), dictionary containing all the start and end Z positions of all the lines on the ice for the zones.
+        /// </summary>
+        internal static ReadOnlyDictionary<IceElement, (double Start, double End)> ICE_X_POSITIONS { get; } = new ReadOnlyDictionary<IceElement, (double, double)>(
+            new Dictionary<IceElement, (double, double)> {
+                { IceElement.BlueTeam_BluePaint, (-2.5, 2.5) },
+                { IceElement.RedTeam_BluePaint, (-2.5, 2.5) },
+            }
+        );
 
         /// <summary>
         /// ReadOnlyCollection of Zone, defense zones attributed to the blue team.
@@ -38,11 +50,29 @@ namespace oomtm450PuckMod_Ruleset {
         });
 
         /// <summary>
+        /// ReadOnlyCollection of Zone, zones attributed to the blue team.
+        /// </summary>
+        private static ReadOnlyCollection<Zone> BLUE_TEAM_ZONES { get; } = new ReadOnlyCollection<Zone>(new List<Zone> {
+            Zone.BlueTeam_Zone,
+            Zone.BlueTeam_BehindGoalLine,
+            Zone.BlueTeam_Center,
+        });
+
+        /// <summary>
         /// ReadOnlyCollection of Zone, defense zones attributed to the red team.
         /// </summary>
         private static ReadOnlyCollection<Zone> RED_TEAM_DEFENSE_ZONES { get; } = new ReadOnlyCollection<Zone>(new List<Zone> {
             Zone.RedTeam_Zone,
             Zone.RedTeam_BehindGoalLine,
+        });
+
+        /// <summary>
+        /// ReadOnlyCollection of Zone, zones attributed to the red team.
+        /// </summary>
+        private static ReadOnlyCollection<Zone> RED_TEAM_ZONES { get; } = new ReadOnlyCollection<Zone>(new List<Zone> {
+            Zone.RedTeam_Zone,
+            Zone.RedTeam_BehindGoalLine,
+            Zone.RedTeam_Center,
         });
         #endregion
 
@@ -58,35 +88,35 @@ namespace oomtm450PuckMod_Ruleset {
             float zMax = position.z + radius;
             
             // Red team.
-            if (zMax < ICE_Z_POSITIONS[ArenaElement.RedTeam_GoalLine].Start) {
+            if (zMax < ICE_Z_POSITIONS[IceElement.RedTeam_GoalLine].Start) {
                 return Zone.RedTeam_BehindGoalLine;
             }
-            if (zMax < ICE_Z_POSITIONS[ArenaElement.RedTeam_GoalLine].End && oldZone == Zone.RedTeam_BehindGoalLine) {
+            if (zMax < ICE_Z_POSITIONS[IceElement.RedTeam_GoalLine].End && oldZone == Zone.RedTeam_BehindGoalLine) {
                 if (oldZone == Zone.RedTeam_BehindGoalLine)
                     return Zone.RedTeam_BehindGoalLine;
                 else
                     return Zone.RedTeam_Zone;
             }
 
-            if (zMax < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].Start) {
+            if (zMax < ICE_Z_POSITIONS[IceElement.RedTeam_BlueLine].Start) {
                 return Zone.RedTeam_Zone;
             }
-            if (zMax < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) {
+            if (zMax < ICE_Z_POSITIONS[IceElement.RedTeam_BlueLine].End) {
                 if (oldZone == Zone.RedTeam_Zone)
                     return Zone.RedTeam_Zone;
                 else
                     return Zone.RedTeam_Center;
             }
 
-            if (zMax < ICE_Z_POSITIONS[ArenaElement.CenterLine].Start) {
+            if (zMax < ICE_Z_POSITIONS[IceElement.CenterLine].Start) {
                 return Zone.RedTeam_Center;
             }
-            if (zMax < ICE_Z_POSITIONS[ArenaElement.CenterLine].End && oldZone == Zone.RedTeam_Center) {
+            if (zMax < ICE_Z_POSITIONS[IceElement.CenterLine].End && oldZone == Zone.RedTeam_Center) {
                 return Zone.RedTeam_Center;
             }
 
             // Both team.
-            if (zMax < ICE_Z_POSITIONS[ArenaElement.RedTeam_BlueLine].End) {
+            if (zMax < ICE_Z_POSITIONS[IceElement.RedTeam_BlueLine].End) {
                 if (oldZone == Zone.RedTeam_Center)
                     return Zone.RedTeam_Center;
                 else
@@ -94,20 +124,20 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             // Blue team.
-            if (zMax < ICE_Z_POSITIONS[ArenaElement.BlueTeam_BlueLine].Start) {
+            if (zMax < ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].Start) {
                 return Zone.BlueTeam_Center;
             }
-            if (zMax < ICE_Z_POSITIONS[ArenaElement.BlueTeam_BlueLine].End) {
+            if (zMax < ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End) {
                 if (oldZone == Zone.BlueTeam_Center)
                     return Zone.BlueTeam_Center;
                 else
                     return Zone.BlueTeam_Zone;
             }
 
-            if (zMax < ICE_Z_POSITIONS[ArenaElement.BlueTeam_GoalLine].Start) {
+            if (zMax < ICE_Z_POSITIONS[IceElement.BlueTeam_GoalLine].Start) {
                 return Zone.BlueTeam_Zone;
             }
-            if (zMax < ICE_Z_POSITIONS[ArenaElement.BlueTeam_GoalLine].End) {
+            if (zMax < ICE_Z_POSITIONS[IceElement.BlueTeam_GoalLine].End) {
                 if (oldZone == Zone.BlueTeam_Zone)
                     return Zone.BlueTeam_Zone;
                 else
@@ -117,17 +147,23 @@ namespace oomtm450PuckMod_Ruleset {
             return Zone.BlueTeam_BehindGoalLine;
         }
 
-        internal static bool IsBehindHashmarks(PlayerTeam team, Vector3 position, Zone oldZone, float radius) {
+        /// <summary>
+        /// Function that checks if a position is behind a team's hashmarks.
+        /// </summary>
+        /// <param name="team">PlayerTeam, team linked to the hashmarks.</param>
+        /// <param name="position">Vector3, position to check.</param>
+        /// <param name="radius">Float, radius of the object linked to the position that is being checked.</param>
+        /// <returns>Bool, is behind hashmarks or not.</returns>
+        internal static bool IsBehindHashmarks(PlayerTeam team, Vector3 position, float radius = 0) {
             float zMax = position.z + radius;
 
-            // Red team.
             if (team == PlayerTeam.Red) {
-                double hashMarkZPosition = ICE_Z_POSITIONS[ArenaElement.RedTeam_HashMarks].Start + (ICE_Z_POSITIONS[ArenaElement.RedTeam_HashMarks].End - ICE_Z_POSITIONS[ArenaElement.RedTeam_HashMarks].Start);
+                double hashMarkZPosition = ICE_Z_POSITIONS[IceElement.RedTeam_HashMarks].Start + (ICE_Z_POSITIONS[IceElement.RedTeam_HashMarks].End - ICE_Z_POSITIONS[IceElement.RedTeam_HashMarks].Start);
                 if (zMax < hashMarkZPosition)
                     return true;
             }
             else if (team == PlayerTeam.Blue) {
-                double hashMarkZPosition = ICE_Z_POSITIONS[ArenaElement.BlueTeam_HashMarks].End - (ICE_Z_POSITIONS[ArenaElement.BlueTeam_HashMarks].End - ICE_Z_POSITIONS[ArenaElement.BlueTeam_HashMarks].Start);
+                double hashMarkZPosition = ICE_Z_POSITIONS[IceElement.BlueTeam_HashMarks].End - (ICE_Z_POSITIONS[IceElement.BlueTeam_HashMarks].End - ICE_Z_POSITIONS[IceElement.BlueTeam_HashMarks].Start);
                 if (zMax > hashMarkZPosition)
                     return true;
             }
@@ -135,6 +171,11 @@ namespace oomtm450PuckMod_Ruleset {
             return false;
         }
 
+        /// <summary>
+        /// Function that returns the zone of a faceoff spot.
+        /// </summary>
+        /// <param name="faceoffSpot">FaceoffSpot, faceoff spot to find the zone of.</param>
+        /// <returns>Zone, zone containing the faceoff spot.</returns>
         internal static Zone GetZone(FaceoffSpot faceoffSpot) {
             switch (faceoffSpot) {
                 case FaceoffSpot.BlueteamDZoneLeft:
@@ -152,39 +193,43 @@ namespace oomtm450PuckMod_Ruleset {
                     return Zone.RedTeam_Center;
 
                 default:
-                    return Zone.BlueTeam_Center;
+                    return DEFAULT_ZONE;
             }
         }
 
+        /// <summary>
+        /// Function that returns the zones linked to a team.
+        /// </summary>
+        /// <param name="team">PlayerTeam, team linked to the zones.</param>
+        /// <param name="includeCenter">Bool, true if the center zone has to be included.</param>
+        /// <returns>List of Zone, zones linked to the team.</returns>
         internal static List<Zone> GetTeamZones(PlayerTeam team, bool includeCenter = false) {
-            switch (team) { // TODO : Optimize with pre made lists.
+            switch (team) {
                 case PlayerTeam.Blue:
-                    if (includeCenter) {
-                        return new List<Zone>(BLUE_TEAM_DEFENSE_ZONES) {
-                            Zone.BlueTeam_Center
-                        };
-                    }
+                    if (includeCenter)
+                        return BLUE_TEAM_ZONES.ToList();
                     else
                         return BLUE_TEAM_DEFENSE_ZONES.ToList();
 
                 case PlayerTeam.Red:
-                    if (includeCenter) {
-                        return new List<Zone>(RED_TEAM_DEFENSE_ZONES) {
-                            Zone.RedTeam_Center
-                        };
-                    }
+                    if (includeCenter)
+                        return RED_TEAM_ZONES.ToList();
                     else
                         return RED_TEAM_DEFENSE_ZONES.ToList();
-            }
 
-            return new List<Zone> {
-                Zone.None,
-            };
+                default:
+                    return new List<Zone> {
+                        Zone.None,
+                    };
+            }
         }
         #endregion
     }
 
     #region Enums
+    /// <summary>
+    /// Enum of all the zones of the ice.
+    /// </summary>
     public enum Zone {
         None,
         BlueTeam_BehindGoalLine,
@@ -195,7 +240,10 @@ namespace oomtm450PuckMod_Ruleset {
         RedTeam_Center,
     }
 
-    public enum ArenaElement {
+    /// <summary>
+    /// Enum of the ice elements (lines, hashmarks, etc.).
+    /// </summary>
+    public enum IceElement {
         BlueTeam_BlueLine,
         RedTeam_BlueLine,
         CenterLine,

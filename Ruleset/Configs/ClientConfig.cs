@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using oomtm450PuckMod_Ruleset.SystemFunc;
 using System;
 using System.IO;
 
@@ -22,6 +21,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if the custom goal horns must be set.
         /// </summary>
         public bool CustomGoalHorns { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if the refs has to be team color coded.
+        /// </summary>
+        public bool TeamColor2DRefs { get; set; } = true;
 
         /// <summary>
         /// Function that serialize the ClientConfig object.

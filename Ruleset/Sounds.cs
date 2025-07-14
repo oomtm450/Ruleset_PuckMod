@@ -1,15 +1,16 @@
-﻿using oomtm450PuckMod_Ruleset.SystemFunc;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
 
 namespace oomtm450PuckMod_Ruleset {
     internal class Sounds : MonoBehaviour {
+        #region Constants
         private const string SOUNDS_FOLDER_PATH = "sounds";
         private const string SOUND_EXTENSION = ".ogg";
 
@@ -17,6 +18,7 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string PLAY_SOUND = "playsound";
         internal const string STOP_SOUND = "stopsound";
 
+        internal const string ALL = "all";
         internal const string MUSIC = "music";
         internal const string WHISTLE = "whistle";
         internal const string BLUEGOALHORN = "bluegoalhorn";
@@ -39,7 +41,14 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string SECOND_FACEOFF_MUSIC_DELAYED = SECOND_FACEOFF_MUSIC + "d";
 
         internal const string GAMEOVER_MUSIC = "gameovermusic";
+        #endregion
 
+        #region Fields
+        private readonly LockDictionary<string, GameObject> _soundObjects = new LockDictionary<string, GameObject>();
+        private readonly List<AudioClip> _audioClips = new List<AudioClip>();
+        #endregion
+
+        #region Properties
         internal List<string> FaceoffMusicList { get; set; } = new List<string>();
         internal List<string> BlueGoalMusicList { get; set; } = new List<string>();
         internal List<string> RedGoalMusicList { get; set; } = new List<string>();
@@ -49,11 +58,11 @@ namespace oomtm450PuckMod_Ruleset {
         internal List<string> FirstFaceoffMusicList { get; set; } = new List<string>();
         internal List<string> SecondFaceoffMusicList { get; set; } = new List<string>();
         internal List<string> GameOverMusicList { get; set; } = new List<string>();
+        
+        internal List<string> Errors { get; } = new List<string>();
+        #endregion
 
-        private readonly Dictionary<string, GameObject> _soundObjects = new Dictionary<string, GameObject>();
-        private readonly List<AudioClip> _audioClips = new List<AudioClip>();
-        internal List<string> _errors = new List<string>();
-
+        #region Methods/Functions
         internal void LoadSounds() {
             try {
                 string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), SOUNDS_FOLDER_PATH);
@@ -99,7 +108,7 @@ namespace oomtm450PuckMod_Ruleset {
                     yield return webRequest.SendWebRequest();
 
                     if (webRequest.result != UnityWebRequest.Result.Success)
-                        _errors.Add(webRequest.error);
+                        Errors.Add(webRequest.error);
                     else {
                         try {
                             AudioClip clip = DownloadHandlerAudioClip.GetContent(webRequest);
@@ -126,7 +135,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 GameOverMusicList.Add(clip.name);
                         }
                         catch (Exception ex) {
-                            _errors.Add(ex.ToString());
+                            Errors.Add(ex.ToString());
                         }
                     }
                 }
@@ -168,6 +177,14 @@ namespace oomtm450PuckMod_Ruleset {
             soundObject.GetComponent<AudioSource>().Stop();
         }
 
+        /// <summary>
+        /// Method that stops all sound and music.
+        /// </summary>
+        internal void StopAll() {
+            foreach (GameObject soundObject in _soundObjects.Values)
+                soundObject.GetComponent<AudioSource>().Stop();
+        }
+
         internal static string GetRandomSound(List<string> musicList) {
             if (musicList.Count != 0)
                 return musicList[new System.Random().Next(0, musicList.Count)];
@@ -179,32 +196,49 @@ namespace oomtm450PuckMod_Ruleset {
         /// Method that sets the custom goal horns.
         /// </summary>
         private void SetGoalHorns() {
-            GameObject levelGameObj = GameObject.Find("Level");
-            if (!levelGameObj)
-                return;
+            try {
+                if (GameObject.Find("Changing Room"))
+                    return;
 
-            GameObject soundsGameObj = levelGameObj.transform.Find("Sounds").gameObject;
+                GameObject levelGameObj = GameObject.Find("Level");
+                if (!levelGameObj) {
+                    Errors.Add("Cant't find GameObject \"Level\" !");
+                    return;
+                }
 
-            if (!soundsGameObj)
-                return;
+                GameObject soundsGameObj = levelGameObj.transform.Find("Sounds").gameObject;
 
-            GameObject blueGoalObj = soundsGameObj.transform.Find("Blue Goal").gameObject;
+                if (!soundsGameObj) {
+                    Errors.Add("Cant't find GameObject \"Sounds\" !");
+                    return;
+                }
 
-            if (!blueGoalObj)
-                return;
+                GameObject blueGoalObj = soundsGameObj.transform.Find("Blue Goal").gameObject;
 
-            AudioSource blueGoalAudioSource = blueGoalObj.GetComponent<AudioSource>();
-            blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == REDGOALHORN);
-            blueGoalAudioSource.maxDistance = 400f;
+                if (!blueGoalObj) {
+                    Errors.Add("Cant't find GameObject \"Blue Goal\" !");
+                    return;
+                }
 
-            GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
+                AudioSource blueGoalAudioSource = blueGoalObj.GetComponent<AudioSource>();
+                blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == REDGOALHORN);
+                blueGoalAudioSource.maxDistance = 400f;
 
-            if (!redGoalObj)
-                return;
+                GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
 
-            AudioSource redGoalAudioSource = redGoalObj.GetComponent<AudioSource>();
-            redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == BLUEGOALHORN);
-            redGoalAudioSource.maxDistance = 400f;
+                if (!redGoalObj) {
+                    Errors.Add("Cant't find GameObject \"Red Goal\" !");
+                    return;
+                }
+
+                AudioSource redGoalAudioSource = redGoalObj.GetComponent<AudioSource>();
+                redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == BLUEGOALHORN);
+                redGoalAudioSource.maxDistance = 400f;
+            }
+            catch (Exception ex) {
+                Errors.Add(ex.ToString());
+            }
         }
+        #endregion
     }
 }

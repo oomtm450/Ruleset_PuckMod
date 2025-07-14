@@ -1,5 +1,4 @@
-﻿using oomtm450PuckMod_Ruleset.SystemFunc;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -10,37 +9,46 @@ using UnityEngine.Networking;
 using UnityEngine.UI;
 
 namespace oomtm450PuckMod_Ruleset {
+    /// <summary>
+    /// Class containing code for the 2D UI ref.
+    /// </summary>
     internal class RefSignals : MonoBehaviour {
+        #region Constants
         private const string IMAGES_FOLDER_PATH = "images\\refsignals";
         private const string IMAGE_EXTENSION = ".png";
 
-        internal const string SHOW_SIGNAL_BLUE = "showrefsignalb";
-        internal const string STOP_SIGNAL_BLUE = "stoprefsignalb";
-        internal const string SHOW_SIGNAL_RED = "showrefsignalr";
-        internal const string STOP_SIGNAL_RED = "stoprefsignalr";
+        private const string REF_SIGNAL = "refsignal";
+        private const string SHOW_SIGNAL = "show" + REF_SIGNAL;
+        private const string STOP_SIGNAL = "stop" + REF_SIGNAL;
+        internal const string RED = "r";
+        internal const string BLUE = "b";
+        internal const string SHOW_SIGNAL_BLUE = SHOW_SIGNAL + BLUE;
+        internal const string STOP_SIGNAL_BLUE = STOP_SIGNAL + BLUE;
+        internal const string SHOW_SIGNAL_RED = SHOW_SIGNAL + RED;
+        internal const string STOP_SIGNAL_RED = STOP_SIGNAL + RED;
 
+        private const string LINESMAN = "linesman";
+        private const string REF = "ref";
         internal const string ALL = "all";
-        internal const string OFFSIDE_LINESMAN = "offside_linesman";
-        internal const string ICING_LINESMAN = "icing_linesman";
-        internal const string HIGHSTICK_LINESMAN = "highstick_linesman";
-        internal const string HIGHSTICK_REF = "highstick_ref";
-        internal const string INTERFERENCE_REF = "interference_ref";
 
+        internal const string OFFSIDE_LINESMAN = "offside_" + LINESMAN;
+        internal const string ICING_LINESMAN = "icing_" + LINESMAN;
+        internal const string HIGHSTICK_LINESMAN = "highstick_" + LINESMAN;
+        internal const string HIGHSTICK_REF = "highstick_" + REF;
+        internal const string INTERFERENCE_REF = "interference_" + REF;
+        #endregion
+
+        #region Fields
         private readonly Dictionary<string, Image> _images = new Dictionary<string, Image>();
-        private List<GameObject> _imageGameObjects = new List<GameObject>();
-        internal List<string> _errors = new List<string>();
+        private readonly List<GameObject> _imageGameObjects = new List<GameObject>();
         private Canvas _canvas;
+        #endregion
 
-        internal void Update() {
-            Player localPlayer = PlayerManager.Instance.GetLocalPlayer();
-            if (!localPlayer || !localPlayer.IsCharacterFullySpawned)
-                return;
+        #region Properties
+        internal List<string> Errors { get; } = new List<string>();
+        #endregion
 
-            //_canvas.transform.position = new Vector3(localPlayer.PlayerCamera.transform.position.x, localPlayer.PlayerCamera.transform.position.y,
-                //localPlayer.PlayerCamera.transform.position.z + 1);
-            //_canvas.transform.rotation = Quaternion.LookRotation(transform.position - localPlayer.PlayerCamera.transform.position);
-        }
-
+        #region Methods/Functions
         internal void DestroyGameObjects() {
             while (_images.Count != 0) {
                 var imageObject = _images.First();
@@ -92,7 +100,7 @@ namespace oomtm450PuckMod_Ruleset {
                 yield return webRequest.SendWebRequest();
 
                 if (webRequest.result != UnityWebRequest.Result.Success)
-                    _errors.Add(webRequest.error);
+                    Errors.Add(webRequest.error);
                 else {
                     try {
                         string fileName = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(IMAGE_EXTENSION, "");
@@ -126,7 +134,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _images.Add(fileName, image);
                     }
                     catch (Exception ex) {
-                        _errors.Add(ex.ToString());
+                        Errors.Add(ex.ToString());
                     }
                 }
             }
@@ -156,5 +164,6 @@ namespace oomtm450PuckMod_Ruleset {
                 return STOP_SIGNAL_BLUE;
             return STOP_SIGNAL_RED;
         }
+        #endregion
     }
 }
