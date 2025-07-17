@@ -62,6 +62,11 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly Harmony _harmony = new Harmony(Constants.MOD_NAME);
 
         /// <summary>
+        /// Bool, true if the mod has been patched in.
+        /// </summary>
+        private static bool _harmonyPatched = false;
+
+        /// <summary>
         /// ServerConfig, config set and sent by the server.
         /// </summary>
         internal static ServerConfig _serverConfig = new ServerConfig();
@@ -2082,6 +2087,9 @@ namespace oomtm450PuckMod_Ruleset {
         /// <returns>Bool, true if the mod successfully enabled.</returns>
         public bool OnEnable() {
             try {
+                if (_harmonyPatched)
+                    return;
+
                 Logging.Log($"Enabling...", _serverConfig, true);
 
                 _harmony.PatchAll();
@@ -2118,6 +2126,7 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                 }
 
+                _harmonyPatched = true;
                 return true;
             }
             catch (Exception ex) {
@@ -2132,6 +2141,8 @@ namespace oomtm450PuckMod_Ruleset {
         /// <returns>Bool, true if the mod successfully disabled.</returns>
         public bool OnDisable() {
             try {
+                if (!_harmonyPatched)
+                    return;
                 Logging.Log($"Disabling...", _serverConfig, true);
 
                 Logging.Log("Unsubscribing from events.", _serverConfig, true);
@@ -2162,6 +2173,8 @@ namespace oomtm450PuckMod_Ruleset {
                 _harmony.UnpatchSelf();
 
                 Logging.Log($"Disabled.", _serverConfig, true);
+
+                _harmonyPatched = false;
                 return true;
             }
             catch (Exception ex) {
