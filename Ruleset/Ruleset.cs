@@ -714,13 +714,13 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (phase == GamePhase.GameOver) {
                             NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.ALL, Constants.FROM_SERVER, _serverConfig);
-                            _currentMusicPlaying = "";
                             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.GAMEOVER_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                            _currentMusicPlaying = Sounds.GAMEOVER_MUSIC;
                         }
                         else if (phase == GamePhase.Warmup) {
                             NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.ALL, Constants.FROM_SERVER, _serverConfig);
-                            _currentMusicPlaying = "";
                             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WARMUP_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                            _currentMusicPlaying = Sounds.WARMUP_MUSIC;
                         }
 
                         return true;
