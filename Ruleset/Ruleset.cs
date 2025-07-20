@@ -1287,6 +1287,10 @@ namespace oomtm450PuckMod_Ruleset {
                     _hasPlayedSecondFaceoffMusic = false;
 
                     _nextFaceoffSpot = FaceoffSpot.Center;
+
+                    // TODO : TEST Reteleport players to the correct faceoff if /vs has been called during faceoff.
+                    GameManager.Instance.Server_SetPhase(GamePhase.FaceOff,
+                        ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.phaseDurationMap[GamePhase.FaceOff]);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManager_Server_ResetGameState_Patch Postfix().\n{ex}");
