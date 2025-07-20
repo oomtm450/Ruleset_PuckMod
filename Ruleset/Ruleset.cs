@@ -1173,11 +1173,24 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(Vector3 position, Quaternion rotation, PlayerRole role) {
                 try {
-                    // If this is not the server, game is not started or faceoff is on the default dot (center), do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.FaceOff || _nextFaceoffSpot == FaceoffSpot.Center)
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
                         return;
 
-                    // Reteleport player on faceoff to the correct faceoff.
+                    /*Logging.Log($"ExcludedLayers : {player.Stick.StickMesh.BladeCollider.excludeLayers.value}.", _serverConfig, true); // TODO : Remove debug logs.
+                    //player.Stick.StickMesh.BladeCollider.excludeLayers &= ~(1 << 8); // Player.
+                    player.Stick.StickMesh.BladeCollider.excludeLayers = 0; // Player.
+                    Logging.Log($"ExcludedLayers after Player removed : {player.Stick.StickMesh.BladeCollider.excludeLayers.value}.", _serverConfig, true); // TODO : Remove debug logs.
+                    //player.Stick.StickMesh.BladeCollider.excludeLayers &= ~(1 << 9); // Player Mesh.
+                    //player.Stick.StickMesh.BladeCollider.excludeLayers &= ~(1 << 16); // Player Collider.
+                    player.Stick.StickMesh.ShaftCollider.excludeLayers = 0; // Player.
+                    //player.Stick.StickMesh.ShaftCollider.excludeLayers &= ~(1 << 9); // Player Mesh.
+                    //player.Stick.StickMesh.ShaftCollider.excludeLayers &= ~(1 << 16); // Player Collider.*/
+
+                    // If this game is not started or faceoff is on the default dot (center), do not use the patch.
+                    if (GameManager.Instance.Phase != GamePhase.FaceOff || _nextFaceoffSpot == FaceoffSpot.Center)
+                        return;
+
                     Player player = PlayerManager.Instance.GetPlayers()
                         .Where(x =>
                             PlayerFunc.IsPlayerPlaying(x) && x.PlayerBody != null &&
@@ -1188,6 +1201,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!player)
                         return;
 
+                    // Reteleport player on faceoff to the correct faceoff.
                     PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(_nextFaceoffSpot), _nextFaceoffSpot);
                 }
                 catch (Exception ex) {
@@ -2441,6 +2455,12 @@ namespace oomtm450PuckMod_Ruleset {
                 return "0.000";
 
             return (((double)saves) / ((double)shots)).ToString("0.000", CultureInfo.InvariantCulture);
+        }
+
+        private static void GetAllLayersName() {
+            for (int i = 0; i < 32; i++) {
+                Logging.Log($"Layer {i} name : {LayerMask.LayerToName(i)}.", _serverConfig, true);
+            }
         }
         #endregion
     }
