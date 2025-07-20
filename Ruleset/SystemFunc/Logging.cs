@@ -13,7 +13,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <param name="config">IConfig, config to use to check if info must be logged.</param>
         /// <param name="bypassConfig">Bool, true to bypass the logs config. False by default.</param>
         internal static void Log(string msg, IConfig config, bool bypassConfig = false) {
-            if (bypassConfig || (ServerFunc.IsDedicatedServer() && config.LogInfo) || (!ServerFunc.IsDedicatedServer() && config.LogInfo))
+            if (bypassConfig || config == null || config.LogInfo)
                 Debug.Log($"[{Constants.MOD_NAME}] {msg}");
         }
 

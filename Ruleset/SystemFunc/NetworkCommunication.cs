@@ -31,8 +31,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 writer.Dispose();
 
-                if (config != null)
-                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to {clientId}.", config);
+                Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to {clientId}.", config);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error when writing streamed data: {ex}");
@@ -60,8 +59,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 writer.Dispose();
 
-                if (config != null)
-                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to all clients.", config);
+                Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to all clients.", config);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error when writing streamed data: {ex}");
@@ -87,8 +85,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 string dataStr = Encoding.UTF8.GetString(data).Trim();
 
-                if (config != null)
-                    Logging.Log($"Received data {dataName.Trim()} ({length} bytes - {totalLength} total bytes) from {clientId}. Content : {dataStr}", config);
+                Logging.Log($"Received data {dataName.Trim()} ({length} bytes - {totalLength} total bytes) from {clientId}. Content : {dataStr}", config);
 
                 return (dataName.Trim(), dataStr);
             }

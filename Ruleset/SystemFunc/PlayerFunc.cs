@@ -6,6 +6,7 @@ namespace oomtm450PuckMod_Ruleset {
     /// Class containing code for player functions.
     /// </summary>
     internal class PlayerFunc {
+        #region Constants
         /// <summary>
         /// Const string, position name for the goalie.
         /// </summary>
@@ -30,7 +31,16 @@ namespace oomtm450PuckMod_Ruleset {
         /// Const string, position name for the right defender.
         /// </summary>
         internal const string RIGHT_DEFENDER_POSITION = "RD";
+        #endregion
 
+        #region Properties
+        /// <summary>
+        /// LockDictionary of ulong and string, dictionary of all players
+        /// </summary>
+        internal static LockDictionary<ulong, string> Players_ClientId_SteamId { get; } = new LockDictionary<ulong, string>();
+        #endregion
+
+        #region Methods/Functions
         /// <summary>
         /// Function that checks if a player is on the ice playing.
         /// </summary>
@@ -53,24 +63,24 @@ namespace oomtm450PuckMod_Ruleset {
             float xOffset = 0, zOffset = 0;
             Quaternion quaternion = player.PlayerBody.Rigidbody.rotation;
             switch (player.PlayerPosition.Name) {
-                case PlayerFunc.CENTER_POSITION:
+                case CENTER_POSITION:
                     zOffset = 1.5f;
                     break;
-                case PlayerFunc.LEFT_WINGER_POSITION:
+                case LEFT_WINGER_POSITION:
                     zOffset = 1.5f;
                     if ((faceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team.Value == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team.Value == PlayerTeam.Blue))
                         xOffset = 6.5f;
                     else
                         xOffset = 9f;
                     break;
-                case PlayerFunc.RIGHT_WINGER_POSITION:
+                case RIGHT_WINGER_POSITION:
                     zOffset = 1.5f;
                     if ((faceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team.Value == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team.Value == PlayerTeam.Blue))
                         xOffset = -6.5f;
                     else
                         xOffset = -9f;
                     break;
-                case PlayerFunc.LEFT_DEFENDER_POSITION:
+                case LEFT_DEFENDER_POSITION:
                     zOffset = 13.75f;
                     if ((ushort)faceoffSpot >= 5)
                         zOffset -= 1f;
@@ -86,7 +96,7 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         xOffset = 4.5f;
                     break;
-                case PlayerFunc.RIGHT_DEFENDER_POSITION:
+                case RIGHT_DEFENDER_POSITION:
                     zOffset = 13.75f;
                     if ((ushort)faceoffSpot >= 5)
                         zOffset -= 1f;
@@ -103,7 +113,7 @@ namespace oomtm450PuckMod_Ruleset {
                         xOffset = -4.5f;
                     break;
 
-                case PlayerFunc.GOALIE_POSITION:
+                case GOALIE_POSITION:
                     zOffset = 0.1f;
                     xOffset = 0.6f;
                     float quaternionY = 35;
@@ -139,7 +149,7 @@ namespace oomtm450PuckMod_Ruleset {
                     break;
             }
 
-            if (player.PlayerPosition.Name != PlayerFunc.GOALIE_POSITION) {
+            if (player.PlayerPosition.Name != GOALIE_POSITION) {
                 if (player.Team.Value == PlayerTeam.Red) {
                     xOffset *= -1;
                     zOffset *= -1;
@@ -209,5 +219,6 @@ namespace oomtm450PuckMod_Ruleset {
         internal static bool IsGoalie(Player player) {
             return player.Role.Value == PlayerRole.Goalie;
         }
+        #endregion
     }
 }

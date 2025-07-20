@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Burst.CompilerServices;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
@@ -23,7 +24,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.15.0";
+        private static readonly string MOD_VERSION = "V0.16.0DEV9";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -42,9 +43,13 @@ namespace oomtm450PuckMod_Ruleset {
 
         private const string SOG = Constants.MOD_NAME + "SOG";
 
+        private const string BATCH_SOG = Constants.MOD_NAME + "BATCHSOG";
+
         private const string RESET_SOG = Constants.MOD_NAME + "RESETSOG";
 
         private const string SAVEPERC = Constants.MOD_NAME + "SAVEPERC";
+
+        private const string BATCH_SAVEPERC = Constants.MOD_NAME + "BATCHSAVEPERC";
 
         private const string RESET_SAVEPERC = Constants.MOD_NAME + "RESETSAVEPERC";
 
@@ -60,6 +65,11 @@ namespace oomtm450PuckMod_Ruleset {
         /// Harmony, harmony instance to patch the Puck's code.
         /// </summary>
         private static readonly Harmony _harmony = new Harmony(Constants.MOD_NAME);
+
+        /// <summary>
+        /// Bool, true if the mod has been patched in.
+        /// </summary>
+        private static bool _harmonyPatched = false;
 
         /// <summary>
         /// ServerConfig, config set and sent by the server.
@@ -714,13 +724,13 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (phase == GamePhase.GameOver) {
                             NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.ALL, Constants.FROM_SERVER, _serverConfig);
-                            _currentMusicPlaying = "";
                             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.GAMEOVER_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                            _currentMusicPlaying = Sounds.GAMEOVER_MUSIC;
                         }
                         else if (phase == GamePhase.Warmup) {
                             NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.ALL, Constants.FROM_SERVER, _serverConfig);
-                            _currentMusicPlaying = "";
                             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WARMUP_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                            _currentMusicPlaying = Sounds.WARMUP_MUSIC;
                         }
 
                         return true;
@@ -945,9 +955,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                         // Deferred icing logic.
                         if (_serverConfig.Icing.Deferred && !PlayerFunc.IsGoalie(player)) {
-                            if (IsIcing(player.Team.Value) && ZoneFunc.IsBehindHashmarks(otherTeam, player.PlayerBody.transform.position, PLAYER_RADIUS))
+                            if (IsIcing(player.Team.Value) && AreBothNegativeOrPositive(player.PlayerBody.transform.position.x, puck.Rigidbody.transform.position.x) && ZoneFunc.IsBehindHashmarks(otherTeam, player.PlayerBody.transform.position, PLAYER_RADIUS))
                                 dictPlayersZPositionsForDeferredIcing.Add(player, Math.Abs(player.PlayerBody.transform.position.z));
-                            else if (IsIcing(otherTeam) && ZoneFunc.IsBehindHashmarks(player.Team.Value, player.PlayerBody.transform.position, PLAYER_RADIUS)) {
+                            else if (IsIcing(otherTeam) && AreBothNegativeOrPositive(player.PlayerBody.transform.position.x, puck.Rigidbody.transform.position.x) && ZoneFunc.IsBehindHashmarks(player.Team.Value, player.PlayerBody.transform.position, PLAYER_RADIUS)) {
                                 dictPlayersZPositionsForDeferredIcing.Add(player, Math.Abs(player.PlayerBody.transform.position.z));
                                 _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             }
@@ -1167,11 +1177,24 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(Vector3 position, Quaternion rotation, PlayerRole role) {
                 try {
-                    // If this is not the server, game is not started or faceoff is on the default dot (center), do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || GameManager.Instance.Phase != GamePhase.FaceOff || _nextFaceoffSpot == FaceoffSpot.Center)
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
                         return;
 
-                    // Reteleport player on faceoff to the correct faceoff.
+                    /*Logging.Log($"ExcludedLayers : {player.Stick.StickMesh.BladeCollider.excludeLayers.value}.", _serverConfig, true); // TODO : Remove debug logs.
+                    //player.Stick.StickMesh.BladeCollider.excludeLayers &= ~(1 << 8); // Player.
+                    player.Stick.StickMesh.BladeCollider.excludeLayers = 0; // Player.
+                    Logging.Log($"ExcludedLayers after Player removed : {player.Stick.StickMesh.BladeCollider.excludeLayers.value}.", _serverConfig, true); // TODO : Remove debug logs.
+                    //player.Stick.StickMesh.BladeCollider.excludeLayers &= ~(1 << 9); // Player Mesh.
+                    //player.Stick.StickMesh.BladeCollider.excludeLayers &= ~(1 << 16); // Player Collider.
+                    player.Stick.StickMesh.ShaftCollider.excludeLayers = 0; // Player.
+                    //player.Stick.StickMesh.ShaftCollider.excludeLayers &= ~(1 << 9); // Player Mesh.
+                    //player.Stick.StickMesh.ShaftCollider.excludeLayers &= ~(1 << 16); // Player Collider.*/
+
+                    // If this game is not started or faceoff is on the default dot (center), do not use the patch.
+                    if (GameManager.Instance.Phase != GamePhase.FaceOff || _nextFaceoffSpot == FaceoffSpot.Center)
+                        return;
+
                     Player player = PlayerManager.Instance.GetPlayers()
                         .Where(x =>
                             PlayerFunc.IsPlayerPlaying(x) && x.PlayerBody != null &&
@@ -1182,6 +1205,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!player)
                         return;
 
+                    // Reteleport player on faceoff to the correct faceoff.
                     PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(_nextFaceoffSpot), _nextFaceoffSpot);
                 }
                 catch (Exception ex) {
@@ -1281,7 +1305,14 @@ namespace oomtm450PuckMod_Ruleset {
                     _hasPlayedFirstFaceoffMusic = false;
                     _hasPlayedSecondFaceoffMusic = false;
 
-                    _nextFaceoffSpot = FaceoffSpot.Center;
+                    if (_nextFaceoffSpot != FaceoffSpot.Center) {
+                        foreach (Player player in PlayerManager.Instance.GetPlayers()) {
+                            if (player.PlayerPosition && player.PlayerBody)
+                                player.PlayerBody.Server_Teleport(player.PlayerPosition.transform.position, player.PlayerPosition.transform.rotation);
+                        }
+
+                        _nextFaceoffSpot = FaceoffSpot.Center;
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManager_Server_ResetGameState_Patch Postfix().\n{ex}");
@@ -1714,6 +1745,20 @@ namespace oomtm450PuckMod_Ruleset {
         }
         
         public static void Event_OnPlayerRoleChanged(Dictionary<string, object> message) {
+            // Use the event to link client Ids to Steam Ids.
+            Dictionary<ulong, string> players_ClientId_SteamId_ToChange = new Dictionary<ulong, string>();
+            foreach (var kvp in PlayerFunc.Players_ClientId_SteamId) {
+                if (string.IsNullOrEmpty(kvp.Value))
+                    players_ClientId_SteamId_ToChange.Add(kvp.Key, PlayerManager.Instance.GetPlayerByClientId(kvp.Key).SteamId.Value.ToString());
+            }
+
+            foreach (var kvp in players_ClientId_SteamId_ToChange) {
+                if (!string.IsNullOrEmpty(kvp.Value)) {
+                    PlayerFunc.Players_ClientId_SteamId[kvp.Key] = kvp.Value;
+                    Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value}.", _serverConfig);
+                }
+            }
+
             Player player = (Player)message["player"];
 
             string playerSteamId = player.SteamId.Value.ToString();
@@ -1739,7 +1784,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         /// <summary>
         /// Method called when a client has connected (joined a server) on the server-side.
-        /// Used to send data to the new client that has connected (config and mod version).
+        /// Used to set server-sided stuff after the game has loaded.
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
         public static void Event_OnClientConnected(Dictionary<string, object> message) {
@@ -1754,9 +1799,67 @@ namespace oomtm450PuckMod_Ruleset {
                     NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
                     _hasRegisteredWithNamedMessageHandler = true;
                 }
+
+                ulong clientId = (ulong)message["clientId"];
+                string clientSteamId = PlayerManager.Instance.GetPlayerByClientId(clientId).SteamId.Value.ToString();
+                try {
+                    PlayerFunc.Players_ClientId_SteamId.Add(clientId, "");
+                }
+                catch {
+                    PlayerFunc.Players_ClientId_SteamId.Remove(clientId);
+                    PlayerFunc.Players_ClientId_SteamId.Add(clientId, "");
+                }
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_OnClientConnected.\n{ex}");
+            }
+        }
+
+        /// <summary>
+        /// Method called when a client has disconnect (left a server) on the server-side.
+        /// Used to unset data linked to the player like rule status.
+        /// </summary>
+        /// <param name="message">Dictionary of string and object, content of the event.</param>
+        public static void Event_OnClientDisconnected(Dictionary<string, object> message) {
+            if (!ServerFunc.IsDedicatedServer())
+                return;
+
+            Logging.Log("Event_OnClientDisconnected", _serverConfig);
+
+            try {
+                ulong clientId = (ulong)message["clientId"];
+                string clientSteamId;
+                try {
+                    clientSteamId = PlayerFunc.Players_ClientId_SteamId[clientId];
+                }
+                catch {
+                    return;
+                }
+
+                _sentOutOfDateMessage.Remove(clientId);
+
+                try {
+                    var offsideValue = _isOffside[clientSteamId];
+                    _isOffside.Remove(clientSteamId);
+                    // Remove offside warning.
+                    if (offsideValue.IsOffside && !IsOffside(offsideValue.Team))
+                        WarnOffside(false, offsideValue.Team);
+                }
+                catch {
+                    _isOffside.Remove(clientSteamId);
+                }
+
+                _playersZone.Remove(clientSteamId);
+                _playersCurrentPuckTouch.Remove(clientSteamId);
+                _playersLastTimePuckPossession.Remove(clientSteamId);
+                _lastTimeOnCollisionExitWasCalled.Remove(clientSteamId);
+                _sog.Remove(clientSteamId);
+                _savePerc.Remove(clientSteamId);
+
+                PlayerFunc.Players_ClientId_SteamId.Remove(clientId);
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in Event_OnClientDisconnected.\n{ex}");
             }
         }
 
@@ -1982,13 +2085,22 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, clientId, Constants.FROM_SERVER, _serverConfig);
-                        //NetworkCommunication.SendData(ServerConfig.CONFIG_DATA_NAME, _serverConfig.ToString(), clientId, Constants.FROM_SERVER, _serverConfig);
 
-                        foreach (string key in new List<string>(_sog.Keys))
-                            NetworkCommunication.SendData(SOG + key, _sog[key].ToString(), clientId, Constants.FROM_SERVER, _serverConfig);
+                        if (_sog.Count != 0) {
+                            string batchSOG = "";
+                            foreach (string key in new List<string>(_sog.Keys))
+                                batchSOG += key + ';' + _sog[key].ToString() + ';';
+                            batchSOG = batchSOG.Remove(batchSOG.Length - 1);
+                            NetworkCommunication.SendData(BATCH_SOG, batchSOG, clientId, Constants.FROM_SERVER, _serverConfig);
+                        }
 
-                        foreach (string key in new List<string>(_savePerc.Keys))
-                            NetworkCommunication.SendData(SAVEPERC + key, _savePerc[key].ToString(), clientId, Constants.FROM_SERVER, _serverConfig);
+                        if (_savePerc.Count != 0) {
+                            string batchSavePerc = "";
+                            foreach (string key in new List<string>(_savePerc.Keys))
+                                batchSavePerc += key + ';' + _savePerc[key].ToString() + ';';
+                            batchSavePerc = batchSavePerc.Remove(batchSavePerc.Length - 1);
+                            NetworkCommunication.SendData(BATCH_SAVEPERC, batchSavePerc, clientId, Constants.FROM_SERVER, _serverConfig);
+                        }
                         break;
 
                     case RESET_SOG:
@@ -2019,21 +2131,35 @@ namespace oomtm450PuckMod_Ruleset {
                             _savePerc[key] = (0, 0);
                         break;
 
+                    case BATCH_SOG:
+                        string[] splittedSOG = dataStr.Split(';');
+                        string steamIdSOG = "";
+                        for (int i = 0; i < splittedSOG.Length; i++) {
+                            if (i % 2 == 0) // SteamId
+                                steamIdSOG = splittedSOG[i];
+                            else // SOG
+                                ReceiveData_SOG(steamIdSOG, splittedSOG[i]);
+                        }
+                        break;
+
+                    case BATCH_SAVEPERC:
+                        string[] splittedSavePerc = dataStr.Split(';');
+                        string steamIdSavePerc = "";
+                        for (int i = 0; i < splittedSavePerc.Length; i++) {
+                            if (i % 2 == 0) // SteamId
+                                steamIdSavePerc = splittedSavePerc[i];
+                            else // SOG
+                                ReceiveData_SavePerc(steamIdSavePerc, splittedSavePerc[i]);
+                        }
+                        break;
+
                     default:
                         if (dataName.StartsWith(SOG)) {
                             string playerSteamId = dataName.Replace(SOG, "");
                             if (string.IsNullOrEmpty(playerSteamId))
                                 return;
 
-                            int sog = int.Parse(dataStr);
-                            if (_sog.TryGetValue(playerSteamId, out int _)) {
-                                _sog[playerSteamId] = sog;
-                                Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-                                if (currentPlayer != null && currentPlayer && !PlayerFunc.IsGoalie(currentPlayer))
-                                    _sogLabels[playerSteamId].text = sog.ToString();
-                            }
-                            else
-                                _sog.Add(playerSteamId, sog);
+                            ReceiveData_SOG(playerSteamId, dataStr);
                         }
 
                         if (dataName.StartsWith(SAVEPERC)) {
@@ -2041,18 +2167,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (string.IsNullOrEmpty(playerSteamId))
                                 return;
 
-                            string[] dataStrSplitted = RemoveWhitespace(dataStr.Replace("(", "").Replace(")", "")).Split(',');
-                            int saves = int.Parse(dataStrSplitted[0]);
-                            int shots = int.Parse(dataStrSplitted[1]);
-
-                            if (_savePerc.TryGetValue(playerSteamId, out var _)) {
-                                _savePerc[playerSteamId] = (saves, shots);
-                                Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-                                if (currentPlayer != null && currentPlayer && PlayerFunc.IsGoalie(currentPlayer))
-                                    _sogLabels[playerSteamId].text = GetGoalieSavePerc(saves, shots);
-                            }
-                            else
-                                _savePerc.Add(playerSteamId, (saves, shots));
+                            ReceiveData_SavePerc(playerSteamId, dataStr);
                         }
                         break;
                 }
@@ -2060,6 +2175,34 @@ namespace oomtm450PuckMod_Ruleset {
             catch (Exception ex) {
                 Logging.LogError($"Error in ReceiveData.\n{ex}");
             }
+        }
+
+        private static void ReceiveData_SOG(string playerSteamId, string dataStr) {
+            int sog = int.Parse(dataStr);
+
+            if (_sog.TryGetValue(playerSteamId, out int _)) {
+                _sog[playerSteamId] = sog;
+                Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
+                if (currentPlayer != null && currentPlayer && !PlayerFunc.IsGoalie(currentPlayer))
+                    _sogLabels[playerSteamId].text = sog.ToString();
+            }
+            else
+                _sog.Add(playerSteamId, sog);
+        }
+
+        private static void ReceiveData_SavePerc(string playerSteamId, string dataStr) {
+            string[] dataStrSplitted = RemoveWhitespace(dataStr.Replace("(", "").Replace(")", "")).Split(',');
+            int saves = int.Parse(dataStrSplitted[0]);
+            int shots = int.Parse(dataStrSplitted[1]);
+
+            if (_savePerc.TryGetValue(playerSteamId, out var _)) {
+                _savePerc[playerSteamId] = (saves, shots);
+                Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
+                if (currentPlayer != null && currentPlayer && PlayerFunc.IsGoalie(currentPlayer))
+                    _sogLabels[playerSteamId].text = GetGoalieSavePerc(saves, shots);
+            }
+            else
+                _savePerc.Add(playerSteamId, (saves, shots));
         }
 
         private static void ServerManager_Update_IcingLogic(PlayerTeam team, Puck puck, Dictionary<PlayerTeam, bool?> icingHasToBeWarned) {
@@ -2082,6 +2225,9 @@ namespace oomtm450PuckMod_Ruleset {
         /// <returns>Bool, true if the mod successfully enabled.</returns>
         public bool OnEnable() {
             try {
+                if (_harmonyPatched)
+                    return true;
+
                 Logging.Log($"Enabling...", _serverConfig, true);
 
                 _harmony.PatchAll();
@@ -2110,6 +2256,7 @@ namespace oomtm450PuckMod_Ruleset {
                 
                 if (ServerFunc.IsDedicatedServer()) {
                     EventManager.Instance.AddEventListener("Event_OnClientConnected", Event_OnClientConnected);
+                    EventManager.Instance.AddEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                 }
                 else {
@@ -2118,6 +2265,7 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                 }
 
+                _harmonyPatched = true;
                 return true;
             }
             catch (Exception ex) {
@@ -2132,11 +2280,15 @@ namespace oomtm450PuckMod_Ruleset {
         /// <returns>Bool, true if the mod successfully disabled.</returns>
         public bool OnDisable() {
             try {
+                if (!_harmonyPatched)
+                    return true;
+
                 Logging.Log($"Disabling...", _serverConfig, true);
 
                 Logging.Log("Unsubscribing from events.", _serverConfig, true);
                 if (ServerFunc.IsDedicatedServer()) {
                     EventManager.Instance.RemoveEventListener("Event_OnClientConnected", Event_OnClientConnected);
+                    EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT);
                 }
@@ -2162,6 +2314,8 @@ namespace oomtm450PuckMod_Ruleset {
                 _harmony.UnpatchSelf();
 
                 Logging.Log($"Disabled.", _serverConfig, true);
+
+                _harmonyPatched = false;
                 return true;
             }
             catch (Exception ex) {
@@ -2355,6 +2509,16 @@ namespace oomtm450PuckMod_Ruleset {
                 return "0.000";
 
             return (((double)saves) / ((double)shots)).ToString("0.000", CultureInfo.InvariantCulture);
+        }
+
+        private static void GetAllLayersName() {
+            for (int i = 0; i < 32; i++) {
+                Logging.Log($"Layer {i} name : {LayerMask.LayerToName(i)}.", _serverConfig, true);
+            }
+        }
+
+        private static bool AreBothNegativeOrPositive(float num1, float num2) {
+            return (num1 <= 0 && num2 <= 0) || (num1 >= 0 && num2 >= 0);
         }
         #endregion
     }
