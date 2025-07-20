@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Assertions.Must;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -23,7 +24,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.16.0DEV3";
+        private static readonly string MOD_VERSION = "V0.16.0DEV8";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1726,6 +1727,20 @@ namespace oomtm450PuckMod_Ruleset {
         }
         
         public static void Event_OnPlayerRoleChanged(Dictionary<string, object> message) {
+            // Use the event to link client Ids to Steam Ids.
+            Dictionary<ulong, string> players_ClientId_SteamId_ToChange = new Dictionary<ulong, string>();
+            foreach (var kvp in PlayerFunc.Players_ClientId_SteamId) {
+                if (string.IsNullOrEmpty(kvp.Value))
+                    players_ClientId_SteamId_ToChange.Add(kvp.Key, PlayerManager.Instance.GetPlayerByClientId(kvp.Key).SteamId.Value.ToString());
+            }
+
+            foreach (var kvp in players_ClientId_SteamId_ToChange) {
+                if (!string.IsNullOrEmpty(kvp.Value)) {
+                    PlayerFunc.Players_ClientId_SteamId[kvp.Key] = kvp.Value;
+                    Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value}.", _serverConfig);
+                }
+            }
+
             Player player = (Player)message["player"];
 
             string playerSteamId = player.SteamId.Value.ToString();
@@ -1770,11 +1785,11 @@ namespace oomtm450PuckMod_Ruleset {
                 ulong clientId = (ulong)message["clientId"];
                 string clientSteamId = PlayerManager.Instance.GetPlayerByClientId(clientId).SteamId.Value.ToString();
                 try {
-                    PlayerFunc.Players_ClientId_SteamId.Add(clientId, clientSteamId);
+                    PlayerFunc.Players_ClientId_SteamId.Add(clientId, "");
                 }
                 catch {
                     PlayerFunc.Players_ClientId_SteamId.Remove(clientId);
-                    PlayerFunc.Players_ClientId_SteamId.Add(clientId, clientSteamId);
+                    PlayerFunc.Players_ClientId_SteamId.Add(clientId, "");
                 }
             }
             catch (Exception ex) {
@@ -1795,7 +1810,13 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 ulong clientId = (ulong)message["clientId"];
-                string clientSteamId = PlayerManager.Instance.GetPlayerByClientId(clientId).SteamId.Value.ToString();
+                string clientSteamId;
+                try {
+                    clientSteamId = PlayerFunc.Players_ClientId_SteamId[clientId];
+                }
+                catch {
+                    return;
+                }
 
                 _sentOutOfDateMessage.Remove(clientId);
 
@@ -1806,6 +1827,8 @@ namespace oomtm450PuckMod_Ruleset {
                 _lastTimeOnCollisionExitWasCalled.Remove(clientSteamId);
                 _sog.Remove(clientSteamId);
                 _savePerc.Remove(clientSteamId);
+
+                PlayerFunc.Players_ClientId_SteamId.Remove(clientId);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_OnClientDisconnected.\n{ex}");
