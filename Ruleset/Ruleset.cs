@@ -2092,7 +2092,7 @@ namespace oomtm450PuckMod_Ruleset {
         public bool OnEnable() {
             try {
                 if (_harmonyPatched)
-                    return;
+                    return true;
 
                 Logging.Log($"Enabling...", _serverConfig, true);
 
@@ -2146,7 +2146,8 @@ namespace oomtm450PuckMod_Ruleset {
         public bool OnDisable() {
             try {
                 if (!_harmonyPatched)
-                    return;
+                    return true;
+
                 Logging.Log($"Disabling...", _serverConfig, true);
 
                 Logging.Log("Unsubscribing from events.", _serverConfig, true);
