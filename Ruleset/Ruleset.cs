@@ -1748,7 +1748,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         /// <summary>
         /// Method called when a client has connected (joined a server) on the server-side.
-        /// Used to send data to the new client that has connected (config and mod version).
+        /// Used to set server-sided stuff after the game has loaded.
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
         public static void Event_OnClientConnected(Dictionary<string, object> message) {
@@ -1763,9 +1763,49 @@ namespace oomtm450PuckMod_Ruleset {
                     NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
                     _hasRegisteredWithNamedMessageHandler = true;
                 }
+
+                ulong clientId = (ulong)message["clientId"];
+                string clientSteamId = PlayerManager.Instance.GetPlayerByClientId(clientId).SteamId.Value.ToString();
+                try {
+                    PlayerFunc.Players_ClientId_SteamId.Add(clientId, clientSteamId);
+                }
+                catch {
+                    PlayerFunc.Players_ClientId_SteamId.Remove(clientId);
+                    PlayerFunc.Players_ClientId_SteamId.Add(clientId, clientSteamId);
+                }
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_OnClientConnected.\n{ex}");
+            }
+        }
+
+        /// <summary>
+        /// Method called when a client has disconnect (left a server) on the server-side.
+        /// Used to unset data linked to the player like rule status.
+        /// </summary>
+        /// <param name="message">Dictionary of string and object, content of the event.</param>
+        public static void Event_OnClientDisconnected(Dictionary<string, object> message) {
+            if (!ServerFunc.IsDedicatedServer())
+                return;
+
+            Logging.Log("Event_OnClientDisconnected", _serverConfig);
+
+            try {
+                ulong clientId = (ulong)message["clientId"];
+                string clientSteamId = PlayerManager.Instance.GetPlayerByClientId(clientId).SteamId.Value.ToString();
+
+                _sentOutOfDateMessage.Remove(clientId);
+
+                _isOffside.Remove(clientSteamId);
+                _playersZone.Remove(clientSteamId);
+                _playersCurrentPuckTouch.Remove(clientSteamId);
+                _playersLastTimePuckPossession.Remove(clientSteamId);
+                _lastTimeOnCollisionExitWasCalled.Remove(clientSteamId);
+                _sog.Remove(clientSteamId);
+                _savePerc.Remove(clientSteamId);
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in Event_OnClientDisconnected.\n{ex}");
             }
         }
 
