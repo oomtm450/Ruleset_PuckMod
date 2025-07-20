@@ -1834,7 +1834,12 @@ namespace oomtm450PuckMod_Ruleset {
 
                 _sentOutOfDateMessage.Remove(clientId);
 
+                var offsideValue = _isOffside[clientSteamId];
                 _isOffside.Remove(clientSteamId);
+                // Remove offside warning.
+                if (offsideValue.IsOffside && !IsOffside(offsideValue.Team))
+                    WarnOffside(false, offsideValue.Team);
+
                 _playersZone.Remove(clientSteamId);
                 _playersCurrentPuckTouch.Remove(clientSteamId);
                 _playersLastTimePuckPossession.Remove(clientSteamId);
