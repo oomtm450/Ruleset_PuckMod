@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.16.0DEV";
+        private static readonly string MOD_VERSION = "V0.16.0DEV3";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1286,11 +1286,14 @@ namespace oomtm450PuckMod_Ruleset {
                     _hasPlayedFirstFaceoffMusic = false;
                     _hasPlayedSecondFaceoffMusic = false;
 
-                    _nextFaceoffSpot = FaceoffSpot.Center;
+                    if (_nextFaceoffSpot != FaceoffSpot.Center) {
+                        foreach (Player player in PlayerManager.Instance.GetPlayers()) {
+                            if (player.PlayerPosition && player.PlayerBody)
+                                player.PlayerBody.Server_Teleport(player.PlayerPosition.transform.position, player.PlayerPosition.transform.rotation);
+                        }
 
-                    // TODO : TEST Reteleport players to the correct faceoff if /vs has been called during faceoff.
-                    GameManager.Instance.Server_SetPhase(GamePhase.FaceOff,
-                        ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.phaseDurationMap[GamePhase.FaceOff]);
+                        _nextFaceoffSpot = FaceoffSpot.Center;
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManager_Server_ResetGameState_Patch Postfix().\n{ex}");
