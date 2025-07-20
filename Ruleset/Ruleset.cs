@@ -24,7 +24,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.16.0DEV9";
+        private static readonly string MOD_VERSION = "V0.16.0";
 
         /// <summary>
         /// Const float, radius of the puck.
