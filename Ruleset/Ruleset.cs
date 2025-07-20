@@ -24,7 +24,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.16.0DEV8";
+        private static readonly string MOD_VERSION = "V0.16.0DEV9";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1838,11 +1838,16 @@ namespace oomtm450PuckMod_Ruleset {
 
                 _sentOutOfDateMessage.Remove(clientId);
 
-                var offsideValue = _isOffside[clientSteamId];
-                _isOffside.Remove(clientSteamId);
-                // Remove offside warning.
-                if (offsideValue.IsOffside && !IsOffside(offsideValue.Team))
-                    WarnOffside(false, offsideValue.Team);
+                try {
+                    var offsideValue = _isOffside[clientSteamId];
+                    _isOffside.Remove(clientSteamId);
+                    // Remove offside warning.
+                    if (offsideValue.IsOffside && !IsOffside(offsideValue.Team))
+                        WarnOffside(false, offsideValue.Team);
+                }
+                catch {
+                    _isOffside.Remove(clientSteamId);
+                }
 
                 _playersZone.Remove(clientSteamId);
                 _playersCurrentPuckTouch.Remove(clientSteamId);
