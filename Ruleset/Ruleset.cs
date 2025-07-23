@@ -2304,8 +2304,25 @@ namespace oomtm450PuckMod_Ruleset {
                 ScoreboardModifications(false);
 
                 if (_sounds != null) {
+                    if (!string.IsNullOrEmpty(_currentMusicPlaying)) {
+                        _sounds.Stop(_currentMusicPlaying);
+                        _currentMusicPlaying = "";
+                    }
+
                     _sounds.DestroyGameObjects();
                     _sounds = null;
+                }
+
+                if (_refSignalsBlueTeam != null) {
+                    _refSignalsBlueTeam.StopAllSignals();
+                    _refSignalsBlueTeam.DestroyGameObjects();
+                    _refSignalsBlueTeam = null;
+                }
+
+                if (_refSignalsRedTeam != null) {
+                    _refSignalsRedTeam.StopAllSignals();
+                    _refSignalsRedTeam.DestroyGameObjects();
+                    _refSignalsRedTeam = null;
                 }
 
                 _harmony.UnpatchSelf();
