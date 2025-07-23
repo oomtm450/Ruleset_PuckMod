@@ -1180,16 +1180,6 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return;
 
-                    /*Logging.Log($"ExcludedLayers : {player.Stick.StickMesh.BladeCollider.excludeLayers.value}.", _serverConfig, true); // TODO : Remove debug logs.
-                    //player.Stick.StickMesh.BladeCollider.excludeLayers &= ~(1 << 8); // Player.
-                    player.Stick.StickMesh.BladeCollider.excludeLayers = 0; // Player.
-                    Logging.Log($"ExcludedLayers after Player removed : {player.Stick.StickMesh.BladeCollider.excludeLayers.value}.", _serverConfig, true); // TODO : Remove debug logs.
-                    //player.Stick.StickMesh.BladeCollider.excludeLayers &= ~(1 << 9); // Player Mesh.
-                    //player.Stick.StickMesh.BladeCollider.excludeLayers &= ~(1 << 16); // Player Collider.
-                    player.Stick.StickMesh.ShaftCollider.excludeLayers = 0; // Player.
-                    //player.Stick.StickMesh.ShaftCollider.excludeLayers &= ~(1 << 9); // Player Mesh.
-                    //player.Stick.StickMesh.ShaftCollider.excludeLayers &= ~(1 << 16); // Player Collider.*/
-
                     // If this game is not started or faceoff is on the default dot (center), do not use the patch.
                     if (GameManager.Instance.Phase != GamePhase.FaceOff || _nextFaceoffSpot == FaceoffSpot.Center)
                         return;
