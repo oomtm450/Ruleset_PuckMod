@@ -1374,6 +1374,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         #region Methods/Functions
         private static void WarnOffside(bool active, PlayerTeam team) {
+            if (!IsOffsideEnabled(team))
+                return;
+
             if (active) {
                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
                 UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {team.ToString().ToUpperInvariant()} TEAM");
@@ -1485,59 +1488,56 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static bool IsOffside(PlayerTeam team) {
-            bool offsidesActivated;
-            if (team == PlayerTeam.Blue)
-                offsidesActivated = _serverConfig.Offside.BlueTeam;
-            else
-                offsidesActivated = _serverConfig.Offside.RedTeam;
-
-            if (!offsidesActivated)
+            if (!IsOffsideEnabled(team))
                 return false;
 
             return _isOffside.Where(x => x.Value.Team == team).Any(x => x.Value.IsOffside);
         }
 
-        private static bool IsHighStick(PlayerTeam team) {
-            bool highStickActivated;
+        private static bool IsOffsideEnabled(PlayerTeam team) {
             if (team == PlayerTeam.Blue)
-                highStickActivated = _serverConfig.HighStick.BlueTeam;
+                return _serverConfig.Offside.BlueTeam;
             else
-                highStickActivated = _serverConfig.HighStick.RedTeam;
+                return _serverConfig.Offside.RedTeam;
+        }
 
-            if (!highStickActivated || !_isHighStickActive[team])
+        private static bool IsHighStick(PlayerTeam team) {
+            if (!IsHighStickEnabled(team) || !_isHighStickActive[team])
                 return false;
 
             return true;
         }
 
-        private static bool IsIcing(PlayerTeam team) {
-            bool icingsActivated;
+        private static bool IsHighStickEnabled(PlayerTeam team) {
             if (team == PlayerTeam.Blue)
-                icingsActivated = _serverConfig.Icing.BlueTeam;
+                return _serverConfig.HighStick.BlueTeam;
             else
-                icingsActivated = _serverConfig.Icing.RedTeam;
+                return _serverConfig.HighStick.RedTeam;
+        }
 
-            if (!icingsActivated)
+        private static bool IsIcing(PlayerTeam team) {
+            if (!IsIcingEnabled(team))
                 return false;
 
             return _isIcingActive[team];
         }
 
+        private static bool IsIcingEnabled(PlayerTeam team) {
+            if (team == PlayerTeam.Blue)
+                return _serverConfig.Icing.BlueTeam;
+            else
+                return _serverConfig.Icing.RedTeam;
+        }
+
         private static bool IsIcingPossible(PlayerTeam team, bool checkPossibleTime = true) {
-            if (_isIcingPossible[team] != null && (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < _serverConfig.Icing.MaxPossibleTime))
+            if (IsIcingEnabled(team) && _isIcingPossible[team] != null && (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < _serverConfig.Icing.MaxPossibleTime))
                 return true;
 
             return false;
         }
 
         private static bool IsGoalieInt(PlayerTeam team) {
-            bool goalieIntActivated;
-            if (team == PlayerTeam.Blue)
-                goalieIntActivated = _serverConfig.GInt.BlueTeam;
-            else
-                goalieIntActivated = _serverConfig.GInt.RedTeam;
-
-            if (!goalieIntActivated)
+            if (!IsGoalieIntEnabled(team))
                 return false;
             
             Stopwatch watch = _goalieIntTimer[team];
@@ -1550,6 +1550,13 @@ namespace oomtm450PuckMod_Ruleset {
                 return watch.ElapsedMilliseconds < _serverConfig.GInt.HitNoGoalMilliseconds;
 
             return watch.ElapsedMilliseconds < _serverConfig.GInt.PushNoGoalMilliseconds;
+        }
+
+        private static bool IsGoalieIntEnabled(PlayerTeam team) {
+            if (team == PlayerTeam.Blue)
+                return _serverConfig.GInt.BlueTeam;
+            else
+                return _serverConfig.GInt.RedTeam;
         }
 
         /// <summary>
@@ -2203,6 +2210,9 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void ServerManager_Update_IcingLogic(PlayerTeam team, Puck puck, Dictionary<PlayerTeam, bool?> icingHasToBeWarned) {
+            if (!IsIcingEnabled(team))
+                return;
+
             if (!IsIcingPossible(team, false) && _isIcingActive[team]) {
                 _isIcingActive[team] = false;
                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
