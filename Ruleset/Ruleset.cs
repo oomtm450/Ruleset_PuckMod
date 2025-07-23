@@ -2308,6 +2308,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 _hasRegisteredWithNamedMessageHandler = false;
+                _serverHasResponded = false;
 
                 //_getStickLocation.Disable();
 
