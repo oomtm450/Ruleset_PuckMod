@@ -8,7 +8,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Unity.Burst.CompilerServices;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
@@ -24,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "V0.16.0";
+        private static readonly string MOD_VERSION = "0.16.1";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -647,6 +646,9 @@ namespace oomtm450PuckMod_Ruleset {
                         NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
                     }
                     else if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) {
+                        if (phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) // Fix faceoff if the period is over because of deferred icing.
+                            _nextFaceoffSpot = FaceoffSpot.Center;
+
                         // Reset players zone.
                         _playersZone.Clear();
 
@@ -756,7 +758,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     if (phase == GamePhase.FaceOff) {
-                        if (_nextFaceoffSpot == FaceoffSpot.Center)
+                        if (_nextFaceoffSpot == FaceoffSpot.Center || !_serverConfig.UseCustomFaceoff)
                             return;
 
                         Vector3 dot = Faceoff.GetFaceoffDot(_nextFaceoffSpot);
@@ -788,11 +790,16 @@ namespace oomtm450PuckMod_Ruleset {
             public static bool Prefix(ref Vector3 position, Quaternion rotation, Vector3 velocity, bool isReplay) {
                 try {
                     // If this is not the server or this is a replay or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff))
+                    if (!ServerFunc.IsDedicatedServer() || isReplay || !_serverConfig.UseCustomFaceoff || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff))
                         return true;
 
                     Vector3 dot = Faceoff.GetFaceoffDot(_nextFaceoffSpot);
-                    position = new Vector3(dot.x, 1.1f, dot.z);
+
+                    if (_serverConfig.UseDefaultPuckDropHeight)
+                        position = new Vector3(dot.x, position.y, dot.z);
+                    else
+                        position = new Vector3(dot.x, _serverConfig.PuckDropHeight, dot.z);
+
                     _nextFaceoffSpot = FaceoffSpot.Center;
                 }
                 catch (Exception ex)  {
@@ -1181,18 +1188,8 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return;
 
-                    /*Logging.Log($"ExcludedLayers : {player.Stick.StickMesh.BladeCollider.excludeLayers.value}.", _serverConfig, true); // TODO : Remove debug logs.
-                    //player.Stick.StickMesh.BladeCollider.excludeLayers &= ~(1 << 8); // Player.
-                    player.Stick.StickMesh.BladeCollider.excludeLayers = 0; // Player.
-                    Logging.Log($"ExcludedLayers after Player removed : {player.Stick.StickMesh.BladeCollider.excludeLayers.value}.", _serverConfig, true); // TODO : Remove debug logs.
-                    //player.Stick.StickMesh.BladeCollider.excludeLayers &= ~(1 << 9); // Player Mesh.
-                    //player.Stick.StickMesh.BladeCollider.excludeLayers &= ~(1 << 16); // Player Collider.
-                    player.Stick.StickMesh.ShaftCollider.excludeLayers = 0; // Player.
-                    //player.Stick.StickMesh.ShaftCollider.excludeLayers &= ~(1 << 9); // Player Mesh.
-                    //player.Stick.StickMesh.ShaftCollider.excludeLayers &= ~(1 << 16); // Player Collider.*/
-
                     // If this game is not started or faceoff is on the default dot (center), do not use the patch.
-                    if (GameManager.Instance.Phase != GamePhase.FaceOff || _nextFaceoffSpot == FaceoffSpot.Center)
+                    if (GameManager.Instance.Phase != GamePhase.FaceOff || _nextFaceoffSpot == FaceoffSpot.Center || !_serverConfig.UseCustomFaceoff)
                         return;
 
                     Player player = PlayerManager.Instance.GetPlayers()
@@ -1377,6 +1374,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         #region Methods/Functions
         private static void WarnOffside(bool active, PlayerTeam team) {
+            if (!IsOffsideEnabled(team))
+                return;
+
             if (active) {
                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send show offside signal for client-side UI.
                 UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {team.ToString().ToUpperInvariant()} TEAM");
@@ -1488,59 +1488,56 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static bool IsOffside(PlayerTeam team) {
-            bool offsidesActivated;
-            if (team == PlayerTeam.Blue)
-                offsidesActivated = _serverConfig.Offside.BlueTeam;
-            else
-                offsidesActivated = _serverConfig.Offside.RedTeam;
-
-            if (!offsidesActivated)
+            if (!IsOffsideEnabled(team))
                 return false;
 
             return _isOffside.Where(x => x.Value.Team == team).Any(x => x.Value.IsOffside);
         }
 
-        private static bool IsHighStick(PlayerTeam team) {
-            bool highStickActivated;
+        private static bool IsOffsideEnabled(PlayerTeam team) {
             if (team == PlayerTeam.Blue)
-                highStickActivated = _serverConfig.HighStick.BlueTeam;
+                return _serverConfig.Offside.BlueTeam;
             else
-                highStickActivated = _serverConfig.HighStick.RedTeam;
+                return _serverConfig.Offside.RedTeam;
+        }
 
-            if (!highStickActivated || !_isHighStickActive[team])
+        private static bool IsHighStick(PlayerTeam team) {
+            if (!IsHighStickEnabled(team) || !_isHighStickActive[team])
                 return false;
 
             return true;
         }
 
-        private static bool IsIcing(PlayerTeam team) {
-            bool icingsActivated;
+        private static bool IsHighStickEnabled(PlayerTeam team) {
             if (team == PlayerTeam.Blue)
-                icingsActivated = _serverConfig.Icing.BlueTeam;
+                return _serverConfig.HighStick.BlueTeam;
             else
-                icingsActivated = _serverConfig.Icing.RedTeam;
+                return _serverConfig.HighStick.RedTeam;
+        }
 
-            if (!icingsActivated)
+        private static bool IsIcing(PlayerTeam team) {
+            if (!IsIcingEnabled(team))
                 return false;
 
             return _isIcingActive[team];
         }
 
+        private static bool IsIcingEnabled(PlayerTeam team) {
+            if (team == PlayerTeam.Blue)
+                return _serverConfig.Icing.BlueTeam;
+            else
+                return _serverConfig.Icing.RedTeam;
+        }
+
         private static bool IsIcingPossible(PlayerTeam team, bool checkPossibleTime = true) {
-            if (_isIcingPossible[team] != null && (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < _serverConfig.Icing.MaxPossibleTime))
+            if (IsIcingEnabled(team) && _isIcingPossible[team] != null && (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < _serverConfig.Icing.MaxPossibleTime))
                 return true;
 
             return false;
         }
 
         private static bool IsGoalieInt(PlayerTeam team) {
-            bool goalieIntActivated;
-            if (team == PlayerTeam.Blue)
-                goalieIntActivated = _serverConfig.GInt.BlueTeam;
-            else
-                goalieIntActivated = _serverConfig.GInt.RedTeam;
-
-            if (!goalieIntActivated)
+            if (!IsGoalieIntEnabled(team))
                 return false;
             
             Stopwatch watch = _goalieIntTimer[team];
@@ -1553,6 +1550,13 @@ namespace oomtm450PuckMod_Ruleset {
                 return watch.ElapsedMilliseconds < _serverConfig.GInt.HitNoGoalMilliseconds;
 
             return watch.ElapsedMilliseconds < _serverConfig.GInt.PushNoGoalMilliseconds;
+        }
+
+        private static bool IsGoalieIntEnabled(PlayerTeam team) {
+            if (team == PlayerTeam.Blue)
+                return _serverConfig.GInt.BlueTeam;
+            else
+                return _serverConfig.GInt.RedTeam;
         }
 
         /// <summary>
@@ -2206,6 +2210,9 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void ServerManager_Update_IcingLogic(PlayerTeam team, Puck puck, Dictionary<PlayerTeam, bool?> icingHasToBeWarned) {
+            if (!IsIcingEnabled(team))
+                return;
+
             if (!IsIcingPossible(team, false) && _isIcingActive[team]) {
                 _isIcingActive[team] = false;
                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
@@ -2307,8 +2314,25 @@ namespace oomtm450PuckMod_Ruleset {
                 ScoreboardModifications(false);
 
                 if (_sounds != null) {
+                    if (!string.IsNullOrEmpty(_currentMusicPlaying)) {
+                        _sounds.Stop(_currentMusicPlaying);
+                        _currentMusicPlaying = "";
+                    }
+
                     _sounds.DestroyGameObjects();
                     _sounds = null;
+                }
+
+                if (_refSignalsBlueTeam != null) {
+                    _refSignalsBlueTeam.StopAllSignals();
+                    _refSignalsBlueTeam.DestroyGameObjects();
+                    _refSignalsBlueTeam = null;
+                }
+
+                if (_refSignalsRedTeam != null) {
+                    _refSignalsRedTeam.StopAllSignals();
+                    _refSignalsRedTeam.DestroyGameObjects();
+                    _refSignalsRedTeam = null;
                 }
 
                 _harmony.UnpatchSelf();
