@@ -646,6 +646,9 @@ namespace oomtm450PuckMod_Ruleset {
                         NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
                     }
                     else if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) {
+                        if (phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) // Fix faceoff if the period is over because of deferred icing.
+                            _nextFaceoffSpot = FaceoffSpot.Center;
+
                         // Reset players zone.
                         _playersZone.Clear();
 
