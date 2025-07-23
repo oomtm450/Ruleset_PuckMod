@@ -758,7 +758,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     if (phase == GamePhase.FaceOff) {
-                        if (_nextFaceoffSpot == FaceoffSpot.Center)
+                        if (_nextFaceoffSpot == FaceoffSpot.Center || !_serverConfig.UseCustomFaceoff)
                             return;
 
                         Vector3 dot = Faceoff.GetFaceoffDot(_nextFaceoffSpot);
@@ -790,11 +790,16 @@ namespace oomtm450PuckMod_Ruleset {
             public static bool Prefix(ref Vector3 position, Quaternion rotation, Vector3 velocity, bool isReplay) {
                 try {
                     // If this is not the server or this is a replay or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff))
+                    if (!ServerFunc.IsDedicatedServer() || isReplay || !_serverConfig.UseCustomFaceoff || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff))
                         return true;
 
                     Vector3 dot = Faceoff.GetFaceoffDot(_nextFaceoffSpot);
-                    position = new Vector3(dot.x, 1.1f, dot.z);
+
+                    if (_serverConfig.UseDefaultPuckDropHeight)
+                        position = new Vector3(dot.x, position.y, dot.z);
+                    else
+                        position = new Vector3(dot.x, _serverConfig.PuckDropHeight, dot.z);
+
                     _nextFaceoffSpot = FaceoffSpot.Center;
                 }
                 catch (Exception ex)  {
@@ -1184,7 +1189,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     // If this game is not started or faceoff is on the default dot (center), do not use the patch.
-                    if (GameManager.Instance.Phase != GamePhase.FaceOff || _nextFaceoffSpot == FaceoffSpot.Center)
+                    if (GameManager.Instance.Phase != GamePhase.FaceOff || _nextFaceoffSpot == FaceoffSpot.Center || !_serverConfig.UseCustomFaceoff)
                         return;
 
                     Player player = PlayerManager.Instance.GetPlayers()

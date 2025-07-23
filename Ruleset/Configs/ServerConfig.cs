@@ -21,6 +21,21 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool LogInfo { get; set; } = true;
 
         /// <summary>
+        /// Bool, true if the custom faceoff (any faceoff not in center) should be used.
+        /// </summary>
+        public bool UseCustomFaceoff { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if the height of the puck drop on faceoffs shouldn't be modified.
+        /// </summary>
+        public bool UseDefaultPuckDropHeight { get; set; } = false;
+
+        /// <summary>
+        /// Float, height of the puck drop on faceoffs.
+        /// </summary>
+        public float PuckDropHeight { get; set; } = 1.1f;
+
+        /// <summary>
         /// OffsideConfig, config related to offsides.
         /// </summary>
         public OffsideConfig Offside { get; set; } = new OffsideConfig();
