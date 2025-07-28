@@ -589,7 +589,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     PlayerTeam goalieOtherTeam = TeamFunc.GetOtherTeam(goalie.Team.Value);
 
-                    bool goalieDown = goalie.PlayerBody.IsSlipping || goalie.PlayerBody.HasSlipped;
+                    bool goalieDown = goalie.PlayerBody.IsSlipping || goalie.PlayerBody.HasSlipped || goalie.PlayerBody.HasFallen;
                     _lastGoalieStateCollision[goalieOtherTeam] = goalieDown;
 
                     if (goalieDown || (force > _serverConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease)) {
