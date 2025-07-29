@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.16.1";
+        private static readonly string MOD_VERSION = "0.16.2";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -547,7 +547,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     PlayerBodyV2 playerBody = GetPlayerBodyV2(collision.gameObject);
 
-                    if (!playerBody)
+                    if (!playerBody || !playerBody.Player || !playerBody.Player.IsCharacterFullySpawned)
                         return;
 
                     float force = Utils.GetCollisionForce(collision);
@@ -584,17 +584,17 @@ namespace oomtm450PuckMod_Ruleset {
                     if (goalie.PlayerBody.Rigidbody.transform.position.x - _serverConfig.GInt.GoalieRadius < startX ||
                         goalie.PlayerBody.Rigidbody.transform.position.x + _serverConfig.GInt.GoalieRadius > endX ||
                         goalie.PlayerBody.Rigidbody.transform.position.z - _serverConfig.GInt.GoalieRadius < startZ ||
-                        goalie.PlayerBody.Rigidbody.transform.position.z + _serverConfig.GInt.GoalieRadius > endZ)
+                        goalie.PlayerBody.Rigidbody.transform.position.z + _serverConfig.GInt.GoalieRadius > endZ) {
                         goalieIsInHisCrease = false;
+                    }
 
                     PlayerTeam goalieOtherTeam = TeamFunc.GetOtherTeam(goalie.Team.Value);
 
-                    bool goalieDown = goalie.PlayerBody.IsSlipping || goalie.PlayerBody.HasSlipped;
+                    bool goalieDown = goalie.PlayerBody.HasFallen;
                     _lastGoalieStateCollision[goalieOtherTeam] = goalieDown;
 
                     if (goalieDown || (force > _serverConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease)) {
-                        if (!_goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch))
-                            return;
+                        _ = _goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch);
 
                         if (watch == null) {
                             watch = new Stopwatch();
@@ -2308,6 +2308,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 _hasRegisteredWithNamedMessageHandler = false;
+                _serverHasResponded = false;
 
                 //_getStickLocation.Disable();
 
