@@ -594,8 +594,7 @@ namespace oomtm450PuckMod_Ruleset {
                     _lastGoalieStateCollision[goalieOtherTeam] = goalieDown;
 
                     if (goalieDown || (force > _serverConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease)) {
-                        if (!_goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch))
-                            return;
+                        _ = _goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch);
 
                         if (watch == null) {
                             watch = new Stopwatch();
