@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -187,7 +186,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static string GetRandomSound(List<string> musicList) {
             if (musicList.Count != 0)
-                return musicList[new System.Random(450).Next(0, musicList.Count)];
+                return musicList[new System.Random().Next(0, musicList.Count)];
 
             return "";
         }
