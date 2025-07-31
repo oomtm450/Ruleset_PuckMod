@@ -1544,7 +1544,18 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static bool IsIcingPossible(PlayerTeam team, bool checkPossibleTime = true) {
-            if (IsIcingEnabled(team) && _isIcingPossible[team] != null && (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched]))
+            PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
+            List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
+
+            int maxPossibleTime = _serverConfig.Icing.MaxPossibleTime.Values.Max();
+            foreach ((PlayerTeam playerTeam, Zone playerZone) in _playersZone.Values) {
+                if (playerTeam == otherTeam && otherTeamZones.Any(x => x == playerZone)) {
+                    maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched];
+                    break;
+                }
+            }
+
+            if (IsIcingEnabled(team) && _isIcingPossible[team] != null && (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < maxPossibleTime))
                 return true;
 
             return false;
