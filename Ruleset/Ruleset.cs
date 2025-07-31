@@ -648,15 +648,15 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (phase == GamePhase.BlueScore) {
                         _currentMusicPlaying = Sounds.BLUE_GOAL_MUSIC;
-                        NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
+                        NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER, _serverConfig);
                     }
                     else if (phase == GamePhase.RedScore) {
                         _currentMusicPlaying = Sounds.RED_GOAL_MUSIC;
-                        NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
+                        NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER, _serverConfig);
                     }
                     else if (phase == GamePhase.PeriodOver) {
                         _currentMusicPlaying = Sounds.BETWEEN_PERIODS_MUSIC;
-                        NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
+                        NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER, _serverConfig);
                     }
                     else if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) {
                         if (phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) // Fix faceoff if the period is over because of deferred icing.
@@ -732,7 +732,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 else
                                     _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
 
-                                NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
+                                NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER, _serverConfig);
                                 _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
                                 return true;
                             }
@@ -740,12 +740,12 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (phase == GamePhase.GameOver) {
                             NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.ALL, Constants.FROM_SERVER, _serverConfig);
-                            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.GAMEOVER_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FormatSoundStrForCommunication(Sounds.GAMEOVER_MUSIC), Constants.FROM_SERVER, _serverConfig);
                             _currentMusicPlaying = Sounds.GAMEOVER_MUSIC;
                         }
                         else if (phase == GamePhase.Warmup) {
                             NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.ALL, Constants.FROM_SERVER, _serverConfig);
-                            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.WARMUP_MUSIC, Constants.FROM_SERVER, _serverConfig);
+                            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FormatSoundStrForCommunication(Sounds.WARMUP_MUSIC), Constants.FROM_SERVER, _serverConfig);
                             _currentMusicPlaying = Sounds.WARMUP_MUSIC;
                         }
 
@@ -1476,7 +1476,7 @@ namespace oomtm450PuckMod_Ruleset {
             else
                 _currentMusicPlaying = Sounds.FACEOFF_MUSIC_DELAYED;
 
-            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, _currentMusicPlaying, Constants.FROM_SERVER, _serverConfig);
+            NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER, _serverConfig);
             _currentMusicPlaying = Sounds.FACEOFF_MUSIC;
 
             _periodTimeRemaining = GameManager.Instance.GameState.Value.Time;
@@ -1915,62 +1915,68 @@ namespace oomtm450PuckMod_Ruleset {
                                 Logging.LogError(error);
                         }
                         else {
+                            string[] dataStrSplitted = dataStr.Split(';');
+                            int? seed = null;
+
+                            if (int.TryParse(dataStrSplitted[1], out int _seed))
+                                seed = _seed;
+
                             bool isFaceoffMusic = false;
                             float delay = 0;
-                            if (dataStr == Sounds.FACEOFF_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList);
+                            if (dataStrSplitted[0] == Sounds.FACEOFF_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList, seed);
                                 isFaceoffMusic = true;
                             }
-                            else if (dataStr == Sounds.FACEOFF_MUSIC_DELAYED) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList);
+                            else if (dataStrSplitted[0] == Sounds.FACEOFF_MUSIC_DELAYED) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList, seed);
                                 isFaceoffMusic = true;
                                 delay = 1f;
                             }
-                            else if (dataStr == Sounds.BLUE_GOAL_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BlueGoalMusicList);
+                            else if (dataStrSplitted[0] == Sounds.BLUE_GOAL_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BlueGoalMusicList, seed);
                                 _sounds.Play(_currentMusicPlaying, 2.25f);
                             }
-                            else if (dataStr == Sounds.RED_GOAL_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.RedGoalMusicList);
+                            else if (dataStrSplitted[0] == Sounds.RED_GOAL_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.RedGoalMusicList, seed);
                                 _sounds.Play(_currentMusicPlaying, 2.25f);
                             }
-                            else if (dataStr == Sounds.BETWEEN_PERIODS_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BetweenPeriodsMusicList);
+                            else if (dataStrSplitted[0] == Sounds.BETWEEN_PERIODS_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BetweenPeriodsMusicList, seed);
                                 _sounds.Play(_currentMusicPlaying, 1.5f);
                             }
-                            else if (dataStr == Sounds.WARMUP_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList);
+                            else if (dataStrSplitted[0] == Sounds.WARMUP_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList, seed);
                                 _sounds.Play(_currentMusicPlaying, 0, true);
                             }
-                            else if (dataStr == Sounds.LAST_MINUTE_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList);
+                            else if (dataStrSplitted[0] == Sounds.LAST_MINUTE_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList, seed);
                                 isFaceoffMusic = true;
                             }
-                            else if (dataStr == Sounds.FIRST_FACEOFF_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FirstFaceoffMusicList);
+                            else if (dataStrSplitted[0] == Sounds.FIRST_FACEOFF_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FirstFaceoffMusicList, seed);
                                 isFaceoffMusic = true;
                             }
-                            else if (dataStr == Sounds.SECOND_FACEOFF_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.SecondFaceoffMusicList);
+                            else if (dataStrSplitted[0] == Sounds.SECOND_FACEOFF_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.SecondFaceoffMusicList, seed);
                                 isFaceoffMusic = true;
                             }
-                            else if (dataStr == Sounds.LAST_MINUTE_MUSIC_DELAYED) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList);
-                                isFaceoffMusic = true;
-                                delay = 1f;
-                            }
-                            else if (dataStr == Sounds.FIRST_FACEOFF_MUSIC_DELAYED) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FirstFaceoffMusicList);
+                            else if (dataStrSplitted[0] == Sounds.LAST_MINUTE_MUSIC_DELAYED) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList, seed);
                                 isFaceoffMusic = true;
                                 delay = 1f;
                             }
-                            else if (dataStr == Sounds.SECOND_FACEOFF_MUSIC_DELAYED) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.SecondFaceoffMusicList);
+                            else if (dataStrSplitted[0] == Sounds.FIRST_FACEOFF_MUSIC_DELAYED) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FirstFaceoffMusicList, seed);
                                 isFaceoffMusic = true;
                                 delay = 1f;
                             }
-                            else if (dataStr == Sounds.GAMEOVER_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.GameOverMusicList);
+                            else if (dataStrSplitted[0] == Sounds.SECOND_FACEOFF_MUSIC_DELAYED) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.SecondFaceoffMusicList, seed);
+                                isFaceoffMusic = true;
+                                delay = 1f;
+                            }
+                            else if (dataStrSplitted[0] == Sounds.GAMEOVER_MUSIC) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.GameOverMusicList, seed);
                                 _sounds.Play(_currentMusicPlaying, 0.5f);
                             }
                             else if (dataStr == Sounds.WHISTLE)
@@ -1978,7 +1984,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                             if (isFaceoffMusic) {
                                 if (string.IsNullOrEmpty(_currentMusicPlaying))
-                                    _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList);
+                                    _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList, seed);
                                 _sounds.Play(_currentMusicPlaying, delay);
                             }
                         }
