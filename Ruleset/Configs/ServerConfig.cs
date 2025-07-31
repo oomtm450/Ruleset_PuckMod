@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace oomtm450PuckMod_Ruleset.Configs {
@@ -161,7 +162,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing.
         /// </summary>
-        public int MaxPossibleTime { get; set; } = 7000;
+        public Dictionary<Zone, int> MaxPossibleTime { get; set; } = new Dictionary<Zone, int> {
+            { Zone.BlueTeam_BehindGoalLine, 8000 },
+            { Zone.RedTeam_BehindGoalLine, 8000 },
+            { Zone.BlueTeam_Zone, 6500 },
+            { Zone.RedTeam_Zone, 6500 },
+            { Zone.BlueTeam_Center, 4500 },
+            { Zone.RedTeam_Center, 4500 },
+        };
 
         /// <summary>
         /// Int, number of milliseconds for icing to be called off if it has not being called.

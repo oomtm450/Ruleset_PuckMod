@@ -143,6 +143,11 @@ namespace oomtm450PuckMod_Ruleset {
         private static Zone _puckZone = ZoneFunc.DEFAULT_ZONE;
 
         /// <summary>
+        /// Zone, zone of the puck when it was last touched.
+        /// </summary>
+        private static Zone _puckZoneLastTouched = ZoneFunc.DEFAULT_ZONE;
+
+        /// <summary>
         /// LockDictionary of string and (PlayerTeam and Zone), dictionary of all the players' zone by steam Id.
         /// </summary>
         private static readonly LockDictionary<string, (PlayerTeam Team, Zone Zone)> _playersZone = new LockDictionary<string, (PlayerTeam, Zone)>();
@@ -258,6 +263,8 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!playerBody || !playerBody.Player)
                             return;
 
+                        _puckZoneLastTouched = _puckZone;
+
                         PlayerTeam playerOtherTeam = TeamFunc.GetOtherTeam(playerBody.Player.Team.Value);
                         if (IsIcingPossible(playerOtherTeam)) {
                             if (!PlayerFunc.IsGoalie(playerBody.Player)) {
@@ -307,6 +314,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (!stick.Player)
                         return;
+
+                    _puckZoneLastTouched = _puckZone;
 
                     string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
 
@@ -410,6 +419,8 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!stick)
                         return;
 
+                    _puckZoneLastTouched = _puckZone;
+
                     string playerSteamId = stick.Player.SteamId.Value.ToString();
 
                     if (!PuckIsTipped(playerSteamId)) {
@@ -482,6 +493,8 @@ namespace oomtm450PuckMod_Ruleset {
                     Stick stick = GetStick(collision.gameObject);
                     if (!stick)
                         return;
+
+                    _puckZoneLastTouched = _puckZone;
 
                     string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
 
@@ -681,6 +694,7 @@ namespace oomtm450PuckMod_Ruleset {
                             _checkIfPuckWasSaved[key] = new SaveCheck();
 
                         _puckZone = ZoneFunc.GetZone(_nextFaceoffSpot);
+                        _puckZoneLastTouched = _puckZone;
 
                         _lastPlayerOnPuckTeam = TeamFunc.DEFAULT_TEAM;
                         _lastPlayerOnPuckTeamTipIncluded = TeamFunc.DEFAULT_TEAM;
@@ -1530,7 +1544,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static bool IsIcingPossible(PlayerTeam team, bool checkPossibleTime = true) {
-            if (IsIcingEnabled(team) && _isIcingPossible[team] != null && (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < _serverConfig.Icing.MaxPossibleTime))
+            if (IsIcingEnabled(team) && _isIcingPossible[team] != null && (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched]))
                 return true;
 
             return false;
