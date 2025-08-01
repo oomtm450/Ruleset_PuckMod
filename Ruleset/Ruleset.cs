@@ -1012,7 +1012,7 @@ namespace oomtm450PuckMod_Ruleset {
                         else if (redPlayersCount != 0 && bluePlayersCount == 0)
                             closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Key;
                         else if (bluePlayersCount != 0 && redPlayersCount != 0) {
-                            if (Math.Abs(closestPlayerToEndBoardBlueTeam.Value.Z - closestPlayerToEndBoardRedTeam.Value.Z) < 5) { // Check distance with x and z coordinates.
+                            if (Math.Abs(closestPlayerToEndBoardBlueTeam.Value.Z - closestPlayerToEndBoardRedTeam.Value.Z) < 10) { // Check distance with x and z coordinates.
                                 float puckXCoordinate = Math.Abs(puck.Rigidbody.transform.position.x);
                                 float puckZCoordinate = Math.Abs(puck.Rigidbody.transform.position.z);
 
