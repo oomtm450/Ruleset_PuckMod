@@ -1,5 +1,7 @@
 ﻿using oomtm450PuckMod_Ruleset.Configs;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Text;
 using Unity.Collections;
 using Unity.Netcode;
@@ -9,6 +11,15 @@ namespace oomtm450PuckMod_Ruleset {
     /// Class containing code for network communication from/to client/server.
     /// </summary>
     internal static class NetworkCommunication {
+        #region Constants
+        private static readonly ReadOnlyCollection<string> DATANAMES_TO_IGNORE_LOG = new ReadOnlyCollection<string>(new List<string> {
+            RefSignals.SHOW_SIGNAL_BLUE,
+            RefSignals.SHOW_SIGNAL_RED,
+            RefSignals.STOP_SIGNAL_BLUE,
+            RefSignals.STOP_SIGNAL_RED,
+        });
+        #endregion
+
         /// <summary>
         /// Method that sends data to the listener.
         /// </summary>
@@ -31,7 +42,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                 writer.Dispose();
 
-                Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to {clientId}.", config);
+                if (!DATANAMES_TO_IGNORE_LOG.Contains(dataName))
+                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to {clientId}.", config);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error when writing streamed data: {ex}");
@@ -45,7 +57,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <param name="dataStr">String, content of the data.</param>
         /// <param name="listener">String, listener where to send the data.</param>
         /// <param name="config">IConfig, config for the logs.</param>
-        public static void SendDataToAll(string dataName, string dataStr, string listener, IConfig config = null) {
+        public static void SendDataToAll(string dataName, string dataStr, string listener, IConfig config = null, bool log = true) {
             try {
                 byte[] data = Encoding.UTF8.GetBytes(dataStr);
 
@@ -59,7 +71,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                 writer.Dispose();
 
-                Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to all clients.", config);
+                if (!DATANAMES_TO_IGNORE_LOG.Contains(dataName))
+                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to all clients.", config);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error when writing streamed data: {ex}");
@@ -85,9 +98,12 @@ namespace oomtm450PuckMod_Ruleset {
 
                 string dataStr = Encoding.UTF8.GetString(data).Trim();
 
-                Logging.Log($"Received data {dataName.Trim()} ({length} bytes - {totalLength} total bytes) from {clientId}. Content : {dataStr}", config);
+                dataName = dataName.Trim();
 
-                return (dataName.Trim(), dataStr);
+                if (!DATANAMES_TO_IGNORE_LOG.Contains(dataName))
+                    Logging.Log($"Received data {dataName} ({length} bytes - {totalLength} total bytes) from {clientId}. Content : {dataStr}", config);
+
+                return (dataName, dataStr);
             }
             catch (Exception ex)  {
                 Logging.LogError($"Error when reading streamed data: {ex}");

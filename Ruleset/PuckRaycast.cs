@@ -7,11 +7,12 @@ namespace oomtm450PuckMod_Ruleset {
     /// </summary>
     internal class PuckRaycast : MonoBehaviour {
         private const int CHECK_EVERY_X_FRAMES = 4;
-        //private readonly Vector3 TOP_VECTOR = new Vector3(0, 0.15f, 0);
-        private readonly Vector3 RIGHT_VECTOR = new Vector3(Ruleset.PUCK_RADIUS + 0.015f, 0, 0);
-        private readonly Vector3 DOWN_VECTOR = new Vector3(0, -0.5f, 0);
+        //private readonly Vector3 TOP_VECTOR = new Vector3(0, 0.175f, 0);
+        private readonly Vector3 RIGHT_VECTOR = new Vector3(Ruleset.PUCK_RADIUS + 0.0175f, 0, 0);
+        private readonly Vector3 DOWN_VECTOR = new Vector3(0, -0.51f, 0);
         private Vector3 DOWN_RIGHT_VECTOR;
         private Vector3 DOWN_LEFT_VECTOR;
+        private readonly float MAX_DISTANCE = 15f;
         private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
 
         private Ray _rayBottomLeft;
@@ -64,13 +65,13 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private void CheckForColliders() {
-            bool hasHit = Physics.Raycast(_rayBottomLeft, out RaycastHit hit, 14f, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
+            bool hasHit = Physics.Raycast(_rayBottomLeft, out RaycastHit hit, MAX_DISTANCE, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
             if (!hasHit) {
-                hasHit = Physics.Raycast(_rayBottomRight, out hit, 14f, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
+                hasHit = Physics.Raycast(_rayBottomRight, out hit, MAX_DISTANCE, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
                 if (!hasHit) {
-                    hasHit = Physics.Raycast(_rayFarBottomLeft, out hit, 14f, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
+                    hasHit = Physics.Raycast(_rayFarBottomLeft, out hit, MAX_DISTANCE, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
                     if (!hasHit) {
-                        hasHit = Physics.Raycast(_rayFarBottomRight, out hit, 14f, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
+                        hasHit = Physics.Raycast(_rayFarBottomRight, out hit, MAX_DISTANCE, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
                         if (!hasHit)
                             return;
                         //else

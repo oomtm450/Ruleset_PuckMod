@@ -184,9 +184,13 @@ namespace oomtm450PuckMod_Ruleset {
                 soundObject.GetComponent<AudioSource>().Stop();
         }
 
-        internal static string GetRandomSound(List<string> musicList) {
-            if (musicList.Count != 0)
-                return musicList[new System.Random().Next(0, musicList.Count)];
+        internal static string GetRandomSound(List<string> musicList, int? seed = null) {
+            if (musicList.Count != 0) {
+                if (seed == null)
+                    return musicList[new System.Random().Next(0, musicList.Count)];
+                else
+                    return musicList[new System.Random((int)seed).Next(0, musicList.Count)];
+            }
 
             return "";
         }
@@ -237,6 +241,10 @@ namespace oomtm450PuckMod_Ruleset {
             catch (Exception ex) {
                 Errors.Add(ex.ToString());
             }
+        }
+
+        internal static string FormatSoundStrForCommunication(string sound) {
+            return sound + $";{new System.Random().Next(0, 100000)}";
         }
         #endregion
     }
