@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.17.0DEV3";
+        private static readonly string MOD_VERSION = "0.17.0DEV5";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -999,43 +999,51 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Deferred icing logic.
                     if (dictPlayersPositionsForDeferredIcing.Count != 0) {
-                        KeyValuePair<Player, (float X, float Z)> closestPlayerToEndBoardBlueTeam = dictPlayersPositionsForDeferredIcing.Where(x => x.Key.Team.Value == PlayerTeam.Blue).OrderByDescending(x => x.Value).First();
-                        KeyValuePair<Player, (float X, float Z)> closestPlayerToEndBoardRedTeam = dictPlayersPositionsForDeferredIcing.Where(x => x.Key.Team.Value == PlayerTeam.Red).OrderByDescending(x => x.Value).First();
+                        var defaultKvp = default(KeyValuePair<Player, (float, float)>);
+                        KeyValuePair<Player, (float X, float Z)> closestPlayerToEndBoardBlueTeam = dictPlayersPositionsForDeferredIcing.Where(x => x.Key.Team.Value == PlayerTeam.Blue).OrderByDescending(x => x.Value).FirstOrDefault();
+                        KeyValuePair<Player, (float X, float Z)> closestPlayerToEndBoardRedTeam = dictPlayersPositionsForDeferredIcing.Where(x => x.Key.Team.Value == PlayerTeam.Red).OrderByDescending(x => x.Value).FirstOrDefault();
 
                         Player closestPlayerToEndBoard;
-                        if (Math.Abs(closestPlayerToEndBoardBlueTeam.Value.Z - closestPlayerToEndBoardRedTeam.Value.Z) < 4) { // Check distance with x and z coordinates.
-                            float puckXCoordinate = Math.Abs(puck.Rigidbody.transform.position.x);
-                            float puckZCoordinate = Math.Abs(puck.Rigidbody.transform.position.z);
 
-                            double blueTeamPlayerDistanceToPuck = Math.Sqrt(Math.Pow(Math.Abs(puckXCoordinate - closestPlayerToEndBoardBlueTeam.Value.X), 2) + Math.Pow(Math.Abs(puckZCoordinate - closestPlayerToEndBoardBlueTeam.Value.Z), 2));
-                            double redTeamPlayerDistanceToPuck = Math.Sqrt(Math.Pow(Math.Abs(puckXCoordinate - closestPlayerToEndBoardRedTeam.Value.X), 2) + Math.Pow(Math.Abs(puckZCoordinate - closestPlayerToEndBoardRedTeam.Value.Z), 2));
+                        if (!closestPlayerToEndBoardBlueTeam.Equals(defaultKvp) && closestPlayerToEndBoardRedTeam.Equals(defaultKvp))
+                            closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Key;
+                        else if (!closestPlayerToEndBoardRedTeam.Equals(defaultKvp) && closestPlayerToEndBoardBlueTeam.Equals(defaultKvp))
+                            closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Key;
+                        else if (!closestPlayerToEndBoardBlueTeam.Equals(defaultKvp) && !closestPlayerToEndBoardRedTeam.Equals(defaultKvp)) {
+                            if (Math.Abs(closestPlayerToEndBoardBlueTeam.Value.Z - closestPlayerToEndBoardRedTeam.Value.Z) < 4) { // Check distance with x and z coordinates.
+                                float puckXCoordinate = Math.Abs(puck.Rigidbody.transform.position.x);
+                                float puckZCoordinate = Math.Abs(puck.Rigidbody.transform.position.z);
 
-                            if (blueTeamPlayerDistanceToPuck < redTeamPlayerDistanceToPuck)
-                                closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Key;
-                            else
-                                closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Key;
-                        }
-                        else { // Take closest player with z coordinates.
-                            if (closestPlayerToEndBoardBlueTeam.Value.Z < closestPlayerToEndBoardRedTeam.Value.Z)
-                                closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Key;
-                            else
-                                closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Key;
-                        }
+                                double blueTeamPlayerDistanceToPuck = Math.Sqrt(Math.Pow(Math.Abs(puckXCoordinate - closestPlayerToEndBoardBlueTeam.Value.X), 2) + Math.Pow(Math.Abs(puckZCoordinate - closestPlayerToEndBoardBlueTeam.Value.Z), 2));
+                                double redTeamPlayerDistanceToPuck = Math.Sqrt(Math.Pow(Math.Abs(puckXCoordinate - closestPlayerToEndBoardRedTeam.Value.X), 2) + Math.Pow(Math.Abs(puckZCoordinate - closestPlayerToEndBoardRedTeam.Value.Z), 2));
 
-                        PlayerTeam closestPlayerToEndBoardOtherTeam = TeamFunc.GetOtherTeam(closestPlayerToEndBoard.Team.Value);
-                        if (IsIcing(closestPlayerToEndBoard.Team.Value)) {
-                            if (icingHasToBeWarned[closestPlayerToEndBoard.Team.Value] == null) {
-                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, closestPlayerToEndBoard.Team.Value), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send stop icing signal for client-side UI
-                                UIChat.Instance.Server_SendSystemChatMessage($"ICING {closestPlayerToEndBoard.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                                if (blueTeamPlayerDistanceToPuck < redTeamPlayerDistanceToPuck)
+                                    closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Key;
+                                else
+                                    closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Key;
                             }
-                            else
-                                icingHasToBeWarned[closestPlayerToEndBoard.Team.Value] = false;
-                            ResetIcings();
-                        }
-                        else if (IsIcing(closestPlayerToEndBoardOtherTeam)) {
-                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {closestPlayerToEndBoardOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
-                            ResetIcings();
-                            DoFaceoff();
+                            else { // Take closest player with z coordinates.
+                                if (closestPlayerToEndBoardBlueTeam.Value.Z < closestPlayerToEndBoardRedTeam.Value.Z)
+                                    closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Key;
+                                else
+                                    closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Key;
+                            }
+
+                            PlayerTeam closestPlayerToEndBoardOtherTeam = TeamFunc.GetOtherTeam(closestPlayerToEndBoard.Team.Value);
+                            if (IsIcing(closestPlayerToEndBoard.Team.Value)) {
+                                if (icingHasToBeWarned[closestPlayerToEndBoard.Team.Value] == null) {
+                                    NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, closestPlayerToEndBoard.Team.Value), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send stop icing signal for client-side UI
+                                    UIChat.Instance.Server_SendSystemChatMessage($"ICING {closestPlayerToEndBoard.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                                }
+                                else
+                                    icingHasToBeWarned[closestPlayerToEndBoard.Team.Value] = false;
+                                ResetIcings();
+                            }
+                            else if (IsIcing(closestPlayerToEndBoardOtherTeam)) {
+                                UIChat.Instance.Server_SendSystemChatMessage($"ICING {closestPlayerToEndBoardOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                                ResetIcings();
+                                DoFaceoff();
+                            }
                         }
                     }
 
