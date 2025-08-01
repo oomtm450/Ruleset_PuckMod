@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.17.0DEV5";
+        private static readonly string MOD_VERSION = "0.17.0DEV7";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1002,16 +1002,16 @@ namespace oomtm450PuckMod_Ruleset {
                         KeyValuePair<Player, (float X, float Z)> closestPlayerToEndBoardBlueTeam = dictPlayersPositionsForDeferredIcing.Where(x => x.Key.Team.Value == PlayerTeam.Blue).OrderByDescending(x => x.Value).FirstOrDefault();
                         KeyValuePair<Player, (float X, float Z)> closestPlayerToEndBoardRedTeam = dictPlayersPositionsForDeferredIcing.Where(x => x.Key.Team.Value == PlayerTeam.Red).OrderByDescending(x => x.Value).FirstOrDefault();
 
-                        Player closestPlayerToEndBoard;
+                        Player closestPlayerToEndBoard = null;
 
                         int bluePlayersCount = dictPlayersPositionsForDeferredIcing.Where(x => x.Key.Team.Value == PlayerTeam.Blue).Count();
                         int redPlayersCount = dictPlayersPositionsForDeferredIcing.Where(x => x.Key.Team.Value == PlayerTeam.Red).Count();
 
-                        if (bluePlayersCount > 0 && redPlayersCount == 0)
+                        if (bluePlayersCount != 0 && redPlayersCount == 0)
                             closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Key;
-                        else if (redPlayersCount > 0 && bluePlayersCount == 0)
+                        else if (redPlayersCount != 0 && bluePlayersCount == 0)
                             closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Key;
-                        else if (bluePlayersCount > 0 && redPlayersCount > 0) {
+                        else if (bluePlayersCount != 0 && redPlayersCount != 0) {
                             if (Math.Abs(closestPlayerToEndBoardBlueTeam.Value.Z - closestPlayerToEndBoardRedTeam.Value.Z) < 5) { // Check distance with x and z coordinates.
                                 float puckXCoordinate = Math.Abs(puck.Rigidbody.transform.position.x);
                                 float puckZCoordinate = Math.Abs(puck.Rigidbody.transform.position.z);
@@ -1030,7 +1030,9 @@ namespace oomtm450PuckMod_Ruleset {
                                 else
                                     closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Key;
                             }
+                        }
 
+                        if (closestPlayerToEndBoard != null) {
                             PlayerTeam closestPlayerToEndBoardOtherTeam = TeamFunc.GetOtherTeam(closestPlayerToEndBoard.Team.Value);
                             if (IsIcing(closestPlayerToEndBoard.Team.Value)) {
                                 if (icingHasToBeWarned[closestPlayerToEndBoard.Team.Value] == null) {
