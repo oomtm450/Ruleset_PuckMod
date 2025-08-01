@@ -2021,7 +2021,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.GameOverMusicList, seed);
                                 _sounds.Play(_currentMusicPlaying, 0.5f);
                             }
-                            else if (dataStr == Sounds.WHISTLE)
+                            else if (dataStrSplitted[0] == Sounds.WHISTLE)
                                 _sounds.Play(Sounds.WHISTLE);
 
                             if (isFaceoffMusic) {
