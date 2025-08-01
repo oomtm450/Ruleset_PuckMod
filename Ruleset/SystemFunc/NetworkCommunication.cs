@@ -42,7 +42,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                 writer.Dispose();
 
-                Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to {clientId}.", config);
+                if (!DATANAMES_TO_IGNORE_LOG.Contains(dataName))
+                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to {clientId}.", config);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error when writing streamed data: {ex}");
@@ -70,7 +71,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                 writer.Dispose();
 
-                Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to all clients.", config);
+                if (!DATANAMES_TO_IGNORE_LOG.Contains(dataName))
+                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to all clients.", config);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error when writing streamed data: {ex}");
