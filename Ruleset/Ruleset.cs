@@ -999,18 +999,20 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Deferred icing logic.
                     if (dictPlayersPositionsForDeferredIcing.Count != 0) {
-                        var defaultKvp = default(KeyValuePair<Player, (float, float)>);
                         KeyValuePair<Player, (float X, float Z)> closestPlayerToEndBoardBlueTeam = dictPlayersPositionsForDeferredIcing.Where(x => x.Key.Team.Value == PlayerTeam.Blue).OrderByDescending(x => x.Value).FirstOrDefault();
                         KeyValuePair<Player, (float X, float Z)> closestPlayerToEndBoardRedTeam = dictPlayersPositionsForDeferredIcing.Where(x => x.Key.Team.Value == PlayerTeam.Red).OrderByDescending(x => x.Value).FirstOrDefault();
 
                         Player closestPlayerToEndBoard;
 
-                        if (!closestPlayerToEndBoardBlueTeam.Equals(defaultKvp) && closestPlayerToEndBoardRedTeam.Equals(defaultKvp))
+                        int bluePlayersCount = dictPlayersPositionsForDeferredIcing.Where(x => x.Key.Team.Value == PlayerTeam.Blue).Count();
+                        int redPlayersCount = dictPlayersPositionsForDeferredIcing.Where(x => x.Key.Team.Value == PlayerTeam.Red).Count();
+
+                        if (bluePlayersCount > 0 && redPlayersCount == 0)
                             closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Key;
-                        else if (!closestPlayerToEndBoardRedTeam.Equals(defaultKvp) && closestPlayerToEndBoardBlueTeam.Equals(defaultKvp))
+                        else if (redPlayersCount > 0 && bluePlayersCount == 0)
                             closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Key;
-                        else if (!closestPlayerToEndBoardBlueTeam.Equals(defaultKvp) && !closestPlayerToEndBoardRedTeam.Equals(defaultKvp)) {
-                            if (Math.Abs(closestPlayerToEndBoardBlueTeam.Value.Z - closestPlayerToEndBoardRedTeam.Value.Z) < 4) { // Check distance with x and z coordinates.
+                        else if (bluePlayersCount > 0 && redPlayersCount > 0) {
+                            if (Math.Abs(closestPlayerToEndBoardBlueTeam.Value.Z - closestPlayerToEndBoardRedTeam.Value.Z) < 5) { // Check distance with x and z coordinates.
                                 float puckXCoordinate = Math.Abs(puck.Rigidbody.transform.position.x);
                                 float puckZCoordinate = Math.Abs(puck.Rigidbody.transform.position.z);
 
