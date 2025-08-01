@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.17.0DEV2";
+        private static readonly string MOD_VERSION = "0.17.0DEV3";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1003,7 +1003,7 @@ namespace oomtm450PuckMod_Ruleset {
                         KeyValuePair<Player, (float X, float Z)> closestPlayerToEndBoardRedTeam = dictPlayersPositionsForDeferredIcing.Where(x => x.Key.Team.Value == PlayerTeam.Red).OrderByDescending(x => x.Value).First();
 
                         Player closestPlayerToEndBoard;
-                        if (Math.Abs(closestPlayerToEndBoardBlueTeam.Value.Z - closestPlayerToEndBoardRedTeam.Value.Z) < 1) { // Check distance with x and z coordinates.
+                        if (Math.Abs(closestPlayerToEndBoardBlueTeam.Value.Z - closestPlayerToEndBoardRedTeam.Value.Z) < 4) { // Check distance with x and z coordinates.
                             float puckXCoordinate = Math.Abs(puck.Rigidbody.transform.position.x);
                             float puckZCoordinate = Math.Abs(puck.Rigidbody.transform.position.z);
 
