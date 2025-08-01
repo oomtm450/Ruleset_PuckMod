@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.17.0DEV8";
+        private static readonly string MOD_VERSION = "0.17.0DEV9";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -1021,16 +1021,16 @@ namespace oomtm450PuckMod_Ruleset {
                         else if (closestPlayerToEndBoardRedTeam != null && closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam.IsBehindHashmarks && !closestPlayerToEndBoardBlueTeam.IsBehindHashmarks)
                             closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Player;
                         else if (closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam != null) {
-                            if (Math.Abs(closestPlayerToEndBoardBlueTeam.Z - closestPlayerToEndBoardRedTeam.Z) < 10) { // Check distance with x and z coordinates.
+                            if (Math.Abs(closestPlayerToEndBoardBlueTeam.Z - closestPlayerToEndBoardRedTeam.Z) < 8f) { // Check distance with x and z coordinates.
                                 float puckXCoordinate = Math.Abs(puck.Rigidbody.transform.position.x);
                                 float puckZCoordinate = Math.Abs(puck.Rigidbody.transform.position.z);
 
                                 double blueTeamPlayerDistanceToPuck = Math.Sqrt(Math.Pow(Math.Abs(puckXCoordinate - closestPlayerToEndBoardBlueTeam.X), 2) + Math.Pow(Math.Abs(puckZCoordinate - closestPlayerToEndBoardBlueTeam.Z), 2));
                                 double redTeamPlayerDistanceToPuck = Math.Sqrt(Math.Pow(Math.Abs(puckXCoordinate - closestPlayerToEndBoardRedTeam.X), 2) + Math.Pow(Math.Abs(puckZCoordinate - closestPlayerToEndBoardRedTeam.Z), 2));
 
-                                if (blueTeamPlayerDistanceToPuck < redTeamPlayerDistanceToPuck)
+                                if (blueTeamPlayerDistanceToPuck < redTeamPlayerDistanceToPuck && closestPlayerToEndBoardBlueTeam.IsBehindHashmarks)
                                     closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Player;
-                                else
+                                else if (redTeamPlayerDistanceToPuck < blueTeamPlayerDistanceToPuck && closestPlayerToEndBoardRedTeam.IsBehindHashmarks)
                                     closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Player;
                             }
                             else { // Take closest player with z coordinates.
