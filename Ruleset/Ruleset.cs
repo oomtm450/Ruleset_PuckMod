@@ -180,6 +180,11 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, "" },
         };
 
+        /// <summary>
+        /// LockDictionary of string and (PlayerTeam and DateTime), dictionary of all DateTime of every player last puck touch.
+        /// </summary>
+        private static readonly LockDictionary<string, (PlayerTeam Team, DateTime LastTouchDateTime)> _playersOnPuckTipIncludedDateTime = new LockDictionary<string, (PlayerTeam, DateTime)>();
+
         private static readonly LockDictionary<PlayerTeam, bool> _lastShotWasCounted = new LockDictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, true },
             { PlayerTeam.Red, true },
@@ -434,6 +439,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = playerSteamId;
+                    _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, DateTime.UtcNow));
 
                     if (!_playersLastTimePuckPossession.TryGetValue(playerSteamId, out Stopwatch watch)) {
                         watch = new Stopwatch();
@@ -521,6 +527,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
+                    _playersOnPuckTipIncludedDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team.Value, DateTime.UtcNow));
 
                     // Icing logic.
                     bool icingPossible = false;
@@ -705,6 +712,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckTipIncludedSteamId.Keys))
                             _lastPlayerOnPuckTipIncludedSteamId[key] = "";
+
+                        _playersOnPuckTipIncludedDateTime.Clear();
 
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_BLUE, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig, false);
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_RED, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig, false);

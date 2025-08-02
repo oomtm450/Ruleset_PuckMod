@@ -57,6 +57,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public GIntConfig GInt { get; set; } = new GIntConfig();
 
         /// <summary>
+        /// PenaltyConfig, config related to penalties.
+        /// </summary>
+        public PenaltyConfig Penalty { get; set; } = new PenaltyConfig();
+
+        /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
         public int MaxTippedMilliseconds { get; set; } = 90;
@@ -123,6 +128,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             return config;
         }
         #endregion
+    }
+
+    /// <summary>
+    /// Class containing the config for penalties.
+    /// </summary>
+    public class PenaltyConfig {
+        /// <summary>
+        /// Int, interference can be called after this number of milliseconds after touching the puck.
+        /// </summary>
+        public int InterferenceMillisecondsThreshold { get; set; } = 2000;
     }
 
     /// <summary>
