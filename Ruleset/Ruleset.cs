@@ -719,7 +719,7 @@ namespace oomtm450PuckMod_Ruleset {
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_RED, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig, false);
                     }
                     else if (phase == GamePhase.Playing) {
-                        if (time == -1)
+                        if (time == -1 && _serverConfig.ReAdd1SecondAfterFaceoff)
                             time = GetPrivateField<int>(typeof(GameManager), GameManager.Instance, "remainingPlayTime") + 1;
                     }
 
@@ -765,7 +765,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (phase == GamePhase.Playing) {
                         _changedPhase = false;
-                        time = _periodTimeRemaining + 1;
+                        if (_serverConfig.ReAdd1SecondAfterFaceoff)
+                            time = _periodTimeRemaining + 1;
                     }
                 }
                 catch (Exception ex) {

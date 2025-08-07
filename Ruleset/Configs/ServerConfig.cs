@@ -27,6 +27,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool UseCustomFaceoff { get; set; } = true;
 
         /// <summary>
+        /// Bool, the game rounds down the time remaining on every faceoff.
+        /// This readds 1 second on every faceoff so the game doesn't end too quickly.
+        /// </summary>
+        public bool ReAdd1SecondAfterFaceoff { get; set; } = true;
+
+        /// <summary>
         /// Bool, true if the height of the puck drop on faceoffs shouldn't be modified.
         /// </summary>
         public bool UseDefaultPuckDropHeight { get; set; } = false;
@@ -94,6 +100,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (UseCustomFaceoff == _oldConfig.UseCustomFaceoff)
                 UseCustomFaceoff = newConfig.UseCustomFaceoff;
+
+            if (ReAdd1SecondAfterFaceoff == _oldConfig.ReAdd1SecondAfterFaceoff)
+                ReAdd1SecondAfterFaceoff = newConfig.ReAdd1SecondAfterFaceoff;
 
             if (UseDefaultPuckDropHeight == _oldConfig.UseDefaultPuckDropHeight)
                 UseDefaultPuckDropHeight = newConfig.UseDefaultPuckDropHeight;
