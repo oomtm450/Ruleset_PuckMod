@@ -1187,7 +1187,7 @@ namespace oomtm450PuckMod_Ruleset {
                         else if (isHighStick) {
                             _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
                             UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
-                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerTeam), RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig, false);
+                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig, false);
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, playerTeam), RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig, false);
                         }
                         else if (isGoalieInt) {
