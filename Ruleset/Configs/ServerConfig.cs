@@ -5,9 +5,9 @@ using System.IO;
 
 namespace oomtm450PuckMod_Ruleset.Configs {
     /// <summary>
-    /// Class containing the configuration from oomtm450_template_serverconfig.json used for this mod.
+    /// Class containing the configuration from oomtm450_ruleset_serverconfig.json used for this mod.
     /// </summary>
-    public class ServerConfig : IConfig {
+    public class ServerConfig : IConfig, ISubConfig {
         #region Constants
         /// <summary>
         /// Const string, name used when sending the config data to the client.
@@ -25,6 +25,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if the custom faceoff (any faceoff not in center) should be used.
         /// </summary>
         public bool UseCustomFaceoff { get; set; } = true;
+
+        /// <summary>
+        /// Bool, the game rounds down the time remaining on every faceoff.
+        /// This readds 1 second on every faceoff so the game doesn't end too quickly.
+        /// </summary>
+        public bool ReAdd1SecondAfterFaceoff { get; set; } = true;
 
         /// <summary>
         /// Bool, true if the height of the puck drop on faceoffs shouldn't be modified.
@@ -57,14 +63,19 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public GIntConfig GInt { get; set; } = new GIntConfig();
 
         /// <summary>
+        /// PenaltyConfig, config related to penalties.
+        /// </summary>
+        public PenaltyConfig Penalty { get; set; } = new PenaltyConfig();
+
+        /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; set; } = 90;
+        public int MaxTippedMilliseconds { get; set; } = 91;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; set; } = 235;
+        public int MinPossessionMilliseconds { get; set; } = 225;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
@@ -73,6 +84,48 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         #endregion
 
         #region Methods/Functions
+        /// <summary>
+        /// Method that updates this config with the new default values, if the old default values were used.
+        /// </summary>
+        /// <param name="oldConfig">ISubConfig, config with old values.</param>
+        public void UpdateDefaultValues(ISubConfig oldConfig) {
+            if (!(oldConfig is OldServerConfig))
+                throw new ArgumentException($"oldConfig has to be typeof {nameof(OldServerConfig)}.", nameof(oldConfig));
+
+            OldServerConfig _oldConfig = oldConfig as OldServerConfig;
+            ServerConfig newConfig = new ServerConfig();
+
+            if (LogInfo == _oldConfig.LogInfo)
+                LogInfo = newConfig.LogInfo;
+
+            if (UseCustomFaceoff == _oldConfig.UseCustomFaceoff)
+                UseCustomFaceoff = newConfig.UseCustomFaceoff;
+
+            if (ReAdd1SecondAfterFaceoff == _oldConfig.ReAdd1SecondAfterFaceoff)
+                ReAdd1SecondAfterFaceoff = newConfig.ReAdd1SecondAfterFaceoff;
+
+            if (UseDefaultPuckDropHeight == _oldConfig.UseDefaultPuckDropHeight)
+                UseDefaultPuckDropHeight = newConfig.UseDefaultPuckDropHeight;
+
+            if (PuckDropHeight == _oldConfig.PuckDropHeight)
+                PuckDropHeight = newConfig.PuckDropHeight;
+
+            if (MaxTippedMilliseconds == _oldConfig.MaxTippedMilliseconds)
+                MaxTippedMilliseconds = newConfig.MaxTippedMilliseconds;
+
+            if (MinPossessionMilliseconds == _oldConfig.MinPossessionMilliseconds)
+                MinPossessionMilliseconds = newConfig.MinPossessionMilliseconds;
+
+            if (MaxPossessionMilliseconds == _oldConfig.MaxPossessionMilliseconds)
+                MaxPossessionMilliseconds = newConfig.MaxPossessionMilliseconds;
+
+            Offside.UpdateDefaultValues(_oldConfig.Offside);
+            Icing.UpdateDefaultValues(_oldConfig.Icing);
+            HighStick.UpdateDefaultValues(_oldConfig.HighStick);
+            GInt.UpdateDefaultValues(_oldConfig.GInt);
+            Penalty.UpdateDefaultValues(_oldConfig.Penalty);
+        }
+
         /// <summary>
         /// Function that serialize the config object.
         /// </summary>
@@ -107,6 +160,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                     Logging.Log($"Server config read.", config, true);
                 }
 
+                config.UpdateDefaultValues(new OldServerConfig());
+
                 try {
                     File.WriteAllText(configPath, config.ToString());
                 }
@@ -126,33 +181,76 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     }
 
     /// <summary>
+    /// Class containing the config for penalties.
+    /// </summary>
+    public class PenaltyConfig : ISubConfig {
+        /// <summary>
+        /// Int, interference can be called after this number of milliseconds after touching the puck.
+        /// </summary>
+        public int InterferenceMillisecondsThreshold { get; set; } = 2000;
+
+        /// <summary>
+        /// Method that updates this config with the new default values, if the old default values were used.
+        /// </summary>
+        /// <param name="oldConfig">ISubConfig, config with old values.</param>
+        public void UpdateDefaultValues(ISubConfig oldConfig) {
+            if (!(oldConfig is OldPenaltyConfig))
+                throw new ArgumentException($"oldConfig has to be typeof {nameof(OldPenaltyConfig)}.", nameof(oldConfig));
+
+            OldPenaltyConfig _oldConfig = oldConfig as OldPenaltyConfig;
+            PenaltyConfig newConfig = new PenaltyConfig();
+
+            if (InterferenceMillisecondsThreshold == _oldConfig.InterferenceMillisecondsThreshold)
+                InterferenceMillisecondsThreshold = newConfig.InterferenceMillisecondsThreshold;
+        }
+    }
+
+    /// <summary>
     /// Class containing the config for offsides.
     /// </summary>
-    public class OffsideConfig {
+    public class OffsideConfig : ISubConfig {
+        /// <summary>
+        /// Bool, true if blue team offsides are activated.
+        /// </summary>
+        public bool BlueTeam { get; set; } = true;
+
         /// <summary>
         /// Bool, true if red team offsides are activated.
         /// </summary>
         public bool RedTeam { get; set; } = true;
 
         /// <summary>
-        /// Bool, true if blue team offsides are activated.
+        /// Method that updates this config with the new default values, if the old default values were used.
         /// </summary>
-        public bool BlueTeam { get; set; } = true;
+        /// <param name="oldConfig">ISubConfig, config with old values.</param>
+        public void UpdateDefaultValues(ISubConfig oldConfig) {
+            if (!(oldConfig is OldOffsideConfig))
+                throw new ArgumentException($"oldConfig has to be typeof {nameof(OldOffsideConfig)}.", nameof(oldConfig));
+
+            OldOffsideConfig _oldConfig = oldConfig as OldOffsideConfig;
+            OffsideConfig newConfig = new OffsideConfig();
+
+            if (BlueTeam == _oldConfig.BlueTeam)
+                BlueTeam = newConfig.BlueTeam;
+
+            if (RedTeam == _oldConfig.RedTeam)
+                RedTeam = newConfig.RedTeam;
+        }
     }
 
     /// <summary>
     /// Class containing the config for icings.
     /// </summary>
-    public class IcingConfig {
-        /// <summary>
-        /// Bool, true if red team icings are activated.
-        /// </summary>
-        public bool RedTeam { get; set; } = true;
-
+    public class IcingConfig : ISubConfig {
         /// <summary>
         /// Bool, true if blue team icings are activated.
         /// </summary>
         public bool BlueTeam { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if red team icings are activated.
+        /// </summary>
+        public bool RedTeam { get; set; } = true;
 
         /// <summary>
         /// Bool, true if deferred icing is activated. If false, icing will be called when the puck is touched.
@@ -175,21 +273,53 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, number of milliseconds for icing to be called off if it has not being called.
         /// </summary>
         public int MaxActiveTime { get; set; } = 12000;
+
+        /// <summary>
+        /// Method that updates this config with the new default values, if the old default values were used.
+        /// </summary>
+        /// <param name="oldConfig">ISubConfig, config with old values.</param>
+        public void UpdateDefaultValues(ISubConfig oldConfig) {
+            if (!(oldConfig is OldIcingConfig))
+                throw new ArgumentException($"oldConfig has to be typeof {nameof(OldIcingConfig)}.", nameof(oldConfig));
+
+            OldIcingConfig _oldConfig = oldConfig as OldIcingConfig;
+            IcingConfig newConfig = new IcingConfig();
+
+            if (BlueTeam == _oldConfig.BlueTeam)
+                BlueTeam = newConfig.BlueTeam;
+
+            if (RedTeam == _oldConfig.RedTeam)
+                RedTeam = newConfig.RedTeam;
+
+            if (Deferred == _oldConfig.Deferred)
+                Deferred = newConfig.Deferred;
+
+            try {
+                foreach (KeyValuePair<Zone, int> kvp in new Dictionary<Zone, int>(MaxPossibleTime)) {
+                    if (_oldConfig.MaxPossibleTime.TryGetValue(kvp.Key, out int value) && value == kvp.Value)
+                        MaxPossibleTime[kvp.Key] = newConfig.MaxPossibleTime[kvp.Key];
+                }
+            }
+            catch { }
+
+            if (MaxActiveTime == _oldConfig.MaxActiveTime)
+                MaxActiveTime = newConfig.MaxActiveTime;
+        }
     }
 
     /// <summary>
     /// Class containing the config for high sticks.
     /// </summary>
-    public class HighStickConfig {
-        /// <summary>
-        /// Bool, true if red team high stick are activated.
-        /// </summary>
-        public bool RedTeam { get; set; } = true;
-
+    public class HighStickConfig : ISubConfig {
         /// <summary>
         /// Bool, true if blue team high stick are activated.
         /// </summary>
         public bool BlueTeam { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if red team high stick are activated.
+        /// </summary>
+        public bool RedTeam { get; set; } = true;
 
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
@@ -200,21 +330,45 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, number of milliseconds after a high stick to not be considered.
         /// </summary>
         public int MaxMilliseconds { get; set; } = 5000;
+
+        /// <summary>
+        /// Method that updates this config with the new default values, if the old default values were used.
+        /// </summary>
+        /// <param name="oldConfig">ISubConfig, config with old values.</param>
+        public void UpdateDefaultValues(ISubConfig oldConfig) {
+            if (!(oldConfig is OldHighStickConfig))
+                throw new ArgumentException($"oldConfig has to be typeof {nameof(OldHighStickConfig)}.", nameof(oldConfig));
+
+            OldHighStickConfig _oldConfig = oldConfig as OldHighStickConfig;
+            HighStickConfig newConfig = new HighStickConfig();
+
+            if (BlueTeam == _oldConfig.BlueTeam)
+                BlueTeam = newConfig.BlueTeam;
+
+            if (RedTeam == _oldConfig.RedTeam)
+                RedTeam = newConfig.RedTeam;
+
+            if (MaxHeight == _oldConfig.MaxHeight)
+                MaxHeight = newConfig.MaxHeight;
+
+            if (MaxMilliseconds == _oldConfig.MaxMilliseconds)
+                MaxMilliseconds = newConfig.MaxMilliseconds;
+        }
     }
 
     /// <summary>
     /// Class containing the config for goalie interferences.
     /// </summary>
-    public class GIntConfig {
-        /// <summary>
-        /// Bool, true if red team is able to get their goal called off because of goalie interference.
-        /// </summary>
-        public bool RedTeam { get; set; } = true;
-
+    public class GIntConfig : ISubConfig {
         /// <summary>
         /// Bool, true if blue team is able to get their goal called off because of goalie interference.
         /// </summary>
         public bool BlueTeam { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if red team is able to get their goal called off because of goalie interference.
+        /// </summary>
+        public bool RedTeam { get; set; } = true;
 
         /// <summary>
         /// Int, number of milliseconds after a push on the goalie to be considered no goal.
@@ -235,5 +389,35 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
         public float GoalieRadius { get; set; } = 0.784f;
+
+        /// <summary>
+        /// Method that updates this config with the new default values, if the old default values were used.
+        /// </summary>
+        /// <param name="oldConfig">ISubConfig, config with old values.</param>
+        public void UpdateDefaultValues(ISubConfig oldConfig) {
+            if (!(oldConfig is OldGIntConfig))
+                throw new ArgumentException($"oldConfig has to be typeof {nameof(OldGIntConfig)}.", nameof(oldConfig));
+
+            OldGIntConfig _oldConfig = oldConfig as OldGIntConfig;
+            GIntConfig newConfig = new GIntConfig();
+
+            if (BlueTeam == _oldConfig.BlueTeam)
+                BlueTeam = newConfig.BlueTeam;
+
+            if (RedTeam == _oldConfig.RedTeam)
+                RedTeam = newConfig.RedTeam;
+
+            if (PushNoGoalMilliseconds == _oldConfig.PushNoGoalMilliseconds)
+                PushNoGoalMilliseconds = newConfig.PushNoGoalMilliseconds;
+
+            if (HitNoGoalMilliseconds == _oldConfig.HitNoGoalMilliseconds)
+                HitNoGoalMilliseconds = newConfig.HitNoGoalMilliseconds;
+
+            if (CollisionForceThreshold == _oldConfig.CollisionForceThreshold)
+                CollisionForceThreshold = newConfig.CollisionForceThreshold;
+
+            if (GoalieRadius == _oldConfig.GoalieRadius)
+                GoalieRadius = newConfig.GoalieRadius;
+        }
     }
 }

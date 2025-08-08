@@ -55,6 +55,15 @@ namespace oomtm450PuckMod_Ruleset {
                 _dictionary.Add(key, value);
         }
 
+        public void AddOrUpdate(TKey key, TValue value) {
+            lock (_locker) {
+                if (_dictionary.ContainsKey(key))
+                    _dictionary[key] = value;
+                else
+                    _dictionary.Add(key, value);
+            }
+        }
+
         public bool Remove(TKey key) {
             lock (_locker)
                 return _dictionary.Remove(key);

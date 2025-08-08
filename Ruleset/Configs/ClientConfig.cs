@@ -18,6 +18,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool Music { get; set; } = true;
 
         /// <summary>
+        /// Float, volume from 0.0 to 1.0 for the music.
+        /// </summary>
+        public float MusicVolume { get; set; } = 0.8f;
+
+        /// <summary>
         /// Bool, true if the custom goal horns must be set.
         /// </summary>
         public bool CustomGoalHorns { get; set; } = true;
@@ -26,6 +31,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if the refs has to be team color coded.
         /// </summary>
         public bool TeamColor2DRefs { get; set; } = true;
+
+        /// <summary>
+        /// String, full path for the config file.
+        /// </summary>
+        [JsonIgnore]
+        private readonly string _configPath = Path.Combine(Path.GetFullPath("."), Constants.MOD_NAME + "_clientconfig.json");
 
         /// <summary>
         /// Function that serialize the ClientConfig object.
@@ -53,28 +64,35 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             ClientConfig config = new ClientConfig();
 
             try {
-                string rootPath = Path.GetFullPath(".");
-                string configPath = Path.Combine(rootPath, Constants.MOD_NAME + "_clientconfig.json");
-                if (File.Exists(configPath)) {
-                    string configFileContent = File.ReadAllText(configPath);
+                if (File.Exists(config._configPath)) {
+                    string configFileContent = File.ReadAllText(config._configPath);
                     config = SetConfig(configFileContent);
                     Logging.Log($"Client config read.", config, true);
                 }
 
-                try {
-                    File.WriteAllText(configPath, config.ToString());
-                }
-                catch (Exception ex) {
-                    Logging.LogError($"Can't write the client config file. (Permission error ?)\n{ex}");
-                }
-
-                Logging.Log($"Wrote client config : {config}", config, true);
+                config.Save();
             }
             catch (Exception ex) {
                 Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}");
             }
 
             return config;
+        }
+
+        internal void Save() {
+            if (string.IsNullOrEmpty(_configPath)) {
+                Logging.LogError($"Can't write the client config file. ({nameof(_configPath)} null or empty)");
+                return;
+            }
+
+            try {
+                File.WriteAllText(_configPath, ToString());
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Can't write the client config file. (Permission error ?)\n{ex}");
+            }
+
+            Logging.Log($"Wrote client config : {ToString()}", this, true);
         }
     }
 }

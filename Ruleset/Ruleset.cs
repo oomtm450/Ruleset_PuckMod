@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.17.0";
+        private static readonly string MOD_VERSION = "0.18.0";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -179,6 +179,11 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Blue, "" },
             { PlayerTeam.Red, "" },
         };
+
+        /// <summary>
+        /// LockDictionary of string and (PlayerTeam and DateTime), dictionary of all DateTime of every player last puck touch.
+        /// </summary>
+        private static readonly LockDictionary<string, (PlayerTeam Team, DateTime LastTouchDateTime)> _playersOnPuckTipIncludedDateTime = new LockDictionary<string, (PlayerTeam, DateTime)>();
 
         private static readonly LockDictionary<PlayerTeam, bool> _lastShotWasCounted = new LockDictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, true },
@@ -434,6 +439,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = playerSteamId;
+                    _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, DateTime.UtcNow));
 
                     if (!_playersLastTimePuckPossession.TryGetValue(playerSteamId, out Stopwatch watch)) {
                         watch = new Stopwatch();
@@ -521,6 +527,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
+                    _playersOnPuckTipIncludedDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team.Value, DateTime.UtcNow));
 
                     // Icing logic.
                     bool icingPossible = false;
@@ -657,11 +664,16 @@ namespace oomtm450PuckMod_Ruleset {
                         NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER, _serverConfig);
                     }
                     else if (phase == GamePhase.PeriodOver) {
+                        _nextFaceoffSpot = FaceoffSpot.Center; // Fix faceoff if the period is over because of deferred icing.
+
+                        NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_BLUE, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig, false);
+                        NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_RED, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig, false);
+
                         _currentMusicPlaying = Sounds.BETWEEN_PERIODS_MUSIC;
                         NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER, _serverConfig);
                     }
-                    else if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) {
-                        if (phase == GamePhase.GameOver || phase == GamePhase.PeriodOver) // Fix faceoff if the period is over because of deferred icing.
+                    else if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver) {
+                        if (phase == GamePhase.GameOver) // Fix faceoff if the period is over because of deferred icing.
                             _nextFaceoffSpot = FaceoffSpot.Center;
 
                         // Reset players zone.
@@ -706,16 +718,18 @@ namespace oomtm450PuckMod_Ruleset {
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckTipIncludedSteamId.Keys))
                             _lastPlayerOnPuckTipIncludedSteamId[key] = "";
 
+                        _playersOnPuckTipIncludedDateTime.Clear();
+
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_BLUE, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig, false);
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_RED, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig, false);
                     }
                     else if (phase == GamePhase.Playing) {
-                        if (time == -1)
+                        if (time == -1 && _serverConfig.ReAdd1SecondAfterFaceoff)
                             time = GetPrivateField<int>(typeof(GameManager), GameManager.Instance, "remainingPlayTime") + 1;
                     }
 
                     if (!_changedPhase) {
-                        if (string.IsNullOrEmpty(_currentMusicPlaying)) {
+                        if (string.IsNullOrEmpty(_currentMusicPlaying) || _currentMusicPlaying == Sounds.WARMUP_MUSIC) {
                             NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.ALL, Constants.FROM_SERVER, _serverConfig);
 
                             if (phase == GamePhase.FaceOff) {
@@ -756,7 +770,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (phase == GamePhase.Playing) {
                         _changedPhase = false;
-                        time = _periodTimeRemaining + 1;
+                        if (_serverConfig.ReAdd1SecondAfterFaceoff)
+                            time = _periodTimeRemaining + 1;
                     }
                 }
                 catch (Exception ex) {
@@ -870,6 +885,47 @@ namespace oomtm450PuckMod_Ruleset {
                 return true;
             }
         }*/
+
+        /// <summary>
+        /// Class that patches the Client_SendClientChatMessage event from UIChat.
+        /// </summary>
+        [HarmonyPatch(typeof(UIChat), nameof(UIChat.Client_SendClientChatMessage))]
+        public class UIChat_Client_SendClientChatMessage_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(string message, bool useTeamChat) {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+                    
+                    if (message.StartsWith(@"/")) {
+                        if (message.StartsWith(@"/musicvol ")) {
+                            message = message.Replace(@"/musicvol ", "").Trim();
+                            if (float.TryParse(message, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                if (vol > 1f)
+                                    vol = 1f;
+                                else if (vol < 0)
+                                    vol = 0;
+
+                                _clientConfig.MusicVolume = vol;
+                                _clientConfig.Save();
+                                _sounds?.ChangeMusicVolume();
+                                Logging.Log($"Adjusted client music volume to {vol}f.", _clientConfig);
+                            }
+                        }
+
+                        if (message.StartsWith(@"/help")) {
+                            UIChat.Instance.AddChatMessage("Ruleset commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n");
+                        }
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in UIChat_Client_SendClientChatMessage_Patch Prefix().\n{ex}");
+                }
+
+                return true;
+            }
+        }
 
         /// <summary>
         /// Class that patches the Update event from ServerManager.
@@ -1171,8 +1227,8 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         else if (isHighStick) {
                             _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig, false);
                             UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
-                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerTeam), RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig, false);
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, playerTeam), RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig, false);
                         }
                         else if (isGoalieInt) {
@@ -1997,19 +2053,19 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             else if (dataStrSplitted[0] == Sounds.BLUE_GOAL_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BlueGoalMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, 2.25f);
+                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 2.25f);
                             }
                             else if (dataStrSplitted[0] == Sounds.RED_GOAL_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.RedGoalMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, 2.25f);
+                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 2.25f);
                             }
                             else if (dataStrSplitted[0] == Sounds.BETWEEN_PERIODS_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BetweenPeriodsMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, 1.5f);
+                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 1.5f);
                             }
                             else if (dataStrSplitted[0] == Sounds.WARMUP_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, 0, true);
+                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0, true);
                             }
                             else if (dataStrSplitted[0] == Sounds.LAST_MINUTE_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList, seed);
@@ -2040,15 +2096,15 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             else if (dataStrSplitted[0] == Sounds.GAMEOVER_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.GameOverMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, 0.5f);
+                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0.5f);
                             }
                             else if (dataStrSplitted[0] == Sounds.WHISTLE)
-                                _sounds.Play(Sounds.WHISTLE);
+                                _sounds.Play(Sounds.WHISTLE, "");
 
                             if (isFaceoffMusic) {
                                 if (string.IsNullOrEmpty(_currentMusicPlaying))
                                     _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, delay);
+                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, delay);
                             }
                         }
                         break;

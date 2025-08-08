@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.Networking;
 
 namespace oomtm450PuckMod_Ruleset {
@@ -45,6 +46,8 @@ namespace oomtm450PuckMod_Ruleset {
         #region Fields
         private readonly LockDictionary<string, GameObject> _soundObjects = new LockDictionary<string, GameObject>();
         private readonly List<AudioClip> _audioClips = new List<AudioClip>();
+
+        private AudioSource _currentAudioSource = null;
         #endregion
 
         #region Properties
@@ -99,6 +102,11 @@ namespace oomtm450PuckMod_Ruleset {
             Destroy(gameObject);
         }
 
+        /// <summary>
+        /// Function that downloads the streamed audio clips from the mods' folder using WebRequest locally.
+        /// </summary>
+        /// <param name="path">String, full path to the directory containing the sounds to load.</param>
+        /// <returns>IEnumerator, enumerator used by the Coroutine to load the audio clips.</returns>
         private IEnumerator GetAudioClips(string path) {
             if (_audioClips.Count == 0 && Ruleset._clientConfig.Music) {
                 foreach (string file in Directory.GetFiles(path, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
@@ -144,7 +152,7 @@ namespace oomtm450PuckMod_Ruleset {
                 SetGoalHorns();
         }
 
-        internal void Play(string name, float delay = 0, bool loop = false) {
+        internal void Play(string name, string type, float delay = 0, bool loop = false) {
             if (string.IsNullOrEmpty(name))
                 return;
 
@@ -163,7 +171,16 @@ namespace oomtm450PuckMod_Ruleset {
 
             AudioSource audioSource = soundObject.GetComponent<AudioSource>();
             audioSource.loop = loop;
-            audioSource.volume = SettingsManager.Instance.GlobalVolume;
+
+            if (type == MUSIC) {
+                _currentAudioSource = audioSource;
+                ChangeMusicVolume();
+            }
+            else {
+                _currentAudioSource = null;
+                audioSource.volume = SettingsManager.Instance.GlobalVolume * SettingsManager.Instance.GameVolume;
+            }
+
             if (delay == 0)
                 audioSource.Play();
             else
@@ -182,6 +199,13 @@ namespace oomtm450PuckMod_Ruleset {
         internal void StopAll() {
             foreach (GameObject soundObject in _soundObjects.Values)
                 soundObject.GetComponent<AudioSource>().Stop();
+        }
+
+        internal void ChangeMusicVolume() {
+            if (_currentAudioSource == null)
+                return;
+
+            _currentAudioSource.volume = SettingsManager.Instance.GlobalVolume * Ruleset._clientConfig.MusicVolume;
         }
 
         internal static string GetRandomSound(List<string> musicList, int? seed = null) {
