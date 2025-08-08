@@ -99,6 +99,11 @@ namespace oomtm450PuckMod_Ruleset {
             Destroy(gameObject);
         }
 
+        /// <summary>
+        /// Function that downloads the streamed audio clips from the mods' folder using WebRequest locally.
+        /// </summary>
+        /// <param name="path">String, full path to the directory containing the sounds to load.</param>
+        /// <returns>IEnumerator, enumerator used by the Coroutine to load the audio clips.</returns>
         private IEnumerator GetAudioClips(string path) {
             if (_audioClips.Count == 0 && Ruleset._clientConfig.Music) {
                 foreach (string file in Directory.GetFiles(path, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
