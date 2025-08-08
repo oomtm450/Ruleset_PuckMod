@@ -729,7 +729,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     if (!_changedPhase) {
-                        if (string.IsNullOrEmpty(_currentMusicPlaying)) {
+                        if (string.IsNullOrEmpty(_currentMusicPlaying) || _currentMusicPlaying == Sounds.WARMUP_MUSIC) {
                             NetworkCommunication.SendDataToAll(Sounds.STOP_SOUND, Sounds.ALL, Constants.FROM_SERVER, _serverConfig);
 
                             if (phase == GamePhase.FaceOff) {
