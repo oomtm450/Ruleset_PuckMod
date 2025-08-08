@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.18.0DEV2";
+        private static readonly string MOD_VERSION = "0.18.0DEV4";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -885,6 +885,47 @@ namespace oomtm450PuckMod_Ruleset {
                 return true;
             }
         }*/
+
+        /// <summary>
+        /// Class that patches the Client_SendClientChatMessage event from UIChat.
+        /// </summary>
+        [HarmonyPatch(typeof(UIChat), nameof(UIChat.Client_SendClientChatMessage))]
+        public class UIChat_Client_SendClientChatMessage_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(string message, bool useTeamChat) {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+                    
+                    if (message.StartsWith(@"/")) {
+                        if (message.StartsWith(@"/musicvol ")) {
+                            message = message.Replace(@"/musicvol ", "").Trim();
+                            if (float.TryParse(message, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                if (vol > 1f)
+                                    vol = 1f;
+                                else if (vol < 0)
+                                    vol = 0;
+
+                                _clientConfig.MusicVolume = vol;
+                                _clientConfig.Save();
+                                _sounds?.ChangeMusicVolume();
+                                Logging.Log($"Adjusted client music volume to {vol}f.", _clientConfig);
+                            }
+                        }
+
+                        if (message.StartsWith(@"/help")) {
+                            UIChat.Instance.AddChatMessage("Ruleset commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n");
+                        }
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in UIChat_Client_SendClientChatMessage_Patch Prefix().\n{ex}");
+                }
+
+                return true;
+            }
+        }
 
         /// <summary>
         /// Class that patches the Update event from ServerManager.
@@ -2012,19 +2053,19 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             else if (dataStrSplitted[0] == Sounds.BLUE_GOAL_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BlueGoalMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, 2.25f);
+                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 2.25f);
                             }
                             else if (dataStrSplitted[0] == Sounds.RED_GOAL_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.RedGoalMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, 2.25f);
+                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 2.25f);
                             }
                             else if (dataStrSplitted[0] == Sounds.BETWEEN_PERIODS_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BetweenPeriodsMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, 1.5f);
+                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 1.5f);
                             }
                             else if (dataStrSplitted[0] == Sounds.WARMUP_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, 0, true);
+                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0, true);
                             }
                             else if (dataStrSplitted[0] == Sounds.LAST_MINUTE_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList, seed);
@@ -2055,15 +2096,15 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             else if (dataStrSplitted[0] == Sounds.GAMEOVER_MUSIC) {
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.GameOverMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, 0.5f);
+                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0.5f);
                             }
                             else if (dataStrSplitted[0] == Sounds.WHISTLE)
-                                _sounds.Play(Sounds.WHISTLE);
+                                _sounds.Play(Sounds.WHISTLE, "");
 
                             if (isFaceoffMusic) {
                                 if (string.IsNullOrEmpty(_currentMusicPlaying))
                                     _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, delay);
+                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, delay);
                             }
                         }
                         break;
