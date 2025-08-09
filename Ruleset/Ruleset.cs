@@ -23,7 +23,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.18.0";
+        private static readonly string MOD_VERSION = "0.18.1DEV";
+
+        /// <summary>
+        /// Const string, version of the mod.
+        /// </summary>
+        private static readonly string OLD_MOD_VERSION = "0.18.0";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -2022,6 +2027,10 @@ namespace oomtm450PuckMod_Ruleset {
                         _serverHasResponded = true;
                         if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
                             break;
+                        else if (OLD_MOD_VERSION == dataStr) {
+                            UIChat.Instance.AddChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
+                            break;
+                        }
 
                         _askForKick = true;
                         break;
@@ -2218,7 +2227,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (lastCheckTime + TimeSpan.FromSeconds(900) < utcNow) {
                             if (string.IsNullOrEmpty(PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value.ToString()))
                                 break;
-                            UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
+                            UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
                             _sentOutOfDateMessage[clientId] = utcNow;
                         }
                         break;
