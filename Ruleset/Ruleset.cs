@@ -435,11 +435,17 @@ namespace oomtm450PuckMod_Ruleset {
 
                     string playerSteamId = stick.Player.SteamId.Value.ToString();
 
+                    var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
+
                     if (!PuckIsTipped(playerSteamId)) {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                         if (!PlayerFunc.IsGoalie(stick.Player))
                             ResetAssists(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
                         _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = playerSteamId;
+
+                        Puck puck = PuckManager.Instance.GetPuck();
+                        if (puck)
+                            _puckLastStateBeforeCall[Rule.GoalieInt] = _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
                     }
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
@@ -458,7 +464,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // Offside logic.
                     List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == otherTeamZones[0] || _puckZone == otherTeamZones[1])) {
-                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.Offside]);
+                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, puckLastStateBeforeCallOffside);
                         UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
                         DoFaceoff();
                     }
