@@ -599,10 +599,15 @@ namespace oomtm450PuckMod_Ruleset {
                     Player goalie;
                     if (PlayerFunc.IsGoalie(playerBody.Player))
                         goalie = playerBody.Player;
-                    else
+                    else if (PlayerFunc.IsGoalie(lastPlayerHit))
                         goalie = lastPlayerHit;
+                    else {
+                        _lastForceOnGoaliePlayerSteamId = "";
+                        _lastForceOnGoalie = 0;
+                        return;
+                    }
 
-                    (double startX, double endX) = (0, 0);
+                        (double startX, double endX) = (0, 0);
                     (double startZ, double endZ) = (0, 0);
                     if (goalie.Team.Value == PlayerTeam.Blue) {
                         (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.BlueTeam_BluePaint];
@@ -1981,6 +1986,7 @@ namespace oomtm450PuckMod_Ruleset {
                     clientSteamId = PlayerFunc.Players_ClientId_SteamId[clientId];
                 }
                 catch {
+                    Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(PlayerFunc.Players_ClientId_SteamId)}.");
                     return;
                 }
 
