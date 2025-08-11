@@ -1253,12 +1253,13 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
+                    bool isGoalieInt = IsGoalieInt(team);
+
                     if (goalPlayer != null) {
                         // No goal if offside or high stick or goalie interference.
-                        bool isOffside = false, isHighStick = false, isGoalieInt = false;
+                        bool isOffside = false, isHighStick = false;
                         isOffside = IsOffside(team);
                         isHighStick = IsHighStick(team);
-                        isGoalieInt = IsGoalieInt(team);
 
                         if (isOffside || isHighStick || isGoalieInt) {
                             if (isOffside) {
@@ -1283,6 +1284,15 @@ namespace oomtm450PuckMod_Ruleset {
 
                         SendSavePercDuringGoal(team, SendSOGDuringGoal(goalPlayer));
                         return true;
+                    }
+
+                    if (isGoalieInt) {
+                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
+                        SendChat(Rule.GoalieInt, team, true, false);
+                        NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF, Constants.FROM_SERVER, _serverConfig, false);
+
+                        DoFaceoff();
+                        return false;
                     }
 
                     // If own goal, add goal attribution to last player on puck on the other team.
