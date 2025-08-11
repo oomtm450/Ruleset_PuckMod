@@ -298,7 +298,7 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             ResetIcings();
                         }
-                        else if (IsIcingPossible(playerBody.Player.Team.Value)) { // TODO CHECK
+                        else if (IsIcingPossible(playerBody.Player.Team.Value)) {
                             if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var playerZone)) {
                                 if (ZoneFunc.GetTeamZones(playerOtherTeam, true).Any(x => x == playerZone.Zone)) {
                                     if (IsIcing(playerBody.Player.Team.Value)) {
@@ -1069,9 +1069,9 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // Remove offside if the other team entered the zone with the puck.
-                    List<Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(_lastPlayerOnPuckTeamTipIncluded, true);
+                    List<Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(_lastPlayerOnPuckTeam, true);
                     if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
-                        PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeamTipIncluded);
+                        PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
                         foreach (string key in new List<string>(_isOffside.Keys)) {
                             if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam)
                                 _isOffside[key] = (lastPlayerOnPuckOtherTeam, false);
