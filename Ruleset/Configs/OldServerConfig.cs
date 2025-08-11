@@ -150,11 +150,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing.
         /// </summary>
-        public Dictionary<Zone, int> MaxPossibleTime { get; } = new Dictionary<Zone, int> { // TODO : Change when releasing V0.18.2 or V0.19.0.
-            { Zone.BlueTeam_BehindGoalLine, 8000 },
-            { Zone.RedTeam_BehindGoalLine, 8000 },
-            { Zone.BlueTeam_Zone, 6500 },
-            { Zone.RedTeam_Zone, 6500 },
+        public Dictionary<Zone, int> MaxPossibleTime { get; } = new Dictionary<Zone, int> {
+            { Zone.BlueTeam_BehindGoalLine, 8500 },
+            { Zone.RedTeam_BehindGoalLine, 8500 },
+            { Zone.BlueTeam_Zone, 6750 },
+            { Zone.RedTeam_Zone, 6750 },
             { Zone.BlueTeam_Center, 4500 },
             { Zone.RedTeam_Center, 4500 },
         };
