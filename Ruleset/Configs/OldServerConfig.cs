@@ -60,12 +60,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; } = 90;
+        public int MaxTippedMilliseconds { get; } = 91;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; } = 235;
+        public int MinPossessionMilliseconds { get; } = 225;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
@@ -109,14 +109,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     /// </summary>
     public class OldOffsideConfig : ISubConfig {
         /// <summary>
-        /// Bool, true if red team offsides are activated.
-        /// </summary>
-        public bool RedTeam { get; } = true;
-
-        /// <summary>
         /// Bool, true if blue team offsides are activated.
         /// </summary>
         public bool BlueTeam { get; } = true;
+
+        /// <summary>
+        /// Bool, true if red team offsides are activated.
+        /// </summary>
+        public bool RedTeam { get; } = true;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -133,14 +133,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     /// </summary>
     public class OldIcingConfig : ISubConfig {
         /// <summary>
-        /// Bool, true if red team icings are activated.
-        /// </summary>
-        public bool RedTeam { get; } = true;
-
-        /// <summary>
         /// Bool, true if blue team icings are activated.
         /// </summary>
         public bool BlueTeam { get; } = true;
+
+        /// <summary>
+        /// Bool, true if red team icings are activated.
+        /// </summary>
+        public bool RedTeam { get; } = true;
 
         /// <summary>
         /// Bool, true if deferred icing is activated. If false, icing will be called when the puck is touched.
@@ -150,7 +150,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing.
         /// </summary>
-        public Dictionary<Zone, int> MaxPossibleTime { get; } = new Dictionary<Zone, int> {
+        public Dictionary<Zone, int> MaxPossibleTime { get; } = new Dictionary<Zone, int> { // TODO : Change when releasing V0.18.2 or V0.19.0.
             { Zone.BlueTeam_BehindGoalLine, 8000 },
             { Zone.RedTeam_BehindGoalLine, 8000 },
             { Zone.BlueTeam_Zone, 6500 },
@@ -179,14 +179,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     /// </summary>
     public class OldHighStickConfig : ISubConfig {
         /// <summary>
-        /// Bool, true if red team high stick are activated.
-        /// </summary>
-        public bool RedTeam { get; } = true;
-
-        /// <summary>
         /// Bool, true if blue team high stick are activated.
         /// </summary>
         public bool BlueTeam { get; } = true;
+
+        /// <summary>
+        /// Bool, true if red team high stick are activated.
+        /// </summary>
+        public bool RedTeam { get; } = true;
 
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
@@ -213,14 +213,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     /// </summary>
     public class OldGIntConfig : ISubConfig {
         /// <summary>
-        /// Bool, true if red team is able to get their goal called off because of goalie interference.
-        /// </summary>
-        public bool RedTeam { get; } = true;
-
-        /// <summary>
         /// Bool, true if blue team is able to get their goal called off because of goalie interference.
         /// </summary>
         public bool BlueTeam { get; } = true;
+
+        /// <summary>
+        /// Bool, true if red team is able to get their goal called off because of goalie interference.
+        /// </summary>
+        public bool RedTeam { get; } = true;
 
         /// <summary>
         /// Int, number of milliseconds after a push on the goalie to be considered no goal.

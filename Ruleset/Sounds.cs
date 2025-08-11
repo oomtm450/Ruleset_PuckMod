@@ -119,6 +119,11 @@ namespace oomtm450PuckMod_Ruleset {
                     else {
                         try {
                             AudioClip clip = DownloadHandlerAudioClip.GetContent(webRequest);
+                            if (!clip) {
+                                Errors.Add($"Sounds.{nameof(GetAudioClips)} clip null.");
+                                continue;
+                            }
+
                             clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
                             DontDestroyOnLoad(clip);
                             _audioClips.Add(clip);

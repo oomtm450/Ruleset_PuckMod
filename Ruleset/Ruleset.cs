@@ -2,6 +2,7 @@
 using oomtm450PuckMod_Ruleset.Configs;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -23,7 +24,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.18.0";
+        private static readonly string MOD_VERSION = "0.18.1";
+
+        /// <summary>
+        /// Const string, version of the mod.
+        /// </summary>
+        private static readonly string OLD_MOD_VERSION = "0.18.0";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -279,7 +285,7 @@ namespace oomtm450PuckMod_Ruleset {
                                     if (playerZone.Zone != ZoneFunc.GetTeamZones(playerBody.Player.Team.Value)[1]) {
                                         if (IsIcing(playerOtherTeam)) {
                                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerOtherTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send stop icing signal for client-side UI.
-                                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                                            SendChat(Rule.Icing, playerOtherTeam, true, true);
                                         }
                                         ResetIcings();
                                     }
@@ -288,7 +294,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                             if (IsIcing(playerOtherTeam)) {
                                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerOtherTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send stop icing signal for client-side UI.
-                                UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                                SendChat(Rule.Icing, playerOtherTeam, true, true);
                             }
                             ResetIcings();
                         }
@@ -297,7 +303,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 if (ZoneFunc.GetTeamZones(playerOtherTeam, true).Any(x => x == playerZone.Zone)) {
                                     if (IsIcing(playerBody.Player.Team.Value)) {
                                         NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerBody.Player.Team.Value), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send stop icing signal for client-side UI.
-                                        UIChat.Instance.Server_SendSystemChatMessage($"ICING {playerBody.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                                        SendChat(Rule.Icing, playerBody.Player.Team.Value, true, true);
                                     }
                                     ResetIcings();
                                 }
@@ -366,7 +372,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 _isHighStickActive[stick.Player.Team.Value] = true;
                                 _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
                                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
-                                UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM");
+                                SendChat(Rule.HighStick, stick.Player.Team.Value, false);
                             }
                         }
                         else if (puck.IsGrounded) {
@@ -374,7 +380,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
                                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, stick.Player.Team.Value), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig, false);
                                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig, false);
-                                UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
+                                SendChat(Rule.HighStick, stick.Player.Team.Value, true);
 
                                 _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
                                 highStickTimer.Change(Timeout.Infinite, Timeout.Infinite);
@@ -388,7 +394,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsHighStick(otherTeam)) {
                         _isHighStickActive[otherTeam] = false;
                         NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, otherTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig, false);
-                        UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                        SendChat(Rule.HighStick, otherTeam, true, true);
                     }
 
                     if (_puckRaycast.PuckIsGoingToNet[stick.Player.Team.Value]) {
@@ -430,11 +436,17 @@ namespace oomtm450PuckMod_Ruleset {
 
                     string playerSteamId = stick.Player.SteamId.Value.ToString();
 
+                    var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
+
                     if (!PuckIsTipped(playerSteamId)) {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                         if (!PlayerFunc.IsGoalie(stick.Player))
                             ResetAssists(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
                         _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = playerSteamId;
+
+                        Puck puck = PuckManager.Instance.GetPuck();
+                        if (puck)
+                            _puckLastStateBeforeCall[Rule.GoalieInt] = _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
                     }
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
@@ -453,8 +465,8 @@ namespace oomtm450PuckMod_Ruleset {
                     // Offside logic.
                     List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == otherTeamZones[0] || _puckZone == otherTeamZones[1])) {
-                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.Offside]);
-                        UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED");
+                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, puckLastStateBeforeCallOffside);
+                        SendChat(Rule.Offside, stick.Player.Team.Value, true);
                         DoFaceoff();
                     }
 
@@ -462,20 +474,20 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsIcing(otherTeam)) {
                         if (!PlayerFunc.IsGoalie(stick.Player)) {
                             _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
-                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                            SendChat(Rule.Icing, otherTeam, true);
                             ResetIcings();
                             DoFaceoff();
                         }
                         else {
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, otherTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send stop icing signal for client-side UI.
-                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {otherTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                            SendChat(Rule.Icing, otherTeam, true, true);
                             ResetIcings();
                         }
                     }
                     else {
                         if (IsIcing(stick.Player.Team.Value)) {
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, stick.Player.Team.Value), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send stop icing signal for client-side UI.
-                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {stick.Player.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                            SendChat(Rule.Icing, stick.Player.Team.Value, true, true);
                         }
                         ResetIcings();
                     }
@@ -588,10 +600,15 @@ namespace oomtm450PuckMod_Ruleset {
                     Player goalie;
                     if (PlayerFunc.IsGoalie(playerBody.Player))
                         goalie = playerBody.Player;
-                    else
+                    else if (PlayerFunc.IsGoalie(lastPlayerHit))
                         goalie = lastPlayerHit;
+                    else {
+                        _lastForceOnGoaliePlayerSteamId = "";
+                        _lastForceOnGoalie = 0;
+                        return;
+                    }
 
-                    (double startX, double endX) = (0, 0);
+                        (double startX, double endX) = (0, 0);
                     (double startZ, double endZ) = (0, 0);
                     if (goalie.Team.Value == PlayerTeam.Blue) {
                         (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.BlueTeam_BluePaint];
@@ -952,7 +969,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (_callOffHighStickNextFrame[callOffHighStickTeam]) {
                             _callOffHighStickNextFrame[callOffHighStickTeam] = false;
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, callOffHighStickTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig, false);
-                            UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {callOffHighStickTeam.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                            SendChat(Rule.HighStick, callOffHighStickTeam, true, true);
                         }
                     }
 
@@ -1052,9 +1069,9 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // Remove offside if the other team entered the zone with the puck.
-                    List<Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(_lastPlayerOnPuckTeamTipIncluded, true);
+                    List<Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(_lastPlayerOnPuckTeam, true);
                     if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
-                        PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeamTipIncluded);
+                        PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
                         foreach (string key in new List<string>(_isOffside.Keys)) {
                             if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam)
                                 _isOffside[key] = (lastPlayerOnPuckOtherTeam, false);
@@ -1070,12 +1087,12 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam == null && closestPlayerToEndBoardBlueTeam.IsBehindHashmarks)
                             closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Player;
-                        else if (closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam != null && closestPlayerToEndBoardBlueTeam.IsBehindHashmarks && !closestPlayerToEndBoardRedTeam.IsBehindHashmarks)
-                            closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Player;
+                        //else if (closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam != null && closestPlayerToEndBoardBlueTeam.IsBehindHashmarks && !closestPlayerToEndBoardRedTeam.IsBehindHashmarks)
+                            //closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Player;
                         else if (closestPlayerToEndBoardRedTeam != null && closestPlayerToEndBoardBlueTeam == null && closestPlayerToEndBoardRedTeam.IsBehindHashmarks)
                             closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Player;
-                        else if (closestPlayerToEndBoardRedTeam != null && closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam.IsBehindHashmarks && !closestPlayerToEndBoardBlueTeam.IsBehindHashmarks)
-                            closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Player;
+                        //else if (closestPlayerToEndBoardRedTeam != null && closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam.IsBehindHashmarks && !closestPlayerToEndBoardBlueTeam.IsBehindHashmarks)
+                            //closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Player;
                         else if (closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam != null) {
                             if (Math.Abs(closestPlayerToEndBoardBlueTeam.Z - closestPlayerToEndBoardRedTeam.Z) < 8f) { // Check distance with x and z coordinates.
                                 float puckXCoordinate = Math.Abs(puck.Rigidbody.transform.position.x);
@@ -1102,14 +1119,14 @@ namespace oomtm450PuckMod_Ruleset {
                             if (IsIcing(closestPlayerToEndBoard.Team.Value)) {
                                 if (icingHasToBeWarned[closestPlayerToEndBoard.Team.Value] == null) {
                                     NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, closestPlayerToEndBoard.Team.Value), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send stop icing signal for client-side UI
-                                    UIChat.Instance.Server_SendSystemChatMessage($"ICING {closestPlayerToEndBoard.Team.Value.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                                    SendChat(Rule.Icing, closestPlayerToEndBoard.Team.Value, true, true);
                                 }
                                 else
                                     icingHasToBeWarned[closestPlayerToEndBoard.Team.Value] = false;
                                 ResetIcings();
                             }
                             else if (IsIcing(closestPlayerToEndBoardOtherTeam)) {
-                                UIChat.Instance.Server_SendSystemChatMessage($"ICING {closestPlayerToEndBoardOtherTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                                SendChat(Rule.Icing, closestPlayerToEndBoardOtherTeam, true);
                                 ResetIcings();
                                 DoFaceoff();
                             }
@@ -1120,7 +1137,8 @@ namespace oomtm450PuckMod_Ruleset {
                     foreach (var kvp in icingHasToBeWarned) {
                         if (kvp.Value != null && (bool)kvp.Value) {
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, kvp.Key), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send show icing signal for client-side UI.
-                            UIChat.Instance.Server_SendSystemChatMessage($"ICING {kvp.Key.ToString().ToUpperInvariant()} TEAM");
+                            SendChat(Rule.Icing, kvp.Key, false);
+                            break;
                         }
                     }
 
@@ -1211,44 +1229,14 @@ namespace oomtm450PuckMod_Ruleset {
                     if (_paused)
                         return false;
 
-                    PlayerTeam playerTeam = (PlayerTeam)message["team"];
-                    playerTeam = TeamFunc.GetOtherTeam(playerTeam);
-
-                    // No goal if offside or high stick or goalie interference.
-                    bool isOffside = false, isHighStick = false, isGoalieInt = false;
-                    isOffside = IsOffside(playerTeam);
-                    isHighStick = IsHighStick(playerTeam);
-                    isGoalieInt = IsGoalieInt(playerTeam);
-
-                    if (isOffside || isHighStick || isGoalieInt) {
-                        if (isOffside) {
-                            _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.Offside]);
-                            UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
-                        }
-                        else if (isHighStick) {
-                            _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
-                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig, false);
-                            UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
-                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, playerTeam), RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig, false);
-                        }
-                        else if (isGoalieInt) {
-                            _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
-                            UIChat.Instance.Server_SendSystemChatMessage($"GOALIE INT {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
-                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, playerTeam), RefSignals.INTERFERENCE_REF, Constants.FROM_SERVER, _serverConfig, false);
-                        }
-                        
-                        DoFaceoff();
-                        return false;
-                    }
-
                     NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_BLUE, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig, false);
                     NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_RED, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig, false);
+
+                    _nextFaceoffSpot = FaceoffSpot.Center;
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManagerController_Event_Server_OnPuckEnterTeamGoal_Patch Prefix().\n{ex}");
                 }
-
-                _nextFaceoffSpot = FaceoffSpot.Center;
 
                 return true;
             }
@@ -1266,9 +1254,46 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
+                    bool isGoalieInt = IsGoalieInt(team);
+
                     if (goalPlayer != null) {
+                        // No goal if offside or high stick or goalie interference.
+                        bool isOffside = false, isHighStick = false;
+                        isOffside = IsOffside(team);
+                        isHighStick = IsHighStick(team);
+
+                        if (isOffside || isHighStick || isGoalieInt) {
+                            if (isOffside) {
+                                _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.Offside]);
+                                SendChat(Rule.Offside, team, true, false);
+                            }
+                            else if (isHighStick) {
+                                _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig, false);
+                                SendChat(Rule.HighStick, team, true, false);
+                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig, false);
+                            }
+                            else if (isGoalieInt) {
+                                _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
+                                SendChat(Rule.GoalieInt, team, true, false);
+                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF, Constants.FROM_SERVER, _serverConfig, false);
+                            }
+
+                            DoFaceoff();
+                            return false;
+                        }
+
                         SendSavePercDuringGoal(team, SendSOGDuringGoal(goalPlayer));
                         return true;
+                    }
+
+                    if (isGoalieInt) {
+                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
+                        SendChat(Rule.GoalieInt, team, true, false);
+                        NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF, Constants.FROM_SERVER, _serverConfig, false);
+
+                        DoFaceoff();
+                        return false;
                     }
 
                     // If own goal, add goal attribution to last player on puck on the other team.
@@ -1495,17 +1520,25 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Methods/Functions
+        private static void SendChat(Rule rule, PlayerTeam team, bool called, bool off = false) {
+            string ruleStr = rule.GetDescription("ToString");
+            if (string.IsNullOrEmpty(ruleStr))
+                return;
+
+            UIChat.Instance.Server_SendSystemChatMessage($"{ruleStr} {team.ToString().ToUpperInvariant()} TEAM" + (called ? (" CALLED" + (off ? " OFF" : "")) : ""));
+        }
+
         private static void WarnOffside(bool active, PlayerTeam team) {
             if (!IsOffsideEnabled(team))
                 return;
 
             if (active) {
                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send show offside signal for client-side UI.
-                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {team.ToString().ToUpperInvariant()} TEAM");
+                SendChat(Rule.Offside, team, false);
             }
             else {
                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send show offside signal for client-side UI.
-                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {team.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                SendChat(Rule.Offside, team, true, true);
             }
         }
 
@@ -1970,6 +2003,7 @@ namespace oomtm450PuckMod_Ruleset {
                     clientSteamId = PlayerFunc.Players_ClientId_SteamId[clientId];
                 }
                 catch {
+                    Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(PlayerFunc.Players_ClientId_SteamId)}.");
                     return;
                 }
 
@@ -2022,6 +2056,10 @@ namespace oomtm450PuckMod_Ruleset {
                         _serverHasResponded = true;
                         if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
                             break;
+                        else if (OLD_MOD_VERSION == dataStr) {
+                            UIChat.Instance.AddChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
+                            break;
+                        }
 
                         _askForKick = true;
                         break;
@@ -2030,82 +2068,82 @@ namespace oomtm450PuckMod_Ruleset {
                         if (_sounds == null)
                             break;
                         if (_sounds.Errors.Count != 0) {
+                            Logging.LogError("There was an error when initializing _sounds.");
                             foreach (string error in _sounds.Errors)
                                 Logging.LogError(error);
                         }
-                        else {
-                            int? seed = null;
-                            string[] dataStrSplitted = dataStr.Split(';');
 
-                            if (int.TryParse(dataStrSplitted[1], out int _seed))
-                                seed = _seed;
+                        int? seed = null;
+                        string[] dataStrSplitted = dataStr.Split(';');
 
-                            bool isFaceoffMusic = false;
-                            float delay = 0;
-                            if (dataStrSplitted[0] == Sounds.FACEOFF_MUSIC) {
+                        if (int.TryParse(dataStrSplitted[1], out int _seed))
+                            seed = _seed;
+
+                        bool isFaceoffMusic = false;
+                        float delay = 0;
+                        if (dataStrSplitted[0] == Sounds.FACEOFF_MUSIC) {
+                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList, seed);
+                            isFaceoffMusic = true;
+                        }
+                        else if (dataStrSplitted[0] == Sounds.FACEOFF_MUSIC_DELAYED) {
+                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList, seed);
+                            isFaceoffMusic = true;
+                            delay = 1f;
+                        }
+                        else if (dataStrSplitted[0] == Sounds.BLUE_GOAL_MUSIC) {
+                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BlueGoalMusicList, seed);
+                            _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 2.25f);
+                        }
+                        else if (dataStrSplitted[0] == Sounds.RED_GOAL_MUSIC) {
+                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.RedGoalMusicList, seed);
+                            _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 2.25f);
+                        }
+                        else if (dataStrSplitted[0] == Sounds.BETWEEN_PERIODS_MUSIC) {
+                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BetweenPeriodsMusicList, seed);
+                            _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 1.5f);
+                        }
+                        else if (dataStrSplitted[0] == Sounds.WARMUP_MUSIC) {
+                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList, seed);
+                            _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0, true);
+                        }
+                        else if (dataStrSplitted[0] == Sounds.LAST_MINUTE_MUSIC) {
+                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList, seed);
+                            isFaceoffMusic = true;
+                        }
+                        else if (dataStrSplitted[0] == Sounds.FIRST_FACEOFF_MUSIC) {
+                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FirstFaceoffMusicList, seed);
+                            isFaceoffMusic = true;
+                        }
+                        else if (dataStrSplitted[0] == Sounds.SECOND_FACEOFF_MUSIC) {
+                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.SecondFaceoffMusicList, seed);
+                            isFaceoffMusic = true;
+                        }
+                        else if (dataStrSplitted[0] == Sounds.LAST_MINUTE_MUSIC_DELAYED) {
+                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList, seed);
+                            isFaceoffMusic = true;
+                            delay = 1f;
+                        }
+                        else if (dataStrSplitted[0] == Sounds.FIRST_FACEOFF_MUSIC_DELAYED) {
+                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FirstFaceoffMusicList, seed);
+                            isFaceoffMusic = true;
+                            delay = 1f;
+                        }
+                        else if (dataStrSplitted[0] == Sounds.SECOND_FACEOFF_MUSIC_DELAYED) {
+                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.SecondFaceoffMusicList, seed);
+                            isFaceoffMusic = true;
+                            delay = 1f;
+                        }
+                        else if (dataStrSplitted[0] == Sounds.GAMEOVER_MUSIC) {
+                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.GameOverMusicList, seed);
+                            _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0.5f);
+                        }
+                        else if (dataStrSplitted[0] == Sounds.WHISTLE)
+                            _sounds.Play(Sounds.WHISTLE, "");
+
+                        if (isFaceoffMusic) {
+                            if (string.IsNullOrEmpty(_currentMusicPlaying))
                                 _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList, seed);
-                                isFaceoffMusic = true;
-                            }
-                            else if (dataStrSplitted[0] == Sounds.FACEOFF_MUSIC_DELAYED) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList, seed);
-                                isFaceoffMusic = true;
-                                delay = 1f;
-                            }
-                            else if (dataStrSplitted[0] == Sounds.BLUE_GOAL_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BlueGoalMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 2.25f);
-                            }
-                            else if (dataStrSplitted[0] == Sounds.RED_GOAL_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.RedGoalMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 2.25f);
-                            }
-                            else if (dataStrSplitted[0] == Sounds.BETWEEN_PERIODS_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.BetweenPeriodsMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 1.5f);
-                            }
-                            else if (dataStrSplitted[0] == Sounds.WARMUP_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0, true);
-                            }
-                            else if (dataStrSplitted[0] == Sounds.LAST_MINUTE_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList, seed);
-                                isFaceoffMusic = true;
-                            }
-                            else if (dataStrSplitted[0] == Sounds.FIRST_FACEOFF_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FirstFaceoffMusicList, seed);
-                                isFaceoffMusic = true;
-                            }
-                            else if (dataStrSplitted[0] == Sounds.SECOND_FACEOFF_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.SecondFaceoffMusicList, seed);
-                                isFaceoffMusic = true;
-                            }
-                            else if (dataStrSplitted[0] == Sounds.LAST_MINUTE_MUSIC_DELAYED) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList, seed);
-                                isFaceoffMusic = true;
-                                delay = 1f;
-                            }
-                            else if (dataStrSplitted[0] == Sounds.FIRST_FACEOFF_MUSIC_DELAYED) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FirstFaceoffMusicList, seed);
-                                isFaceoffMusic = true;
-                                delay = 1f;
-                            }
-                            else if (dataStrSplitted[0] == Sounds.SECOND_FACEOFF_MUSIC_DELAYED) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.SecondFaceoffMusicList, seed);
-                                isFaceoffMusic = true;
-                                delay = 1f;
-                            }
-                            else if (dataStrSplitted[0] == Sounds.GAMEOVER_MUSIC) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.GameOverMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0.5f);
-                            }
-                            else if (dataStrSplitted[0] == Sounds.WHISTLE)
-                                _sounds.Play(Sounds.WHISTLE, "");
-
-                            if (isFaceoffMusic) {
-                                if (string.IsNullOrEmpty(_currentMusicPlaying))
-                                    _currentMusicPlaying = Sounds.GetRandomSound(_sounds.FaceoffMusicList, seed);
-                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, delay);
-                            }
+                            _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, delay);
                         }
                         break;
 
@@ -2117,16 +2155,15 @@ namespace oomtm450PuckMod_Ruleset {
                             foreach (string error in _sounds.Errors)
                                 Logging.LogError(error);
                         }
-                        else {
-                            if (dataStr == Sounds.MUSIC) {
-                                if (!string.IsNullOrEmpty(_currentMusicPlaying))
-                                    _sounds.Stop(_currentMusicPlaying);
-                            }
-                            else if (dataStr == Sounds.ALL)
-                                _sounds.StopAll();
 
-                            _currentMusicPlaying = "";
+                        if (dataStr == Sounds.MUSIC) {
+                            if (!string.IsNullOrEmpty(_currentMusicPlaying))
+                                _sounds.Stop(_currentMusicPlaying);
                         }
+                        else if (dataStr == Sounds.ALL)
+                            _sounds.StopAll();
+
+                        _currentMusicPlaying = "";
                         break;
 
                     case RefSignals.SHOW_SIGNAL_BLUE: // CLIENT-SIDE : Show blue team ref signal in the UI.
@@ -2218,7 +2255,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (lastCheckTime + TimeSpan.FromSeconds(900) < utcNow) {
                             if (string.IsNullOrEmpty(PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value.ToString()))
                                 break;
-                            UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
+                            UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
                             _sentOutOfDateMessage[clientId] = utcNow;
                         }
                         break;
@@ -2355,7 +2392,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (!IsIcingPossible(team, false) && _isIcingActive[team]) {
                 _isIcingActive[team] = false;
                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send stop icing signal for client-side UI.
-                UIChat.Instance.Server_SendSystemChatMessage($"ICING {team.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                SendChat(Rule.Icing, team, true, true);
             }
             else if (!_isIcingActive[team] && IsIcingPossible(team) && _puckZone == ZoneFunc.GetTeamZones(TeamFunc.GetOtherTeam(team))[1]) {
                 _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
@@ -2688,9 +2725,13 @@ namespace oomtm450PuckMod_Ruleset {
     }
 
     public enum Rule {
+        [Description("OFFSIDE"), Category("ToString")]
         Offside,
+        [Description("ICING"), Category("ToString")]
         Icing,
+        [Description("HIGH STICK"), Category("ToString")]
         HighStick,
+        [Description("GOALIE INT"), Category("ToString")]
         GoalieInt,
     }
 
@@ -2708,5 +2749,27 @@ namespace oomtm450PuckMod_Ruleset {
         internal float Z { get; set; }
 
         internal bool IsBehindHashmarks { get; set; }
+    }
+
+    public static class EnumExtensions {
+        public static string GetDescription(this Enum enumValue, string category = "") {
+            // Get the FieldInfo for the enum member
+            FieldInfo fieldInfo = enumValue.GetType().GetField(enumValue.ToString());
+
+            // Check if the field exists and has a DescriptionAttribute
+            if (fieldInfo != null) {
+                if (!string.IsNullOrEmpty(category)) {
+                    CategoryAttribute[] categoryAttributes = (CategoryAttribute[])fieldInfo.GetCustomAttributes(typeof(CategoryAttribute), false);
+                    if (categoryAttributes == null || categoryAttributes.Length == 0 || categoryAttributes[0].Category.ToLower() != category.ToLower())
+                        return "";
+                }
+
+                DescriptionAttribute[] descriptionAttributes = (DescriptionAttribute[])fieldInfo.GetCustomAttributes(typeof(DescriptionAttribute), false);
+                if (descriptionAttributes != null && descriptionAttributes.Length > 0)
+                    return descriptionAttributes[0].Description;
+            }
+
+            return "";
+        }
     }
 }
