@@ -2,6 +2,7 @@
 using oomtm450PuckMod_Ruleset.Configs;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -1239,17 +1240,17 @@ namespace oomtm450PuckMod_Ruleset {
                     if (isOffside || isHighStick || isGoalieInt) {
                         if (isOffside) {
                             _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.Offside]);
-                            UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                            SendChat(Rule.Offside, playerTeam, true, false);
                         }
                         else if (isHighStick) {
                             _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig, false);
-                            UIChat.Instance.Server_SendSystemChatMessage($"HIGH STICK {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                            SendChat(Rule.HighStick, playerTeam, true, false);
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, playerTeam), RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig, false);
                         }
                         else if (isGoalieInt) {
                             _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
-                            UIChat.Instance.Server_SendSystemChatMessage($"GOALIE INT {playerTeam.ToString().ToUpperInvariant()} TEAM CALLED");
+                            SendChat(Rule.GoalieInt, playerTeam, true, false);
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, playerTeam), RefSignals.INTERFERENCE_REF, Constants.FROM_SERVER, _serverConfig, false);
                         }
                         
@@ -1511,17 +1512,25 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Methods/Functions
+        private static void SendChat(Rule rule, PlayerTeam team, bool called, bool off = false) {
+            string ruleStr = rule.GetDescription("ToString");
+            if (string.IsNullOrEmpty(ruleStr))
+                return;
+
+            UIChat.Instance.Server_SendSystemChatMessage($"{ruleStr} {team.ToString().ToUpperInvariant()} TEAM" + (called ? (" CALLED" + (off ? " OFF" : "")) : ""));
+        }
+
         private static void WarnOffside(bool active, PlayerTeam team) {
             if (!IsOffsideEnabled(team))
                 return;
 
             if (active) {
                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send show offside signal for client-side UI.
-                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {team.ToString().ToUpperInvariant()} TEAM");
+                SendChat(Rule.Offside, team, false);
             }
             else {
                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send show offside signal for client-side UI.
-                UIChat.Instance.Server_SendSystemChatMessage($"OFFSIDE {team.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                SendChat(Rule.Offside, team, true, true);
             }
         }
 
@@ -2375,7 +2384,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (!IsIcingPossible(team, false) && _isIcingActive[team]) {
                 _isIcingActive[team] = false;
                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig, false); // Send stop icing signal for client-side UI.
-                UIChat.Instance.Server_SendSystemChatMessage($"ICING {team.ToString().ToUpperInvariant()} TEAM CALLED OFF");
+                SendChat(Rule.Icing, team, true, true);
             }
             else if (!_isIcingActive[team] && IsIcingPossible(team) && _puckZone == ZoneFunc.GetTeamZones(TeamFunc.GetOtherTeam(team))[1]) {
                 _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
@@ -2708,9 +2717,13 @@ namespace oomtm450PuckMod_Ruleset {
     }
 
     public enum Rule {
+        [Description("OFFSIDE"), Category("ToString")]
         Offside,
+        [Description("ICING"), Category("ToString")]
         Icing,
+        [Description("HIGH STICK"), Category("ToString")]
         HighStick,
+        [Description("GOALIE INT"), Category("ToString")]
         GoalieInt,
     }
 
@@ -2728,5 +2741,27 @@ namespace oomtm450PuckMod_Ruleset {
         internal float Z { get; set; }
 
         internal bool IsBehindHashmarks { get; set; }
+    }
+
+    public static class EnumExtensions {
+        public static string GetDescription(this Enum enumValue, string category = "") {
+            // Get the FieldInfo for the enum member
+            FieldInfo fieldInfo = enumValue.GetType().GetField(enumValue.ToString());
+
+            // Check if the field exists and has a DescriptionAttribute
+            if (fieldInfo != null) {
+                if (!string.IsNullOrEmpty(category)) {
+                    CategoryAttribute[] categoryAttributes = (CategoryAttribute[])fieldInfo.GetCustomAttributes(typeof(CategoryAttribute), false);
+                    if (categoryAttributes == null || categoryAttributes.Length == 0 || categoryAttributes[0].Category.ToLower() != category.ToLower())
+                        return "";
+                }
+
+                DescriptionAttribute[] descriptionAttributes = (DescriptionAttribute[])fieldInfo.GetCustomAttributes(typeof(DescriptionAttribute), false);
+                if (descriptionAttributes != null && descriptionAttributes.Length > 0)
+                    return descriptionAttributes[0].Description;
+            }
+
+            return "";
+        }
     }
 }
