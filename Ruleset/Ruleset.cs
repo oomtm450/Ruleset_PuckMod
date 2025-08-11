@@ -1228,44 +1228,14 @@ namespace oomtm450PuckMod_Ruleset {
                     if (_paused)
                         return false;
 
-                    PlayerTeam playerTeam = (PlayerTeam)message["team"];
-                    playerTeam = TeamFunc.GetOtherTeam(playerTeam);
-
-                    // No goal if offside or high stick or goalie interference.
-                    bool isOffside = false, isHighStick = false, isGoalieInt = false;
-                    isOffside = IsOffside(playerTeam);
-                    isHighStick = IsHighStick(playerTeam);
-                    isGoalieInt = IsGoalieInt(playerTeam);
-
-                    if (isOffside || isHighStick || isGoalieInt) {
-                        if (isOffside) {
-                            _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.Offside]);
-                            SendChat(Rule.Offside, playerTeam, true, false);
-                        }
-                        else if (isHighStick) {
-                            _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
-                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig, false);
-                            SendChat(Rule.HighStick, playerTeam, true, false);
-                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, playerTeam), RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig, false);
-                        }
-                        else if (isGoalieInt) {
-                            _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(playerTeam, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
-                            SendChat(Rule.GoalieInt, playerTeam, true, false);
-                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, playerTeam), RefSignals.INTERFERENCE_REF, Constants.FROM_SERVER, _serverConfig, false);
-                        }
-                        
-                        DoFaceoff();
-                        return false;
-                    }
-
                     NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_BLUE, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig, false);
                     NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_RED, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig, false);
+
+                    _nextFaceoffSpot = FaceoffSpot.Center;
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManagerController_Event_Server_OnPuckEnterTeamGoal_Patch Prefix().\n{ex}");
                 }
-
-                _nextFaceoffSpot = FaceoffSpot.Center;
 
                 return true;
             }
@@ -1284,6 +1254,33 @@ namespace oomtm450PuckMod_Ruleset {
                         return true;
 
                     if (goalPlayer != null) {
+                        // No goal if offside or high stick or goalie interference.
+                        bool isOffside = false, isHighStick = false, isGoalieInt = false;
+                        isOffside = IsOffside(team);
+                        isHighStick = IsHighStick(team);
+                        isGoalieInt = IsGoalieInt(team);
+
+                        if (isOffside || isHighStick || isGoalieInt) {
+                            if (isOffside) {
+                                _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.Offside]);
+                                SendChat(Rule.Offside, team, true, false);
+                            }
+                            else if (isHighStick) {
+                                _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig, false);
+                                SendChat(Rule.HighStick, team, true, false);
+                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig, false);
+                            }
+                            else if (isGoalieInt) {
+                                _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
+                                SendChat(Rule.GoalieInt, team, true, false);
+                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF, Constants.FROM_SERVER, _serverConfig, false);
+                            }
+
+                            DoFaceoff();
+                            return false;
+                        }
+
                         SendSavePercDuringGoal(team, SendSOGDuringGoal(goalPlayer));
                         return true;
                     }
