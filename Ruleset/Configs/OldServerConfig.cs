@@ -223,14 +223,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool RedTeam { get; } = true;
 
         /// <summary>
-        /// Int, number of milliseconds after a push on the goalie to be considered no goal.
+        /// Int, number of milliseconds after a push on the goalie to be considered no goal. // TODO : Change after release.
         /// </summary>
         public int PushNoGoalMilliseconds { get; } = 3500;
 
         /// <summary>
         /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
         /// </summary>
-        public int HitNoGoalMilliseconds { get; } = 9000; // TODO : Remove when penalty is added.
+        public int HitNoGoalMilliseconds { get; } = 9000; // TODO : Remove when penalty is added. // TODO : Change after release.
 
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
