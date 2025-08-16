@@ -24,12 +24,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.18.1";
+        private static readonly string MOD_VERSION = "0.18.2DEV";
 
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string OLD_MOD_VERSION = "0.18.0";
+        private static readonly string OLD_MOD_VERSION = "0.18.1";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -252,6 +252,8 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool _serverHasResponded = false;
 
         private static bool _askForKick = false;
+
+        private static bool _addServerModVersionOutOfDateMessage = false;
 
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
@@ -1380,6 +1382,11 @@ namespace oomtm450PuckMod_Ruleset {
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_kick", "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT, _clientConfig);
                     }
 
+                    if (_addServerModVersionOutOfDateMessage) {
+                        _addServerModVersionOutOfDateMessage = false;
+                        UIChat.Instance.AddChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
+                    }
+
                     ScoreboardModifications(true);
                 }
                 catch (Exception ex) {
@@ -2057,7 +2064,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
                             break;
                         else if (OLD_MOD_VERSION == dataStr) {
-                            UIChat.Instance.AddChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
+                            _addServerModVersionOutOfDateMessage = true;
                             break;
                         }
 
