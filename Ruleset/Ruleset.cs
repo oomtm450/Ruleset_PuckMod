@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly string MOD_VERSION = "0.18.2DEV";
 
         /// <summary>
-        /// Const string, version of the mod.
+        /// Const string, last released version of the mod.
         /// </summary>
         private static readonly string OLD_MOD_VERSION = "0.18.1";
 
@@ -62,7 +62,10 @@ namespace oomtm450PuckMod_Ruleset {
 
         private const string SOG_LABEL = "SOGLabel";
 
-        private const string ASK_SERVER_FOR_DATA = Constants.MOD_NAME + "ASKDATA";
+        /// <summary>
+        /// Const string, tag to ask the server for the startup data.
+        /// </summary>
+        private const string ASK_SERVER_FOR_STARTUP_DATA = Constants.MOD_NAME + "ASKDATA";
         #endregion
 
         #region Fields
@@ -209,6 +212,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static bool _doFaceoff = false;
 
+        /// <summary>
+        /// Bool, true if the mod has registered with the named message handler for server/client communication.
+        /// </summary>
         private static bool _hasRegisteredWithNamedMessageHandler = false;
 
         private static PuckRaycast _puckRaycast;
@@ -247,12 +253,24 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly LockDictionary<string, Label> _sogLabels = new LockDictionary<string, Label>(); // TODO : Clear if player quits server
 
-        private static DateTime _lastDateTimeAskData = DateTime.MinValue;
+        /// <summary>
+        /// DateTime, last time client asked the server for startup data.
+        /// </summary>
+        private static DateTime _lastDateTimeAskStartupData = DateTime.MinValue;
 
+        /// <summary>
+        /// Bool, true if the server has responded and sent the startup data.
+        /// </summary>
         private static bool _serverHasResponded = false;
 
+        /// <summary>
+        /// Bool, true if the client asked to be kicked because of versionning problems.
+        /// </summary>
         private static bool _askForKick = false;
 
+        /// <summary>
+        /// Bool, true if the client needs to notify the user that the server is running an out of date version of the mod.
+        /// </summary>
         private static bool _addServerModVersionOutOfDateMessage = false;
 
         // Barrier collider, position 0 -19 0 is realistic.
@@ -1371,9 +1389,9 @@ namespace oomtm450PuckMod_Ruleset {
                         _hasRegisteredWithNamedMessageHandler = true;
 
                         DateTime now = DateTime.UtcNow;
-                        if (_lastDateTimeAskData + TimeSpan.FromSeconds(1) < now) {
-                            _lastDateTimeAskData = now;
-                            NetworkCommunication.SendData(ASK_SERVER_FOR_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT, _clientConfig);
+                        if (_lastDateTimeAskStartupData + TimeSpan.FromSeconds(1) < now) {
+                            _lastDateTimeAskStartupData = now;
+                            NetworkCommunication.SendData(ASK_SERVER_FOR_STARTUP_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT, _clientConfig);
                         }
                     }
 
@@ -1384,7 +1402,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (_addServerModVersionOutOfDateMessage) {
                         _addServerModVersionOutOfDateMessage = false;
-                        UIChat.Instance.AddChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
+                        UIChat.Instance.AddChatMessage($"{player.Username.Value} : Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
                     }
 
                     ScoreboardModifications(true);
@@ -2251,7 +2269,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         Logging.Log($"Kicking client {clientId}.", _serverConfig);
                         //NetworkManager.Singleton.DisconnectClient(clientId,
-                            //$"Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update."");
+                            //$"Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
                         
                         if (!_sentOutOfDateMessage.TryGetValue(clientId, out DateTime lastCheckTime)) {
                             lastCheckTime = DateTime.MinValue;
@@ -2267,7 +2285,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
-                    case ASK_SERVER_FOR_DATA: // SERVER-SIDE : Send the necessary data to client.
+                    case ASK_SERVER_FOR_STARTUP_DATA: // SERVER-SIDE : Send the necessary data to client.
                         if (dataStr != "1")
                             break;
 

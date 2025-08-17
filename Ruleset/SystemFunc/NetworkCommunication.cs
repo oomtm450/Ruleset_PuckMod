@@ -12,6 +12,9 @@ namespace oomtm450PuckMod_Ruleset {
     /// </summary>
     internal static class NetworkCommunication {
         #region Constants
+        /// <summary>
+        /// ReadOnlyCollection of string, collection of datanames to not log.
+        /// </summary>
         private static readonly ReadOnlyCollection<string> DATANAMES_TO_IGNORE_LOG = new ReadOnlyCollection<string>(new List<string> {
             RefSignals.SHOW_SIGNAL_BLUE,
             RefSignals.SHOW_SIGNAL_RED,
