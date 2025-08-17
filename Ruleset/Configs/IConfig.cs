@@ -1,6 +1,6 @@
 ﻿namespace oomtm450PuckMod_Ruleset.Configs {
     /// <summary>
-    /// Class containing the configuration from oomtm450_template_clientconfig.json used for this mod.
+    /// Class containing the interface for configurations.
     /// </summary>
     public interface IConfig {
         /// <summary>
