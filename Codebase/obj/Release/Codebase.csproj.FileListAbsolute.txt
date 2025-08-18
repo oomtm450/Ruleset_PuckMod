@@ -1,5 +1,3 @@
-C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\bin\Release\Codebase.dll
-C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\bin\Release\Codebase.pdb
 C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\bin\Release\0Harmony.dll
 C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\bin\Release\Assembly-CSharp-firstpass.dll
 C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\bin\Release\AYellowpaper.SerializedCollections.dll
@@ -154,5 +152,7 @@ C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\bin\Release\
 C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\obj\Release\Codebase.csproj.AssemblyReference.cache
 C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\obj\Release\Codebase.csproj.CoreCompileInputs.cache
 C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\obj\Release\Codebase.csproj.Up2Date
-C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\obj\Release\Codebase.dll
-C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\obj\Release\Codebase.pdb
+C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\bin\Release\oomtm450PuckMod_Codebase.dll
+C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\bin\Release\oomtm450PuckMod_Codebase.pdb
+C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\obj\Release\oomtm450PuckMod_Codebase.dll
+C:\Users\oomtm\Desktop\PuckModding\oomtm450PuckMod_Ruleset\Codebase\obj\Release\oomtm450PuckMod_Codebase.pdb
