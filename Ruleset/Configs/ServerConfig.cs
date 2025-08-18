@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using Codebase;
+using Codebase.Configs;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,6 +22,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if the info logs must be printed.
         /// </summary>
         public bool LogInfo { get; set; } = true;
+
+        /// <summary>
+        /// String, name of the mod.
+        /// </summary>
+        [JsonIgnore]
+        public string ModName { get; } = Constants.MOD_NAME;
 
         /// <summary>
         /// Bool, true if the custom faceoff (any faceoff not in center) should be used.
@@ -166,13 +174,13 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                     File.WriteAllText(configPath, config.ToString());
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}");
+                    Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}", config);
                 }
 
                 Logging.Log($"Wrote server config : {config}", config, true);
             }
             catch (Exception ex) {
-                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}");
+                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", config);
             }
 
             return config;

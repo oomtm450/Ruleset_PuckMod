@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Codebase;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -75,7 +76,7 @@ namespace oomtm450PuckMod_Ruleset {
                 string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), IMAGES_FOLDER_PATH);
 
                 if (!Directory.Exists(fullPath)) {
-                    Logging.LogError($"Images not found at: {fullPath}");
+                    Logging.LogError($"Images not found at: {fullPath}", Ruleset._clientConfig);
                     return;
                 }
 
@@ -89,7 +90,7 @@ namespace oomtm450PuckMod_Ruleset {
                 StartCoroutine(GetSprites(fullPath, team));
             }
             catch (Exception ex) {
-                Logging.LogError($"Error loading Images.\n{ex}");
+                Logging.LogError($"Error loading Images.\n{ex}", Ruleset._clientConfig);
             }
         }
 

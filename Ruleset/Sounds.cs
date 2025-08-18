@@ -1,11 +1,11 @@
-﻿using System;
+﻿using Codebase;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using UnityEngine.Audio;
 using UnityEngine.Networking;
 
 namespace oomtm450PuckMod_Ruleset {
@@ -73,7 +73,7 @@ namespace oomtm450PuckMod_Ruleset {
                     DontDestroyOnLoad(gameObject);
 
                     if (!Directory.Exists(fullPath)) {
-                        Logging.LogError($"Sounds not found at: {fullPath}");
+                        Logging.LogError($"Sounds not found at: {fullPath}", Ruleset._clientConfig);
                         return;
                     }
                 }
@@ -82,7 +82,7 @@ namespace oomtm450PuckMod_Ruleset {
                 StartCoroutine(GetAudioClips(fullPath));
             }
             catch (Exception ex) {
-                Logging.LogError($"Error loading Sounds.\n{ex}");
+                Logging.LogError($"Error loading Sounds.\n{ex}", Ruleset._clientConfig);
             }
         }
 

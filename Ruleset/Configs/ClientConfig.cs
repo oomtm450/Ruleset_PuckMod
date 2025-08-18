@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using Codebase;
+using Codebase.Configs;
+using Newtonsoft.Json;
 using System;
 using System.IO;
 
@@ -11,6 +13,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if the info logs must be printed.
         /// </summary>
         public bool LogInfo { get; set; } = true;
+
+        /// <summary>
+        /// String, name of the mod.
+        /// </summary>
+        [JsonIgnore]
+        public string ModName { get; } = Constants.MOD_NAME;
 
         /// <summary>
         /// Bool, true if the music must be played ingame.
@@ -73,7 +81,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 config.Save();
             }
             catch (Exception ex) {
-                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}");
+                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", config);
             }
 
             return config;
@@ -81,7 +89,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
         internal void Save() {
             if (string.IsNullOrEmpty(_configPath)) {
-                Logging.LogError($"Can't write the client config file. ({nameof(_configPath)} null or empty)");
+                Logging.LogError($"Can't write the client config file. ({nameof(_configPath)} null or empty)", this);
                 return;
             }
 
@@ -89,7 +97,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 File.WriteAllText(_configPath, ToString());
             }
             catch (Exception ex) {
-                Logging.LogError($"Can't write the client config file. (Permission error ?)\n{ex}");
+                Logging.LogError($"Can't write the client config file. (Permission error ?)\n{ex}", this);
             }
 
             Logging.Log($"Wrote client config : {ToString()}", this, true);
