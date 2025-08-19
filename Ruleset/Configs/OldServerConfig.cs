@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Codebase.Configs;
+using System.Collections.Generic;
 
 namespace oomtm450PuckMod_Ruleset.Configs {
     /// <summary>
@@ -150,11 +151,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing.
         /// </summary>
-        public Dictionary<Zone, int> MaxPossibleTime { get; } = new Dictionary<Zone, int> { // TODO : Change when releasing V0.18.2 or V0.19.0.
-            { Zone.BlueTeam_BehindGoalLine, 8000 },
-            { Zone.RedTeam_BehindGoalLine, 8000 },
-            { Zone.BlueTeam_Zone, 6500 },
-            { Zone.RedTeam_Zone, 6500 },
+        public Dictionary<Zone, int> MaxPossibleTime { get; } = new Dictionary<Zone, int> { // TODO : Change after release.
+            { Zone.BlueTeam_BehindGoalLine, 8500 },
+            { Zone.RedTeam_BehindGoalLine, 8500 },
+            { Zone.BlueTeam_Zone, 6750 },
+            { Zone.RedTeam_Zone, 6750 },
             { Zone.BlueTeam_Center, 4500 },
             { Zone.RedTeam_Center, 4500 },
         };
@@ -223,14 +224,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool RedTeam { get; } = true;
 
         /// <summary>
-        /// Int, number of milliseconds after a push on the goalie to be considered no goal.
+        /// Int, number of milliseconds after a push on the goalie to be considered no goal. // TODO : Change after release.
         /// </summary>
         public int PushNoGoalMilliseconds { get; } = 3500;
 
         /// <summary>
         /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
         /// </summary>
-        public int HitNoGoalMilliseconds { get; } = 9000; // TODO : Remove when penalty is added.
+        public int HitNoGoalMilliseconds { get; } = 9000; // TODO : Remove when penalty is added. // TODO : Change after release.
 
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.

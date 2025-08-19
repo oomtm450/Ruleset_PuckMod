@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Codebase;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +20,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private const string REF_SIGNAL = "refsignal";
         private const string SHOW_SIGNAL = "show" + REF_SIGNAL;
-        private const string STOP_SIGNAL = "stop" + REF_SIGNAL;
+        internal const string STOP_SIGNAL = "stop" + REF_SIGNAL;
         internal const string RED = "r";
         internal const string BLUE = "b";
         internal const string SHOW_SIGNAL_BLUE = SHOW_SIGNAL + BLUE;
@@ -75,7 +76,7 @@ namespace oomtm450PuckMod_Ruleset {
                 string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), IMAGES_FOLDER_PATH);
 
                 if (!Directory.Exists(fullPath)) {
-                    Logging.LogError($"Images not found at: {fullPath}");
+                    Logging.LogError($"Images not found at: {fullPath}", Ruleset._clientConfig);
                     return;
                 }
 
@@ -89,7 +90,7 @@ namespace oomtm450PuckMod_Ruleset {
                 StartCoroutine(GetSprites(fullPath, team));
             }
             catch (Exception ex) {
-                Logging.LogError($"Error loading Images.\n{ex}");
+                Logging.LogError($"Error loading Images.\n{ex}", Ruleset._clientConfig);
             }
         }
 

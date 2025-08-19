@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using Codebase;
+using Codebase.Configs;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,6 +22,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if the info logs must be printed.
         /// </summary>
         public bool LogInfo { get; set; } = true;
+
+        /// <summary>
+        /// String, name of the mod.
+        /// </summary>
+        [JsonIgnore]
+        public string ModName { get; } = Constants.MOD_NAME;
 
         /// <summary>
         /// Bool, true if the custom faceoff (any faceoff not in center) should be used.
@@ -166,13 +174,13 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                     File.WriteAllText(configPath, config.ToString());
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}");
+                    Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}", config);
                 }
 
                 Logging.Log($"Wrote server config : {config}", config, true);
             }
             catch (Exception ex) {
-                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}");
+                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", config);
             }
 
             return config;
@@ -261,12 +269,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing.
         /// </summary>
         public Dictionary<Zone, int> MaxPossibleTime { get; set; } = new Dictionary<Zone, int> {
-            { Zone.BlueTeam_BehindGoalLine, 8500 },
-            { Zone.RedTeam_BehindGoalLine, 8500 },
-            { Zone.BlueTeam_Zone, 6750 },
-            { Zone.RedTeam_Zone, 6750 },
-            { Zone.BlueTeam_Center, 4500 },
-            { Zone.RedTeam_Center, 4500 },
+            { Zone.BlueTeam_BehindGoalLine, 8250 },
+            { Zone.RedTeam_BehindGoalLine, 8250 },
+            { Zone.BlueTeam_Zone, 6500 },
+            { Zone.RedTeam_Zone, 6500 },
+            { Zone.BlueTeam_Center, 4750 },
+            { Zone.RedTeam_Center, 4750 },
         };
 
         /// <summary>
@@ -373,12 +381,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after a push on the goalie to be considered no goal.
         /// </summary>
-        public int PushNoGoalMilliseconds { get; set; } = 3500;
+        public int PushNoGoalMilliseconds { get; set; } = 3750;
 
         /// <summary>
         /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
         /// </summary>
-        public int HitNoGoalMilliseconds { get; set; } = 9000; // TODO : Remove when penalty is added.
+        public int HitNoGoalMilliseconds { get; set; } = 11000; // TODO : Remove when penalty is added.
 
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
