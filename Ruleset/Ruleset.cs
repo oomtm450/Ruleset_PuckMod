@@ -1,7 +1,6 @@
 ﻿using Codebase;
 using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
-using SingularityGroup.HotReload;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -27,7 +26,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.18.2DEV";
+        private static readonly string MOD_VERSION = "0.18.2";
 
         /// <summary>
         /// Const string, last released version of the mod.
