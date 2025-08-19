@@ -1,6 +1,7 @@
 ﻿using Codebase;
 using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
+using SingularityGroup.HotReload;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -2707,7 +2708,10 @@ namespace oomtm450PuckMod_Ruleset {
                     _sog.Add(playerSteamId, 0);
 
                 _sog[playerSteamId] += 1;
-                NetworkCommunication.SendDataToAll(SOG + playerSteamId, _sog[playerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+                int sog = _sog[playerSteamId];
+                NetworkCommunication.SendDataToAll(SOG + playerSteamId, sog.ToString(), Constants.FROM_SERVER, _serverConfig);
+
+                Logging.Log($"playerSteamId:{playerSteamId},sog:{sog}", _serverConfig);
 
                 _lastShotWasCounted[player.Team.Value] = true;
 
@@ -2734,9 +2738,11 @@ namespace oomtm450PuckMod_Ruleset {
                 _savePercValue = (0, 0);
             }
 
-            _savePerc[_goaliePlayerSteamId] = saveWasCounted ? (--_savePercValue.Saves, _savePercValue.Shots) : (_savePercValue.Saves, ++_savePercValue.Shots);
+            var saveperc = _savePerc[_goaliePlayerSteamId] = saveWasCounted ? (--_savePercValue.Saves, _savePercValue.Shots) : (_savePercValue.Saves, ++_savePercValue.Shots);
 
             NetworkCommunication.SendDataToAll(SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+
+            Logging.Log($"playerSteamId:{_goaliePlayerSteamId},saveperc:{GetGoalieSavePerc(saveperc.Saves, saveperc.Shots)}", _serverConfig);
         }
 
         public static string RemoveWhitespace(string input) {
