@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private const string REF_SIGNAL = "refsignal";
         private const string SHOW_SIGNAL = "show" + REF_SIGNAL;
-        private const string STOP_SIGNAL = "stop" + REF_SIGNAL;
+        internal const string STOP_SIGNAL = "stop" + REF_SIGNAL;
         internal const string RED = "r";
         internal const string BLUE = "b";
         internal const string SHOW_SIGNAL_BLUE = SHOW_SIGNAL + BLUE;

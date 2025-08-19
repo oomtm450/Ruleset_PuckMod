@@ -42,6 +42,7 @@ namespace oomtm450PuckMod_Ruleset {
             RefSignals.SHOW_SIGNAL_RED,
             RefSignals.STOP_SIGNAL_BLUE,
             RefSignals.STOP_SIGNAL_RED,
+            RefSignals.STOP_SIGNAL,
         });
 
         /// <summary>
@@ -411,14 +412,12 @@ namespace oomtm450PuckMod_Ruleset {
                         else if (puck.IsGrounded) {
                             if (IsHighStick(stick.Player.Team.Value)) {
                                 _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
-                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, stick.Player.Team.Value), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
-                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig);
-                                SendChat(Rule.HighStick, stick.Player.Team.Value, true);
 
                                 _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
                                 highStickTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
-                                DoFaceoff();
+                                SendChat(Rule.HighStick, stick.Player.Team.Value, true);
+                                DoFaceoff(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_REF);
                             }
                         }
                     }
@@ -716,8 +715,7 @@ namespace oomtm450PuckMod_Ruleset {
                     else if (phase == GamePhase.PeriodOver) {
                         _nextFaceoffSpot = FaceoffSpot.Center; // Fix faceoff if the period is over because of deferred icing.
 
-                        NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_BLUE, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
-                        NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_RED, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
+                        NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
 
                         _currentMusicPlaying = Sounds.BETWEEN_PERIODS_MUSIC;
                         NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER, _serverConfig);
@@ -770,8 +768,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         _playersOnPuckTipIncludedDateTime.Clear();
 
-                        NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_BLUE, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
-                        NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_RED, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
+                        NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
                     }
                     else if (phase == GamePhase.Playing) {
                         if (time == -1 && _serverConfig.ReAdd1SecondAfterFaceoff)
@@ -1262,8 +1259,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (_paused)
                         return false;
 
-                    NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_BLUE, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
-                    NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL_RED, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
+                    NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
 
                     _nextFaceoffSpot = FaceoffSpot.Center;
                 }
@@ -1299,20 +1295,18 @@ namespace oomtm450PuckMod_Ruleset {
                             if (isOffside) {
                                 _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.Offside]);
                                 SendChat(Rule.Offside, team, true, false);
+                                DoFaceoff();
                             }
                             else if (isHighStick) {
                                 _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.HighStick]);
-                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
                                 SendChat(Rule.HighStick, team, true, false);
-                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), RefSignals.HIGHSTICK_REF, Constants.FROM_SERVER, _serverConfig);
+                                DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.HIGHSTICK_REF);
                             }
                             else if (isGoalieInt) {
                                 _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
                                 SendChat(Rule.GoalieInt, team, true, false);
-                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF, Constants.FROM_SERVER, _serverConfig);
+                                DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
                             }
-
-                            DoFaceoff();
                             return false;
                         }
 
@@ -1323,9 +1317,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (isGoalieInt) {
                         _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
                         SendChat(Rule.GoalieInt, team, true, false);
-                        NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF, Constants.FROM_SERVER, _serverConfig);
-
-                        DoFaceoff();
+                        DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
                         return false;
                     }
 
@@ -1632,13 +1624,18 @@ namespace oomtm450PuckMod_Ruleset {
                 _callOffHighStickNextFrame[key] = false;
         }
 
-        private static void DoFaceoff(int millisecondsPauseMin = 3500, int millisecondsPauseMax = 5000) {
+        private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3500, int millisecondsPauseMax = 5000) {
             if (_paused)
                 return;
 
             _paused = true;
 
             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FormatSoundStrForCommunication(Sounds.WHISTLE), Constants.FROM_SERVER, _serverConfig);
+
+            if (!string.IsNullOrEmpty(dataName) && !string.IsNullOrEmpty(dataStr)) {
+                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER, _serverConfig);
+                NetworkCommunication.SendDataToAll(dataName, dataStr, Constants.FROM_SERVER, _serverConfig);
+            }
 
             if (!_hasPlayedLastMinuteMusic && GameManager.Instance.GameState.Value.Time <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
                 _hasPlayedLastMinuteMusic = true;
@@ -2222,22 +2219,7 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RefSignals.STOP_SIGNAL_BLUE: // CLIENT-SIDE : Hide blue team ref signal in the UI.
-                        if (_refSignalsBlueTeam == null)
-                            break;
-
-                        if (_refSignalsBlueTeam.Errors.Count != 0) {
-                            Logging.LogError("There was an error when initializing _refSignalsBlueTeam.", _clientConfig);
-                            foreach (string error in _refSignalsBlueTeam.Errors)
-                                Logging.LogError(error, _clientConfig);
-                        }
-                        else {
-                            if (dataStr == RefSignals.ALL)
-                                _refSignalsBlueTeam.StopAllSignals();
-                            else if (_clientConfig.TeamColor2DRefs)
-                                _refSignalsBlueTeam.StopSignal(dataStr + "_" + RefSignals.BLUE);
-                            else
-                                _refSignalsBlueTeam.StopSignal(dataStr);
-                        }
+                        StopBlueRefSignals(dataStr);
                         break;
 
                     case RefSignals.SHOW_SIGNAL_RED: // CLIENT-SIDE : Show red team ref signal in the UI.
@@ -2258,22 +2240,12 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RefSignals.STOP_SIGNAL_RED: // CLIENT-SIDE : Hide red team ref signal in the UI.
-                        if (_refSignalsRedTeam == null)
-                            break;
+                        StopRedRefSignals(dataStr);
+                        break;
 
-                        if (_refSignalsRedTeam.Errors.Count != 0) {
-                            Logging.LogError("There was an error when initializing _refSignalsRedTeam.", _clientConfig);
-                            foreach (string error in _refSignalsRedTeam.Errors)
-                                Logging.LogError(error, _clientConfig);
-                        }
-                        else {
-                            if (dataStr == RefSignals.ALL)
-                                _refSignalsRedTeam.StopAllSignals();
-                            else if (_clientConfig.TeamColor2DRefs)
-                                _refSignalsRedTeam.StopSignal(dataStr + "_" + RefSignals.RED);
-                            else
-                                _refSignalsRedTeam.StopSignal(dataStr);
-                        }
+                    case RefSignals.STOP_SIGNAL: // CLIENT-SIDE : Hide all ref signals in the UI.
+                        StopBlueRefSignals(dataStr);
+                        StopRedRefSignals(dataStr);
                         break;
 
                     case Constants.MOD_NAME + "_kick": // SERVER-SIDE : Kick the client that asked to be kicked.
@@ -2392,6 +2364,44 @@ namespace oomtm450PuckMod_Ruleset {
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in ReceiveData.\n{ex}", _serverConfig);
+            }
+        }
+
+        private static void StopBlueRefSignals(string dataStr) {
+            if (_refSignalsBlueTeam == null)
+                return;
+
+            if (_refSignalsBlueTeam.Errors.Count != 0) {
+                Logging.LogError("There was an error when initializing _refSignalsBlueTeam.", _clientConfig);
+                foreach (string error in _refSignalsBlueTeam.Errors)
+                    Logging.LogError(error, _clientConfig);
+            }
+            else {
+                if (dataStr == RefSignals.ALL)
+                    _refSignalsBlueTeam.StopAllSignals();
+                else if (_clientConfig.TeamColor2DRefs)
+                    _refSignalsBlueTeam.StopSignal(dataStr + "_" + RefSignals.BLUE);
+                else
+                    _refSignalsBlueTeam.StopSignal(dataStr);
+            }
+        }
+
+        private static void StopRedRefSignals(string dataStr) {
+            if (_refSignalsRedTeam == null)
+                return;
+
+            if (_refSignalsRedTeam.Errors.Count != 0) {
+                Logging.LogError("There was an error when initializing _refSignalsRedTeam.", _clientConfig);
+                foreach (string error in _refSignalsRedTeam.Errors)
+                    Logging.LogError(error, _clientConfig);
+            }
+            else {
+                if (dataStr == RefSignals.ALL)
+                    _refSignalsRedTeam.StopAllSignals();
+                else if (_clientConfig.TeamColor2DRefs)
+                    _refSignalsRedTeam.StopSignal(dataStr + "_" + RefSignals.RED);
+                else
+                    _refSignalsRedTeam.StopSignal(dataStr);
             }
         }
 
