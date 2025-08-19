@@ -11,10 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Codebase\Codebase.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="0Harmony">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\0Harmony.dll</HintPath>
     </Reference>
@@ -455,6 +451,8 @@
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\uPnP.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+  <Import Project="..\Codebase\Codebase1.projitems" Label="Shared" />
 
   <!-- Streamline development and move the built .dll to the plugins folder after building -->
   <!-- <Target Name="PostBuildMoveDll" AfterTargets="Build">
