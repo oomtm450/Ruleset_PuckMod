@@ -1114,14 +1114,14 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
 
-                    // Deferred icing logic.
-                    if (dictPlayersPositionsForDeferredIcing.Count != 0) {
-                        PlayerTeam puckTeamZone;
-                        if (puck.Rigidbody.transform.position.z > 0)
-                            puckTeamZone = PlayerTeam.Blue;
-                        else
-                            puckTeamZone = PlayerTeam.Red;
+                    PlayerTeam puckTeamZone;
+                    if (puck.Rigidbody.transform.position.z > 0)
+                        puckTeamZone = PlayerTeam.Blue;
+                    else
+                        puckTeamZone = PlayerTeam.Red;
 
+                    // Deferred icing logic.
+                    if (dictPlayersPositionsForDeferredIcing.Any(x => puckTeamZone == PlayerTeam.Blue ? x.IsBehindBlueTeamHashmarks : x.IsBehindRedTeamHashmarks)) {
                         PlayerIcing closestPlayerToEndBoardBlueTeam;
                         PlayerIcing closestPlayerToEndBoardRedTeam;
 
@@ -1138,12 +1138,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam == null && closestPlayerToEndBoardBlueTeam.IsBehindHashmarks)
                             closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Player;
-                        //else if (closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam != null && closestPlayerToEndBoardBlueTeam.IsBehindHashmarks && !closestPlayerToEndBoardRedTeam.IsBehindHashmarks)
-                            //closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Player;
                         else if (closestPlayerToEndBoardRedTeam != null && closestPlayerToEndBoardBlueTeam == null && closestPlayerToEndBoardRedTeam.IsBehindHashmarks)
                             closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Player;
-                        //else if (closestPlayerToEndBoardRedTeam != null && closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam.IsBehindHashmarks && !closestPlayerToEndBoardBlueTeam.IsBehindHashmarks)
-                            //closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Player;
                         else if (closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam != null) {
                             if (Math.Abs(closestPlayerToEndBoardBlueTeam.Z - closestPlayerToEndBoardRedTeam.Z) < 8f) { // Check distance with x and z coordinates.
                                 float puckXCoordinate = Math.Abs(puck.Rigidbody.transform.position.x);
