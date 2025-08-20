@@ -1233,7 +1233,7 @@ namespace oomtm450PuckMod_Ruleset {
                             _checkIfPuckWasSaved[key] = new SaveCheck();
                         }
                         else {
-                            if (++saveCheck.FramesChecked > 400)
+                            if (++saveCheck.FramesChecked > 480)
                                 _checkIfPuckWasSaved[key] = new SaveCheck();
                         }
                     }
