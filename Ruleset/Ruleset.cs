@@ -1,6 +1,7 @@
 ﻿using Codebase;
 using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
+using SingularityGroup.HotReload;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -1210,6 +1211,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                             _sog[shotPlayerSteamId] += 1;
                             NetworkCommunication.SendDataToAll(SOG + shotPlayerSteamId, _sog[shotPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+                            LogSOG(shotPlayerSteamId, _sog[shotPlayerSteamId]);
 
                             _lastShotWasCounted[shotPlayerTeam] = true;
 
@@ -1222,10 +1224,10 @@ namespace oomtm450PuckMod_Ruleset {
                                     savePercValue = (0, 0);
                                 }
 
-                                (int saves, int shots) = _savePerc[_goaliePlayerSteamId] = (++savePercValue.Saves, ++savePercValue.Shots);
+                                (int saves, int sog) = _savePerc[_goaliePlayerSteamId] = (++savePercValue.Saves, ++savePercValue.Shots);
 
                                 NetworkCommunication.SendDataToAll(SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
-                                LogSavePerc(_goaliePlayerSteamId, saves, shots);
+                                LogSavePerc(_goaliePlayerSteamId, saves, sog);
                             }
 
                             _checkIfPuckWasSaved[key] = new SaveCheck();
@@ -2720,8 +2722,7 @@ namespace oomtm450PuckMod_Ruleset {
                 _sog[playerSteamId] += 1;
                 int sog = _sog[playerSteamId];
                 NetworkCommunication.SendDataToAll(SOG + playerSteamId, sog.ToString(), Constants.FROM_SERVER, _serverConfig);
-
-                Logging.Log($"playerSteamId:{playerSteamId},sog:{sog}", _serverConfig);
+                LogSOG(playerSteamId, sog);
 
                 _lastShotWasCounted[player.Team.Value] = true;
 
@@ -2748,14 +2749,29 @@ namespace oomtm450PuckMod_Ruleset {
                 _savePercValue = (0, 0);
             }
 
-            (int saves, int shots) = _savePerc[_goaliePlayerSteamId] = saveWasCounted ? (--_savePercValue.Saves, _savePercValue.Shots) : (_savePercValue.Saves, ++_savePercValue.Shots);
+            (int saves, int sog) = _savePerc[_goaliePlayerSteamId] = saveWasCounted ? (--_savePercValue.Saves, _savePercValue.Shots) : (_savePercValue.Saves, ++_savePercValue.Shots);
 
             NetworkCommunication.SendDataToAll(SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
-            LogSavePerc(_goaliePlayerSteamId, saves, shots);
+            LogSavePerc(_goaliePlayerSteamId, saves, sog);
+        }
+        
+        /// <summary>
+        /// Method that logs the save percentage of a goalie.
+        /// </summary>
+        /// <param name="goaliePlayerSteamId">String, steam Id of the goalie.</param>
+        /// <param name="saves">Int, number of saves.</param>
+        /// <param name="sog">Int, number of shots on goal on the goalie.</param>
+        private static void LogSavePerc(string goaliePlayerSteamId, int saves, int sog) {
+            Logging.Log($"playerSteamId:{goaliePlayerSteamId},saveperc:{GetGoalieSavePerc(saves, sog)},saves:{saves},sog:{sog}", _serverConfig);
         }
 
-        private static void LogSavePerc(string goaliePlayerSteamId, int saves, int shots) {
-            Logging.Log($"playerSteamId:{goaliePlayerSteamId},saveperc:{GetGoalieSavePerc(saves, shots)},saves:{saves},shots:{shots}", _serverConfig);
+        /// <summary>
+        /// Method that logs the shots on goal of a player.
+        /// </summary>
+        /// <param name="playerSteamId">String, steam Id of the player.</param>
+        /// <param name="sog">Int, number of shots on goal.</param>
+        private static void LogSOG(string playerSteamId, int sog) {
+            Logging.Log($"playerSteamId:{playerSteamId},sog:{sog}", _serverConfig);
         }
 
         public static string RemoveWhitespace(string input) {
