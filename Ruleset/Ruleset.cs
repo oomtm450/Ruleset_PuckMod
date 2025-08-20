@@ -2504,9 +2504,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                 Logging.Log($"Enabled.", _serverConfig, true);
 
-                if (ServerFunc.IsDedicatedServer()) {
-                    NetworkCommunication.AddToNotLogList(DATA_NAMES_TO_IGNORE);
+                NetworkCommunication.AddToNotLogList(DATA_NAMES_TO_IGNORE);
 
+                if (ServerFunc.IsDedicatedServer()) {
                     if (NetworkManager.Singleton != null && NetworkManager.Singleton.CustomMessagingManager != null) {
                         Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT}.", _serverConfig);
                         NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
@@ -2558,8 +2558,8 @@ namespace oomtm450PuckMod_Ruleset {
                 Logging.Log($"Disabling...", _serverConfig, true);
 
                 Logging.Log("Unsubscribing from events.", _serverConfig, true);
+                NetworkCommunication.RemoveFromNotLogList(DATA_NAMES_TO_IGNORE);
                 if (ServerFunc.IsDedicatedServer()) {
-                    NetworkCommunication.RemoveFromNotLogList(DATA_NAMES_TO_IGNORE);
                     EventManager.Instance.RemoveEventListener("Event_OnClientConnected", Event_OnClientConnected);
                     EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
