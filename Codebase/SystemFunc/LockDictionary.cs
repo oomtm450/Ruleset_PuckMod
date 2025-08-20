@@ -24,7 +24,8 @@ namespace Codebase {
         public LockDictionary() { }
 
         public LockDictionary(Dictionary<TKey, TValue> dictionary) {
-            _dictionary = dictionary;
+            lock (_locker)
+                _dictionary = new Dictionary<TKey, TValue>(dictionary);
         }
         #endregion
 
