@@ -1222,9 +1222,10 @@ namespace oomtm450PuckMod_Ruleset {
                                     savePercValue = (0, 0);
                                 }
 
-                                _savePerc[_goaliePlayerSteamId] = (++savePercValue.Saves, ++savePercValue.Shots);
+                                (int saves, int shots) = _savePerc[_goaliePlayerSteamId] = (++savePercValue.Saves, ++savePercValue.Shots);
 
                                 NetworkCommunication.SendDataToAll(SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+                                LogSavePerc(_goaliePlayerSteamId, saves, shots);
                             }
 
                             _checkIfPuckWasSaved[key] = new SaveCheck();
@@ -2747,11 +2748,14 @@ namespace oomtm450PuckMod_Ruleset {
                 _savePercValue = (0, 0);
             }
 
-            var saveperc = _savePerc[_goaliePlayerSteamId] = saveWasCounted ? (--_savePercValue.Saves, _savePercValue.Shots) : (_savePercValue.Saves, ++_savePercValue.Shots);
+            (int saves, int shots) = _savePerc[_goaliePlayerSteamId] = saveWasCounted ? (--_savePercValue.Saves, _savePercValue.Shots) : (_savePercValue.Saves, ++_savePercValue.Shots);
 
             NetworkCommunication.SendDataToAll(SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+            LogSavePerc(_goaliePlayerSteamId, saves, shots);
+        }
 
-            Logging.Log($"playerSteamId:{_goaliePlayerSteamId},saveperc:{GetGoalieSavePerc(saveperc.Saves, saveperc.Shots)}", _serverConfig);
+        private static void LogSavePerc(string goaliePlayerSteamId, int saves, int shots) {
+            Logging.Log($"playerSteamId:{goaliePlayerSteamId},saveperc:{GetGoalieSavePerc(saves, shots)},saves:{saves},shots:{shots}", _serverConfig);
         }
 
         public static string RemoveWhitespace(string input) {
