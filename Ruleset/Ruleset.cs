@@ -1341,7 +1341,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_GoalScored))]
         public class GameManager_Server_GoalScored_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(PlayerTeam team, ref Player lastPlayer, ref Player goalPlayer, Player assistPlayer, Player secondAssistPlayer, Puck puck) {
+            public static bool Prefix(PlayerTeam team, ref Player lastPlayer, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer())
@@ -1374,6 +1374,8 @@ namespace oomtm450PuckMod_Ruleset {
                             return false;
                         }
 
+                        secondAssistPlayer = assistPlayer;
+                        assistPlayer = goalPlayer;
                         goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
                         SendSavePercDuringGoal(team, SendSOGDuringGoal(goalPlayer));
                         return true;
