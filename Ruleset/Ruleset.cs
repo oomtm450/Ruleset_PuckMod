@@ -466,8 +466,19 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     Stick stick = GetStick(collision.gameObject);
-                    if (!stick)
+                    if (!stick) {
+                        PlayerBodyV2 playerBody = GetPlayerBodyV2(collision.gameObject);
+                        if (!playerBody || !playerBody.Player)
+                            return;
+
+                        string playerBodySteamId = playerBody.Player.SteamId.Value.ToString();
+
+                        _lastPlayerOnPuckTeamTipIncluded = playerBody.Player.Team.Value;
+                        _lastPlayerOnPuckTipIncludedSteamId[playerBody.Player.Team.Value] = playerBodySteamId;
+                        _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerBodySteamId, (playerBody.Player.Team.Value, DateTime.UtcNow));
+
                         return;
+                    }
 
                     _puckZoneLastTouched = _puckZone;
 
@@ -1363,6 +1374,7 @@ namespace oomtm450PuckMod_Ruleset {
                             return false;
                         }
 
+                        goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
                         SendSavePercDuringGoal(team, SendSOGDuringGoal(goalPlayer));
                         return true;
                     }
