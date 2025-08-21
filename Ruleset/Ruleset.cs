@@ -1373,9 +1373,20 @@ namespace oomtm450PuckMod_Ruleset {
                             return false;
                         }
 
-                        secondAssistPlayer = assistPlayer;
-                        assistPlayer = goalPlayer;
-                        goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
+                        Player lastTouchPlayerTipIncluded = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
+                        if (lastTouchPlayerTipIncluded != null && lastTouchPlayerTipIncluded.SteamId.Value.ToString() != goalPlayer.SteamId.Value.ToString()) {
+                            secondAssistPlayer = assistPlayer;
+                            assistPlayer = goalPlayer;
+                            goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
+
+                            while (assistPlayer != null && assistPlayer.SteamId.Value.ToString() == goalPlayer.SteamId.Value.ToString()) {
+                                assistPlayer = secondAssistPlayer;
+                                secondAssistPlayer = null;
+                            }
+
+                            if (secondAssistPlayer != null && (secondAssistPlayer.SteamId.Value.ToString() == assistPlayer.SteamId.Value.ToString() || secondAssistPlayer.SteamId.Value.ToString() == goalPlayer.SteamId.Value.ToString()))
+                                secondAssistPlayer = null;
+                        }
                         SendSavePercDuringGoal(team, SendSOGDuringGoal(goalPlayer));
                         return true;
                     }
