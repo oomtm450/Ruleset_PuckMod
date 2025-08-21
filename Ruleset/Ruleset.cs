@@ -267,9 +267,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static string _currentMusicPlaying = "";
 
-        private static readonly List<string> _hasUpdatedUIScoreboard = new List<string>(); // TODO : Clear if player quits server
+        private static readonly List<string> _hasUpdatedUIScoreboard = new List<string>();
 
-        private static readonly LockDictionary<string, Label> _sogLabels = new LockDictionary<string, Label>(); // TODO : Clear if player quits server
+        private static readonly LockDictionary<string, Label> _sogLabels = new LockDictionary<string, Label>();
 
         /// <summary>
         /// DateTime, last time client asked the server for startup data.
