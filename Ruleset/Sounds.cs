@@ -48,6 +48,8 @@ namespace oomtm450PuckMod_Ruleset {
         private readonly List<AudioClip> _audioClips = new List<AudioClip>();
 
         private AudioSource _currentAudioSource = null;
+
+        private static string _lastRandomSound = "";
         #endregion
 
         #region Properties
@@ -132,13 +134,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                             // Add a faceoff music twice to the list to double the chance of playing if it's a not a multi part music.
                             // This is going to help music with one ogg to play more.
-                            string bareClipName = clip.name
-                                .Replace(FACEOFF_MUSIC, "")
-                                .Replace(FIRST_FACEOFF_MUSIC, "")
-                                .Replace(SECOND_FACEOFF_MUSIC, "")
-                                .Replace(LAST_MINUTE_MUSIC, "")
-                                .Replace(BETWEEN_PERIODS_MUSIC, "");
-                            if (!char.IsDigit(bareClipName[bareClipName.Length - 1]))
+                            if (!char.IsDigit(clip.name[clip.name.Length - 1]))
                                 AddClipNameToCorrectList(clip.name);
 
                         }
@@ -230,15 +226,28 @@ namespace oomtm450PuckMod_Ruleset {
             _currentAudioSource.volume = SettingsManager.Instance.GlobalVolume * Ruleset._clientConfig.MusicVolume;
         }
 
-        internal static string GetRandomSound(List<string> musicList, int? seed = null) {
-            if (musicList.Count != 0) {
+        internal static string GetRandomSound(List<string> soundList, int? seed = null) {
+            string sound = "";
+            if (soundList.Count != 0) {
                 if (seed == null)
-                    return musicList[new System.Random().Next(0, musicList.Count)];
+                    sound = soundList[new System.Random().Next(0, soundList.Count)];
                 else
-                    return musicList[new System.Random((int)seed).Next(0, musicList.Count)];
+                    sound = soundList[new System.Random((int)seed).Next(0, soundList.Count)];
+
+                if (sound == _lastRandomSound) {
+                    int soundIndex = soundList.FindIndex(x => x == sound);
+                    if (soundIndex == soundList.Count - 1)
+                        soundIndex = 0;
+                    else
+                        soundIndex++;
+
+                    sound = soundList[soundIndex];
+                }
+
+                _lastRandomSound = sound;
             }
 
-            return "";
+            return sound;
         }
 
         /// <summary>
