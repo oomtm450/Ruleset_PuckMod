@@ -2,7 +2,6 @@
 using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -27,7 +26,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.19.0DEV8";
+        private static readonly string MOD_VERSION = "0.19.0DEV9";
 
         /// <summary>
         /// Const string, last released version of the mod.
@@ -1013,7 +1012,7 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     // Check if high stick has been called by an event that cannot call it off by itself.
                     foreach (PlayerTeam callHighStickTeam in new List<PlayerTeam>(_callHighStickNextFrame.Keys)) {
-                        if (_callHighStickNextFrame[callHighStickTeam])
+                        if (!_callHighStickNextFrame[callHighStickTeam])
                             continue;
                         /*_callOffHighStickNextFrame[callOffHighStickTeam] = false;
                         NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, callOffHighStickTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
