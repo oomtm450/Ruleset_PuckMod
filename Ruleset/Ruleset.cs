@@ -2,6 +2,7 @@
 using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -113,9 +114,9 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly LockDictionary<string, (PlayerTeam Team, bool IsOffside)> _isOffside = new LockDictionary<string, (PlayerTeam, bool)>();
 
         /// <summary>
-        /// LockDictionary of PlayerTeam and bool, dictionary for teams if high stick has to be called off next frame.
+        /// LockDictionary of PlayerTeam and bool, dictionary for teams if high stick has to be called next frame.
         /// </summary>
-        private static readonly LockDictionary<PlayerTeam, bool> _callOffHighStickNextFrame = new LockDictionary<PlayerTeam, bool> {
+        private static readonly LockDictionary<PlayerTeam, bool> _callHighStickNextFrame = new LockDictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, false },
             { PlayerTeam.Red, false },
         };
@@ -999,13 +1000,20 @@ namespace oomtm450PuckMod_Ruleset {
                 };
 
                 try {
-                    // Check if high stick has been cancelled by an event that cannot call it off by itself.
-                    foreach (PlayerTeam callOffHighStickTeam in new List<PlayerTeam>(_callOffHighStickNextFrame.Keys)) {
-                        if (_callOffHighStickNextFrame[callOffHighStickTeam]) {
-                            _callOffHighStickNextFrame[callOffHighStickTeam] = false;
-                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, callOffHighStickTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
-                            SendChat(Rule.HighStick, callOffHighStickTeam, true, true);
-                        }
+                    // Check if high stick has been called by an event that cannot call it off by itself.
+                    foreach (PlayerTeam callHighStickTeam in new List<PlayerTeam>(_callHighStickNextFrame.Keys)) {
+                        if (_callHighStickNextFrame[callHighStickTeam])
+                            continue;
+                        /*_callOffHighStickNextFrame[callOffHighStickTeam] = false;
+                        NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, callOffHighStickTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
+                        SendChat(Rule.HighStick, callOffHighStickTeam, true, true);*/
+
+                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(callHighStickTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                        SendChat(Rule.HighStick, callHighStickTeam, true);
+                        ResetHighSticks();
+
+                        DoFaceoff(RefSignals.GetSignalConstant(true, callHighStickTeam), RefSignals.HIGHSTICK_REF);
+                        break;
                     }
 
                     // If game was paused by the mod, don't do anything if faceoff hasn't being set yet.
@@ -1640,7 +1648,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             _isHighStickActive[team] = false;
             _isHighStickActiveTimers[team].Change(Timeout.Infinite, Timeout.Infinite);
-            _callOffHighStickNextFrame[team] = true;
+            _callHighStickNextFrame[team] = true;
         }
 
         private static void ResetGoalieInt() {
@@ -1665,8 +1673,8 @@ namespace oomtm450PuckMod_Ruleset {
             foreach (PlayerTeam key in new List<PlayerTeam>(_isHighStickActive.Keys))
                 _isHighStickActive[key] = false;
 
-            foreach (PlayerTeam key in new List<PlayerTeam>(_callOffHighStickNextFrame.Keys))
-                _callOffHighStickNextFrame[key] = false;
+            foreach (PlayerTeam key in new List<PlayerTeam>(_callHighStickNextFrame.Keys))
+                _callHighStickNextFrame[key] = false;
         }
 
         private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3500, int millisecondsPauseMax = 5000) {
@@ -1935,10 +1943,10 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /*/// <summary>
-        /// Method called when the client has started on the client-side.
-        /// Used to register to load assets.
-        /// </summary>
-        /// <param name="message">Dictionary of string and object, content of the event.</param>
+                            /// Method called when the client has started on the client-side.
+                            /// Used to register to load assets.
+                            /// </summary>
+                            /// <param name="message">Dictionary of string and object, content of the event.</param>
         public static void Event_Client_OnClientStarted(Dictionary<string, object> message) {
             if (ServerFunc.IsDedicatedServer() || NetworkManager.Singleton == null || NetworkManager.Singleton.CustomMessagingManager == null)
                 return;
