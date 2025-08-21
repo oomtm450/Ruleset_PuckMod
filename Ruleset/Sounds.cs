@@ -127,24 +127,20 @@ namespace oomtm450PuckMod_Ruleset {
                             clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
                             DontDestroyOnLoad(clip);
                             _audioClips.Add(clip);
-                            if (clip.name.Contains(FACEOFF_MUSIC))
-                                FaceoffMusicList.Add(clip.name);
-                            if (clip.name.Contains(BLUE_GOAL_MUSIC))
-                                BlueGoalMusicList.Add(clip.name);
-                            if (clip.name.Contains(RED_GOAL_MUSIC))
-                                RedGoalMusicList.Add(clip.name);
-                            if (clip.name.Contains(BETWEEN_PERIODS_MUSIC))
-                                BetweenPeriodsMusicList.Add(clip.name);
-                            if (clip.name.Contains(WARMUP_MUSIC))
-                                WarmupMusicList.Add(clip.name);
-                            if (clip.name.Contains(LAST_MINUTE_MUSIC))
-                                LastMinuteMusicList.Add(clip.name);
-                            if (clip.name.Contains(FIRST_FACEOFF_MUSIC))
-                                FirstFaceoffMusicList.Add(clip.name);
-                            if (clip.name.Contains(SECOND_FACEOFF_MUSIC))
-                                SecondFaceoffMusicList.Add(clip.name);
-                            if (clip.name.Contains(GAMEOVER_MUSIC))
-                                GameOverMusicList.Add(clip.name);
+
+                            AddClipNameToCorrectList(clip.name);
+
+                            // Add a faceoff music twice to the list to double the chance of playing if it's a not a multi part music.
+                            // This is going to help music with one ogg to play more.
+                            string bareClipName = clip.name
+                                .Replace(FACEOFF_MUSIC, "")
+                                .Replace(FIRST_FACEOFF_MUSIC, "")
+                                .Replace(SECOND_FACEOFF_MUSIC, "")
+                                .Replace(LAST_MINUTE_MUSIC, "")
+                                .Replace(BETWEEN_PERIODS_MUSIC, "");
+                            if (!char.IsDigit(bareClipName[bareClipName.Length - 1]))
+                                AddClipNameToCorrectList(clip.name);
+
                         }
                         catch (Exception ex) {
                             Errors.Add(ex.ToString());
@@ -155,6 +151,27 @@ namespace oomtm450PuckMod_Ruleset {
 
             if (Ruleset._clientConfig.CustomGoalHorns)
                 SetGoalHorns();
+        }
+
+        private void AddClipNameToCorrectList(string clipName) {
+            if (clipName.Contains(FACEOFF_MUSIC))
+                FaceoffMusicList.Add(clipName);
+            if (clipName.Contains(BLUE_GOAL_MUSIC))
+                BlueGoalMusicList.Add(clipName);
+            if (clipName.Contains(RED_GOAL_MUSIC))
+                RedGoalMusicList.Add(clipName);
+            if (clipName.Contains(BETWEEN_PERIODS_MUSIC))
+                BetweenPeriodsMusicList.Add(clipName);
+            if (clipName.Contains(WARMUP_MUSIC))
+                WarmupMusicList.Add(clipName);
+            if (clipName.Contains(LAST_MINUTE_MUSIC))
+                LastMinuteMusicList.Add(clipName);
+            if (clipName.Contains(FIRST_FACEOFF_MUSIC))
+                FirstFaceoffMusicList.Add(clipName);
+            if (clipName.Contains(SECOND_FACEOFF_MUSIC))
+                SecondFaceoffMusicList.Add(clipName);
+            if (clipName.Contains(GAMEOVER_MUSIC))
+                GameOverMusicList.Add(clipName);
         }
 
         internal void Play(string name, string type, float delay = 0, bool loop = false) {
