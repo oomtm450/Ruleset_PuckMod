@@ -26,12 +26,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.18.2";
+        private static readonly string MOD_VERSION = "0.19.0";
 
         /// <summary>
         /// Const string, last released version of the mod.
         /// </summary>
-        private static readonly string OLD_MOD_VERSION = "0.18.1";
+        private static readonly string OLD_MOD_VERSION = "0.18.2";
 
         /// <summary>
         /// ReadOnlyCollection of string, collection of datanames to not log.
@@ -103,14 +103,19 @@ namespace oomtm450PuckMod_Ruleset {
         internal static ClientConfig _clientConfig = new ClientConfig();
 
         /// <summary>
+        /// LockList of PlayerIcing, positions of the players on the ice for icing logic.
+        /// </summary>
+        private static readonly LockList<PlayerIcing> _dictPlayersPositionsForIcing = new LockList<PlayerIcing>();
+
+        /// <summary>
         /// LockDictionary of string and (PlayerTeam and bool), dictionary of offside status of each player with steam Id as a key.
         /// </summary>
         private static readonly LockDictionary<string, (PlayerTeam Team, bool IsOffside)> _isOffside = new LockDictionary<string, (PlayerTeam, bool)>();
 
         /// <summary>
-        /// LockDictionary of PlayerTeam and bool, dictionary for teams if high stick has to be called off next frame.
+        /// LockDictionary of PlayerTeam and bool, dictionary for teams if high stick has to be called next frame.
         /// </summary>
-        private static readonly LockDictionary<PlayerTeam, bool> _callOffHighStickNextFrame = new LockDictionary<PlayerTeam, bool> {
+        private static readonly LockDictionary<PlayerTeam, bool> _callHighStickNextFrame = new LockDictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, false },
             { PlayerTeam.Red, false },
         };
@@ -262,9 +267,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static string _currentMusicPlaying = "";
 
-        private static readonly List<string> _hasUpdatedUIScoreboard = new List<string>(); // TODO : Clear if player quits server
+        private static readonly List<string> _hasUpdatedUIScoreboard = new List<string>();
 
-        private static readonly LockDictionary<string, Label> _sogLabels = new LockDictionary<string, Label>(); // TODO : Clear if player quits server
+        private static readonly LockDictionary<string, Label> _sogLabels = new LockDictionary<string, Label>();
 
         /// <summary>
         /// DateTime, last time client asked the server for startup data.
@@ -312,7 +317,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _puckZoneLastTouched = _puckZone;
 
                         PlayerTeam playerOtherTeam = TeamFunc.GetOtherTeam(playerBody.Player.Team.Value);
-                        if (IsIcingPossible(playerOtherTeam)) {
+                        if (IsIcingPossible(playerOtherTeam, _dictPlayersPositionsForIcing.Any(x => playerOtherTeam == PlayerTeam.Blue ? x.IsBehindRedTeamHashmarks : x.IsBehindBlueTeamHashmarks))) {
                             if (!Codebase.PlayerFunc.IsGoalie(playerBody.Player)) {
                                 if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var playerZone)) {
                                     if (playerZone.Zone != ZoneFunc.GetTeamZones(playerBody.Player.Team.Value)[1]) {
@@ -331,7 +336,7 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             ResetIcings();
                         }
-                        else if (IsIcingPossible(playerBody.Player.Team.Value)) {
+                        else if (IsIcingPossible(playerBody.Player.Team.Value, _dictPlayersPositionsForIcing.Any(x => playerBody.Player.Team.Value == PlayerTeam.Blue ? x.IsBehindRedTeamHashmarks : x.IsBehindBlueTeamHashmarks))) {
                             if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var playerZone)) {
                                 if (ZoneFunc.GetTeamZones(playerOtherTeam, true).Any(x => x == playerZone.Zone)) {
                                     if (IsIcing(playerBody.Player.Team.Value)) {
@@ -460,8 +465,19 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     Stick stick = GetStick(collision.gameObject);
-                    if (!stick)
+                    if (!stick) {
+                        PlayerBodyV2 playerBody = GetPlayerBodyV2(collision.gameObject);
+                        if (!playerBody || !playerBody.Player)
+                            return;
+
+                        string playerBodySteamId = playerBody.Player.SteamId.Value.ToString();
+
+                        _lastPlayerOnPuckTeamTipIncluded = playerBody.Player.Team.Value;
+                        _lastPlayerOnPuckTipIncludedSteamId[playerBody.Player.Team.Value] = playerBodySteamId;
+                        _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerBodySteamId, (playerBody.Player.Team.Value, DateTime.UtcNow));
+
                         return;
+                    }
 
                     _puckZoneLastTouched = _puckZone;
 
@@ -748,6 +764,7 @@ namespace oomtm450PuckMod_Ruleset {
                         ResetOffsides();
                         ResetHighSticks();
                         ResetIcings();
+                        _dictPlayersPositionsForIcing.Clear();
                         ResetGoalieInt();
 
                         // Reset puck was saved states.
@@ -993,13 +1010,20 @@ namespace oomtm450PuckMod_Ruleset {
                 };
 
                 try {
-                    // Check if high stick has been cancelled by an event that cannot call it off by itself.
-                    foreach (PlayerTeam callOffHighStickTeam in new List<PlayerTeam>(_callOffHighStickNextFrame.Keys)) {
-                        if (_callOffHighStickNextFrame[callOffHighStickTeam]) {
-                            _callOffHighStickNextFrame[callOffHighStickTeam] = false;
-                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, callOffHighStickTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
-                            SendChat(Rule.HighStick, callOffHighStickTeam, true, true);
-                        }
+                    // Check if high stick has been called by an event that cannot call it off by itself.
+                    foreach (PlayerTeam callHighStickTeam in new List<PlayerTeam>(_callHighStickNextFrame.Keys)) {
+                        if (!_callHighStickNextFrame[callHighStickTeam])
+                            continue;
+                        /*_callOffHighStickNextFrame[callOffHighStickTeam] = false;
+                        NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, callOffHighStickTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER, _serverConfig);
+                        SendChat(Rule.HighStick, callOffHighStickTeam, true, true);*/
+
+                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(callHighStickTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                        SendChat(Rule.HighStick, callHighStickTeam, true);
+                        ResetHighSticks();
+
+                        DoFaceoff(RefSignals.GetSignalConstant(true, callHighStickTeam), RefSignals.HIGHSTICK_REF);
+                        break;
                     }
 
                     // If game was paused by the mod, don't do anything if faceoff hasn't being set yet.
@@ -1023,23 +1047,20 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     oldZone = _puckZone;
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PUCK_RADIUS);
-
-                    // Icing logic.
-                    ServerManager_Update_IcingLogic(PlayerTeam.Blue, puck, icingHasToBeWarned);
-                    ServerManager_Update_IcingLogic(PlayerTeam.Red, puck, icingHasToBeWarned);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}", _serverConfig);
                 }
 
+                Dictionary<PlayerTeam, bool> isTeamOffside = new Dictionary<PlayerTeam, bool> {
+                    { PlayerTeam.Blue, IsOffside(PlayerTeam.Blue) },
+                    { PlayerTeam.Red, IsOffside(PlayerTeam.Red) },
+                };
+
                 try {
                     string playerWithPossessionSteamId = GetPlayerSteamIdInPossession();
-                    Dictionary<PlayerTeam, bool> isTeamOffside = new Dictionary<PlayerTeam, bool> {
-                        { PlayerTeam.Blue, IsOffside(PlayerTeam.Blue) },
-                        { PlayerTeam.Red, IsOffside(PlayerTeam.Red) },
-                    };
 
-                    List<PlayerIcing> dictPlayersPositionsForDeferredIcing = new List<PlayerIcing>();
+                    _dictPlayersPositionsForIcing.Clear();
                     foreach (Player player in players) {
                         if (!Codebase.PlayerFunc.IsPlayerPlaying(player))
                             continue;
@@ -1079,20 +1100,36 @@ namespace oomtm450PuckMod_Ruleset {
                             _isOffside[playerSteamId] = (player.Team.Value, false);
 
                         // Deferred icing logic.
-                        if (_serverConfig.Icing.Deferred && !Codebase.PlayerFunc.IsGoalie(player)) {
-                            bool isPlayerBehindHashmarks = false;
-                            if (IsIcing(player.Team.Value) && AreBothNegativeOrPositive(player.PlayerBody.transform.position.x, puck.Rigidbody.transform.position.x) && ZoneFunc.IsBehindHashmarks(otherTeam, player.PlayerBody.transform.position, PLAYER_RADIUS))
-                                isPlayerBehindHashmarks = true;
-                            else if (IsIcing(otherTeam) && AreBothNegativeOrPositive(player.PlayerBody.transform.position.x, puck.Rigidbody.transform.position.x) && ZoneFunc.IsBehindHashmarks(player.Team.Value, player.PlayerBody.transform.position, PLAYER_RADIUS)) {
-                                isPlayerBehindHashmarks = true;
-                                _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
+                        if (!Codebase.PlayerFunc.IsGoalie(player)) {
+                            bool isPlayerBehindBlueTeamHashmarks = false, isPlayerBehindRedTeamHashmarks = false, considerForIcing = false;
+                            if (ZoneFunc.IsBehindHashmarks(otherTeam, player.PlayerBody.transform.position, PLAYER_RADIUS)) {
+                                if (otherTeam == PlayerTeam.Blue)
+                                    isPlayerBehindBlueTeamHashmarks = true;
+                                else
+                                    isPlayerBehindRedTeamHashmarks = true;
+
+                                if (IsIcing(player.Team.Value) && AreBothNegativeOrPositive(player.PlayerBody.transform.position.x, puck.Rigidbody.transform.position.x))
+                                    considerForIcing = true;
+                            }
+                            else if (ZoneFunc.IsBehindHashmarks(player.Team.Value, player.PlayerBody.transform.position, PLAYER_RADIUS)) {
+                                if (player.Team.Value == PlayerTeam.Blue)
+                                    isPlayerBehindBlueTeamHashmarks = true;
+                                else
+                                    isPlayerBehindRedTeamHashmarks = true;
+
+                                if (IsIcing(otherTeam) && AreBothNegativeOrPositive(player.PlayerBody.transform.position.x, puck.Rigidbody.transform.position.x)) {
+                                    considerForIcing = true;
+                                    _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
+                                }
                             }
 
-                            dictPlayersPositionsForDeferredIcing.Add(new PlayerIcing {
+                            _dictPlayersPositionsForIcing.Add(new PlayerIcing {
                                 Player = player,
                                 X = Math.Abs(player.PlayerBody.transform.position.x),
                                 Z = Math.Abs(player.PlayerBody.transform.position.z),
-                                IsBehindHashmarks = isPlayerBehindHashmarks,
+                                IsBehindBlueTeamHashmarks = isPlayerBehindBlueTeamHashmarks,
+                                IsBehindRedTeamHashmarks = isPlayerBehindRedTeamHashmarks,
+                                ConsiderForIcing = considerForIcing,
                             });
                         }
                     }
@@ -1107,21 +1144,32 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
 
+                    PlayerTeam puckTeamZone;
+                    if (puck.Rigidbody.transform.position.z > 0)
+                        puckTeamZone = PlayerTeam.Blue;
+                    else
+                        puckTeamZone = PlayerTeam.Red;
+
                     // Deferred icing logic.
-                    if (dictPlayersPositionsForDeferredIcing.Count != 0) {
-                        PlayerIcing closestPlayerToEndBoardBlueTeam = dictPlayersPositionsForDeferredIcing.Where(x => x.Player.Team.Value == PlayerTeam.Blue).OrderByDescending(x => x.Z).FirstOrDefault();
-                        PlayerIcing closestPlayerToEndBoardRedTeam = dictPlayersPositionsForDeferredIcing.Where(x => x.Player.Team.Value == PlayerTeam.Red).OrderByDescending(x => x.Z).FirstOrDefault();
+                    if (_serverConfig.Icing.Deferred && _dictPlayersPositionsForIcing.Any(x => x.ConsiderForIcing && (puckTeamZone == PlayerTeam.Blue ? x.IsBehindBlueTeamHashmarks : x.IsBehindRedTeamHashmarks))) {
+                        PlayerIcing closestPlayerToEndBoardBlueTeam;
+                        PlayerIcing closestPlayerToEndBoardRedTeam;
+
+                        if (puckTeamZone == PlayerTeam.Blue) {
+                            closestPlayerToEndBoardBlueTeam = _dictPlayersPositionsForIcing.Where(x => x.ConsiderForIcing && x.Player.Team.Value == PlayerTeam.Blue && x.IsBehindBlueTeamHashmarks).OrderByDescending(x => x.Z).FirstOrDefault();
+                            closestPlayerToEndBoardRedTeam = _dictPlayersPositionsForIcing.Where(x => x.ConsiderForIcing && x.Player.Team.Value == PlayerTeam.Red && x.IsBehindBlueTeamHashmarks).OrderByDescending(x => x.Z).FirstOrDefault();
+                        }
+                        else {
+                            closestPlayerToEndBoardBlueTeam = _dictPlayersPositionsForIcing.Where(x => x.ConsiderForIcing && x.Player.Team.Value == PlayerTeam.Blue && x.IsBehindRedTeamHashmarks).OrderByDescending(x => x.Z).FirstOrDefault();
+                            closestPlayerToEndBoardRedTeam = _dictPlayersPositionsForIcing.Where(x => x.ConsiderForIcing && x.Player.Team.Value == PlayerTeam.Red && x.IsBehindRedTeamHashmarks).OrderByDescending(x => x.Z).FirstOrDefault();
+                        }
 
                         Player closestPlayerToEndBoard = null;
 
-                        if (closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam == null && closestPlayerToEndBoardBlueTeam.IsBehindHashmarks)
+                        if (closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam == null)
                             closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Player;
-                        //else if (closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam != null && closestPlayerToEndBoardBlueTeam.IsBehindHashmarks && !closestPlayerToEndBoardRedTeam.IsBehindHashmarks)
-                            //closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Player;
-                        else if (closestPlayerToEndBoardRedTeam != null && closestPlayerToEndBoardBlueTeam == null && closestPlayerToEndBoardRedTeam.IsBehindHashmarks)
+                        else if (closestPlayerToEndBoardRedTeam != null && closestPlayerToEndBoardBlueTeam == null)
                             closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Player;
-                        //else if (closestPlayerToEndBoardRedTeam != null && closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam.IsBehindHashmarks && !closestPlayerToEndBoardBlueTeam.IsBehindHashmarks)
-                            //closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Player;
                         else if (closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam != null) {
                             if (Math.Abs(closestPlayerToEndBoardBlueTeam.Z - closestPlayerToEndBoardRedTeam.Z) < 8f) { // Check distance with x and z coordinates.
                                 float puckXCoordinate = Math.Abs(puck.Rigidbody.transform.position.x);
@@ -1161,7 +1209,21 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                         }
                     }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 3.\n{ex}", _serverConfig);
+                }
 
+                try {
+                    // Icing logic.
+                    ServerManager_Update_IcingLogic(PlayerTeam.Blue, puck, icingHasToBeWarned, _dictPlayersPositionsForIcing.Any(x => x.IsBehindRedTeamHashmarks));
+                    ServerManager_Update_IcingLogic(PlayerTeam.Red, puck, icingHasToBeWarned, _dictPlayersPositionsForIcing.Any(x => x.IsBehindBlueTeamHashmarks));
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 4.\n{ex}", _serverConfig);
+                }
+
+                try {
                     // Warn icings.
                     foreach (var kvp in icingHasToBeWarned) {
                         if (kvp.Value != null && (bool)kvp.Value) {
@@ -1180,7 +1242,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 3.\n{ex}", _serverConfig);
+                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 5.\n{ex}", _serverConfig);
                 }
 
                 return true;
@@ -1210,6 +1272,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                             _sog[shotPlayerSteamId] += 1;
                             NetworkCommunication.SendDataToAll(SOG + shotPlayerSteamId, _sog[shotPlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+                            LogSOG(shotPlayerSteamId, _sog[shotPlayerSteamId]);
 
                             _lastShotWasCounted[shotPlayerTeam] = true;
 
@@ -1222,15 +1285,16 @@ namespace oomtm450PuckMod_Ruleset {
                                     savePercValue = (0, 0);
                                 }
 
-                                _savePerc[_goaliePlayerSteamId] = (++savePercValue.Saves, ++savePercValue.Shots);
+                                (int saves, int sog) = _savePerc[_goaliePlayerSteamId] = (++savePercValue.Saves, ++savePercValue.Shots);
 
                                 NetworkCommunication.SendDataToAll(SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+                                LogSavePerc(_goaliePlayerSteamId, saves, sog);
                             }
 
                             _checkIfPuckWasSaved[key] = new SaveCheck();
                         }
                         else {
-                            if (++saveCheck.FramesChecked > 400)
+                            if (++saveCheck.FramesChecked > 480)
                                 _checkIfPuckWasSaved[key] = new SaveCheck();
                         }
                     }
@@ -1276,7 +1340,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_GoalScored))]
         public class GameManager_Server_GoalScored_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(PlayerTeam team, ref Player lastPlayer, ref Player goalPlayer, Player assistPlayer, Player secondAssistPlayer, Puck puck) {
+            public static bool Prefix(PlayerTeam team, ref Player lastPlayer, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer())
@@ -1309,6 +1373,20 @@ namespace oomtm450PuckMod_Ruleset {
                             return false;
                         }
 
+                        Player lastTouchPlayerTipIncluded = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
+                        if (lastTouchPlayerTipIncluded != null && lastTouchPlayerTipIncluded.SteamId.Value.ToString() != goalPlayer.SteamId.Value.ToString()) {
+                            secondAssistPlayer = assistPlayer;
+                            assistPlayer = goalPlayer;
+                            goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
+
+                            while (assistPlayer != null && assistPlayer.SteamId.Value.ToString() == goalPlayer.SteamId.Value.ToString()) {
+                                assistPlayer = secondAssistPlayer;
+                                secondAssistPlayer = null;
+                            }
+
+                            if (secondAssistPlayer != null && (secondAssistPlayer.SteamId.Value.ToString() == assistPlayer.SteamId.Value.ToString() || secondAssistPlayer.SteamId.Value.ToString() == goalPlayer.SteamId.Value.ToString()))
+                                secondAssistPlayer = null;
+                        }
                         SendSavePercDuringGoal(team, SendSOGDuringGoal(goalPlayer));
                         return true;
                     }
@@ -1594,7 +1672,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             _isHighStickActive[team] = false;
             _isHighStickActiveTimers[team].Change(Timeout.Infinite, Timeout.Infinite);
-            _callOffHighStickNextFrame[team] = true;
+            _callHighStickNextFrame[team] = true;
         }
 
         private static void ResetGoalieInt() {
@@ -1619,8 +1697,8 @@ namespace oomtm450PuckMod_Ruleset {
             foreach (PlayerTeam key in new List<PlayerTeam>(_isHighStickActive.Keys))
                 _isHighStickActive[key] = false;
 
-            foreach (PlayerTeam key in new List<PlayerTeam>(_callOffHighStickNextFrame.Keys))
-                _callOffHighStickNextFrame[key] = false;
+            foreach (PlayerTeam key in new List<PlayerTeam>(_callHighStickNextFrame.Keys))
+                _callHighStickNextFrame[key] = false;
         }
 
         private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3500, int millisecondsPauseMax = 5000) {
@@ -1718,20 +1796,22 @@ namespace oomtm450PuckMod_Ruleset {
                 return _serverConfig.Icing.RedTeam;
         }
 
-        private static bool IsIcingPossible(PlayerTeam team, bool checkPossibleTime = true) {
-            PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
-            List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
+        private static bool IsIcingPossible(PlayerTeam team, bool anyPlayersBehindHashmarks, bool checkPossibleTime = true) {
+            if (IsIcingEnabled(team) && _isIcingPossible[team] != null && !anyPlayersBehindHashmarks) {
+                PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
+                List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
 
-            int maxPossibleTime = _serverConfig.Icing.MaxPossibleTime.Values.Max();
-            foreach ((PlayerTeam playerTeam, Zone playerZone) in _playersZone.Values) {
-                if (playerTeam == otherTeam && otherTeamZones.Any(x => x == playerZone)) {
-                    maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched];
-                    break;
+                int maxPossibleTime = _serverConfig.Icing.MaxPossibleTime.Values.Max();
+                foreach ((PlayerTeam playerTeam, Zone playerZone) in _playersZone.Values) {
+                    if (playerTeam == otherTeam && otherTeamZones.Any(x => x == playerZone)) {
+                        maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched];
+                        break;
+                    }
                 }
-            }
 
-            if (IsIcingEnabled(team) && _isIcingPossible[team] != null && (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < maxPossibleTime))
-                return true;
+                if (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < maxPossibleTime)
+                    return true;
+            }
 
             return false;
         }
@@ -1887,10 +1967,10 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /*/// <summary>
-        /// Method called when the client has started on the client-side.
-        /// Used to register to load assets.
-        /// </summary>
-        /// <param name="message">Dictionary of string and object, content of the event.</param>
+                            /// Method called when the client has started on the client-side.
+                            /// Used to register to load assets.
+                            /// </summary>
+                            /// <param name="message">Dictionary of string and object, content of the event.</param>
         public static void Event_Client_OnClientStarted(Dictionary<string, object> message) {
             if (ServerFunc.IsDedicatedServer() || NetworkManager.Singleton == null || NetworkManager.Singleton.CustomMessagingManager == null)
                 return;
@@ -2432,16 +2512,16 @@ namespace oomtm450PuckMod_Ruleset {
                 _savePerc.Add(playerSteamId, (saves, shots));
         }
 
-        private static void ServerManager_Update_IcingLogic(PlayerTeam team, Puck puck, Dictionary<PlayerTeam, bool?> icingHasToBeWarned) {
+        private static void ServerManager_Update_IcingLogic(PlayerTeam team, Puck puck, Dictionary<PlayerTeam, bool?> icingHasToBeWarned, bool anyPlayersBehindHashmarks) {
             if (!IsIcingEnabled(team))
                 return;
 
-            if (!IsIcingPossible(team, false) && _isIcingActive[team]) {
+            if (!IsIcingPossible(team, anyPlayersBehindHashmarks, false) && _isIcingActive[team]) {
                 _isIcingActive[team] = false;
                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                 SendChat(Rule.Icing, team, true, true);
             }
-            else if (!_isIcingActive[team] && IsIcingPossible(team) && _puckZone == ZoneFunc.GetTeamZones(TeamFunc.GetOtherTeam(team))[1]) {
+            else if (!_isIcingActive[team] && IsIcingPossible(team, anyPlayersBehindHashmarks) && _puckZone == ZoneFunc.GetTeamZones(TeamFunc.GetOtherTeam(team))[1]) {
                 _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
                 _isIcingActiveTimers[team].Change(_serverConfig.Icing.MaxActiveTime, Timeout.Infinite);
                 icingHasToBeWarned[team] = true;
@@ -2464,9 +2544,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                 Logging.Log($"Enabled.", _serverConfig, true);
 
-                if (ServerFunc.IsDedicatedServer()) {
-                    NetworkCommunication.AddToNotLogList(DATA_NAMES_TO_IGNORE);
+                NetworkCommunication.AddToNotLogList(DATA_NAMES_TO_IGNORE);
 
+                if (ServerFunc.IsDedicatedServer()) {
                     if (NetworkManager.Singleton != null && NetworkManager.Singleton.CustomMessagingManager != null) {
                         Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT}.", _serverConfig);
                         NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT, ReceiveData);
@@ -2518,8 +2598,8 @@ namespace oomtm450PuckMod_Ruleset {
                 Logging.Log($"Disabling...", _serverConfig, true);
 
                 Logging.Log("Unsubscribing from events.", _serverConfig, true);
+                NetworkCommunication.RemoveFromNotLogList(DATA_NAMES_TO_IGNORE);
                 if (ServerFunc.IsDedicatedServer()) {
-                    NetworkCommunication.RemoveFromNotLogList(DATA_NAMES_TO_IGNORE);
                     EventManager.Instance.RemoveEventListener("Event_OnClientConnected", Event_OnClientConnected);
                     EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
@@ -2719,8 +2799,7 @@ namespace oomtm450PuckMod_Ruleset {
                 _sog[playerSteamId] += 1;
                 int sog = _sog[playerSteamId];
                 NetworkCommunication.SendDataToAll(SOG + playerSteamId, sog.ToString(), Constants.FROM_SERVER, _serverConfig);
-
-                Logging.Log($"playerSteamId:{playerSteamId},sog:{sog}", _serverConfig);
+                LogSOG(playerSteamId, sog);
 
                 _lastShotWasCounted[player.Team.Value] = true;
 
@@ -2747,11 +2826,29 @@ namespace oomtm450PuckMod_Ruleset {
                 _savePercValue = (0, 0);
             }
 
-            var saveperc = _savePerc[_goaliePlayerSteamId] = saveWasCounted ? (--_savePercValue.Saves, _savePercValue.Shots) : (_savePercValue.Saves, ++_savePercValue.Shots);
+            (int saves, int sog) = _savePerc[_goaliePlayerSteamId] = saveWasCounted ? (--_savePercValue.Saves, _savePercValue.Shots) : (_savePercValue.Saves, ++_savePercValue.Shots);
 
             NetworkCommunication.SendDataToAll(SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER, _serverConfig);
+            LogSavePerc(_goaliePlayerSteamId, saves, sog);
+        }
+        
+        /// <summary>
+        /// Method that logs the save percentage of a goalie.
+        /// </summary>
+        /// <param name="goaliePlayerSteamId">String, steam Id of the goalie.</param>
+        /// <param name="saves">Int, number of saves.</param>
+        /// <param name="sog">Int, number of shots on goal on the goalie.</param>
+        private static void LogSavePerc(string goaliePlayerSteamId, int saves, int sog) {
+            Logging.Log($"playerSteamId:{goaliePlayerSteamId},saveperc:{GetGoalieSavePerc(saves, sog)},saves:{saves},sog:{sog}", _serverConfig);
+        }
 
-            Logging.Log($"playerSteamId:{_goaliePlayerSteamId},saveperc:{GetGoalieSavePerc(saveperc.Saves, saveperc.Shots)}", _serverConfig);
+        /// <summary>
+        /// Method that logs the shots on goal of a player.
+        /// </summary>
+        /// <param name="playerSteamId">String, steam Id of the player.</param>
+        /// <param name="sog">Int, number of shots on goal.</param>
+        private static void LogSOG(string playerSteamId, int sog) {
+            Logging.Log($"playerSteamId:{playerSteamId},sog:{sog}", _serverConfig);
         }
 
         public static string RemoveWhitespace(string input) {
@@ -2803,7 +2900,13 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal float Z { get; set; }
 
-        internal bool IsBehindHashmarks { get; set; }
+        internal bool IsBehindBlueTeamHashmarks { get; set; }
+
+        internal bool IsBehindRedTeamHashmarks { get; set; }
+
+        internal bool IsBehindHashmarks => IsBehindBlueTeamHashmarks || IsBehindRedTeamHashmarks;
+
+        internal bool ConsiderForIcing { get; set; }
     }
 
     public static class EnumExtensions {

@@ -3,15 +3,11 @@
   <PropertyGroup>
     <AssemblyName>oomtm450PuckMod_Ruleset</AssemblyName>
     <TargetFramework>net4.8</TargetFramework>
-    <Version>0.18.2</Version>
+    <Version>0.19.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Text.Json" Version="9.0.5" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Codebase\Codebase.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -455,6 +451,8 @@
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\uPnP.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+  <Import Project="..\Codebase\Codebase.projitems" Label="Shared" />
 
   <!-- Streamline development and move the built .dll to the plugins folder after building -->
   <!-- <Target Name="PostBuildMoveDll" AfterTargets="Build">

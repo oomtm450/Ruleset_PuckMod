@@ -9,11 +9,11 @@ namespace oomtm450PuckMod_Ruleset {
     internal class PuckRaycast : MonoBehaviour {
         private const int CHECK_EVERY_X_FRAMES = 4;
         //private readonly Vector3 TOP_VECTOR = new Vector3(0, 0.175f, 0);
-        private readonly Vector3 RIGHT_VECTOR = new Vector3(Ruleset.PUCK_RADIUS + 0.0175f, 0, 0);
+        private readonly Vector3 RIGHT_VECTOR = new Vector3(Ruleset.PUCK_RADIUS + 0.018f, 0.001f, 0);
         private readonly Vector3 DOWN_VECTOR = new Vector3(0, -0.51f, 0);
         private Vector3 DOWN_RIGHT_VECTOR;
         private Vector3 DOWN_LEFT_VECTOR;
-        private readonly float MAX_DISTANCE = 15f;
+        private readonly float MAX_DISTANCE = 20f;
         private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
 
         private Ray _rayBottomLeft;
