@@ -26,12 +26,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.19.0";
+        private static readonly string MOD_VERSION = "0.19.1";
 
         /// <summary>
         /// Const string, last released version of the mod.
         /// </summary>
-        private static readonly string OLD_MOD_VERSION = "0.18.2";
+        private static readonly string OLD_MOD_VERSION = "0.19.0";
 
         /// <summary>
         /// ReadOnlyCollection of string, collection of datanames to not log.
@@ -133,6 +133,14 @@ namespace oomtm450PuckMod_Ruleset {
         /// LockDictionary of PlayerTeam and bool, dictionary for teams if icing is active.
         /// </summary>
         private static readonly LockDictionary<PlayerTeam, bool> _isIcingActive = new LockDictionary<PlayerTeam, bool> {
+            { PlayerTeam.Blue, false },
+            { PlayerTeam.Red, false },
+        };
+
+        /// <summary>
+        /// LockDictionary of PlayerTeam and bool, dictionary for teams if puck is behind hashmarks.
+        /// </summary>
+        private static readonly LockDictionary<PlayerTeam, bool> _isPuckBehindHashmarks = new LockDictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, false },
             { PlayerTeam.Red, false },
         };
@@ -317,7 +325,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _puckZoneLastTouched = _puckZone;
 
                         PlayerTeam playerOtherTeam = TeamFunc.GetOtherTeam(playerBody.Player.Team.Value);
-                        if (IsIcingPossible(playerOtherTeam, _dictPlayersPositionsForIcing.Any(x => playerOtherTeam == PlayerTeam.Blue ? x.IsBehindRedTeamHashmarks : x.IsBehindBlueTeamHashmarks))) {
+                        if (IsIcingPossible(playerOtherTeam, _dictPlayersPositionsForIcing.Any(x => playerOtherTeam == PlayerTeam.Blue ? x.IsBehindRedTeamHashmarks : x.IsBehindBlueTeamHashmarks), _isPuckBehindHashmarks[playerBody.Player.Team.Value])) {
                             if (!Codebase.PlayerFunc.IsGoalie(playerBody.Player)) {
                                 if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var playerZone)) {
                                     if (playerZone.Zone != ZoneFunc.GetTeamZones(playerBody.Player.Team.Value)[1]) {
@@ -336,7 +344,7 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             ResetIcings();
                         }
-                        else if (IsIcingPossible(playerBody.Player.Team.Value, _dictPlayersPositionsForIcing.Any(x => playerBody.Player.Team.Value == PlayerTeam.Blue ? x.IsBehindRedTeamHashmarks : x.IsBehindBlueTeamHashmarks))) {
+                        else if (IsIcingPossible(playerBody.Player.Team.Value, _dictPlayersPositionsForIcing.Any(x => playerBody.Player.Team.Value == PlayerTeam.Blue ? x.IsBehindRedTeamHashmarks : x.IsBehindBlueTeamHashmarks), _isPuckBehindHashmarks[playerOtherTeam])) {
                             if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var playerZone)) {
                                 if (ZoneFunc.GetTeamZones(playerOtherTeam, true).Any(x => x == playerZone.Zone)) {
                                     if (IsIcing(playerBody.Player.Team.Value)) {
@@ -962,24 +970,65 @@ namespace oomtm450PuckMod_Ruleset {
                         return true;
                     
                     if (message.StartsWith(@"/")) {
-                        if (message.StartsWith(@"/musicvol ")) {
-                            message = message.Replace(@"/musicvol ", "").Trim();
-                            if (float.TryParse(message, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
-                                if (vol > 1f)
-                                    vol = 1f;
-                                else if (vol < 0)
-                                    vol = 0;
+                        message = message.ToLowerInvariant();
 
-                                _clientConfig.MusicVolume = vol;
-                                _clientConfig.Save();
-                                _sounds?.ChangeMusicVolume();
-                                Logging.Log($"Adjusted client music volume to {vol}f.", _clientConfig);
+                        if (message.StartsWith(@"/musicvol")) {
+                            message = message.Replace(@"/musicvol", "").Trim();
+
+                            if (string.IsNullOrEmpty(message))
+                                UIChat.Instance.AddChatMessage($"Music volume is currently at {_clientConfig.MusicVolume.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(message, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                    if (vol > 1f)
+                                        vol = 1f;
+                                    else if (vol < 0)
+                                        vol = 0;
+
+                                    _clientConfig.MusicVolume = vol;
+                                    _clientConfig.Save();
+                                    _sounds?.ChangeMusicVolume();
+                                    UIChat.Instance.AddChatMessage($"Adjusted client music volume to {vol.ToString(CultureInfo.InvariantCulture)}");
+                                }
+                            }
+                        }
+                        else if (message.StartsWith(@"/warmupmusic")) {
+                            message = message.Replace(@"/warmupmusic", "").Trim();
+
+                            if (string.IsNullOrEmpty(message))
+                                UIChat.Instance.AddChatMessage($"Warmup music is currently {(_clientConfig.WarmupMusic ? "enabled" : "disabled")}");
+                            else {
+                                bool? enableWarmupMusic = null;
+                                if (int.TryParse(message, out int warmupMusicValue)) {
+                                    if (warmupMusicValue >= 1)
+                                        enableWarmupMusic = true;
+                                    else
+                                        enableWarmupMusic = false;
+                                }
+                                else if (message == "true")
+                                    enableWarmupMusic = true;
+                                else if (message == "false")
+                                    enableWarmupMusic = false;
+
+                                if (enableWarmupMusic != null) {
+                                    if (_sounds != null && _sounds.WarmupMusicList.Contains(_currentMusicPlaying)) {
+                                        if (_clientConfig.WarmupMusic && !((bool)enableWarmupMusic))
+                                            _sounds.StopAll();
+                                        else if (!_clientConfig.WarmupMusic && (bool)enableWarmupMusic)
+                                            _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0, true);
+                                    }
+
+                                    _clientConfig.WarmupMusic = (bool)enableWarmupMusic;
+                                    _clientConfig.Save();
+                                    if ((bool)enableWarmupMusic)
+                                        UIChat.Instance.AddChatMessage($"Enabled warmup music");
+                                    else
+                                        UIChat.Instance.AddChatMessage($"Disabled warmup music");
+                                }
                             }
                         }
 
-                        if (message.StartsWith(@"/help")) {
-                            UIChat.Instance.AddChatMessage("Ruleset commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n");
-                        }
+                        if (message.StartsWith(@"/help"))
+                            UIChat.Instance.AddChatMessage("Ruleset commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n* <b>/warmupmusic</b> - Disable or enable warmup music (false-true)\n");
                     }
                 }
                 catch (Exception ex) {
@@ -1047,6 +1096,8 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     oldZone = _puckZone;
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PUCK_RADIUS);
+                    _isPuckBehindHashmarks[PlayerTeam.Blue] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Blue, puck.Rigidbody.transform.position, PUCK_RADIUS);
+                    _isPuckBehindHashmarks[PlayerTeam.Red] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Red, puck.Rigidbody.transform.position, PUCK_RADIUS);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}", _serverConfig);
@@ -1796,8 +1847,8 @@ namespace oomtm450PuckMod_Ruleset {
                 return _serverConfig.Icing.RedTeam;
         }
 
-        private static bool IsIcingPossible(PlayerTeam team, bool anyPlayersBehindHashmarks, bool checkPossibleTime = true) {
-            if (IsIcingEnabled(team) && _isIcingPossible[team] != null && !anyPlayersBehindHashmarks) {
+        private static bool IsIcingPossible(PlayerTeam team, bool anyPlayersBehindHashmarks, bool puckBehindHashmarks, bool checkPossibleTime = true) {
+            if (IsIcingEnabled(team) && _isIcingPossible[team] != null && (!anyPlayersBehindHashmarks || puckBehindHashmarks)) {
                 PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
                 List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
 
@@ -2218,7 +2269,8 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         else if (dataStrSplitted[0] == Sounds.WARMUP_MUSIC) {
                             _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList, seed);
-                            _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0, true);
+                            if (_clientConfig.WarmupMusic)
+                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0, true);
                         }
                         else if (dataStrSplitted[0] == Sounds.LAST_MINUTE_MUSIC) {
                             _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList, seed);
@@ -2516,12 +2568,14 @@ namespace oomtm450PuckMod_Ruleset {
             if (!IsIcingEnabled(team))
                 return;
 
-            if (!IsIcingPossible(team, anyPlayersBehindHashmarks, false) && _isIcingActive[team]) {
+            PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
+
+            if (!IsIcingPossible(team, anyPlayersBehindHashmarks, _isPuckBehindHashmarks[otherTeam], false) && _isIcingActive[team]) {
                 _isIcingActive[team] = false;
                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                 SendChat(Rule.Icing, team, true, true);
             }
-            else if (!_isIcingActive[team] && IsIcingPossible(team, anyPlayersBehindHashmarks) && _puckZone == ZoneFunc.GetTeamZones(TeamFunc.GetOtherTeam(team))[1]) {
+            else if (!_isIcingActive[team] && IsIcingPossible(team, anyPlayersBehindHashmarks, _isPuckBehindHashmarks[otherTeam]) && _puckZone == ZoneFunc.GetTeamZones(otherTeam)[1]) {
                 _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
                 _isIcingActiveTimers[team].Change(_serverConfig.Icing.MaxActiveTime, Timeout.Infinite);
                 icingHasToBeWarned[team] = true;
