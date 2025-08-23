@@ -26,7 +26,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.19.1DEV";
+        private static readonly string MOD_VERSION = "0.19.1DEV2";
 
         /// <summary>
         /// Const string, last released version of the mod.
@@ -976,7 +976,7 @@ namespace oomtm450PuckMod_Ruleset {
                             message = message.Replace(@"/musicvol", "").Trim();
 
                             if (string.IsNullOrEmpty(message))
-                                UIChat.Instance.AddChatMessage($"Music volume is currently at {_clientConfig.MusicVolume.ToString(CultureInfo.InvariantCulture)}.");
+                                UIChat.Instance.AddChatMessage($"Music volume is currently at {_clientConfig.MusicVolume.ToString(CultureInfo.InvariantCulture)}");
                             else {
                                 if (float.TryParse(message, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
                                     if (vol > 1f)
@@ -987,7 +987,7 @@ namespace oomtm450PuckMod_Ruleset {
                                     _clientConfig.MusicVolume = vol;
                                     _clientConfig.Save();
                                     _sounds?.ChangeMusicVolume();
-                                    UIChat.Instance.AddChatMessage($"Adjusted client music volume to {vol}.");
+                                    UIChat.Instance.AddChatMessage($"Adjusted client music volume to {vol.ToString(CultureInfo.InvariantCulture)}");
                                 }
                             }
                         }
@@ -995,7 +995,7 @@ namespace oomtm450PuckMod_Ruleset {
                             message = message.Replace(@"/warmupmusic", "").Trim();
 
                             if (string.IsNullOrEmpty(message))
-                                UIChat.Instance.AddChatMessage($"Warmup music is currently {(_clientConfig.WarmupMusic ? "enabled" : "disabled")}.");
+                                UIChat.Instance.AddChatMessage($"Warmup music is currently {(_clientConfig.WarmupMusic ? "enabled" : "disabled")}");
                             else {
                                 bool? enableWarmupMusic = null;
                                 if (int.TryParse(message, out int warmupMusicValue)) {
@@ -1020,9 +1020,9 @@ namespace oomtm450PuckMod_Ruleset {
                                     _clientConfig.WarmupMusic = (bool)enableWarmupMusic;
                                     _clientConfig.Save();
                                     if ((bool)enableWarmupMusic)
-                                        UIChat.Instance.AddChatMessage($"Enabled warmup music.");
+                                        UIChat.Instance.AddChatMessage($"Enabled warmup music");
                                     else
-                                        UIChat.Instance.AddChatMessage($"Disabled warmup music.");
+                                        UIChat.Instance.AddChatMessage($"Disabled warmup music");
                                 }
                             }
                         }
