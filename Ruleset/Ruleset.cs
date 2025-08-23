@@ -970,24 +970,58 @@ namespace oomtm450PuckMod_Ruleset {
                         return true;
                     
                     if (message.StartsWith(@"/")) {
-                        if (message.StartsWith(@"/musicvol ")) {
-                            message = message.Replace(@"/musicvol ", "").Trim();
-                            if (float.TryParse(message, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
-                                if (vol > 1f)
-                                    vol = 1f;
-                                else if (vol < 0)
-                                    vol = 0;
+                        message = message.ToLowerInvariant();
 
-                                _clientConfig.MusicVolume = vol;
-                                _clientConfig.Save();
-                                _sounds?.ChangeMusicVolume();
-                                Logging.Log($"Adjusted client music volume to {vol}f.", _clientConfig);
+                        if (message.StartsWith(@"/musicvol")) {
+                            message = message.Replace(@"/musicvol", "").Trim();
+
+                            if (string.IsNullOrEmpty(message))
+                                Logging.Log($"Music volume is currently at {_clientConfig.MusicVolume.ToString(CultureInfo.InvariantCulture)}.", _clientConfig);
+                            else {
+                                if (float.TryParse(message, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                    if (vol > 1f)
+                                        vol = 1f;
+                                    else if (vol < 0)
+                                        vol = 0;
+
+                                    _clientConfig.MusicVolume = vol;
+                                    _clientConfig.Save();
+                                    _sounds?.ChangeMusicVolume();
+                                    Logging.Log($"Adjusted client music volume to {vol}f.", _clientConfig);
+                                }
+                            }
+                        }
+                        else if (message.StartsWith(@"/warmupmusic")) {
+                            message = message.Replace(@"/warmupmusic", "").Trim();
+
+                            if (string.IsNullOrEmpty(message))
+                                Logging.Log($"Warmup music is currently {(_clientConfig.WarmupMusic ? "enabled" : "disabled")}.", _clientConfig);
+                            else {
+                                bool? enableWarmupMusic = null;
+                                if (int.TryParse(message, out int warmupMusicValue)) {
+                                    if (warmupMusicValue >= 1)
+                                        enableWarmupMusic = true;
+                                    else
+                                        enableWarmupMusic = false;
+                                }
+                                else if (message == "true")
+                                    enableWarmupMusic = true;
+                                else if (message == "false")
+                                    enableWarmupMusic = false;
+
+                                if (enableWarmupMusic != null) {
+                                    _clientConfig.WarmupMusic = (bool)enableWarmupMusic;
+                                    _clientConfig.Save();
+                                    if ((bool)enableWarmupMusic)
+                                        Logging.Log($"Enabled warmup music.", _clientConfig);
+                                    else
+                                        Logging.Log($"Disabled warmup music.", _clientConfig);
+                                }
                             }
                         }
 
-                        if (message.StartsWith(@"/help")) {
-                            UIChat.Instance.AddChatMessage("Ruleset commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n");
-                        }
+                        if (message.StartsWith(@"/help"))
+                            UIChat.Instance.AddChatMessage("Ruleset commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n* <b>/warmupmusic</b> - Disable or enable warmup music (false-true)\n");
                     }
                 }
                 catch (Exception ex) {
@@ -2227,8 +2261,10 @@ namespace oomtm450PuckMod_Ruleset {
                             _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 1.5f);
                         }
                         else if (dataStrSplitted[0] == Sounds.WARMUP_MUSIC) {
-                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList, seed);
-                            _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0, true);
+                            if (_clientConfig.WarmupMusic) {
+                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList, seed);
+                                _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0, true);
+                            }
                         }
                         else if (dataStrSplitted[0] == Sounds.LAST_MINUTE_MUSIC) {
                             _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList, seed);

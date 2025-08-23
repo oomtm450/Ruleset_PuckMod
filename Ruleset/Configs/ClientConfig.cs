@@ -41,6 +41,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool TeamColor2DRefs { get; set; } = true;
 
         /// <summary>
+        /// Bool, true if the warmup music must be played. Won't work if Music is false.
+        /// </summary>
+        public bool WarmupMusic { get; set; } = true;
+
+        /// <summary>
         /// String, full path for the config file.
         /// </summary>
         [JsonIgnore]
