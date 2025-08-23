@@ -976,7 +976,7 @@ namespace oomtm450PuckMod_Ruleset {
                             message = message.Replace(@"/musicvol", "").Trim();
 
                             if (string.IsNullOrEmpty(message))
-                                Logging.Log($"Music volume is currently at {_clientConfig.MusicVolume.ToString(CultureInfo.InvariantCulture)}.", _clientConfig);
+                                UIChat.Instance.AddChatMessage($"Music volume is currently at {_clientConfig.MusicVolume.ToString(CultureInfo.InvariantCulture)}.");
                             else {
                                 if (float.TryParse(message, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
                                     if (vol > 1f)
@@ -987,7 +987,7 @@ namespace oomtm450PuckMod_Ruleset {
                                     _clientConfig.MusicVolume = vol;
                                     _clientConfig.Save();
                                     _sounds?.ChangeMusicVolume();
-                                    Logging.Log($"Adjusted client music volume to {vol}f.", _clientConfig);
+                                    UIChat.Instance.AddChatMessage($"Adjusted client music volume to {vol}.");
                                 }
                             }
                         }
@@ -995,7 +995,7 @@ namespace oomtm450PuckMod_Ruleset {
                             message = message.Replace(@"/warmupmusic", "").Trim();
 
                             if (string.IsNullOrEmpty(message))
-                                Logging.Log($"Warmup music is currently {(_clientConfig.WarmupMusic ? "enabled" : "disabled")}.", _clientConfig);
+                                UIChat.Instance.AddChatMessage($"Warmup music is currently {(_clientConfig.WarmupMusic ? "enabled" : "disabled")}.");
                             else {
                                 bool? enableWarmupMusic = null;
                                 if (int.TryParse(message, out int warmupMusicValue)) {
@@ -1010,12 +1010,19 @@ namespace oomtm450PuckMod_Ruleset {
                                     enableWarmupMusic = false;
 
                                 if (enableWarmupMusic != null) {
+                                    if (_sounds != null && _sounds.WarmupMusicList.Contains(_currentMusicPlaying)) {
+                                        if (_clientConfig.WarmupMusic && !((bool)enableWarmupMusic))
+                                            _sounds.StopAll();
+                                        else if (!_clientConfig.WarmupMusic && (bool)enableWarmupMusic)
+                                            _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0, true);
+                                    }
+
                                     _clientConfig.WarmupMusic = (bool)enableWarmupMusic;
                                     _clientConfig.Save();
                                     if ((bool)enableWarmupMusic)
-                                        Logging.Log($"Enabled warmup music.", _clientConfig);
+                                        UIChat.Instance.AddChatMessage($"Enabled warmup music.");
                                     else
-                                        Logging.Log($"Disabled warmup music.", _clientConfig);
+                                        UIChat.Instance.AddChatMessage($"Disabled warmup music.");
                                 }
                             }
                         }
@@ -2261,10 +2268,9 @@ namespace oomtm450PuckMod_Ruleset {
                             _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 1.5f);
                         }
                         else if (dataStrSplitted[0] == Sounds.WARMUP_MUSIC) {
-                            if (_clientConfig.WarmupMusic) {
-                                _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList, seed);
+                            _currentMusicPlaying = Sounds.GetRandomSound(_sounds.WarmupMusicList, seed);
+                            if (_clientConfig.WarmupMusic)
                                 _sounds.Play(_currentMusicPlaying, Sounds.MUSIC, 0, true);
-                            }
                         }
                         else if (dataStrSplitted[0] == Sounds.LAST_MINUTE_MUSIC) {
                             _currentMusicPlaying = Sounds.GetRandomSound(_sounds.LastMinuteMusicList, seed);
