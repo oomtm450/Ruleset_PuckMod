@@ -1503,6 +1503,11 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Reteleport player on faceoff to the correct faceoff.
                     PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(_nextFaceoffSpot), _nextFaceoffSpot);
+
+                    if (_addServerModVersionOutOfDateMessage) {
+                        _addServerModVersionOutOfDateMessage = false;
+                        UIChat.Instance.AddChatMessage($"{player.Username.Value} : Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Player_Server_RespawnCharacter_Patch Postfix().\n{ex}", _serverConfig);
@@ -1537,11 +1542,6 @@ namespace oomtm450PuckMod_Ruleset {
                     if (_askForKick) {
                         _askForKick = false;
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_kick", "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT, _clientConfig);
-                    }
-
-                    if (_addServerModVersionOutOfDateMessage) {
-                        _addServerModVersionOutOfDateMessage = false;
-                        UIChat.Instance.AddChatMessage($"{player.Username.Value} : Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
                     }
 
                     ScoreboardModifications(true);
