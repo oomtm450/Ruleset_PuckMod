@@ -1096,8 +1096,6 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     oldZone = _puckZone;
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PUCK_RADIUS);
-                    _isPuckBehindHashmarks[PlayerTeam.Blue] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Blue, puck.Rigidbody.transform.position, PUCK_RADIUS);
-                    _isPuckBehindHashmarks[PlayerTeam.Red] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Red, puck.Rigidbody.transform.position, PUCK_RADIUS);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}", _serverConfig);
@@ -1294,6 +1292,14 @@ namespace oomtm450PuckMod_Ruleset {
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 5.\n{ex}", _serverConfig);
+                }
+
+                try {
+                    _isPuckBehindHashmarks[PlayerTeam.Blue] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Blue, puck.Rigidbody.transform.position, PUCK_RADIUS);
+                    _isPuckBehindHashmarks[PlayerTeam.Red] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Red, puck.Rigidbody.transform.position, PUCK_RADIUS);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 6.\n{ex}", _serverConfig);
                 }
 
                 return true;
