@@ -52,7 +52,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const float, radius of a player.
         /// </summary>
-        private const float PLAYER_RADIUS = 0.26f;
+        private const float PLAYER_RADIUS = 0.2625f;
 
         /// <summary>
         /// Const float, height of the net's crossbar.
