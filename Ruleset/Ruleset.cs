@@ -26,7 +26,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.20.0DEV";
+        private static readonly string MOD_VERSION = "0.20.0DEV3";
 
         /// <summary>
         /// Const string, last released version of the mod.
@@ -139,12 +139,12 @@ namespace oomtm450PuckMod_Ruleset {
         };
 
         /// <summary>
-        /// LockDictionary of PlayerTeam and Stopwatch, dictionary for teams if icing is possible if it reaches the end of the ice.
+        /// LockDictionary of PlayerTeam and (Stopwatch and float), dictionary for teams if icing is possible if it reaches the end of the ice and its delta.
         /// Stopwatch is null if it is not possible.
         /// </summary>
-        private static readonly LockDictionary<PlayerTeam, Stopwatch> _isIcingPossible = new LockDictionary<PlayerTeam, Stopwatch> {
-            { PlayerTeam.Blue, null },
-            { PlayerTeam.Red, null },
+        private static readonly LockDictionary<PlayerTeam, (Stopwatch Watch, float Delta)> _isIcingPossible = new LockDictionary<PlayerTeam, (Stopwatch, float)> {
+            { PlayerTeam.Blue, (null, 0) },
+            { PlayerTeam.Red, (null, 0) },
         };
 
         /// <summary>
@@ -577,7 +577,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(Puck), "OnCollisionExit")]
         public class Puck_OnCollisionExit_Patch {
             [HarmonyPostfix]
-            public static void Postfix(Collision collision) {
+            public static void Postfix(Puck __instance, Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
@@ -622,10 +622,10 @@ namespace oomtm450PuckMod_Ruleset {
                     if (icingPossible) {
                         Stopwatch icingPossibleWatch = new Stopwatch();
                         icingPossibleWatch.Start();
-                        _isIcingPossible[stick.Player.Team.Value] = icingPossibleWatch;
+                        _isIcingPossible[stick.Player.Team.Value] = (icingPossibleWatch, 1f / (__instance.Speed / _serverConfig.Icing.Delta));
                     }
                     else
-                        _isIcingPossible[stick.Player.Team.Value] = null;
+                        _isIcingPossible[stick.Player.Team.Value] = (null, 0);
 
                     _lastShotWasCounted[stick.Player.Team.Value] = false;
                 }
@@ -1726,7 +1726,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void ResetIcings() {
             foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingPossible.Keys))
-                _isIcingPossible[key] = null;
+                _isIcingPossible[key] = (null, 0);
 
             foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingActive.Keys))
                 _isIcingActive[key] = false;
@@ -1737,7 +1737,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void ResetIcingCallback(object stateInfo) {
             PlayerTeam team = (PlayerTeam)stateInfo;
-            _isIcingPossible[team] = null;
+            _isIcingPossible[team] = (null, 0);
         }
 
         private static void ResetHighStickCallback(object stateInfo) {
@@ -1872,19 +1872,23 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static bool IsIcingPossible(PlayerTeam team, bool anyPlayersBehindHashmarks, bool puckBehindHashmarks, bool checkPossibleTime = true) {
-            if (IsIcingEnabled(team) && _isIcingPossible[team] != null && (!anyPlayersBehindHashmarks || puckBehindHashmarks)) {
+            (Stopwatch watch, float delta) = _isIcingPossible[team];
+            if (IsIcingEnabled(team) && watch != null && (!anyPlayersBehindHashmarks || puckBehindHashmarks)) {
                 PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
                 List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
 
-                int maxPossibleTime = _serverConfig.Icing.MaxPossibleTime.Values.Max();
+                float maxPossibleTime = _serverConfig.Icing.MaxPossibleTime.Values.Max() * delta;
                 foreach ((PlayerTeam playerTeam, Zone playerZone) in _playersZone.Values) {
                     if (playerTeam == otherTeam && otherTeamZones.Any(x => x == playerZone)) {
-                        maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched];
+                        maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched] * delta;
                         break;
                     }
                 }
 
-                if (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < maxPossibleTime)
+                if (checkPossibleTime)
+                    Logging.Log($"Possible time was : {maxPossibleTime}", _serverConfig, true); // TODO TEST REMOVE
+
+                if (!checkPossibleTime || watch.ElapsedMilliseconds < maxPossibleTime)
                     return true;
             }
 
