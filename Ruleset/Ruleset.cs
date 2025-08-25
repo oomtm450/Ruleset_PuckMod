@@ -1242,8 +1242,8 @@ namespace oomtm450PuckMod_Ruleset {
                                 float puckXCoordinate = Math.Abs(puck.Rigidbody.transform.position.x);
                                 float puckZCoordinate = Math.Abs(puck.Rigidbody.transform.position.z);
 
-                                double blueTeamPlayerDistanceToPuck = Math.Sqrt(Math.Pow(Math.Abs(puckXCoordinate - closestPlayerToEndBoardBlueTeam.X), 2) + Math.Pow(Math.Abs(puckZCoordinate - closestPlayerToEndBoardBlueTeam.Z), 2));
-                                double redTeamPlayerDistanceToPuck = Math.Sqrt(Math.Pow(Math.Abs(puckXCoordinate - closestPlayerToEndBoardRedTeam.X), 2) + Math.Pow(Math.Abs(puckZCoordinate - closestPlayerToEndBoardRedTeam.Z), 2));
+                                double blueTeamPlayerDistanceToPuck = GetDistance(puckXCoordinate, puckZCoordinate, closestPlayerToEndBoardBlueTeam.X, closestPlayerToEndBoardBlueTeam.Z);
+                                double redTeamPlayerDistanceToPuck = GetDistance(puckXCoordinate, puckZCoordinate, closestPlayerToEndBoardRedTeam.X, closestPlayerToEndBoardRedTeam.Z);
 
                                 if (blueTeamPlayerDistanceToPuck < redTeamPlayerDistanceToPuck && closestPlayerToEndBoardBlueTeam.IsBehindHashmarks)
                                     closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Player;
@@ -2961,6 +2961,10 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static bool AreBothNegativeOrPositive(float num1, float num2) {
             return (num1 <= 0 && num2 <= 0) || (num1 >= 0 && num2 >= 0);
+        }
+
+        public static double GetDistance(double x1, double z1, double x2, double z2) {
+            return Math.Sqrt(Math.Pow(Math.Abs(x1 - x2), 2) + Math.Pow(Math.Abs(z1 - z2), 2));
         }
         #endregion
     }
