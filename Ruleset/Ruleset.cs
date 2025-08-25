@@ -26,12 +26,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.19.1";
+        private static readonly string MOD_VERSION = "0.20.0DEV3";
 
         /// <summary>
         /// Const string, last released version of the mod.
         /// </summary>
-        private static readonly string OLD_MOD_VERSION = "0.19.0";
+        private static readonly string OLD_MOD_VERSION = "0.19.1";
 
         /// <summary>
         /// ReadOnlyCollection of string, collection of datanames to not log.
@@ -52,23 +52,41 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const float, radius of a player.
         /// </summary>
-        private const float PLAYER_RADIUS = 0.26f;
+        private const float PLAYER_RADIUS = 0.2625f;
 
         /// <summary>
         /// Const float, height of the net's crossbar.
         /// </summary>
         private const float CROSSBAR_HEIGHT = 1.8f;
 
+        /// <summary>
+        /// Const string, data name for SOG.
+        /// </summary>
         private const string SOG = Constants.MOD_NAME + "SOG";
 
+        /// <summary>
+        /// Const string, data name for batching the SOG.
+        /// </summary>
         private const string BATCH_SOG = Constants.MOD_NAME + "BATCHSOG";
 
+        /// <summary>
+        /// Const string, data name for resetting the SOG.
+        /// </summary>
         private const string RESET_SOG = Constants.MOD_NAME + "RESETSOG";
 
+        /// <summary>
+        /// Const string, data name for the save percentage.
+        /// </summary>
         private const string SAVEPERC = Constants.MOD_NAME + "SAVEPERC";
 
+        /// <summary>
+        /// Const string, data name for batching the save percentage.
+        /// </summary>
         private const string BATCH_SAVEPERC = Constants.MOD_NAME + "BATCHSAVEPERC";
 
+        /// <summary>
+        /// Const string, data name for resetting the save percentage.
+        /// </summary>
         private const string RESET_SAVEPERC = Constants.MOD_NAME + "RESETSAVEPERC";
 
         private const string SOG_HEADER_LABEL_NAME = "SOGHeaderLabel";
@@ -121,12 +139,12 @@ namespace oomtm450PuckMod_Ruleset {
         };
 
         /// <summary>
-        /// LockDictionary of PlayerTeam and Stopwatch, dictionary for teams if icing is possible if it reaches the end of the ice.
+        /// LockDictionary of PlayerTeam and (Stopwatch and float), dictionary for teams if icing is possible if it reaches the end of the ice and its delta.
         /// Stopwatch is null if it is not possible.
         /// </summary>
-        private static readonly LockDictionary<PlayerTeam, Stopwatch> _isIcingPossible = new LockDictionary<PlayerTeam, Stopwatch> {
-            { PlayerTeam.Blue, null },
-            { PlayerTeam.Red, null },
+        private static readonly LockDictionary<PlayerTeam, (Stopwatch Watch, float Delta)> _isIcingPossible = new LockDictionary<PlayerTeam, (Stopwatch, float)> {
+            { PlayerTeam.Blue, (null, 0) },
+            { PlayerTeam.Red, (null, 0) },
         };
 
         /// <summary>
@@ -559,7 +577,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(Puck), "OnCollisionExit")]
         public class Puck_OnCollisionExit_Patch {
             [HarmonyPostfix]
-            public static void Postfix(Collision collision) {
+            public static void Postfix(Puck __instance, Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
@@ -604,10 +622,10 @@ namespace oomtm450PuckMod_Ruleset {
                     if (icingPossible) {
                         Stopwatch icingPossibleWatch = new Stopwatch();
                         icingPossibleWatch.Start();
-                        _isIcingPossible[stick.Player.Team.Value] = icingPossibleWatch;
+                        _isIcingPossible[stick.Player.Team.Value] = (icingPossibleWatch, 1f / (__instance.Speed / _serverConfig.Icing.Delta));
                     }
                     else
-                        _isIcingPossible[stick.Player.Team.Value] = null;
+                        _isIcingPossible[stick.Player.Team.Value] = (null, 0);
 
                     _lastShotWasCounted[stick.Player.Team.Value] = false;
                 }
@@ -684,7 +702,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     PlayerTeam goalieOtherTeam = TeamFunc.GetOtherTeam(goalie.Team.Value);
 
-                    bool goalieDown = goalie.PlayerBody.HasFallen;
+                    bool goalieDown = goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped;
                     _lastGoalieStateCollision[goalieOtherTeam] = goalieDown;
 
                     if (goalieDown || (force > _serverConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease)) {
@@ -1096,8 +1114,6 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     oldZone = _puckZone;
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PUCK_RADIUS);
-                    _isPuckBehindHashmarks[PlayerTeam.Blue] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Blue, puck.Rigidbody.transform.position, PUCK_RADIUS);
-                    _isPuckBehindHashmarks[PlayerTeam.Red] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Red, puck.Rigidbody.transform.position, PUCK_RADIUS);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}", _serverConfig);
@@ -1190,7 +1206,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
                         PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
                         foreach (string key in new List<string>(_isOffside.Keys)) {
-                            if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam)
+                            if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam && _lastPlayerOnPuckTeamTipIncluded == lastPlayerOnPuckOtherTeam)
                                 _isOffside[key] = (lastPlayerOnPuckOtherTeam, false);
                         }
                     }
@@ -1294,6 +1310,14 @@ namespace oomtm450PuckMod_Ruleset {
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 5.\n{ex}", _serverConfig);
+                }
+
+                try {
+                    _isPuckBehindHashmarks[PlayerTeam.Blue] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Blue, puck.Rigidbody.transform.position, PUCK_RADIUS);
+                    _isPuckBehindHashmarks[PlayerTeam.Red] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Red, puck.Rigidbody.transform.position, PUCK_RADIUS);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 6.\n{ex}", _serverConfig);
                 }
 
                 return true;
@@ -1497,6 +1521,11 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Reteleport player on faceoff to the correct faceoff.
                     PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(_nextFaceoffSpot), _nextFaceoffSpot);
+
+                    if (_addServerModVersionOutOfDateMessage) {
+                        _addServerModVersionOutOfDateMessage = false;
+                        UIChat.Instance.AddChatMessage($"{player.Username.Value} : Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Player_Server_RespawnCharacter_Patch Postfix().\n{ex}", _serverConfig);
@@ -1531,11 +1560,6 @@ namespace oomtm450PuckMod_Ruleset {
                     if (_askForKick) {
                         _askForKick = false;
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_kick", "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT, _clientConfig);
-                    }
-
-                    if (_addServerModVersionOutOfDateMessage) {
-                        _addServerModVersionOutOfDateMessage = false;
-                        UIChat.Instance.AddChatMessage($"{player.Username.Value} : Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
                     }
 
                     ScoreboardModifications(true);
@@ -1702,7 +1726,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void ResetIcings() {
             foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingPossible.Keys))
-                _isIcingPossible[key] = null;
+                _isIcingPossible[key] = (null, 0);
 
             foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingActive.Keys))
                 _isIcingActive[key] = false;
@@ -1713,7 +1737,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void ResetIcingCallback(object stateInfo) {
             PlayerTeam team = (PlayerTeam)stateInfo;
-            _isIcingPossible[team] = null;
+            _isIcingPossible[team] = (null, 0);
         }
 
         private static void ResetHighStickCallback(object stateInfo) {
@@ -1848,19 +1872,23 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static bool IsIcingPossible(PlayerTeam team, bool anyPlayersBehindHashmarks, bool puckBehindHashmarks, bool checkPossibleTime = true) {
-            if (IsIcingEnabled(team) && _isIcingPossible[team] != null && (!anyPlayersBehindHashmarks || puckBehindHashmarks)) {
+            (Stopwatch watch, float delta) = _isIcingPossible[team];
+            if (IsIcingEnabled(team) && watch != null && (!anyPlayersBehindHashmarks || puckBehindHashmarks)) {
                 PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
                 List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
 
-                int maxPossibleTime = _serverConfig.Icing.MaxPossibleTime.Values.Max();
+                float maxPossibleTime = _serverConfig.Icing.MaxPossibleTime.Values.Max() * delta;
                 foreach ((PlayerTeam playerTeam, Zone playerZone) in _playersZone.Values) {
                     if (playerTeam == otherTeam && otherTeamZones.Any(x => x == playerZone)) {
-                        maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched];
+                        maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched] * delta;
                         break;
                     }
                 }
 
-                if (!checkPossibleTime || _isIcingPossible[team].ElapsedMilliseconds < maxPossibleTime)
+                if (checkPossibleTime)
+                    Logging.Log($"Possible time was : {maxPossibleTime}", _serverConfig, true); // TODO TEST REMOVE
+
+                if (!checkPossibleTime || watch.ElapsedMilliseconds < maxPossibleTime)
                     return true;
             }
 
