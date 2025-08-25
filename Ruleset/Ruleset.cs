@@ -59,16 +59,34 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private const float CROSSBAR_HEIGHT = 1.8f;
 
+        /// <summary>
+        /// Const string, data name for SOG.
+        /// </summary>
         private const string SOG = Constants.MOD_NAME + "SOG";
 
+        /// <summary>
+        /// Const string, data name for batching the SOG.
+        /// </summary>
         private const string BATCH_SOG = Constants.MOD_NAME + "BATCHSOG";
 
+        /// <summary>
+        /// Const string, data name for resetting the SOG.
+        /// </summary>
         private const string RESET_SOG = Constants.MOD_NAME + "RESETSOG";
 
+        /// <summary>
+        /// Const string, data name for the save percentage.
+        /// </summary>
         private const string SAVEPERC = Constants.MOD_NAME + "SAVEPERC";
 
+        /// <summary>
+        /// Const string, data name for batching the save percentage.
+        /// </summary>
         private const string BATCH_SAVEPERC = Constants.MOD_NAME + "BATCHSAVEPERC";
 
+        /// <summary>
+        /// Const string, data name for resetting the save percentage.
+        /// </summary>
         private const string RESET_SAVEPERC = Constants.MOD_NAME + "RESETSAVEPERC";
 
         private const string SOG_HEADER_LABEL_NAME = "SOGHeaderLabel";
