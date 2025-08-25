@@ -26,7 +26,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.20.0DEV3";
+        private static readonly string MOD_VERSION = "0.20.0DEV4";
 
         /// <summary>
         /// Const string, last released version of the mod.
@@ -1874,22 +1874,29 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool IsIcingPossible(PlayerTeam team, bool anyPlayersBehindHashmarks, bool puckBehindHashmarks, bool checkPossibleTime = true) {
             (Stopwatch watch, float delta) = _isIcingPossible[team];
             if (IsIcingEnabled(team) && watch != null && (!anyPlayersBehindHashmarks || puckBehindHashmarks)) {
-                PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
-                List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
-
-                float maxPossibleTime = _serverConfig.Icing.MaxPossibleTime.Values.Max() * delta;
-                foreach ((PlayerTeam playerTeam, Zone playerZone) in _playersZone.Values) {
-                    if (playerTeam == otherTeam && otherTeamZones.Any(x => x == playerZone)) {
-                        maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched] * delta;
-                        break;
-                    }
-                }
-
-                if (checkPossibleTime)
+                if (!checkPossibleTime)
+                    return true;
+                else {
+                    float maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched] * delta;
                     Logging.Log($"Possible time was : {maxPossibleTime}", _serverConfig, true); // TODO TEST REMOVE
 
-                if (!checkPossibleTime || watch.ElapsedMilliseconds < maxPossibleTime)
-                    return true;
+                    PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
+                    List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
+                    List<(PlayerTeam Team, Zone Zone)> otherTeamPlayers = _playersZone.Values.Where(x => x.Team == otherTeam).ToList();
+
+                    if (maxPossibleTime >= 4000f && otherTeamPlayers.Any(x => x.Zone == otherTeamZones[0])) {
+                        _isIcingPossible[team] = (null, 0);
+                        return false;
+                    }
+
+                    if (maxPossibleTime >= 8000f && otherTeamPlayers.Any(x => x.Zone == otherTeamZones[2])) {
+                        _isIcingPossible[team] = (null, 0);
+                        return false;
+                    }
+
+                    if (watch.ElapsedMilliseconds < maxPossibleTime)
+                        return true;
+                }
             }
 
             return false;
