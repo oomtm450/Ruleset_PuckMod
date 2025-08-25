@@ -111,7 +111,7 @@ namespace oomtm450PuckMod_Ruleset {
                     break;
             }
 
-            if (player.PlayerPosition.Name != Codebase.PlayerFunc.GOALIE_POSITION) {
+            if (player.PlayerPosition.Name != GOALIE_POSITION) {
                 if (player.Team.Value == PlayerTeam.Red) {
                     xOffset *= -1;
                     zOffset *= -1;
