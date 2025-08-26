@@ -151,13 +151,13 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
-        public Dictionary<Zone, float> MaxPossibleTime { get; } = new Dictionary<Zone, float> { // TODO : Change after release.
-            { Zone.BlueTeam_BehindGoalLine, 8250f },
-            { Zone.RedTeam_BehindGoalLine, 8250f },
-            { Zone.BlueTeam_Zone, 6500f },
-            { Zone.RedTeam_Zone, 6500f },
-            { Zone.BlueTeam_Center, 4750f },
-            { Zone.RedTeam_Center, 4750f },
+        public Dictionary<Zone, float> MaxPossibleTime { get; } = new Dictionary<Zone, float> {
+            { Zone.BlueTeam_BehindGoalLine, 8500f },
+            { Zone.RedTeam_BehindGoalLine, 8500f },
+            { Zone.BlueTeam_Zone, 6750f },
+            { Zone.RedTeam_Zone, 6750f },
+            { Zone.BlueTeam_Center, 5000f },
+            { Zone.RedTeam_Center, 5000f },
         };
 
         /// <summary>
