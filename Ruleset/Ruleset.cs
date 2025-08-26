@@ -26,12 +26,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.20.0";
+        private static readonly string MOD_VERSION = "0.20.1DEV";
 
         /// <summary>
         /// Const string, last released version of the mod.
         /// </summary>
-        private static readonly string OLD_MOD_VERSION = "0.19.1";
+        private static readonly string OLD_MOD_VERSION = "0.20.0";
 
         /// <summary>
         /// ReadOnlyCollection of string, collection of datanames to not log.
@@ -548,7 +548,6 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!Codebase.PlayerFunc.IsGoalie(stick.Player)) {
                             _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             SendChat(Rule.Icing, otherTeam, true);
-                            ResetIcings();
                             DoFaceoff();
                         }
                         else {
@@ -1271,7 +1270,6 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             else if (IsIcing(closestPlayerToEndBoardOtherTeam)) {
                                 SendChat(Rule.Icing, closestPlayerToEndBoardOtherTeam, true);
-                                ResetIcings();
                                 DoFaceoff();
                             }
                         }
@@ -1369,7 +1367,7 @@ namespace oomtm450PuckMod_Ruleset {
                             _checkIfPuckWasSaved[key] = new SaveCheck();
                         }
                         else {
-                            if (++saveCheck.FramesChecked > 480)
+                            if (++saveCheck.FramesChecked > ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate)
                                 _checkIfPuckWasSaved[key] = new SaveCheck();
                         }
                     }
@@ -1780,6 +1778,9 @@ namespace oomtm450PuckMod_Ruleset {
             if (_paused)
                 return;
 
+            ResetIcings();
+            ResetHighSticks();
+
             _paused = true;
 
             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FormatSoundStrForCommunication(Sounds.WHISTLE), Constants.FROM_SERVER, _serverConfig);
@@ -1879,7 +1880,7 @@ namespace oomtm450PuckMod_Ruleset {
                 else {
                     float maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched] * icingObj.Delta;
 
-                    if (!icingObj.DeltaHasBeenChecked) {
+                    if (!icingObj.DeltaHasBeenChecked && ++icingObj.FrameCheck > ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate) {
                         icingObj.DeltaHasBeenChecked = true;
 
                         PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
@@ -1891,11 +1892,11 @@ namespace oomtm450PuckMod_Ruleset {
                                 Player player = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
                                 if (!player)
                                     continue;
-                                
-                                float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 250d) + 4000d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 450f);
-                                Logging.Log($"Possible time is : {maxPossibleTime}. Limit is : {maxPossibleTimeLimit}", _serverConfig, true); // TODO TEST REMOVE
 
-                                if (maxPossibleTime >= maxPossibleTimeLimit) {
+                                float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 255d) + 4000d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 440f);
+                                Logging.Log($"Possible time is : {maxPossibleTime}. Limit is : {maxPossibleTimeLimit}. Puck Y is : {puck.Rigidbody.transform.position.y}.", _serverConfig, true); // TODO TEST REMOVE
+
+                                if (puck.Rigidbody.transform.position.y < CROSSBAR_HEIGHT / 2 && maxPossibleTime >= maxPossibleTimeLimit) {
                                     _isIcingPossible[team] = new IcingObject();
                                     return false;
                                 }
@@ -3017,6 +3018,8 @@ namespace oomtm450PuckMod_Ruleset {
         internal float Delta { get; set; } = 0;
 
         internal bool DeltaHasBeenChecked { get; set; } = false;
+
+        internal int FrameCheck {  get; set; } = 0;
 
         internal IcingObject() { }
 
