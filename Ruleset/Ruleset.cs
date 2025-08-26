@@ -548,7 +548,6 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!Codebase.PlayerFunc.IsGoalie(stick.Player)) {
                             _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             SendChat(Rule.Icing, otherTeam, true);
-                            ResetIcings();
                             DoFaceoff();
                         }
                         else {
@@ -1271,7 +1270,6 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             else if (IsIcing(closestPlayerToEndBoardOtherTeam)) {
                                 SendChat(Rule.Icing, closestPlayerToEndBoardOtherTeam, true);
-                                ResetIcings();
                                 DoFaceoff();
                             }
                         }
