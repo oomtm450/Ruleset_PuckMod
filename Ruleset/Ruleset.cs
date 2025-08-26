@@ -1780,6 +1780,9 @@ namespace oomtm450PuckMod_Ruleset {
             if (_paused)
                 return;
 
+            ResetIcings();
+            ResetHighSticks();
+
             _paused = true;
 
             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FormatSoundStrForCommunication(Sounds.WHISTLE), Constants.FROM_SERVER, _serverConfig);
