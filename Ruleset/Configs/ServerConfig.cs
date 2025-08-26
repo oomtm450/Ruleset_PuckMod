@@ -266,21 +266,26 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool Deferred { get; set; } = true;
 
         /// <summary>
-        /// Int, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing.
+        /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
-        public Dictionary<Zone, int> MaxPossibleTime { get; set; } = new Dictionary<Zone, int> {
-            { Zone.BlueTeam_BehindGoalLine, 8250 },
-            { Zone.RedTeam_BehindGoalLine, 8250 },
-            { Zone.BlueTeam_Zone, 6500 },
-            { Zone.RedTeam_Zone, 6500 },
-            { Zone.BlueTeam_Center, 4750 },
-            { Zone.RedTeam_Center, 4750 },
+        public Dictionary<Zone, float> MaxPossibleTime { get; set; } = new Dictionary<Zone, float> {
+            { Zone.BlueTeam_BehindGoalLine, 8500f },
+            { Zone.RedTeam_BehindGoalLine, 8500f },
+            { Zone.BlueTeam_Zone, 6750f },
+            { Zone.RedTeam_Zone, 6750f },
+            { Zone.BlueTeam_Center, 5000f },
+            { Zone.RedTeam_Center, 5000f },
         };
 
         /// <summary>
         /// Int, number of milliseconds for icing to be called off if it has not being called.
         /// </summary>
         public int MaxActiveTime { get; set; } = 12000;
+
+        /// <summary>
+        /// Float, delta used to calculate the dynamic icing possible times.
+        /// </summary>
+        public float Delta { get; set; } = 20f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -303,8 +308,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 Deferred = newConfig.Deferred;
 
             try {
-                foreach (KeyValuePair<Zone, int> kvp in new Dictionary<Zone, int>(MaxPossibleTime)) {
-                    if (_oldConfig.MaxPossibleTime.TryGetValue(kvp.Key, out int value) && value == kvp.Value)
+                foreach (KeyValuePair<Zone, float> kvp in new Dictionary<Zone, float>(MaxPossibleTime)) {
+                    if (_oldConfig.MaxPossibleTime.TryGetValue(kvp.Key, out float value) && value == kvp.Value)
                         MaxPossibleTime[kvp.Key] = newConfig.MaxPossibleTime[kvp.Key];
                 }
             }
@@ -312,6 +317,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (MaxActiveTime == _oldConfig.MaxActiveTime)
                 MaxActiveTime = newConfig.MaxActiveTime;
+
+            if (Delta == _oldConfig.Delta)
+                Delta = newConfig.Delta;
         }
     }
 

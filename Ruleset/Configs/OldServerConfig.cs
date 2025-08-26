@@ -149,21 +149,26 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool Deferred { get; } = true;
 
         /// <summary>
-        /// Int, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing.
+        /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
-        public Dictionary<Zone, int> MaxPossibleTime { get; } = new Dictionary<Zone, int> {
-            { Zone.BlueTeam_BehindGoalLine, 8250 },
-            { Zone.RedTeam_BehindGoalLine, 8250 },
-            { Zone.BlueTeam_Zone, 6500 },
-            { Zone.RedTeam_Zone, 6500 },
-            { Zone.BlueTeam_Center, 4750 },
-            { Zone.RedTeam_Center, 4750 },
+        public Dictionary<Zone, float> MaxPossibleTime { get; } = new Dictionary<Zone, float> { // TODO : Change after release.
+            { Zone.BlueTeam_BehindGoalLine, 8250f },
+            { Zone.RedTeam_BehindGoalLine, 8250f },
+            { Zone.BlueTeam_Zone, 6500f },
+            { Zone.RedTeam_Zone, 6500f },
+            { Zone.BlueTeam_Center, 4750f },
+            { Zone.RedTeam_Center, 4750f },
         };
 
         /// <summary>
         /// Int, number of milliseconds for icing to be called off if it has not being called.
         /// </summary>
         public int MaxActiveTime { get; } = 12000;
+
+        /// <summary>
+        /// Float, delta used to calculate the dynamic icing possible times.
+        /// </summary>
+        public float Delta { get; set; } = 20f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
