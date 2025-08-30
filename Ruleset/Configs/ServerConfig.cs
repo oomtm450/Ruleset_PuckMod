@@ -83,7 +83,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; set; } = 225;
+        public int MinPossessionMilliseconds { get; set; } = 200;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
@@ -285,7 +285,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, delta used to calculate the dynamic icing possible times.
         /// </summary>
-        public float Delta { get; set; } = 20f;
+        public float Delta { get; set; } = 21f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -404,7 +404,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
-        public float GoalieRadius { get; set; } = 0.784f;
+        public float GoalieRadius { get; set; } = 0.7875f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.

@@ -13,7 +13,7 @@ namespace oomtm450PuckMod_Ruleset {
         private readonly Vector3 DOWN_VECTOR = new Vector3(0, -0.51f, 0);
         private Vector3 DOWN_RIGHT_VECTOR;
         private Vector3 DOWN_LEFT_VECTOR;
-        private readonly float MAX_DISTANCE = 20f;
+        private readonly float MAX_DISTANCE = 25f;
         private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
 
         private Ray _rayBottomLeft;
@@ -46,6 +46,8 @@ namespace oomtm450PuckMod_Ruleset {
             if (++_increment == CHECK_EVERY_X_FRAMES) {
                 foreach (PlayerTeam key in new List<PlayerTeam>(PuckIsGoingToNet.Keys))
                     PuckIsGoingToNet[key] = false;
+
+                _startingPosition.y = transform.position.y; // Adjust Y of starting position so that the rays are all parallel to the ice.
 
                 _rayBottomLeft = new Ray(transform.position - RIGHT_VECTOR, transform.position - _startingPosition);
                 _rayBottomRight = new Ray(transform.position + RIGHT_VECTOR, transform.position - _startingPosition);
