@@ -1884,7 +1884,7 @@ namespace oomtm450PuckMod_Ruleset {
                         List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
                         List<string> otherTeamPlayersSteamId = _playersZone.Where(x => x.Value.Team == otherTeam && x.Value.Zone == otherTeamZones[0]).Select(x => x.Key).ToList();
 
-                        if (otherTeamPlayersSteamId.Count != 0 && puck.Rigidbody.transform.position.y < CROSSBAR_HEIGHT / 2) {
+                        if (otherTeamPlayersSteamId.Count != 0 && puck.Rigidbody.transform.position.y < 0.8f) {
                             foreach (string playerSteamId in otherTeamPlayersSteamId) {
                                 Player player = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
                                 if (!player)
