@@ -26,12 +26,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.20.1";
+        private static readonly string MOD_VERSION = "0.20.2DEV";
 
         /// <summary>
         /// Const string, last released version of the mod.
         /// </summary>
-        private static readonly string OLD_MOD_VERSION = "0.20.0";
+        private static readonly string OLD_MOD_VERSION = "0.20.1";
 
         /// <summary>
         /// ReadOnlyCollection of string, collection of datanames to not log.
