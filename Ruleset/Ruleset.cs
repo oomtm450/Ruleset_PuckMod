@@ -355,18 +355,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                         PlayerTeam playerOtherTeam = TeamFunc.GetOtherTeam(playerBody.Player.Team.Value);
                         if (IsIcingPossible(__instance, playerOtherTeam, _dictPlayersPositionsForIcing.Any(x => playerOtherTeam == PlayerTeam.Blue ? x.IsBehindRedTeamHashmarks : x.IsBehindBlueTeamHashmarks), _isPuckBehindHashmarks[playerBody.Player.Team.Value])) {
-                            if (!Codebase.PlayerFunc.IsGoalie(playerBody.Player)) {
-                                if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var playerZone)) {
-                                    if (playerZone.Zone != ZoneFunc.GetTeamZones(playerBody.Player.Team.Value)[1]) {
-                                        if (IsIcing(playerOtherTeam)) {
-                                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerOtherTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
-                                            SendChat(Rule.Icing, playerOtherTeam, true, true);
-                                        }
-                                        ResetIcings();
-                                    }
-                                }
-                            }
-
                             if (IsIcing(playerOtherTeam)) {
                                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerOtherTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER, _serverConfig); // Send stop icing signal for client-side UI.
                                 SendChat(Rule.Icing, playerOtherTeam, true, true);
