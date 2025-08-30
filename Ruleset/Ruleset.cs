@@ -1894,9 +1894,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                         PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
                         List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
-                        List<string> otherTeamPlayersSteamId = _playersZone.Where(x => x.Value.Team == otherTeam && (x.Value.Zone == otherTeamZones[0] || x.Value.Zone == otherTeamZones[2])).Select(x => x.Key).ToList();
+                        List<string> otherTeamPlayersSteamId = _playersZone.Where(x => x.Value.Team == otherTeam && x.Value.Zone == otherTeamZones[0]).Select(x => x.Key).ToList();
 
-                        if (otherTeamPlayersSteamId.Count != 0) {
+                        if (otherTeamPlayersSteamId.Count != 0 && puck.Rigidbody.transform.position.y < CROSSBAR_HEIGHT / 2) {
                             foreach (string playerSteamId in otherTeamPlayersSteamId) {
                                 Player player = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
                                 if (!player)
@@ -1905,7 +1905,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 255d) + 4000d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 440f);
                                 Logging.Log($"Possible time is : {maxPossibleTime}. Limit is : {maxPossibleTimeLimit}. Puck Y is : {puck.Rigidbody.transform.position.y}.", _serverConfig, true); // TODO TEST REMOVE
 
-                                if (puck.Rigidbody.transform.position.y < CROSSBAR_HEIGHT / 2 && maxPossibleTime >= maxPossibleTimeLimit) {
+                                if (maxPossibleTime >= maxPossibleTimeLimit) {
                                     _isIcingPossible[team] = new IcingObject();
                                     return false;
                                 }
