@@ -77,17 +77,17 @@ namespace oomtm450PuckMod_Ruleset {
                         hasHit = Physics.Raycast(_rayFarBottomRight, out hit, MAX_DISTANCE, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
                         if (!hasHit)
                             return;
-                        else
-                            Logging.Log("Far bottom right ray has hit !", Ruleset._serverConfig, true);
+                        //else
+                            //Logging.Log("Far bottom right ray has hit !", Ruleset._serverConfig, true);
                     }
-                    else
-                        Logging.Log("Far bottom left ray has hit !", Ruleset._serverConfig, true);
+                    //else
+                        //Logging.Log("Far bottom left ray has hit !", Ruleset._serverConfig, true);
                 }
-                else
-                    Logging.Log("Bottom right ray has hit !", Ruleset._serverConfig, true);
+                //else
+                    //Logging.Log("Bottom right ray has hit !", Ruleset._serverConfig, true);
             }
-            else
-                Logging.Log("Bottom left ray has hit !", Ruleset._serverConfig, true); // TODO : Remove test logs.
+            //else
+                //Logging.Log("Bottom left ray has hit !", Ruleset._serverConfig, true);
 
             Goal goal = Ruleset.GetPrivateField<Goal>(typeof(GoalTrigger), hit.collider.gameObject.GetComponent<GoalTrigger>(), "goal");
             PlayerTeam team = Ruleset.GetPrivateField<PlayerTeam>(typeof(Goal), goal, "Team");
