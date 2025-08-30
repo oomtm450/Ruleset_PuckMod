@@ -1199,13 +1199,15 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
 
-                    // Remove offside if the other team entered the zone with the puck.
-                    List<Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(_lastPlayerOnPuckTeam, true);
-                    if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
-                        PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
-                        foreach (string key in new List<string>(_isOffside.Keys)) {
-                            if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam && _lastPlayerOnPuckTeamTipIncluded == lastPlayerOnPuckOtherTeam)
-                                _isOffside[key] = (lastPlayerOnPuckOtherTeam, false);
+                    // Remove offside if the other team entered their zone with the puck.
+                    if (_lastPlayerOnPuckTeamTipIncluded == _lastPlayerOnPuckTeam) {
+                        List<Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(_lastPlayerOnPuckTeam, true);
+                        if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
+                            PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
+                            foreach (string key in new List<string>(_isOffside.Keys)) {
+                                if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam)
+                                    _isOffside[key] = (lastPlayerOnPuckOtherTeam, false);
+                            }
                         }
                     }
 
