@@ -29,9 +29,20 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly string MOD_VERSION = "0.20.2DEV";
 
         /// <summary>
-        /// Const string, last released version of the mod.
+        /// List of string, last released versions of the mod.
         /// </summary>
-        private static readonly string OLD_MOD_VERSION = "0.20.1";
+        private static readonly ReadOnlyCollection<string> OLD_MOD_VERSIONS = new ReadOnlyCollection<string>(new List<string> {
+            "0.16.0",
+            "0.16.1",
+            "0.16.2",
+            "0.17.0",
+            "0.18.0",
+            "0.18.1",
+            "0.18.2",
+            "0.19.0",
+            "0.20.0",
+            "0.20.1",
+        });
 
         /// <summary>
         /// ReadOnlyCollection of string, collection of datanames to not log.
@@ -1519,11 +1530,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Reteleport player on faceoff to the correct faceoff.
                     PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(_nextFaceoffSpot), _nextFaceoffSpot);
-
-                    if (_addServerModVersionOutOfDateMessage) {
-                        _addServerModVersionOutOfDateMessage = false;
-                        UIChat.Instance.AddChatMessage($"{player.Username.Value} : Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
-                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Player_Server_RespawnCharacter_Patch Postfix().\n{ex}", _serverConfig);
@@ -1554,10 +1560,13 @@ namespace oomtm450PuckMod_Ruleset {
                             NetworkCommunication.SendData(ASK_SERVER_FOR_STARTUP_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT, _clientConfig);
                         }
                     }
-
-                    if (_askForKick) {
+                    else if (_askForKick) {
                         _askForKick = false;
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_kick", "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT, _clientConfig);
+                    }
+                    else if (_addServerModVersionOutOfDateMessage) {
+                        _addServerModVersionOutOfDateMessage = false;
+                        UIChat.Instance.AddChatMessage($"{player.Username.Value} : Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
                     }
 
                     ScoreboardModifications(true);
@@ -2266,7 +2275,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _serverHasResponded = true;
                         if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
                             break;
-                        else if (OLD_MOD_VERSION == dataStr) {
+                        else if (OLD_MOD_VERSIONS.Contains(dataStr)) {
                             _addServerModVersionOutOfDateMessage = true;
                             break;
                         }
