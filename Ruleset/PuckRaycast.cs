@@ -13,7 +13,7 @@ namespace oomtm450PuckMod_Ruleset {
         private readonly Vector3 DOWN_VECTOR = new Vector3(0, -0.51f, 0);
         private Vector3 DOWN_RIGHT_VECTOR;
         private Vector3 DOWN_LEFT_VECTOR;
-        private readonly float MAX_DISTANCE = 20f;
+        private readonly float MAX_DISTANCE = 25f;
         private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
 
         private Ray _rayBottomLeft;
@@ -47,6 +47,8 @@ namespace oomtm450PuckMod_Ruleset {
                 foreach (PlayerTeam key in new List<PlayerTeam>(PuckIsGoingToNet.Keys))
                     PuckIsGoingToNet[key] = false;
 
+                _startingPosition.y = transform.position.y; // Adjust Y of starting position so that the rays are all parallel to the ice.
+
                 _rayBottomLeft = new Ray(transform.position - RIGHT_VECTOR, transform.position - _startingPosition);
                 _rayBottomRight = new Ray(transform.position + RIGHT_VECTOR, transform.position - _startingPosition);
                 _rayFarBottomLeft = new Ray(transform.position + DOWN_LEFT_VECTOR, transform.position - _startingPosition);
@@ -75,17 +77,17 @@ namespace oomtm450PuckMod_Ruleset {
                         hasHit = Physics.Raycast(_rayFarBottomRight, out hit, MAX_DISTANCE, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
                         if (!hasHit)
                             return;
-                        //else
-                            //Logging.Log("Far bottom right ray has hit !", Ruleset._serverConfig, true);
+                        else
+                            Logging.Log("Far bottom right ray has hit !", Ruleset._serverConfig, true);
                     }
-                    //else
-                        //Logging.Log("Far bottom left ray has hit !", Ruleset._serverConfig, true);
+                    else
+                        Logging.Log("Far bottom left ray has hit !", Ruleset._serverConfig, true);
                 }
-                //else
-                    //Logging.Log("Bottom right ray has hit !", Ruleset._serverConfig, true);
+                else
+                    Logging.Log("Bottom right ray has hit !", Ruleset._serverConfig, true);
             }
-            //else
-                //Logging.Log("Bottom left ray has hit !", Ruleset._serverConfig, true);
+            else
+                Logging.Log("Bottom left ray has hit !", Ruleset._serverConfig, true); // TODO : Remove test logs.
 
             Goal goal = Ruleset.GetPrivateField<Goal>(typeof(GoalTrigger), hit.collider.gameObject.GetComponent<GoalTrigger>(), "goal");
             PlayerTeam team = Ruleset.GetPrivateField<PlayerTeam>(typeof(Goal), goal, "Team");
