@@ -72,35 +72,6 @@ namespace Codebase {
         /// <param name="dataStr">String, content of the data.</param>
         /// <param name="listener">String, listener where to send the data.</param>
         /// <param name="config">IConfig, config for the logs.</param>
-        public static void SendDataToServer(string dataName, string dataStr, string listener, IConfig config) {
-            try {
-                byte[] data = Encoding.UTF8.GetBytes(dataStr);
-
-                int size = Encoding.UTF8.GetByteCount(dataName) + sizeof(ulong) + data.Length;
-
-                FastBufferWriter writer = new FastBufferWriter(size, Allocator.TempJob);
-                writer.WriteValue(dataName);
-                writer.WriteBytes(data);
-
-                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage(listener, NetworkManager.ServerClientId, writer, NetworkDelivery.ReliableFragmentedSequenced);
-
-                writer.Dispose();
-
-                if (!DataNamesToIgnore.Contains(dataName))
-                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to server.", config);
-            }
-            catch (Exception ex) {
-                Logging.LogError($"Error when writing streamed data: {ex}", config);
-            }
-        }
-
-        /// <summary>
-        /// Method that sends data to the listener.
-        /// </summary>
-        /// <param name="dataName">String, header of the data.</param>
-        /// <param name="dataStr">String, content of the data.</param>
-        /// <param name="listener">String, listener where to send the data.</param>
-        /// <param name="config">IConfig, config for the logs.</param>
         public static void SendDataToAll(string dataName, string dataStr, string listener, IConfig config) {
             try {
                 byte[] data = Encoding.UTF8.GetBytes(dataStr);
