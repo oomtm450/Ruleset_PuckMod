@@ -10,7 +10,7 @@ namespace oomtm450PuckMod_Stats {
         private const int CHECK_EVERY_X_FRAMES = 4;
         //private readonly Vector3 TOP_VECTOR = new Vector3(0, 0.175f, 0);
         private readonly Vector3 RIGHT_VECTOR = new Vector3(Codebase.Constants.PUCK_RADIUS + 0.018f, 0.001f, 0);
-        private readonly Vector3 DOWN_VECTOR = new Vector3(0, -0.52f, 0);
+        private readonly Vector3 DOWN_VECTOR = new Vector3(0, -0.53f, 0);
         private Vector3 DOWN_RIGHT_VECTOR;
         private Vector3 DOWN_LEFT_VECTOR;
         private readonly float MAX_DISTANCE = 25f;
