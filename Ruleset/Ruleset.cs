@@ -329,6 +329,11 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static bool _addServerModVersionOutOfDateMessage = false;
 
+        /// <summary>
+        /// Int, number of time client asked the server for startup data.
+        /// </summary>
+        private static int _askServerForStartupDataCount = 0;
+
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
 
@@ -1546,7 +1551,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _hasRegisteredWithNamedMessageHandler = true;
 
                         DateTime now = DateTime.UtcNow;
-                        if (_lastDateTimeAskStartupData + TimeSpan.FromSeconds(1) < now) {
+                        if (_lastDateTimeAskStartupData + TimeSpan.FromSeconds(1) < now && _askServerForStartupDataCount++ < 10) {
                             _lastDateTimeAskStartupData = now;
                             NetworkCommunication.SendData(ASK_SERVER_FOR_STARTUP_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT, _clientConfig);
                         }
@@ -2091,6 +2096,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 _serverHasResponded = false;
+                _askServerForStartupDataCount = 0;
 
                 if (_refSignalsBlueTeam == null && _refSignalsRedTeam == null && _sounds == null)
                     return;
@@ -2714,6 +2720,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 _hasRegisteredWithNamedMessageHandler = false;
                 _serverHasResponded = false;
+                _askServerForStartupDataCount = 0;
 
                 //_getStickLocation.Disable();
 
