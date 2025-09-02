@@ -19,7 +19,7 @@ namespace oomtm450PuckMod_Stats {
         internal const string FROM_SERVER_TO_CLIENT = MOD_NAME + "_server";
 
         /// <summary>
-        /// Const string, used for the communication from the client.
+        /// Const string, used for the communication from the server.
         /// </summary>
         internal const string FROM_CLIENT_TO_SERVER = MOD_NAME + "_client";
     }

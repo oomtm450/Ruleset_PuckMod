@@ -6,9 +6,9 @@
         internal const string STATS_MOD_NAME = "oomtm450_stats";
 
         /// <summary>
-        /// Const string, name of the stats mod.
+        /// Const string, used for the communication from the client.
         /// </summary>
-        internal const string STATS_FROM_SERVER_TO_SERVER = STATS_MOD_NAME + "_servertoserver";
+        internal const string FROM_CLIENT_TO_STATS_SERVER = STATS_MOD_NAME + "_from_anothermod_client";
 
         /// <summary>
         /// Const float, radius of the puck.

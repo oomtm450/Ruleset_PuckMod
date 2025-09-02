@@ -1999,6 +1999,9 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 switch (dataName) {
+                    case Codebase.Constants.SOG:
+                        NetworkCommunication.SendData(Codebase.Constants.SOG, dataStr, NetworkManager.ServerClientId, Codebase.Constants.FROM_CLIENT_TO_STATS_SERVER, _serverConfig);
+                        break;
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
                         _serverHasResponded = true;
                         if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
@@ -2383,8 +2386,8 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         /// <param name="player">Player, player that scored.</param>
         private static void SendSOGDuringGoal(Player player) {
-            NetworkCommunication.SendDataToAll(Codebase.Constants.SOG, $"{nameof(player)}:{player.SteamId.Value}", Codebase.Constants.STATS_FROM_SERVER_TO_SERVER,
-                _serverConfig);
+            NetworkCommunication.SendData(Codebase.Constants.SOG, $"{player.SteamId.Value}", PlayerFunc.Players_ClientId_SteamId.First().Key,
+                Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
         }
 
         /// <summary>

@@ -81,7 +81,7 @@ namespace oomtm450PuckMod_Stats {
             { PlayerTeam.Red, true },
         };
 
-        private static readonly LockDictionary<PlayerTeam, string> _lastPlayerOnPuckTipIncludedSteamId = new LockDictionary<PlayerTeam, string> { // TODO : Create a communication with Ruleset.
+        private static readonly LockDictionary<PlayerTeam, string> _lastPlayerOnPuckTipIncludedSteamId = new LockDictionary<PlayerTeam, string> {
             { PlayerTeam.Blue, "" },
             { PlayerTeam.Red, "" },
         };
@@ -592,7 +592,7 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
-                    NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Codebase.Constants.STATS_FROM_SERVER_TO_SERVER);
+                    NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Codebase.Constants.FROM_CLIENT_TO_STATS_SERVER);
                 }
                 else {
                     EventManager.Instance.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
@@ -750,8 +750,8 @@ namespace oomtm450PuckMod_Stats {
                 Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT_TO_SERVER}.", _serverConfig);
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER, ReceiveData);
 
-                Logging.Log($"RegisterNamedMessageHandler {Codebase.Constants.STATS_FROM_SERVER_TO_SERVER}.", _serverConfig);
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Codebase.Constants.STATS_FROM_SERVER_TO_SERVER, ReceiveDataServerToServer);
+                Logging.Log($"RegisterNamedMessageHandler {Codebase.Constants.FROM_CLIENT_TO_STATS_SERVER}.", _serverConfig);
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Codebase.Constants.FROM_CLIENT_TO_STATS_SERVER, ReceiveDataServerToServer);
 
                 _hasRegisteredWithNamedMessageHandler = true;
             }
@@ -762,7 +762,6 @@ namespace oomtm450PuckMod_Stats {
                 return;
 
             _rulesetModEnabled = ModManagerV2.Instance.EnabledModIds.Contains(3501446576) || ModManagerV2.Instance.EnabledModIds.Contains(3500559233);
-            Logging.Log($"{nameof(_rulesetModEnabled)} : {_rulesetModEnabled}", _serverConfig, true); // TODO : Remove debug logs.
         }
 
         /// <summary>
@@ -917,13 +916,10 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="reader">FastBufferReader, stream containing the received data.</param>
         public static void ReceiveDataServerToServer(ulong clientId, FastBufferReader reader) {
             try {
-                Logging.Log($"ReceiveDataServerToServer", _serverConfig, true); // TODO : Remove debug logs.
                 (string dataName, string dataStr) = NetworkCommunication.GetData(clientId, reader, _serverConfig);
-                Logging.Log($"{dataName}, {dataStr}", _serverConfig, true); // TODO : Remove debug logs.
 
                 switch (dataName) {
                     case Codebase.Constants.SOG: // SERVER-SIDE : Another mod wants to add a SOG.
-                        Logging.Log($"Player goal steamId : {dataStr}", _serverConfig, true); // TODO : Remove debug logs.
                         Player player = PlayerManager.Instance.GetPlayerBySteamId(dataStr);
                         SendSavePercDuringGoal(player.Team.Value, SendSOGDuringGoal(player));
                         break;
@@ -1071,7 +1067,6 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="player">Player, player that scored.</param>
         /// <returns>Bool, true if it was already sent and set.</returns>
         private static bool SendSOGDuringGoal(Player player) {
-            Logging.Log($"{nameof(_lastShotWasCounted)} : {_lastShotWasCounted}", _serverConfig, true); // TODO : Remove debug logs.
             if (!_lastShotWasCounted[player.Team.Value]) {
                 string playerSteamId = player.SteamId.Value.ToString();
 
