@@ -1821,9 +1821,6 @@ namespace oomtm450PuckMod_Ruleset {
             _doFaceoff = false;
             _paused = false;
 
-            ResetGoalAndAssistAttribution(PlayerTeam.Blue);
-            ResetGoalAndAssistAttribution(PlayerTeam.Red);
-
             GameManager.Instance.Server_Resume();
             if (GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
                 return;
