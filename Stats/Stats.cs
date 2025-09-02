@@ -751,7 +751,6 @@ namespace oomtm450PuckMod_Stats {
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER, ReceiveData);
 
                 Logging.Log($"RegisterNamedMessageHandler {Codebase.Constants.STATS_FROM_SERVER_TO_SERVER}.", _serverConfig);
-                NetworkManager.Singleton.CustomMessagingManager.
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Codebase.Constants.STATS_FROM_SERVER_TO_SERVER, ReceiveDataServerToServer);
 
                 _hasRegisteredWithNamedMessageHandler = true;
