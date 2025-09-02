@@ -514,7 +514,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!PuckIsTipped(playerSteamId)) {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                         if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
-                            ResetAssists(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
+                            ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
                         _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = playerSteamId;
 
                         Puck puck = PuckManager.Instance.GetPuck();
@@ -601,7 +601,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!PuckIsTipped(currentPlayerSteamId)) {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                         if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
-                            ResetAssists(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
+                            ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
                         _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
 
                         Puck puck = PuckManager.Instance.GetPuck();
@@ -1821,6 +1821,9 @@ namespace oomtm450PuckMod_Ruleset {
             _doFaceoff = false;
             _paused = false;
 
+            ResetGoalAndAssistAttribution(PlayerTeam.Blue);
+            ResetGoalAndAssistAttribution(PlayerTeam.Red);
+
             GameManager.Instance.Server_Resume();
             if (GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
                 return;
@@ -1993,7 +1996,7 @@ namespace oomtm450PuckMod_Ruleset {
             return false;
         }
 
-        private static void ResetAssists(PlayerTeam team) {
+        private static void ResetGoalAndAssistAttribution(PlayerTeam team) {
             try {
                 NetworkList<NetworkObjectCollision> buffer = GetPuckBuffer();
                 if (buffer == null) {
