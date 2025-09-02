@@ -41,7 +41,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <param name="puckLastState">(Vector3, Zone), puck's last position and zone.</param>
         /// <returns>FaceoffSpot, next faceoff position.</returns>
         private static FaceoffSpot SetNextFaceoffPositionFromLastTouch(PlayerTeam team, bool left, (Vector3 Position, Zone Zone) puckLastState) {
-            Zone puckZone = ZoneFunc.GetZone(puckLastState.Position, puckLastState.Zone, Ruleset.PUCK_RADIUS);
+            Zone puckZone = ZoneFunc.GetZone(puckLastState.Position, puckLastState.Zone, Codebase.Constants.PUCK_RADIUS);
             if (puckZone == Zone.BlueTeam_BehindGoalLine || puckZone == Zone.BlueTeam_Zone) {
                 if (team == PlayerTeam.Blue) {
                     if (left)

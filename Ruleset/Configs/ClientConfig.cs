@@ -6,7 +6,7 @@ using System.IO;
 
 namespace oomtm450PuckMod_Ruleset.Configs {
     /// <summary>
-    /// Class containing the configuration from oomtm450_template_clientconfig.json used for this mod.
+    /// Class containing the configuration from oomtm450_ruleset_clientconfig.json used for this mod.
     /// </summary>
     public class ClientConfig : IConfig {
         /// <summary>

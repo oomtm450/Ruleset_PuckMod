@@ -2,15 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace oomtm450PuckMod_Ruleset {
+namespace oomtm450PuckMod_Stats {
     /// <summary>
     /// Class containing code for the puck raycasts with the goal trigger to know if the puck is going towards the net or not.
     /// </summary>
     internal class PuckRaycast : MonoBehaviour {
         private const int CHECK_EVERY_X_FRAMES = 4;
         //private readonly Vector3 TOP_VECTOR = new Vector3(0, 0.175f, 0);
-        private readonly Vector3 RIGHT_VECTOR = new Vector3(Ruleset.PUCK_RADIUS + 0.018f, 0.001f, 0);
-        private readonly Vector3 DOWN_VECTOR = new Vector3(0, -0.51f, 0);
+        private readonly Vector3 RIGHT_VECTOR = new Vector3(Codebase.Constants.PUCK_RADIUS + 0.018f, 0.001f, 0);
+        private readonly Vector3 DOWN_VECTOR = new Vector3(0, -0.52f, 0);
         private Vector3 DOWN_RIGHT_VECTOR;
         private Vector3 DOWN_LEFT_VECTOR;
         private readonly float MAX_DISTANCE = 25f;
@@ -89,8 +89,8 @@ namespace oomtm450PuckMod_Ruleset {
             //else
                 //Logging.Log("Bottom left ray has hit !", Ruleset._serverConfig, true);
 
-            Goal goal = Ruleset.GetPrivateField<Goal>(typeof(GoalTrigger), hit.collider.gameObject.GetComponent<GoalTrigger>(), "goal");
-            PlayerTeam team = Ruleset.GetPrivateField<PlayerTeam>(typeof(Goal), goal, "Team");
+            Goal goal = SystemFunc.GetPrivateField<Goal>(typeof(GoalTrigger), hit.collider.gameObject.GetComponent<GoalTrigger>(), "goal");
+            PlayerTeam team = SystemFunc.GetPrivateField<PlayerTeam>(typeof(Goal), goal, "Team");
             PuckIsGoingToNet[team] = hasHit;
         }
 

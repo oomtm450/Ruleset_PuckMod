@@ -103,8 +103,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             OldServerConfig _oldConfig = oldConfig as OldServerConfig;
             ServerConfig newConfig = new ServerConfig();
 
-            if (LogInfo == _oldConfig.LogInfo)
-                LogInfo = newConfig.LogInfo;
+            //if (LogInfo == _oldConfig.LogInfo)
+                //LogInfo = newConfig.LogInfo;
 
             if (UseCustomFaceoff == _oldConfig.UseCustomFaceoff)
                 UseCustomFaceoff = newConfig.UseCustomFaceoff;
