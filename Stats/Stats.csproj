@@ -1,16 +1,54 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <AssemblyName>oomtm450PuckMod_Ruleset</AssemblyName>
-    <TargetFramework>net4.8</TargetFramework>
-    <Version>0.21.0</Version>
-    <RootNamespace>oomtm450PuckMod_Ruleset</RootNamespace>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{E3770437-BAE2-41CE-AC40-31F0B03BBA12}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>oomtm450PuckMod_Stats</RootNamespace>
+    <AssemblyName>oomtm450PuckMod_Stats</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
   </PropertyGroup>
-
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="9.0.5" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
-
+  <ItemGroup>
+    <Compile Include="Configs\ClientConfig.cs" />
+    <Compile Include="Configs\OldServerConfig.cs" />
+    <Compile Include="Configs\ServerConfig.cs" />
+    <Compile Include="Constants.cs" />
+    <Compile Include="PuckRaycast.cs" />
+    <Compile Include="Stats.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\0Harmony.dll</HintPath>
@@ -44,7 +82,8 @@
     </Reference>
     <Reference Include="Mono.Cecil.Rocks">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Mono.Cecil.Rocks.dll</HintPath>
-      <Private></Private>
+      <Private>
+      </Private>
     </Reference>
     <Reference Include="Mono.Security">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Mono.Security.dll</HintPath>
@@ -452,19 +491,6 @@
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\uPnP.dll</HintPath>
     </Reference>
   </ItemGroup>
-
   <Import Project="..\Codebase\Codebase.projitems" Label="Shared" />
-
-  <!-- Streamline development and move the built .dll to the plugins folder after building -->
-  <!-- <Target Name="PostBuildMoveDll" AfterTargets="Build">
-    <PropertyGroup>
-      <TargetDir>C:\Your\Puck\Plugins\GAFURIXCustomMOTD</TargetDir>
-    </PropertyGroup>
-
-    <MakeDir Directories="$(TargetDir)" />
-    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(TargetDir)" OverwriteReadOnlyFiles="true" />
-    
-    <Message Importance="high" Text="Copied $(AssemblyName).dll to $(TargetDir)" />
-  </Target> -->
-
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

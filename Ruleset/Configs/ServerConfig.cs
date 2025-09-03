@@ -83,7 +83,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; set; } = 200;
+        public int MinPossessionMilliseconds { get; set; } = 300;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
@@ -103,8 +103,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             OldServerConfig _oldConfig = oldConfig as OldServerConfig;
             ServerConfig newConfig = new ServerConfig();
 
-            if (LogInfo == _oldConfig.LogInfo)
-                LogInfo = newConfig.LogInfo;
+            //if (LogInfo == _oldConfig.LogInfo)
+                //LogInfo = newConfig.LogInfo;
 
             if (UseCustomFaceoff == _oldConfig.UseCustomFaceoff)
                 UseCustomFaceoff = newConfig.UseCustomFaceoff;

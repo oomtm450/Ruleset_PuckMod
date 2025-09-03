@@ -116,7 +116,7 @@ namespace Codebase {
                 dataName = dataName.Trim();
 
                 if (!DataNamesToIgnore.Contains(dataName))
-                    Logging.Log($"Received data {dataName} ({length} bytes - {totalLength} total bytes) from {clientId}. Content : {dataStr}", config);
+                    Logging.Log($"Received data {dataName} ({length} bytes - {totalLength} total bytes) from {(clientId == 0 ? "server" : clientId.ToString())}. Content : {dataStr}", config);
 
                 return (dataName, dataStr);
             }

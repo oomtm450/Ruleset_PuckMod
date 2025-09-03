@@ -1,4 +1,4 @@
-namespace oomtm450PuckMod_Ruleset {
+namespace oomtm450PuckMod_Stats {
     /// <summary>
     /// Class containing some constants linked to the mod in general.
     /// </summary>
@@ -6,12 +6,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, name of the mod on the workshop.
         /// </summary>
-        internal const string WORKSHOP_MOD_NAME = "Ruleset";
+        internal const string WORKSHOP_MOD_NAME = "Stats";
 
         /// <summary>
         /// Const string, name of the mod.
         /// </summary>
-        internal const string MOD_NAME = Codebase.Constants.RULESET_MOD_NAME;
+        internal const string MOD_NAME = Codebase.Constants.STATS_MOD_NAME;
 
         /// <summary>
         /// Const string, used for the communication from the server.
@@ -19,7 +19,7 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string FROM_SERVER_TO_CLIENT = MOD_NAME + "_server";
 
         /// <summary>
-        /// Const string, used for the communication from the client.
+        /// Const string, used for the communication from the server.
         /// </summary>
         internal const string FROM_CLIENT_TO_SERVER = MOD_NAME + "_client";
     }

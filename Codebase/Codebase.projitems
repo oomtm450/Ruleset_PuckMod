@@ -11,12 +11,14 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Configs\IConfig.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Configs\ISubConfig.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\Constants.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\LockList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\LockDictionary.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\Logging.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\NetworkCommunication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\PlayerFunc.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\ServerFunc.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\SystemFunc.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\TeamFunc.cs" />
   </ItemGroup>
 </Project>
