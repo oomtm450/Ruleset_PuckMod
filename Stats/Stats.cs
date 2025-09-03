@@ -592,7 +592,7 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
-                    NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Codebase.Constants.FROM_CLIENT_TO_STATS_SERVER);
+                    NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Codebase.Constants.FROM_RULESET_CLIENT_TO_ANOTHERMOD_SERVER);
                 }
                 else {
                     EventManager.Instance.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
@@ -750,8 +750,8 @@ namespace oomtm450PuckMod_Stats {
                 Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT_TO_SERVER}.", _serverConfig);
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER, ReceiveData);
 
-                Logging.Log($"RegisterNamedMessageHandler {Codebase.Constants.FROM_CLIENT_TO_STATS_SERVER}.", _serverConfig);
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Codebase.Constants.FROM_CLIENT_TO_STATS_SERVER, ReceiveDataServerToServer);
+                Logging.Log($"RegisterNamedMessageHandler {Codebase.Constants.FROM_RULESET_CLIENT_TO_ANOTHERMOD_SERVER}.", _serverConfig);
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Codebase.Constants.FROM_RULESET_CLIENT_TO_ANOTHERMOD_SERVER, ReceiveDataFromRulesetClient);
 
                 _hasRegisteredWithNamedMessageHandler = true;
             }
@@ -914,14 +914,18 @@ namespace oomtm450PuckMod_Stats {
         /// </summary>
         /// <param name="clientId">Ulong, Id of the client that sent the data. (0 if the server sent the data)</param>
         /// <param name="reader">FastBufferReader, stream containing the received data.</param>
-        public static void ReceiveDataServerToServer(ulong clientId, FastBufferReader reader) {
+        public static void ReceiveDataFromRulesetClient(ulong clientId, FastBufferReader reader) {
             try {
                 (string dataName, string dataStr) = NetworkCommunication.GetData(clientId, reader, _serverConfig);
 
                 switch (dataName) {
-                    case Codebase.Constants.SOG: // SERVER-SIDE : Another mod wants to add a SOG.
+                    case Codebase.Constants.SOG: // SERVER-SIDE : Ruleset wants to add a SOG.
                         Player player = PlayerManager.Instance.GetPlayerBySteamId(dataStr);
                         SendSavePercDuringGoal(player.Team.Value, SendSOGDuringGoal(player));
+                        break;
+
+                    case Codebase.Constants.PAUSED: // SERVER-SIDE : Ruleset has paused the game.
+                        _paused = bool.Parse(dataStr);
                         break;
                 }
             }

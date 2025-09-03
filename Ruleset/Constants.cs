@@ -11,7 +11,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, name of the mod.
         /// </summary>
-        internal const string MOD_NAME = "oomtm450_ruleset";
+        internal const string MOD_NAME = Codebase.Constants.RULESET_MOD_NAME;
 
         /// <summary>
         /// Const string, used for the communication from the server.

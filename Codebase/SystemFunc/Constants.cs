@@ -6,9 +6,14 @@
         internal const string STATS_MOD_NAME = "oomtm450_stats";
 
         /// <summary>
-        /// Const string, used for the communication from the client.
+        /// Const string, name of the ruleset mod.
         /// </summary>
-        internal const string FROM_CLIENT_TO_STATS_SERVER = STATS_MOD_NAME + "_from_anothermod_client";
+        internal const string RULESET_MOD_NAME = "oomtm450_ruleset";
+
+        /// <summary>
+        /// Const string, used for the communication from the ruleset client to another mod server.
+        /// </summary>
+        internal const string FROM_RULESET_CLIENT_TO_ANOTHERMOD_SERVER = RULESET_MOD_NAME + "_to_anothermod_server";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -34,5 +39,10 @@
         /// Const string, data name for the save percentage.
         /// </summary>
         public const string SAVEPERC = STATS_MOD_NAME + "SAVEPERC";
+
+        /// <summary>
+        /// Const string, data name for the save percentage.
+        /// </summary>
+        public const string PAUSED = RULESET_MOD_NAME + "PAUSED";
     }
 }

@@ -25,7 +25,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.21.0DEV1";
+        private static readonly string MOD_VERSION = "0.21.0";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -266,6 +266,17 @@ namespace oomtm450PuckMod_Ruleset {
         // Barrier collider, position 0 -19 0 is realistic.
         #endregion
 
+        #region Properties
+        private static bool Paused {
+            get { return _paused; }
+            set {
+                _paused = value;
+                NetworkCommunication.SendData(Codebase.Constants.PAUSED, $"{_paused}", PlayerFunc.Players_ClientId_SteamId.First().Key,
+                    Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+            }
+        }
+        #endregion
+
         #region Harmony Patches
         #region Puck_OnCollision
         /// <summary>
@@ -395,7 +406,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
+                    if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing)
                         return;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
@@ -487,7 +498,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(Puck __instance, Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
+                    if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing)
                         return;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
@@ -550,7 +561,7 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(Collision collision) {
                 // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
+                if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing)
                     return;
 
                 try {
@@ -642,12 +653,12 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
-                    if (_paused) {
+                    if (Paused) {
                         GameManager.Instance.Server_Resume();
                         _changedPhase = false;
                     }
-                            
-                    _paused = false;
+
+                    Paused = false;
                     _doFaceoff = false;
 
                     if (phase == GamePhase.BlueScore) {
@@ -980,7 +991,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // If game was paused by the mod, don't do anything if faceoff hasn't being set yet.
-                    if (_paused && !_doFaceoff)
+                    if (Paused && !_doFaceoff)
                         return true;
 
                     // Unpause game and set faceoff.
@@ -990,7 +1001,7 @@ namespace oomtm450PuckMod_Ruleset {
                     players = PlayerManager.Instance.GetPlayers();
                     puck = PuckManager.Instance.GetPuck();
 
-                    if (players.Count == 0 || puck == null || _paused)
+                    if (players.Count == 0 || puck == null || Paused)
                         return true;
                 }
                 catch (Exception ex) {
@@ -1223,7 +1234,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing)
                         return true;
 
-                    if (_paused)
+                    if (Paused)
                         return false;
 
                     NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
@@ -1559,13 +1570,13 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3500, int millisecondsPauseMax = 5000) {
-            if (_paused)
+            if (Paused)
                 return;
 
             ResetIcings();
             ResetHighSticks();
 
-            _paused = true;
+            Paused = true;
 
             NetworkCommunication.SendDataToAll(Sounds.PLAY_SOUND, Sounds.FormatSoundStrForCommunication(Sounds.WHISTLE), Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
 
@@ -1603,7 +1614,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void PostDoFaceoff() {
             _doFaceoff = false;
-            _paused = false;
+            Paused = false;
 
             GameManager.Instance.Server_Resume();
             if (GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
@@ -2000,8 +2011,10 @@ namespace oomtm450PuckMod_Ruleset {
 
                 switch (dataName) {
                     case Codebase.Constants.SOG:
-                        NetworkCommunication.SendData(Codebase.Constants.SOG, dataStr, NetworkManager.ServerClientId, Codebase.Constants.FROM_CLIENT_TO_STATS_SERVER, _serverConfig);
+                    case Codebase.Constants.PAUSED:
+                        NetworkCommunication.SendData(dataName, dataStr, NetworkManager.ServerClientId, Codebase.Constants.FROM_RULESET_CLIENT_TO_ANOTHERMOD_SERVER, _serverConfig);
                         break;
+
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
                         _serverHasResponded = true;
                         if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
