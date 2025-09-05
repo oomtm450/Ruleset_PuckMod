@@ -16,13 +16,13 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.1.0";
+        private static readonly string MOD_VERSION = "0.1.1DEV";
 
         /// <summary>
         /// List of string, last released versions of the mod.
         /// </summary>
         private static readonly ReadOnlyCollection<string> OLD_MOD_VERSIONS = new ReadOnlyCollection<string>(new List<string> {
-            //"0.1.0",
+            "0.1.0",
         });
 
         /// <summary>
@@ -301,20 +301,18 @@ namespace oomtm450PuckMod_Stats {
 
                         //Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId}.", _serverConfig, true);
 
-                        string shotPlayerSteamId = saveCheck.ShooterSteamId;
-                        PlayerTeam shotPlayerTeam = PlayerManager.Instance.GetPlayerBySteamId(shotPlayerSteamId).Team.Value;
-                        if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastShotWasCounted[shotPlayerTeam]) {
-                            if (!_sog.TryGetValue(shotPlayerSteamId, out int _))
-                                _sog.Add(shotPlayerSteamId, 0);
+                        if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastShotWasCounted[saveCheck.ShooterTeam]) {
+                            if (!_sog.TryGetValue(saveCheck.ShooterSteamId, out int _))
+                                _sog.Add(saveCheck.ShooterSteamId, 0);
 
-                            _sog[shotPlayerSteamId] += 1;
-                            NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + shotPlayerSteamId, _sog[shotPlayerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
-                            LogSOG(shotPlayerSteamId, _sog[shotPlayerSteamId]);
+                            _sog[saveCheck.ShooterSteamId] += 1;
+                            NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+                            LogSOG(saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId]);
 
-                            _lastShotWasCounted[shotPlayerTeam] = true;
+                            _lastShotWasCounted[saveCheck.ShooterTeam] = true;
 
                             // Get other team goalie.
-                            Player goalie = Codebase.PlayerFunc.GetOtherTeamGoalie(shotPlayerTeam);
+                            Player goalie = PlayerFunc.GetOtherTeamGoalie(saveCheck.ShooterTeam);
                             if (goalie != null) {
                                 string _goaliePlayerSteamId = goalie.SteamId.Value.ToString();
                                 if (!_savePerc.TryGetValue(_goaliePlayerSteamId, out var savePercValue)) {
@@ -395,39 +393,33 @@ namespace oomtm450PuckMod_Stats {
                     return;
 
                 try {
+                    Player player = null;
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
                         PlayerBodyV2 playerBody = SystemFunc.GetPlayerBodyV2(collision.gameObject);
-                        if (!playerBody || !playerBody.Player)
+                        if (!playerBody)
                             return;
 
-                        if (_puckRaycast.PuckIsGoingToNet[playerBody.Player.Team.Value]) {
-                            if (PlayerFunc.IsGoalie(playerBody.Player)) {
-                                string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(playerBody.Player.Team.Value)];
-                                if (!string.IsNullOrEmpty(shooterSteamId)) {
-                                    _checkIfPuckWasSaved[playerBody.Player.Team.Value] = new SaveCheck {
-                                        HasToCheck = true,
-                                        ShooterSteamId = shooterSteamId,
-                                    };
-                                }
-                            }
-                            // Use else condition here to add a shot blocked stat.
-                        }
-                        return;
+                        player = playerBody.Player;
                     }
 
-                    if (!stick.Player)
+                    if (player == null)
+                        player = stick.Player;
+
+                    if (player == null || !player)
                         return;
 
-                    PlayerTeam otherTeam = TeamFunc.GetOtherTeam(stick.Player.Team.Value);
+                    PlayerTeam otherTeam = TeamFunc.GetOtherTeam(player.Team.Value);
 
-                    if (_puckRaycast.PuckIsGoingToNet[stick.Player.Team.Value]) {
-                        if (PlayerFunc.IsGoalie(stick.Player)) {
-                            string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(stick.Player.Team.Value)];
+                    if (_puckRaycast.PuckIsGoingToNet[player.Team.Value]) {
+                        if (PlayerFunc.IsGoalie(player)) {
+                            PlayerTeam shooterTeam = TeamFunc.GetOtherTeam(player.Team.Value);
+                            string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam];
                             if (!string.IsNullOrEmpty(shooterSteamId)) {
-                                _checkIfPuckWasSaved[stick.Player.Team.Value] = new SaveCheck {
+                                _checkIfPuckWasSaved[player.Team.Value] = new SaveCheck {
                                     HasToCheck = true,
                                     ShooterSteamId = shooterSteamId,
+                                    ShooterTeam = shooterTeam,
                                 };
                             }
                         }
@@ -940,7 +932,7 @@ namespace oomtm450PuckMod_Stats {
             if (_sog.TryGetValue(playerSteamId, out int _)) {
                 _sog[playerSteamId] = sog;
                 Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-                if (currentPlayer != null && currentPlayer && !Codebase.PlayerFunc.IsGoalie(currentPlayer))
+                if (currentPlayer != null && currentPlayer && !PlayerFunc.IsGoalie(currentPlayer))
                     _sogLabels[playerSteamId].text = sog.ToString();
             }
             else
@@ -955,7 +947,7 @@ namespace oomtm450PuckMod_Stats {
             if (_savePerc.TryGetValue(playerSteamId, out var _)) {
                 _savePerc[playerSteamId] = (saves, shots);
                 Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-                if (currentPlayer != null && currentPlayer && Codebase.PlayerFunc.IsGoalie(currentPlayer))
+                if (currentPlayer != null && currentPlayer && PlayerFunc.IsGoalie(currentPlayer))
                     _sogLabels[playerSteamId].text = GetGoalieSavePerc(saves, shots);
             }
             else
@@ -1151,6 +1143,7 @@ namespace oomtm450PuckMod_Stats {
         internal class SaveCheck {
             internal bool HasToCheck { get; set; } = false;
             internal string ShooterSteamId { get; set; } = "";
+            internal PlayerTeam ShooterTeam { get; set; } = PlayerTeam.Blue;
             internal int FramesChecked { get; set; } = 0;
         }
         #endregion
