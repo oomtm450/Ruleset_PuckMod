@@ -11,9 +11,14 @@
         internal const string RULESET_MOD_NAME = "oomtm450_ruleset";
 
         /// <summary>
-        /// Const string, used for the communication from the ruleset client to another mod server.
+        /// Const string, name of the stats mod pipe server.
         /// </summary>
-        internal const string FROM_RULESET_CLIENT_TO_ANOTHERMOD_SERVER = RULESET_MOD_NAME + "_to_anothermod_server";
+        internal const string STATS_MOD_NAMED_PIPE_SERVER = "oomtm450_stats";
+
+        /// <summary>
+        /// Const string, name of the stats mod pipe server.
+        /// </summary>
+        internal const string STATS_MOD_NAMED_PIPE_SERVER_TOKEN = "ghreoidhnwu5f43h4ty78ewrqh6f";
 
         /// <summary>
         /// Const float, radius of the puck.

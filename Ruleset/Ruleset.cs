@@ -7,14 +7,17 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.SceneManagement;
+using static Codebase.SystemFunc;
 
 namespace oomtm450PuckMod_Ruleset {
     /// <summary>
@@ -25,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.21.0";
+        private static readonly string MOD_VERSION = "0.21.1";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -42,6 +45,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.20.0",
             "0.20.1",
             "0.20.2",
+            "0.21.0",
         });
 
         /// <summary>
@@ -81,6 +85,11 @@ namespace oomtm450PuckMod_Ruleset {
         /// ClientConfig, config set by the client.
         /// </summary>
         internal static ClientConfig _clientConfig = new ClientConfig();
+
+        /// <summary>
+        /// StreamString, pipe client for communication with Stats mod.
+        /// </summary>
+        private static StreamString _statsPipeClient = null;
 
         /// <summary>
         /// LockList of PlayerIcing, positions of the players on the ice for icing logic.
@@ -271,8 +280,13 @@ namespace oomtm450PuckMod_Ruleset {
             get { return _paused; }
             set {
                 _paused = value;
-                NetworkCommunication.SendData(Codebase.Constants.PAUSED, $"{_paused}", PlayerFunc.Players_ClientId_SteamId.First().Key,
-                    Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+
+                if (_statsPipeClient == null)
+                    return;
+
+                _statsPipeClient.WriteString($"{Codebase.Constants.PAUSED};{_paused}");
+                if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.PAUSED))
+                    Logging.Log($"Sent data \"{Codebase.Constants.PAUSED}\" to {Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER}.", _serverConfig);
             }
         }
         #endregion
@@ -1930,6 +1944,30 @@ namespace oomtm450PuckMod_Ruleset {
                     _hasRegisteredWithNamedMessageHandler = true;
                 }
 
+                if (_statsPipeClient == null) {
+                    Logging.Log("Opening NamedPipeClientStream for communication with Stats mod.", _serverConfig, true);
+
+                    NamedPipeClientStream statsPipeClient =
+                        new NamedPipeClientStream(".", Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER,
+                            PipeDirection.InOut, PipeOptions.None,
+                            TokenImpersonationLevel.Impersonation);
+
+                    try {
+                        statsPipeClient.Connect(4000);
+
+                        _statsPipeClient = new StreamString(statsPipeClient);
+                        // Validate the server's signature string.
+                        if (_statsPipeClient.ReadString() != Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER_TOKEN) {
+                            Logging.LogError("Communication with Stats mod could not be verified.", _serverConfig);
+                            _statsPipeClient.Close();
+                            _statsPipeClient = null;
+                        }
+                    }
+                    catch (TimeoutException) {
+                        Logging.LogWarning("Communication with Stats mod could not be made. (Mod is probably not installed)", _serverConfig, true);
+                    }
+                }
+
                 ulong clientId = (ulong)message["clientId"];
                 string clientSteamId = PlayerManager.Instance.GetPlayerByClientId(clientId).SteamId.Value.ToString();
                 try {
@@ -2010,11 +2048,6 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 switch (dataName) {
-                    case Codebase.Constants.SOG:
-                    case Codebase.Constants.PAUSED:
-                        NetworkCommunication.SendData(dataName, dataStr, NetworkManager.ServerClientId, Codebase.Constants.FROM_RULESET_CLIENT_TO_ANOTHERMOD_SERVER, _serverConfig);
-                        break;
-
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
                         _serverHasResponded = true;
                         if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
@@ -2381,6 +2414,11 @@ namespace oomtm450PuckMod_Ruleset {
                     _refSignalsRedTeam = null;
                 }
 
+                if (_statsPipeClient != null) {
+                    _statsPipeClient.Close();
+                    _statsPipeClient = null;
+                }
+
                 _harmony.UnpatchSelf();
 
                 Logging.Log($"Disabled.", _serverConfig, true);
@@ -2399,8 +2437,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         /// <param name="player">Player, player that scored.</param>
         private static void SendSOGDuringGoal(Player player) {
-            NetworkCommunication.SendData(Codebase.Constants.SOG, $"{player.SteamId.Value}", PlayerFunc.Players_ClientId_SteamId.First().Key,
-                Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+            if (_statsPipeClient == null)
+                return;
+
+            _statsPipeClient.WriteString($"{Codebase.Constants.SOG};{player.SteamId.Value}");
+            if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.SOG))
+                Logging.Log($"Sent data \"{Codebase.Constants.SOG}\" to {Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER}.", _serverConfig);
         }
 
         /// <summary>
@@ -2438,6 +2480,14 @@ namespace oomtm450PuckMod_Ruleset {
 
         public static double GetDistance(double x1, double z1, double x2, double z2) {
             return Math.Sqrt(Math.Pow(Math.Abs(x1 - x2), 2) + Math.Pow(Math.Abs(z1 - z2), 2));
+        }
+
+        private static void CleanupClientIds() {
+            foreach (ulong clientId in new List<ulong>(PlayerFunc.Players_ClientId_SteamId.Keys)) {
+                Player _player = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                if (_player == null || _player.Equals(default(Player)) || !_player)
+                    PlayerFunc.Players_ClientId_SteamId.Remove(clientId);
+            }
         }
         #endregion
     }

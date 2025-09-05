@@ -5,10 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO.Pipes;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static Codebase.SystemFunc;
 
 namespace oomtm450PuckMod_Stats {
     public class Stats : IPuckMod {
@@ -16,13 +20,13 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.1.0";
+        private static readonly string MOD_VERSION = "0.1.1";
 
         /// <summary>
         /// List of string, last released versions of the mod.
         /// </summary>
         private static readonly ReadOnlyCollection<string> OLD_MOD_VERSIONS = new ReadOnlyCollection<string>(new List<string> {
-            //"0.1.0",
+            "0.1.0",
         });
 
         /// <summary>
@@ -63,6 +67,12 @@ namespace oomtm450PuckMod_Stats {
         internal static ServerConfig _serverConfig = new ServerConfig();
 
         private static bool? _rulesetModEnabled = null;
+
+        private static StreamString _pipeServer = null;
+
+        private static bool _sendSavePercDuringGoalNextFrame = false;
+
+        private static Player _sendSavePercDuringGoalNextFrame_Player = null;
 
         /// <summary>
         /// LockDictionary of ulong and string, dictionary of all players
@@ -288,8 +298,17 @@ namespace oomtm450PuckMod_Stats {
             [HarmonyPostfix]
             public static void Postfix() {
                 try {
-                    // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing || _paused)
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return;
+
+                    if (_sendSavePercDuringGoalNextFrame) {
+                        _sendSavePercDuringGoalNextFrame = false;
+                        SendSavePercDuringGoal(_sendSavePercDuringGoalNextFrame_Player.Team.Value, SendSOGDuringGoal(_sendSavePercDuringGoalNextFrame_Player));
+                    }
+
+                    // If game is not started, do not use the rest of the patch.
+                    if (PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing || _paused)
                         return;
 
                     foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys)) {
@@ -301,20 +320,18 @@ namespace oomtm450PuckMod_Stats {
 
                         //Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId}.", _serverConfig, true);
 
-                        string shotPlayerSteamId = saveCheck.ShooterSteamId;
-                        PlayerTeam shotPlayerTeam = PlayerManager.Instance.GetPlayerBySteamId(shotPlayerSteamId).Team.Value;
-                        if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastShotWasCounted[shotPlayerTeam]) {
-                            if (!_sog.TryGetValue(shotPlayerSteamId, out int _))
-                                _sog.Add(shotPlayerSteamId, 0);
+                        if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastShotWasCounted[saveCheck.ShooterTeam]) {
+                            if (!_sog.TryGetValue(saveCheck.ShooterSteamId, out int _))
+                                _sog.Add(saveCheck.ShooterSteamId, 0);
 
-                            _sog[shotPlayerSteamId] += 1;
-                            NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + shotPlayerSteamId, _sog[shotPlayerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
-                            LogSOG(shotPlayerSteamId, _sog[shotPlayerSteamId]);
+                            _sog[saveCheck.ShooterSteamId] += 1;
+                            NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+                            LogSOG(saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId]);
 
-                            _lastShotWasCounted[shotPlayerTeam] = true;
+                            _lastShotWasCounted[saveCheck.ShooterTeam] = true;
 
                             // Get other team goalie.
-                            Player goalie = Codebase.PlayerFunc.GetOtherTeamGoalie(shotPlayerTeam);
+                            Player goalie = PlayerFunc.GetOtherTeamGoalie(saveCheck.ShooterTeam);
                             if (goalie != null) {
                                 string _goaliePlayerSteamId = goalie.SteamId.Value.ToString();
                                 if (!_savePerc.TryGetValue(_goaliePlayerSteamId, out var savePercValue)) {
@@ -395,39 +412,33 @@ namespace oomtm450PuckMod_Stats {
                     return;
 
                 try {
+                    Player player = null;
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
                         PlayerBodyV2 playerBody = SystemFunc.GetPlayerBodyV2(collision.gameObject);
-                        if (!playerBody || !playerBody.Player)
+                        if (!playerBody)
                             return;
 
-                        if (_puckRaycast.PuckIsGoingToNet[playerBody.Player.Team.Value]) {
-                            if (PlayerFunc.IsGoalie(playerBody.Player)) {
-                                string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(playerBody.Player.Team.Value)];
-                                if (!string.IsNullOrEmpty(shooterSteamId)) {
-                                    _checkIfPuckWasSaved[playerBody.Player.Team.Value] = new SaveCheck {
-                                        HasToCheck = true,
-                                        ShooterSteamId = shooterSteamId,
-                                    };
-                                }
-                            }
-                            // Use else condition here to add a shot blocked stat.
-                        }
-                        return;
+                        player = playerBody.Player;
                     }
 
-                    if (!stick.Player)
+                    if (player == null)
+                        player = stick.Player;
+
+                    if (player == null || !player)
                         return;
 
-                    PlayerTeam otherTeam = TeamFunc.GetOtherTeam(stick.Player.Team.Value);
+                    PlayerTeam otherTeam = TeamFunc.GetOtherTeam(player.Team.Value);
 
-                    if (_puckRaycast.PuckIsGoingToNet[stick.Player.Team.Value]) {
-                        if (PlayerFunc.IsGoalie(stick.Player)) {
-                            string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(stick.Player.Team.Value)];
+                    if (_puckRaycast.PuckIsGoingToNet[player.Team.Value]) {
+                        if (PlayerFunc.IsGoalie(player)) {
+                            PlayerTeam shooterTeam = TeamFunc.GetOtherTeam(player.Team.Value);
+                            string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam];
                             if (!string.IsNullOrEmpty(shooterSteamId)) {
-                                _checkIfPuckWasSaved[stick.Player.Team.Value] = new SaveCheck {
+                                _checkIfPuckWasSaved[player.Team.Value] = new SaveCheck {
                                     HasToCheck = true,
                                     ShooterSteamId = shooterSteamId,
+                                    ShooterTeam = shooterTeam,
                                 };
                             }
                         }
@@ -565,6 +576,58 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                 }
 
+                Logging.Log("Opening NamedPipeServerStream for inner server mods communication.", _serverConfig, true);
+
+                NamedPipeServerStream pipeServer = new NamedPipeServerStream(Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER, PipeDirection.InOut, 1);
+
+                if (ServerFunc.IsDedicatedServer()) {
+                    Task.Run(() => {
+                        pipeServer.WaitForConnection();
+
+                        Logging.Log($"Client connected to NamedPipeServerStream.", _serverConfig, true);
+                        try {
+                            // Read the request from the client. Once the client has
+                            // written to the pipe its security token will be available.
+                            _pipeServer = new StreamString(pipeServer);
+
+                            // Verify our identity to the connected client using a
+                            // string that the client anticipates.
+                            _pipeServer.WriteString(Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER_TOKEN);
+                            Logging.Log($"Sent data \"{Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER_TOKEN}\" to {Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER}.", _serverConfig);
+
+                            while (_pipeServer.IsConnected) {
+                                Thread.Sleep(200);
+                                string str = _pipeServer.ReadString();
+                                if (string.IsNullOrEmpty(str))
+                                    continue;
+
+                                try {
+                                    string[] splittedStr = str.Split(';');
+
+                                    if (!NetworkCommunication.GetDataNamesToIgnore().Contains(splittedStr[0]))
+                                        Logging.Log($"Received data {splittedStr[0]} from {Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER}. Content : {splittedStr[1]}", _serverConfig);
+
+                                    if (splittedStr[0] == Codebase.Constants.SOG) {
+                                        _sendSavePercDuringGoalNextFrame_Player = PlayerManager.Instance.GetPlayerBySteamId(splittedStr[1]);
+                                        if (_sendSavePercDuringGoalNextFrame_Player == null || !_sendSavePercDuringGoalNextFrame_Player)
+                                            Logging.LogError($"{nameof(_sendSavePercDuringGoalNextFrame_Player)} is null.", _serverConfig);
+                                        else
+                                            _sendSavePercDuringGoalNextFrame = true;
+                                    }
+                                    else if (splittedStr[0] == Codebase.Constants.PAUSED)
+                                        _paused = bool.Parse(splittedStr[1]);
+                                }
+                                catch (Exception ex) {
+                                    Logging.LogError(ex.ToString(), _serverConfig);
+                                }
+                            }
+                        }
+                        catch (Exception ex) {
+                            Logging.LogError(ex.ToString(), _serverConfig);
+                        }
+                    });
+                }
+
                 _harmonyPatched = true;
                 return true;
             }
@@ -592,7 +655,6 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
-                    NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Codebase.Constants.FROM_RULESET_CLIENT_TO_ANOTHERMOD_SERVER);
                 }
                 else {
                     EventManager.Instance.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
@@ -606,6 +668,11 @@ namespace oomtm450PuckMod_Stats {
                 _askServerForStartupDataCount = 0;
 
                 ScoreboardModifications(false);
+
+                if (_pipeServer != null) {
+                    _pipeServer.Close();
+                    _pipeServer = null;
+                }
 
                 _harmony.UnpatchSelf();
 
@@ -749,9 +816,6 @@ namespace oomtm450PuckMod_Stats {
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.CustomMessagingManager != null && !_hasRegisteredWithNamedMessageHandler) {
                 Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT_TO_SERVER}.", _serverConfig);
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER, ReceiveData);
-
-                Logging.Log($"RegisterNamedMessageHandler {Codebase.Constants.FROM_RULESET_CLIENT_TO_ANOTHERMOD_SERVER}.", _serverConfig);
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Codebase.Constants.FROM_RULESET_CLIENT_TO_ANOTHERMOD_SERVER, ReceiveDataFromRulesetClient);
 
                 _hasRegisteredWithNamedMessageHandler = true;
             }
@@ -909,38 +973,13 @@ namespace oomtm450PuckMod_Stats {
             }
         }
 
-        /// <summary>
-        /// Method that manages received data from client-server communications.
-        /// </summary>
-        /// <param name="clientId">Ulong, Id of the client that sent the data. (0 if the server sent the data)</param>
-        /// <param name="reader">FastBufferReader, stream containing the received data.</param>
-        public static void ReceiveDataFromRulesetClient(ulong clientId, FastBufferReader reader) {
-            try {
-                (string dataName, string dataStr) = NetworkCommunication.GetData(clientId, reader, _serverConfig);
-
-                switch (dataName) {
-                    case Codebase.Constants.SOG: // SERVER-SIDE : Ruleset wants to add a SOG.
-                        Player player = PlayerManager.Instance.GetPlayerBySteamId(dataStr);
-                        SendSavePercDuringGoal(player.Team.Value, SendSOGDuringGoal(player));
-                        break;
-
-                    case Codebase.Constants.PAUSED: // SERVER-SIDE : Ruleset has paused the game.
-                        _paused = bool.Parse(dataStr);
-                        break;
-                }
-            }
-            catch (Exception ex) {
-                Logging.LogError($"Error in ReceiveDataServerToServer.\n{ex}", _serverConfig);
-            }
-        }
-
         private static void ReceiveData_SOG(string playerSteamId, string dataStr) {
             int sog = int.Parse(dataStr);
 
             if (_sog.TryGetValue(playerSteamId, out int _)) {
                 _sog[playerSteamId] = sog;
                 Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-                if (currentPlayer != null && currentPlayer && !Codebase.PlayerFunc.IsGoalie(currentPlayer))
+                if (currentPlayer != null && currentPlayer && !PlayerFunc.IsGoalie(currentPlayer))
                     _sogLabels[playerSteamId].text = sog.ToString();
             }
             else
@@ -955,7 +994,7 @@ namespace oomtm450PuckMod_Stats {
             if (_savePerc.TryGetValue(playerSteamId, out var _)) {
                 _savePerc[playerSteamId] = (saves, shots);
                 Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-                if (currentPlayer != null && currentPlayer && Codebase.PlayerFunc.IsGoalie(currentPlayer))
+                if (currentPlayer != null && currentPlayer && PlayerFunc.IsGoalie(currentPlayer))
                     _sogLabels[playerSteamId].text = GetGoalieSavePerc(saves, shots);
             }
             else
@@ -1151,6 +1190,7 @@ namespace oomtm450PuckMod_Stats {
         internal class SaveCheck {
             internal bool HasToCheck { get; set; } = false;
             internal string ShooterSteamId { get; set; } = "";
+            internal PlayerTeam ShooterTeam { get; set; } = PlayerTeam.Blue;
             internal int FramesChecked { get; set; } = 0;
         }
         #endregion
