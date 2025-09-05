@@ -35,6 +35,10 @@ namespace Codebase {
                 DataNamesToIgnore.Remove(dataName);
         }
 
+        public static List<string> GetDataNamesToIgnore() {
+            return new List<string>(DataNamesToIgnore);
+        }
+
         /// <summary>
         /// Method that sends data to the listener.
         /// </summary>
