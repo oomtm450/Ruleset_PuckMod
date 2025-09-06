@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
-using static Codebase.SystemFunc;
 
 namespace oomtm450PuckMod_Stats {
     public class Stats : IPuckMod {
@@ -59,20 +58,20 @@ namespace oomtm450PuckMod_Stats {
         private const string ASK_SERVER_FOR_STARTUP_DATA = Constants.MOD_NAME + "ASKDATA";
         #endregion
 
-        #region Fields
+        #region Fields and Properties
         // Server-side.
         /// <summary>
         /// ServerConfig, config set and sent by the server.
         /// </summary>
-        internal static ServerConfig _serverConfig = new ServerConfig();
+        internal static ServerConfig ServerConfig { get; set; } = new ServerConfig();
+
+        private static RulesetCommunication _rulesetCommunication = null;
 
         private static bool? _rulesetModEnabled = null;
 
-        private static StreamString _pipeServer = null;
+        internal static bool SendSavePercDuringGoalNextFrame { get; set; } = false;
 
-        private static bool _sendSavePercDuringGoalNextFrame = false;
-
-        private static Player _sendSavePercDuringGoalNextFrame_Player = null;
+        internal static Player SendSavePercDuringGoalNextFrame_Player { get; set; } = null;
 
         /// <summary>
         /// LockDictionary of ulong and string, dictionary of all players
@@ -99,7 +98,7 @@ namespace oomtm450PuckMod_Stats {
         private static PuckRaycast _puckRaycast;
 
         // Server-side from Ruleset.
-        private static bool _paused = false; // TODO : Create a communication with Ruleset.
+        internal static bool Paused { get; set; } = false;
 
         // Client-side and server-side.
         /// <summary>
@@ -174,7 +173,7 @@ namespace oomtm450PuckMod_Stats {
                     _puckRaycast = __result.gameObject.GetComponent<PuckRaycast>();
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in PuckManager_Server_SpawnPuck_Patch Postfix().\n{ex}", _serverConfig);
+                    Logging.LogError($"Error in PuckManager_Server_SpawnPuck_Patch Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -223,7 +222,7 @@ namespace oomtm450PuckMod_Stats {
                     SendSavePercDuringGoal(team, saveWasCounted);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_GoalScored_Patch Prefix().\n{ex}", _serverConfig);
+                    Logging.LogError($"Error in GameManager_Server_GoalScored_Patch Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -271,7 +270,7 @@ namespace oomtm450PuckMod_Stats {
                         else
                             _savePerc.Remove(key);
                     }
-                    NetworkCommunication.SendDataToAll(RESET_SAVEPERC, "1", Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+                    NetworkCommunication.SendDataToAll(RESET_SAVEPERC, "1", Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
                     // Reset SOG.
                     foreach (string key in new List<string>(_sog.Keys)) {
@@ -280,12 +279,12 @@ namespace oomtm450PuckMod_Stats {
                         else
                             _sog.Remove(key);
                     }
-                    NetworkCommunication.SendDataToAll(RESET_SOG, "1", Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+                    NetworkCommunication.SendDataToAll(RESET_SOG, "1", Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
                     _sentOutOfDateMessage.Clear();
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_ResetGameState_Patch Postfix().\n{ex}", _serverConfig);
+                    Logging.LogError($"Error in GameManager_Server_ResetGameState_Patch Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -302,13 +301,13 @@ namespace oomtm450PuckMod_Stats {
                     if (!ServerFunc.IsDedicatedServer())
                         return;
 
-                    if (_sendSavePercDuringGoalNextFrame) {
-                        _sendSavePercDuringGoalNextFrame = false;
-                        SendSavePercDuringGoal(_sendSavePercDuringGoalNextFrame_Player.Team.Value, SendSOGDuringGoal(_sendSavePercDuringGoalNextFrame_Player));
+                    if (SendSavePercDuringGoalNextFrame) {
+                        SendSavePercDuringGoalNextFrame = false;
+                        SendSavePercDuringGoal(SendSavePercDuringGoalNextFrame_Player.Team.Value, SendSOGDuringGoal(SendSavePercDuringGoalNextFrame_Player));
                     }
 
                     // If game is not started, do not use the rest of the patch.
-                    if (PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing || _paused)
+                    if (PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing || Paused)
                         return;
 
                     foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys)) {
@@ -318,14 +317,14 @@ namespace oomtm450PuckMod_Stats {
                             continue;
                         }
 
-                        //Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId}.", _serverConfig, true);
+                        //Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId}.", ServerConfig, true);
 
                         if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastShotWasCounted[saveCheck.ShooterTeam]) {
                             if (!_sog.TryGetValue(saveCheck.ShooterSteamId, out int _))
                                 _sog.Add(saveCheck.ShooterSteamId, 0);
 
                             _sog[saveCheck.ShooterSteamId] += 1;
-                            NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+                            NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             LogSOG(saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId]);
 
                             _lastShotWasCounted[saveCheck.ShooterTeam] = true;
@@ -341,7 +340,7 @@ namespace oomtm450PuckMod_Stats {
 
                                 (int saves, int sog) = _savePerc[_goaliePlayerSteamId] = (++savePercValue.Saves, ++savePercValue.Shots);
 
-                                NetworkCommunication.SendDataToAll(Codebase.Constants.SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+                                NetworkCommunication.SendDataToAll(Codebase.Constants.SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                                 LogSavePerc(_goaliePlayerSteamId, saves, sog);
                             }
 
@@ -354,7 +353,7 @@ namespace oomtm450PuckMod_Stats {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Postfix().\n{ex}", _serverConfig);
+                    Logging.LogError($"Error in ServerManager_Update_Patch Postfix().\n{ex}", ServerConfig);
                 }
 
                 return;
@@ -408,7 +407,7 @@ namespace oomtm450PuckMod_Stats {
             [HarmonyPostfix]
             public static void Postfix(Puck __instance, Collision collision) {
                 // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
+                if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing)
                     return;
 
                 try {
@@ -446,7 +445,7 @@ namespace oomtm450PuckMod_Stats {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in Puck_OnCollisionEnter_Patch Postfix().\n{ex}", _serverConfig);
+                    Logging.LogError($"Error in Puck_OnCollisionEnter_Patch Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -460,7 +459,7 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix(Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
+                    if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing)
                         return;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
@@ -477,7 +476,7 @@ namespace oomtm450PuckMod_Stats {
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = stick.Player.SteamId.Value.ToString();
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in Puck_OnCollisionStay_Patch Postfix().\n{ex}", _serverConfig);
+                    Logging.LogError($"Error in Puck_OnCollisionStay_Patch Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -491,7 +490,7 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix(Puck __instance, Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
+                    if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing)
                         return;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
@@ -502,7 +501,7 @@ namespace oomtm450PuckMod_Stats {
                     _lastShotWasCounted[stick.Player.Team.Value] = false;
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}", _serverConfig);
+                    Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -530,7 +529,7 @@ namespace oomtm450PuckMod_Stats {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_SetPhase_Patch Prefix().\n{ex}", _serverConfig);
+                    Logging.LogError($"Error in GameManager_Server_SetPhase_Patch Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -546,26 +545,26 @@ namespace oomtm450PuckMod_Stats {
                 if (_harmonyPatched)
                     return true;
 
-                Logging.Log($"Enabling...", _serverConfig, true);
+                Logging.Log($"Enabling...", ServerConfig, true);
 
                 _harmony.PatchAll();
 
-                Logging.Log($"Enabled.", _serverConfig, true);
+                Logging.Log($"Enabled.", ServerConfig, true);
 
                 //NetworkCommunication.AddToNotLogList(DATA_NAMES_TO_IGNORE);
 
                 if (ServerFunc.IsDedicatedServer()) {
                     Server_RegisterNamedMessageHandler();
 
-                    Logging.Log("Setting server sided config.", _serverConfig, true);
-                    _serverConfig = ServerConfig.ReadConfig();
+                    Logging.Log("Setting server sided config.", ServerConfig, true);
+                    ServerConfig = ServerConfig.ReadConfig();
                 }
                 else {
-                    Logging.Log("Setting client sided config.", _serverConfig, true);
+                    Logging.Log("Setting client sided config.", ServerConfig, true);
                     _clientConfig = ClientConfig.ReadConfig();
                 }
 
-                Logging.Log("Subscribing to events.", _serverConfig, true);
+                Logging.Log("Subscribing to events.", ServerConfig, true);
 
                 if (ServerFunc.IsDedicatedServer()) {
                     EventManager.Instance.AddEventListener("Event_OnClientConnected", Event_OnClientConnected);
@@ -576,58 +575,17 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                 }
 
-                Logging.Log("Opening NamedPipeServerStream for inner server mods communication.", _serverConfig, true);
-
-                NamedPipeServerStream pipeServer = new NamedPipeServerStream(Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER, PipeDirection.InOut, 1);
-
                 if (ServerFunc.IsDedicatedServer()) {
-                    Task.Run(async () => {
-                        await pipeServer.WaitForConnectionAsync();
-
-                        Logging.Log($"Client connected to NamedPipeServerStream.", _serverConfig, true);
-                        try {
-                            // Read the request from the client. Once the client has
-                            // written to the pipe its security token will be available.
-                            _pipeServer = new StreamString(pipeServer);
-
-                            while (_pipeServer.IsConnected) {
-                                Thread.Sleep(200);
-                                string str = _pipeServer.ReadString();
-                                if (string.IsNullOrEmpty(str))
-                                    continue;
-
-                                try {
-                                    string[] splittedStr = str.Split(';');
-
-                                    if (!NetworkCommunication.GetDataNamesToIgnore().Contains(splittedStr[0]))
-                                        Logging.Log($"Received data {splittedStr[0]} from {Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER}. Content : {splittedStr[1]}", _serverConfig);
-
-                                    if (splittedStr[0] == Codebase.Constants.SOG) {
-                                        _sendSavePercDuringGoalNextFrame_Player = PlayerManager.Instance.GetPlayerBySteamId(splittedStr[1]);
-                                        if (_sendSavePercDuringGoalNextFrame_Player == null || !_sendSavePercDuringGoalNextFrame_Player)
-                                            Logging.LogError($"{nameof(_sendSavePercDuringGoalNextFrame_Player)} is null.", _serverConfig);
-                                        else
-                                            _sendSavePercDuringGoalNextFrame = true;
-                                    }
-                                    else if (splittedStr[0] == Codebase.Constants.PAUSED)
-                                        _paused = bool.Parse(splittedStr[1]);
-                                }
-                                catch (Exception ex) {
-                                    Logging.LogError(ex.ToString(), _serverConfig);
-                                }
-                            }
-                        }
-                        catch (Exception ex) {
-                            Logging.LogError(ex.ToString(), _serverConfig);
-                        }
-                    });
+                    GameObject rulesetCommunicationGameObj = new GameObject(Constants.MOD_NAME + "_RulesetCommunication");
+                    rulesetCommunicationGameObj.AddComponent<RulesetCommunication>();
+                    _rulesetCommunication = rulesetCommunicationGameObj.gameObject.GetComponent<RulesetCommunication>();
                 }
 
                 _harmonyPatched = true;
                 return true;
             }
             catch (Exception ex) {
-                Logging.LogError($"Failed to enable.\n{ex}", _serverConfig);
+                Logging.LogError($"Failed to enable.\n{ex}", ServerConfig);
                 return false;
             }
         }
@@ -641,9 +599,9 @@ namespace oomtm450PuckMod_Stats {
                 if (!_harmonyPatched)
                     return true;
 
-                Logging.Log($"Disabling...", _serverConfig, true);
+                Logging.Log($"Disabling...", ServerConfig, true);
 
-                Logging.Log("Unsubscribing from events.", _serverConfig, true);
+                Logging.Log("Unsubscribing from events.", ServerConfig, true);
                 //NetworkCommunication.RemoveFromNotLogList(DATA_NAMES_TO_IGNORE);
                 if (ServerFunc.IsDedicatedServer()) {
                     EventManager.Instance.RemoveEventListener("Event_OnClientConnected", Event_OnClientConnected);
@@ -664,20 +622,20 @@ namespace oomtm450PuckMod_Stats {
 
                 ScoreboardModifications(false);
 
-                if (_pipeServer != null) {
-                    _pipeServer.Close();
-                    _pipeServer = null;
+                if (_rulesetCommunication != null) {
+                    _rulesetCommunication.Close();
+                    _rulesetCommunication = null;
                 }
 
                 _harmony.UnpatchSelf();
 
-                Logging.Log($"Disabled.", _serverConfig, true);
+                Logging.Log($"Disabled.", ServerConfig, true);
 
                 _harmonyPatched = false;
                 return true;
             }
             catch (Exception ex) {
-                Logging.LogError($"Failed to disable.\n{ex}", _serverConfig);
+                Logging.LogError($"Failed to disable.\n{ex}", ServerConfig);
                 return false;
             }
         }
@@ -693,7 +651,7 @@ namespace oomtm450PuckMod_Stats {
             if (!ServerFunc.IsDedicatedServer())
                 return;
 
-            Logging.Log("Event_OnClientConnected", _serverConfig);
+            Logging.Log("Event_OnClientConnected", ServerConfig);
 
             try {
                 Server_RegisterNamedMessageHandler();
@@ -710,7 +668,7 @@ namespace oomtm450PuckMod_Stats {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnClientConnected.\n{ex}", _serverConfig);
+                Logging.LogError($"Error in Event_OnClientConnected.\n{ex}", ServerConfig);
             }
         }
 
@@ -723,7 +681,7 @@ namespace oomtm450PuckMod_Stats {
             if (!ServerFunc.IsDedicatedServer())
                 return;
 
-            Logging.Log("Event_OnClientDisconnected", _serverConfig);
+            Logging.Log("Event_OnClientDisconnected", ServerConfig);
 
             try {
                 ulong clientId = (ulong)message["clientId"];
@@ -732,7 +690,7 @@ namespace oomtm450PuckMod_Stats {
                     clientSteamId = _players_ClientId_SteamId[clientId];
                 }
                 catch {
-                    Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(_players_ClientId_SteamId)}.", _serverConfig);
+                    Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(_players_ClientId_SteamId)}.", ServerConfig);
                     return;
                 }
 
@@ -744,7 +702,7 @@ namespace oomtm450PuckMod_Stats {
                 _players_ClientId_SteamId.Remove(clientId);
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnClientDisconnected.\n{ex}", _serverConfig);
+                Logging.LogError($"Error in Event_OnClientDisconnected.\n{ex}", ServerConfig);
             }
         }
 
@@ -778,7 +736,7 @@ namespace oomtm450PuckMod_Stats {
             foreach (var kvp in players_ClientId_SteamId_ToChange) {
                 if (!string.IsNullOrEmpty(kvp.Value)) {
                     _players_ClientId_SteamId[kvp.Key] = kvp.Value;
-                    Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value}.", _serverConfig);
+                    Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value}.", ServerConfig);
                 }
             }
 
@@ -795,13 +753,13 @@ namespace oomtm450PuckMod_Stats {
                 if (!_sog.TryGetValue(playerSteamId, out int _))
                     _sog.Add(playerSteamId, 0);
 
-                NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + playerSteamId, _sog[playerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+                NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + playerSteamId, _sog[playerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
             }
             else {
                 if (!_savePerc.TryGetValue(playerSteamId, out var _))
                     _savePerc.Add(playerSteamId, (0, 0));
 
-                NetworkCommunication.SendDataToAll(Codebase.Constants.SAVEPERC + playerSteamId, _savePerc[playerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+                NetworkCommunication.SendDataToAll(Codebase.Constants.SAVEPERC + playerSteamId, _savePerc[playerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
             }
         }
         #endregion
@@ -809,7 +767,7 @@ namespace oomtm450PuckMod_Stats {
         #region Methods/Functions
         private static void Server_RegisterNamedMessageHandler() {
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.CustomMessagingManager != null && !_hasRegisteredWithNamedMessageHandler) {
-                Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT_TO_SERVER}.", _serverConfig);
+                Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT_TO_SERVER}.", ServerConfig);
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER, ReceiveData);
 
                 _hasRegisteredWithNamedMessageHandler = true;
@@ -834,7 +792,7 @@ namespace oomtm450PuckMod_Stats {
                 if (clientId == NetworkManager.ServerClientId) // If client Id is 0, we received data from the server, so we are client-sided.
                     (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, _clientConfig);
                 else
-                    (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, _serverConfig);
+                    (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, ServerConfig);
 
                 switch (dataName) {
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
@@ -853,7 +811,7 @@ namespace oomtm450PuckMod_Stats {
                         if (dataStr != "1")
                             break;
 
-                        Logging.Log($"Kicking client {clientId}.", _serverConfig);
+                        Logging.Log($"Kicking client {clientId}.", ServerConfig);
                         //NetworkManager.Singleton.DisconnectClient(clientId,
                         //$"Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
 
@@ -875,14 +833,14 @@ namespace oomtm450PuckMod_Stats {
                         if (dataStr != "1")
                             break;
 
-                        NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, clientId, Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+                        NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
                         if (_sog.Count != 0) {
                             string batchSOG = "";
                             foreach (string key in new List<string>(_sog.Keys))
                                 batchSOG += key + ';' + _sog[key].ToString() + ';';
                             batchSOG = batchSOG.Remove(batchSOG.Length - 1);
-                            NetworkCommunication.SendData(BATCH_SOG, batchSOG, clientId, Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+                            NetworkCommunication.SendData(BATCH_SOG, batchSOG, clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                         }
 
                         if (_savePerc.Count != 0) {
@@ -890,7 +848,7 @@ namespace oomtm450PuckMod_Stats {
                             foreach (string key in new List<string>(_savePerc.Keys))
                                 batchSavePerc += key + ';' + _savePerc[key].ToString() + ';';
                             batchSavePerc = batchSavePerc.Remove(batchSavePerc.Length - 1);
-                            NetworkCommunication.SendData(BATCH_SAVEPERC, batchSavePerc, clientId, Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+                            NetworkCommunication.SendData(BATCH_SAVEPERC, batchSavePerc, clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                         }
                         break;
 
@@ -964,7 +922,7 @@ namespace oomtm450PuckMod_Stats {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in ReceiveData.\n{ex}", _serverConfig);
+                Logging.LogError($"Error in ReceiveData.\n{ex}", ServerConfig);
             }
         }
 
@@ -1116,7 +1074,7 @@ namespace oomtm450PuckMod_Stats {
 
                 _sog[playerSteamId] += 1;
                 int sog = _sog[playerSteamId];
-                NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + playerSteamId, sog.ToString(), Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+                NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + playerSteamId, sog.ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                 LogSOG(playerSteamId, sog);
 
                 _lastShotWasCounted[player.Team.Value] = true;
@@ -1146,7 +1104,7 @@ namespace oomtm450PuckMod_Stats {
 
             (int saves, int sog) = _savePerc[_goaliePlayerSteamId] = saveWasCounted ? (--_savePercValue.Saves, _savePercValue.Shots) : (_savePercValue.Saves, ++_savePercValue.Shots);
 
-            NetworkCommunication.SendDataToAll(Codebase.Constants.SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+            NetworkCommunication.SendDataToAll(Codebase.Constants.SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
             LogSavePerc(_goaliePlayerSteamId, saves, sog);
         }
 
@@ -1157,7 +1115,7 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="saves">Int, number of saves.</param>
         /// <param name="sog">Int, number of shots on goal on the goalie.</param>
         private static void LogSavePerc(string goaliePlayerSteamId, int saves, int sog) {
-            Logging.Log($"playerSteamId:{goaliePlayerSteamId},saveperc:{GetGoalieSavePerc(saves, sog)},saves:{saves},sog:{sog}", _serverConfig);
+            Logging.Log($"playerSteamId:{goaliePlayerSteamId},saveperc:{GetGoalieSavePerc(saves, sog)},saves:{saves},sog:{sog}", ServerConfig);
         }
 
         /// <summary>
@@ -1166,7 +1124,7 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="sog">Int, number of shots on goal.</param>
         private static void LogSOG(string playerSteamId, int sog) {
-            Logging.Log($"playerSteamId:{playerSteamId},sog:{sog}", _serverConfig);
+            Logging.Log($"playerSteamId:{playerSteamId},sog:{sog}", ServerConfig);
         }
 
         private static string GetGoalieSavePerc(int saves, int shots) {

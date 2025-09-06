@@ -285,9 +285,14 @@ namespace oomtm450PuckMod_Ruleset {
                 if (_statsPipeClient == null)
                     return;
 
-                _statsPipeClient.WriteString($"{Codebase.Constants.PAUSED};{_paused}");
-                if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.PAUSED))
-                    Logging.Log($"Sent data \"{Codebase.Constants.PAUSED}\" to {Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER}.", _serverConfig);
+                try {
+                    _statsPipeClient.WriteString($"{Codebase.Constants.PAUSED};{_paused}");
+                    if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.PAUSED))
+                        Logging.Log($"Sent data \"{Codebase.Constants.PAUSED}\" to {Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER}.", _serverConfig);
+                }
+                catch (Exception ex) {
+                    Logging.LogError(ex.ToString(), _serverConfig);
+                }
             }
         }
         #endregion
@@ -1945,25 +1950,6 @@ namespace oomtm450PuckMod_Ruleset {
                     _hasRegisteredWithNamedMessageHandler = true;
                 }
 
-                if (_statsPipeClient == null) {
-                    Task.Run(async () => {
-                        Logging.Log("Opening NamedPipeClientStream for communication with Stats mod.", _serverConfig, true);
-
-                        NamedPipeClientStream statsPipeClient =
-                            new NamedPipeClientStream(".", Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER,
-                                PipeDirection.InOut, PipeOptions.None,
-                                TokenImpersonationLevel.Impersonation);
-
-                        try {
-                            await statsPipeClient.ConnectAsync(4000);
-                            _statsPipeClient = new StreamString(statsPipeClient);
-                        }
-                        catch (TimeoutException) {
-                            Logging.LogWarning("Communication with Stats mod could not be made. (Mod is probably not installed)", _serverConfig, true);
-                        }
-                    });
-                }
-
                 ulong clientId = (ulong)message["clientId"];
                 string clientSteamId = PlayerManager.Instance.GetPlayerByClientId(clientId).SteamId.Value.ToString();
                 try {
@@ -1972,6 +1958,24 @@ namespace oomtm450PuckMod_Ruleset {
                 catch {
                     PlayerFunc.Players_ClientId_SteamId.Remove(clientId);
                     PlayerFunc.Players_ClientId_SteamId.Add(clientId, "");
+                }
+
+                if (_statsPipeClient == null) {
+                    Logging.Log("Opening NamedPipeClientStream for communication with Stats mod.", _serverConfig, true);
+
+                    NamedPipeClientStream statsPipeClient =
+                        new NamedPipeClientStream(".", Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER,
+                            PipeDirection.InOut, PipeOptions.None,
+                            TokenImpersonationLevel.Impersonation);
+
+                    try {
+                        statsPipeClient.Connect(6000);
+                        _statsPipeClient = new StreamString(statsPipeClient);
+                        Logging.Log("NamedPipeClientStream connected for communication with Stats mod.", _serverConfig, true);
+                    }
+                    catch (TimeoutException) {
+                        Logging.LogWarning("Communication with Stats mod could not be made. (Mod is probably not installed)", _serverConfig, true);
+                    }
                 }
             }
             catch (Exception ex) {
@@ -2436,9 +2440,14 @@ namespace oomtm450PuckMod_Ruleset {
             if (_statsPipeClient == null)
                 return;
 
-            _statsPipeClient.WriteString($"{Codebase.Constants.SOG};{player.SteamId.Value}");
-            if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.SOG))
-                Logging.Log($"Sent data \"{Codebase.Constants.SOG}\" to {Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER}.", _serverConfig);
+            try {
+                _statsPipeClient.WriteString($"{Codebase.Constants.SOG};{player.SteamId.Value}");
+                if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.SOG))
+                    Logging.Log($"Sent data \"{Codebase.Constants.SOG}\" to {Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER}.", _serverConfig);
+            }
+            catch (Exception ex) {
+                Logging.LogError(ex.ToString(), _serverConfig);
+            }
         }
 
         /// <summary>

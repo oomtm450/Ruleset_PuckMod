@@ -45,6 +45,7 @@
     <Compile Include="Configs\OldServerConfig.cs" />
     <Compile Include="Configs\ServerConfig.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="RulesetCommunication.cs" />
     <Compile Include="PuckRaycast.cs" />
     <Compile Include="Stats.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
