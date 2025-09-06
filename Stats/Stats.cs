@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.1.1";
+        private static readonly string MOD_VERSION = "0.1.2";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -581,19 +581,14 @@ namespace oomtm450PuckMod_Stats {
                 NamedPipeServerStream pipeServer = new NamedPipeServerStream(Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER, PipeDirection.InOut, 1);
 
                 if (ServerFunc.IsDedicatedServer()) {
-                    Task.Run(() => {
-                        pipeServer.WaitForConnection();
+                    Task.Run(async () => {
+                        await pipeServer.WaitForConnectionAsync();
 
                         Logging.Log($"Client connected to NamedPipeServerStream.", _serverConfig, true);
                         try {
                             // Read the request from the client. Once the client has
                             // written to the pipe its security token will be available.
                             _pipeServer = new StreamString(pipeServer);
-
-                            // Verify our identity to the connected client using a
-                            // string that the client anticipates.
-                            _pipeServer.WriteString(Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER_TOKEN);
-                            Logging.Log($"Sent data \"{Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER_TOKEN}\" to {Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER}.", _serverConfig);
 
                             while (_pipeServer.IsConnected) {
                                 Thread.Sleep(200);

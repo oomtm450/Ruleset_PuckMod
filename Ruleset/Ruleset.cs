@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.21.1";
+        private static readonly string MOD_VERSION = "0.21.2";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -46,6 +46,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.20.1",
             "0.20.2",
             "0.21.0",
+            "0.21.1",
         });
 
         /// <summary>
@@ -1945,27 +1946,22 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 if (_statsPipeClient == null) {
-                    Logging.Log("Opening NamedPipeClientStream for communication with Stats mod.", _serverConfig, true);
+                    Task.Run(async () => {
+                        Logging.Log("Opening NamedPipeClientStream for communication with Stats mod.", _serverConfig, true);
 
-                    NamedPipeClientStream statsPipeClient =
-                        new NamedPipeClientStream(".", Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER,
-                            PipeDirection.InOut, PipeOptions.None,
-                            TokenImpersonationLevel.Impersonation);
+                        NamedPipeClientStream statsPipeClient =
+                            new NamedPipeClientStream(".", Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER,
+                                PipeDirection.InOut, PipeOptions.None,
+                                TokenImpersonationLevel.Impersonation);
 
-                    try {
-                        statsPipeClient.Connect(4000);
-
-                        _statsPipeClient = new StreamString(statsPipeClient);
-                        // Validate the server's signature string.
-                        if (_statsPipeClient.ReadString() != Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER_TOKEN) {
-                            Logging.LogError("Communication with Stats mod could not be verified.", _serverConfig);
-                            _statsPipeClient.Close();
-                            _statsPipeClient = null;
+                        try {
+                            await statsPipeClient.ConnectAsync(4000);
+                            _statsPipeClient = new StreamString(statsPipeClient);
                         }
-                    }
-                    catch (TimeoutException) {
-                        Logging.LogWarning("Communication with Stats mod could not be made. (Mod is probably not installed)", _serverConfig, true);
-                    }
+                        catch (TimeoutException) {
+                            Logging.LogWarning("Communication with Stats mod could not be made. (Mod is probably not installed)", _serverConfig, true);
+                        }
+                    });
                 }
 
                 ulong clientId = (ulong)message["clientId"];
