@@ -1939,7 +1939,7 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log("Event_OnClientConnected", _serverConfig);
 
             try {
-                if (NetworkManager.Singleton != null && !_hasRegisteredWithNamedMessageHandler) {
+                if (NetworkManager.Singleton != null && NetworkManager.Singleton.CustomMessagingManager != null && !_hasRegisteredWithNamedMessageHandler) {
                     Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT_TO_SERVER}.", _serverConfig);
                     NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER, ReceiveData);
                     _hasRegisteredWithNamedMessageHandler = true;
