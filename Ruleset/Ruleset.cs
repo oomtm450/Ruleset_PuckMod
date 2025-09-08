@@ -369,18 +369,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // High stick logic.
                     Puck puck = PuckManager.Instance.GetPuck();
                     if (puck) {
-                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && puck.Rigidbody.transform.position.y > _serverConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
-                            _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
-
-                            highStickTimer.Change(_serverConfig.HighStick.MaxMilliseconds, Timeout.Infinite);
-                            if (!IsHighStick(stick.Player.Team.Value)) {
-                                _isHighStickActive[stick.Player.Team.Value] = true;
-                                _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
-                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
-                                SendChat(Rule.HighStick, stick.Player.Team.Value, false);
-                            }
-                        }
-                        else if (puck.IsGrounded) {
+                        if (puck.IsGrounded) {
                             if (IsHighStick(stick.Player.Team.Value)) {
                                 _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
 
@@ -514,6 +503,8 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!stick)
                         return;
 
+                    Puck puck = PuckManager.Instance.GetPuck();
+
                     _puckZoneLastTouched = _puckZone;
 
                     string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
@@ -532,7 +523,6 @@ namespace oomtm450PuckMod_Ruleset {
                             ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
                         _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
 
-                        Puck puck = PuckManager.Instance.GetPuck();
                         if (puck)
                             _puckLastStateBeforeCall[Rule.GoalieInt] = _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
                     }
@@ -553,6 +543,20 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                     else
                         _isIcingPossible[stick.Player.Team.Value] = new IcingObject();
+
+                    if (puck) {
+                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && puck.Rigidbody.transform.position.y > _serverConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
+                            _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
+
+                            highStickTimer.Change(_serverConfig.HighStick.MaxMilliseconds, Timeout.Infinite);
+                            if (!IsHighStick(stick.Player.Team.Value)) {
+                                _isHighStickActive[stick.Player.Team.Value] = true;
+                                _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
+                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+                                SendChat(Rule.HighStick, stick.Player.Team.Value, false);
+                            }
+                        }
+                    }
                 }
                 catch (Exception ex)  {
                     Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}", _serverConfig);
