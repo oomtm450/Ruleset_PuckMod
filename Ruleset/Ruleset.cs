@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly string MOD_VERSION = "0.21.2";
 
         /// <summary>
-        /// List of string, last released versions of the mod.
+        /// ReadOnlyCollection of string, last released versions of the mod.
         /// </summary>
         private static readonly ReadOnlyCollection<string> OLD_MOD_VERSIONS = new ReadOnlyCollection<string>(new List<string> {
             "0.16.0",
@@ -1419,7 +1419,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                     else if (_addServerModVersionOutOfDateMessage) {
                         _addServerModVersionOutOfDateMessage = false;
-                        UIChat.Instance.AddChatMessage($"{player.Username.Value} : Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
+                        UIChat.Instance.AddChatMessage($"Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
                     }
                 }
                 catch (Exception ex) {
@@ -1885,9 +1885,14 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
         public static void Event_Client_OnClientStopped(Dictionary<string, object> message) {
+            if (NetworkManager.Singleton == null || ServerFunc.IsDedicatedServer())
+                return;
+
             //Logging.Log("Event_Client_OnClientStopped", _clientConfig);
 
             try {
+                _serverConfig = new ServerConfig();
+
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
 

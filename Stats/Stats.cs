@@ -383,7 +383,7 @@ namespace oomtm450PuckMod_Stats {
                     }
                     else if (_addServerModVersionOutOfDateMessage) {
                         _addServerModVersionOutOfDateMessage = false;
-                        UIChat.Instance.AddChatMessage($"{player.Username.Value} : Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
+                        UIChat.Instance.AddChatMessage($"Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
                     }
 
                     ScoreboardModifications(true);
@@ -721,9 +721,14 @@ namespace oomtm450PuckMod_Stats {
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
         public static void Event_Client_OnClientStopped(Dictionary<string, object> message) {
+            if (NetworkManager.Singleton == null || ServerFunc.IsDedicatedServer())
+                return;
+
             //Logging.Log("Event_Client_OnClientStopped", _clientConfig);
 
             try {
+                ServerConfig = new ServerConfig();
+
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
 
