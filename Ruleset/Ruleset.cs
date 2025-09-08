@@ -953,9 +953,6 @@ namespace oomtm450PuckMod_Ruleset {
                                 }
                             }
                         }
-
-                        if (message.StartsWith(@"/help"))
-                            UIChat.Instance.AddChatMessage("Ruleset commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n* <b>/warmupmusic</b> - Disable or enable warmup music (false-true)\n");
                     }
                 }
                 catch (Exception ex) {
@@ -963,6 +960,25 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 return true;
+            }
+
+            [HarmonyPostfix]
+            public static void Postfix(string message, bool useTeamChat) {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return;
+
+                    if (message.StartsWith(@"/")) {
+                        message = message.ToLowerInvariant();
+
+                        if (message.StartsWith(@"/help"))
+                            UIChat.Instance.AddChatMessage("Ruleset commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n* <b>/warmupmusic</b> - Disable or enable warmup music (false-true)\n");
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in UIChat_Client_SendClientChatMessage_Patch Postfix().\n{ex}", _serverConfig);
+                }
             }
         }
 
