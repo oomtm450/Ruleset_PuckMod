@@ -5,10 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.IO.Pipes;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -65,13 +62,11 @@ namespace oomtm450PuckMod_Stats {
         /// </summary>
         internal static ServerConfig ServerConfig { get; set; } = new ServerConfig();
 
-        private static RulesetCommunication _rulesetCommunication = null;
-
         private static bool? _rulesetModEnabled = null;
 
-        internal static bool SendSavePercDuringGoalNextFrame { get; set; } = false;
+        private static bool _sendSavePercDuringGoalNextFrame = false;
 
-        internal static Player SendSavePercDuringGoalNextFrame_Player { get; set; } = null;
+        private static Player _sendSavePercDuringGoalNextFrame_Player = null;
 
         /// <summary>
         /// LockDictionary of ulong and string, dictionary of all players
@@ -98,7 +93,7 @@ namespace oomtm450PuckMod_Stats {
         private static PuckRaycast _puckRaycast;
 
         // Server-side from Ruleset.
-        internal static bool Paused { get; set; } = false;
+        private static bool _paused = false;
 
         // Client-side and server-side.
         /// <summary>
@@ -301,13 +296,13 @@ namespace oomtm450PuckMod_Stats {
                     if (!ServerFunc.IsDedicatedServer())
                         return;
 
-                    if (SendSavePercDuringGoalNextFrame) {
-                        SendSavePercDuringGoalNextFrame = false;
-                        SendSavePercDuringGoal(SendSavePercDuringGoalNextFrame_Player.Team.Value, SendSOGDuringGoal(SendSavePercDuringGoalNextFrame_Player));
+                    if (_sendSavePercDuringGoalNextFrame) {
+                        _sendSavePercDuringGoalNextFrame = false;
+                        SendSavePercDuringGoal(_sendSavePercDuringGoalNextFrame_Player.Team.Value, SendSOGDuringGoal(_sendSavePercDuringGoalNextFrame_Player));
                     }
 
                     // If game is not started, do not use the rest of the patch.
-                    if (PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing || Paused)
+                    if (PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing || _paused)
                         return;
 
                     foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys)) {
@@ -407,7 +402,7 @@ namespace oomtm450PuckMod_Stats {
             [HarmonyPostfix]
             public static void Postfix(Puck __instance, Collision collision) {
                 // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing)
+                if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
                     return;
 
                 try {
@@ -459,7 +454,7 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix(Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing)
+                    if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
                         return;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
@@ -490,7 +485,7 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix(Puck __instance, Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing)
+                    if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
                         return;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
@@ -570,15 +565,10 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.Instance.AddEventListener("Event_OnClientConnected", Event_OnClientConnected);
                     EventManager.Instance.AddEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
+                    EventManager.Instance.AddEventListener(Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER, Event_OnRulesetTrigger);
                 }
                 else {
                     EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
-                }
-
-                if (ServerFunc.IsDedicatedServer()) {
-                    GameObject rulesetCommunicationGameObj = new GameObject(Constants.MOD_NAME + "_RulesetCommunication");
-                    rulesetCommunicationGameObj.AddComponent<RulesetCommunication>();
-                    _rulesetCommunication = rulesetCommunicationGameObj.gameObject.GetComponent<RulesetCommunication>();
                 }
 
                 _harmonyPatched = true;
@@ -607,6 +597,7 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.Instance.RemoveEventListener("Event_OnClientConnected", Event_OnClientConnected);
                     EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
+                    EventManager.Instance.RemoveEventListener(Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER, Event_OnRulesetTrigger);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
@@ -616,16 +607,11 @@ namespace oomtm450PuckMod_Stats {
                 }
 
                 _hasRegisteredWithNamedMessageHandler = false;
-                _rulesetModEnabled = false;
+                _rulesetModEnabled = null;
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
 
                 ScoreboardModifications(false);
-
-                if (_rulesetCommunication != null) {
-                    _rulesetCommunication.Close();
-                    _rulesetCommunication = null;
-                }
 
                 _harmony.UnpatchSelf();
 
@@ -642,6 +628,29 @@ namespace oomtm450PuckMod_Stats {
         #endregion
 
         #region Events
+        public static void Event_OnRulesetTrigger(Dictionary<string, object> message) {
+            try {
+                foreach (KeyValuePair<string, object> kvp in message) {
+                    string value = (string)kvp.Value;
+                    if (!NetworkCommunication.GetDataNamesToIgnore().Contains(kvp.Key))
+                        Logging.Log($"Received data {kvp.Key} from {Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER}. Content : {value}", ServerConfig);
+
+                    if (kvp.Key == Codebase.Constants.SOG) {
+                        _sendSavePercDuringGoalNextFrame_Player = PlayerManager.Instance.GetPlayerBySteamId(value);
+                        if (_sendSavePercDuringGoalNextFrame_Player == null || !Stats._sendSavePercDuringGoalNextFrame_Player)
+                            Logging.LogError($"{nameof(Stats._sendSavePercDuringGoalNextFrame_Player)} is null.", Stats.ServerConfig);
+                        else
+                            _sendSavePercDuringGoalNextFrame = true;
+                    }
+                    else if (kvp.Key == Codebase.Constants.PAUSED)
+                        _paused = bool.Parse(value);
+                }
+            }
+            catch (Exception ex) {
+                Logging.LogError(ex.ToString(), Stats.ServerConfig);
+            }
+        }
+
         /// <summary>
         /// Method called when a client has connected (joined a server) on the server-side.
         /// Used to set server-sided stuff after the game has loaded.
@@ -775,7 +784,7 @@ namespace oomtm450PuckMod_Stats {
         }
 
         private static void CheckForRulesetMod() {
-            if (ModManagerV2.Instance == null || ModManagerV2.Instance.EnabledModIds == null)
+            if (ModManagerV2.Instance == null || ModManagerV2.Instance.EnabledModIds == null || _rulesetModEnabled != null)
                 return;
 
             _rulesetModEnabled = ModManagerV2.Instance.EnabledModIds.Contains(3501446576) || ModManagerV2.Instance.EnabledModIds.Contains(3500559233);
@@ -811,7 +820,6 @@ namespace oomtm450PuckMod_Stats {
                         if (dataStr != "1")
                             break;
 
-                        Logging.Log($"Kicking client {clientId}.", ServerConfig);
                         //NetworkManager.Singleton.DisconnectClient(clientId,
                         //$"Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
 
@@ -824,6 +832,8 @@ namespace oomtm450PuckMod_Stats {
                         if (lastCheckTime + TimeSpan.FromSeconds(900) < utcNow) {
                             if (string.IsNullOrEmpty(PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value.ToString()))
                                 break;
+
+                            Logging.Log($"Warning client {clientId} mod out of date.", ServerConfig);
                             UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
                             _sentOutOfDateMessage[clientId] = utcNow;
                         }

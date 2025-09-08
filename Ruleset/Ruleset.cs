@@ -88,11 +88,6 @@ namespace oomtm450PuckMod_Ruleset {
         internal static ClientConfig _clientConfig = new ClientConfig();
 
         /// <summary>
-        /// StreamString, pipe client for communication with Stats mod.
-        /// </summary>
-        private static StreamString _statsPipeClient = null;
-
-        /// <summary>
         /// LockList of PlayerIcing, positions of the players on the ice for icing logic.
         /// </summary>
         private static readonly LockList<PlayerIcing> _dictPlayersPositionsForIcing = new LockList<PlayerIcing>();
@@ -282,11 +277,8 @@ namespace oomtm450PuckMod_Ruleset {
             set {
                 _paused = value;
 
-                if (_statsPipeClient == null)
-                    return;
-
                 try {
-                    _statsPipeClient.WriteString($"{Codebase.Constants.PAUSED};{_paused}");
+                    EventManager.Instance.TriggerEvent(Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER, new Dictionary<string, object>{ { Codebase.Constants.PAUSED, _paused.ToString() } });
                     if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.PAUSED))
                         Logging.Log($"Sent data \"{Codebase.Constants.PAUSED}\" to {Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER}.", _serverConfig);
                 }
@@ -1959,24 +1951,6 @@ namespace oomtm450PuckMod_Ruleset {
                     PlayerFunc.Players_ClientId_SteamId.Remove(clientId);
                     PlayerFunc.Players_ClientId_SteamId.Add(clientId, "");
                 }
-
-                if (_statsPipeClient == null) {
-                    Logging.Log("Opening NamedPipeClientStream for communication with Stats mod.", _serverConfig, true);
-
-                    NamedPipeClientStream statsPipeClient =
-                        new NamedPipeClientStream(".", Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER,
-                            PipeDirection.InOut, PipeOptions.None,
-                            TokenImpersonationLevel.Impersonation);
-
-                    try {
-                        statsPipeClient.Connect(6000);
-                        _statsPipeClient = new StreamString(statsPipeClient);
-                        Logging.Log("NamedPipeClientStream connected for communication with Stats mod.", _serverConfig, true);
-                    }
-                    catch (TimeoutException) {
-                        Logging.LogWarning("Communication with Stats mod could not be made. (Mod is probably not installed)", _serverConfig, true);
-                    }
-                }
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_OnClientConnected.\n{ex}", _serverConfig);
@@ -2214,10 +2188,9 @@ namespace oomtm450PuckMod_Ruleset {
                         if (dataStr != "1")
                             break;
 
-                        Logging.Log($"Kicking client {clientId}.", _serverConfig);
                         //NetworkManager.Singleton.DisconnectClient(clientId,
-                            //$"Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
-                        
+                        //$"Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
+
                         if (!_sentOutOfDateMessage.TryGetValue(clientId, out DateTime lastCheckTime)) {
                             lastCheckTime = DateTime.MinValue;
                             _sentOutOfDateMessage.Add(clientId, lastCheckTime);
@@ -2227,6 +2200,8 @@ namespace oomtm450PuckMod_Ruleset {
                         if (lastCheckTime + TimeSpan.FromSeconds(900) < utcNow) {
                             if (string.IsNullOrEmpty(PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value.ToString()))
                                 break;
+
+                            Logging.Log($"Warning client {clientId} mod out of date.", _serverConfig);
                             UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
                             _sentOutOfDateMessage[clientId] = utcNow;
                         }
@@ -2414,11 +2389,6 @@ namespace oomtm450PuckMod_Ruleset {
                     _refSignalsRedTeam = null;
                 }
 
-                if (_statsPipeClient != null) {
-                    _statsPipeClient.Close();
-                    _statsPipeClient = null;
-                }
-
                 _harmony.UnpatchSelf();
 
                 Logging.Log($"Disabled.", _serverConfig, true);
@@ -2437,11 +2407,8 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         /// <param name="player">Player, player that scored.</param>
         private static void SendSOGDuringGoal(Player player) {
-            if (_statsPipeClient == null)
-                return;
-
             try {
-                _statsPipeClient.WriteString($"{Codebase.Constants.SOG};{player.SteamId.Value}");
+                EventManager.Instance.TriggerEvent(Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER, new Dictionary<string, object> { { Codebase.Constants.SOG, player.SteamId.Value.ToString() } });
                 if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.SOG))
                     Logging.Log($"Sent data \"{Codebase.Constants.SOG}\" to {Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER}.", _serverConfig);
             }
