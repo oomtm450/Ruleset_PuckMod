@@ -92,8 +92,15 @@ namespace oomtm450PuckMod_Stats {
 
         private static PuckRaycast _puckRaycast;
 
-        // Server-side from Ruleset.
+        /// <summary>
+        /// Bool, true if there's a pause in play.
+        /// </summary>
         private static bool _paused = false;
+
+        /// <summary>
+        /// Bool, true if the mod's logic has to be runned.
+        /// </summary>
+        private static bool _logic = true;
 
         // Client-side and server-side.
         /// <summary>
@@ -182,7 +189,7 @@ namespace oomtm450PuckMod_Stats {
             public static bool Prefix(PlayerTeam team, ref Player lastPlayer, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || RulesetModEnabled())
+                    if (!ServerFunc.IsDedicatedServer() || RulesetModEnabled() || !_logic)
                         return true;
 
                     if (goalPlayer != null) {
@@ -293,7 +300,7 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix() {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer())
+                    if (!ServerFunc.IsDedicatedServer() || !_logic)
                         return;
 
                     if (_sendSavePercDuringGoalNextFrame) {
@@ -402,7 +409,7 @@ namespace oomtm450PuckMod_Stats {
             [HarmonyPostfix]
             public static void Postfix(Puck __instance, Collision collision) {
                 // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
+                if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
                     return;
 
                 try {
@@ -454,7 +461,7 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix(Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
+                    if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
                         return;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
@@ -485,7 +492,7 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix(Puck __instance, Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing)
+                    if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
                         return;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
@@ -510,7 +517,7 @@ namespace oomtm450PuckMod_Stats {
             public static bool Prefix(GamePhase phase, ref int time) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer())
+                    if (!ServerFunc.IsDedicatedServer() || !_logic)
                         return true;
 
                     if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver) {
@@ -565,13 +572,14 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.Instance.AddEventListener("Event_OnClientConnected", Event_OnClientConnected);
                     EventManager.Instance.AddEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
-                    EventManager.Instance.AddEventListener(Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER, Event_OnRulesetTrigger);
+                    EventManager.Instance.AddEventListener(Codebase.Constants.STATS_MOD_NAME, Event_OnStatsTrigger);
                 }
                 else {
                     EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                 }
 
                 _harmonyPatched = true;
+                _logic = true;
                 return true;
             }
             catch (Exception ex) {
@@ -597,7 +605,7 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.Instance.RemoveEventListener("Event_OnClientConnected", Event_OnClientConnected);
                     EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
-                    EventManager.Instance.RemoveEventListener(Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER, Event_OnRulesetTrigger);
+                    EventManager.Instance.RemoveEventListener(Codebase.Constants.STATS_MOD_NAME, Event_OnStatsTrigger);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
@@ -618,6 +626,7 @@ namespace oomtm450PuckMod_Stats {
                 Logging.Log($"Disabled.", ServerConfig, true);
 
                 _harmonyPatched = false;
+                _logic = true;
                 return true;
             }
             catch (Exception ex) {
@@ -628,26 +637,35 @@ namespace oomtm450PuckMod_Stats {
         #endregion
 
         #region Events
-        public static void Event_OnRulesetTrigger(Dictionary<string, object> message) {
+        public static void Event_OnStatsTrigger(Dictionary<string, object> message) {
             try {
                 foreach (KeyValuePair<string, object> kvp in message) {
                     string value = (string)kvp.Value;
                     if (!NetworkCommunication.GetDataNamesToIgnore().Contains(kvp.Key))
-                        Logging.Log($"Received data {kvp.Key} from {Codebase.Constants.STATS_MOD_NAMED_PIPE_SERVER}. Content : {value}", ServerConfig);
+                        Logging.Log($"Received data {kvp.Key}. Content : {value}", ServerConfig);
 
-                    if (kvp.Key == Codebase.Constants.SOG) {
-                        _sendSavePercDuringGoalNextFrame_Player = PlayerManager.Instance.GetPlayerBySteamId(value);
-                        if (_sendSavePercDuringGoalNextFrame_Player == null || !Stats._sendSavePercDuringGoalNextFrame_Player)
-                            Logging.LogError($"{nameof(Stats._sendSavePercDuringGoalNextFrame_Player)} is null.", Stats.ServerConfig);
-                        else
-                            _sendSavePercDuringGoalNextFrame = true;
+                    switch (kvp.Key) {
+                        case Codebase.Constants.SOG:
+                            _sendSavePercDuringGoalNextFrame_Player = PlayerManager.Instance.GetPlayerBySteamId(value);
+                            if (_sendSavePercDuringGoalNextFrame_Player == null || !_sendSavePercDuringGoalNextFrame_Player)
+                                Logging.LogError($"{nameof(_sendSavePercDuringGoalNextFrame_Player)} is null.", ServerConfig);
+                            else
+                                _sendSavePercDuringGoalNextFrame = true;
+
+                            break;
+
+                        case Codebase.Constants.PAUSE:
+                            _paused = bool.Parse(value);
+                            break;
+
+                        case Codebase.Constants.LOGIC:
+                            _logic = bool.Parse(value);
+                            break;
                     }
-                    else if (kvp.Key == Codebase.Constants.PAUSED)
-                        _paused = bool.Parse(value);
                 }
             }
             catch (Exception ex) {
-                Logging.LogError(ex.ToString(), Stats.ServerConfig);
+                Logging.LogError($"Error in Event_OnStatsTrigger.\n{ex}", ServerConfig);
             }
         }
 
