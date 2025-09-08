@@ -1598,7 +1598,7 @@ namespace oomtm450PuckMod_Ruleset {
                 _callHighStickNextFrame[key] = false;
         }
 
-        private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3500, int millisecondsPauseMax = 5000) {
+        private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3750, int millisecondsPauseMax = 6000) {
             if (Paused)
                 return;
 
