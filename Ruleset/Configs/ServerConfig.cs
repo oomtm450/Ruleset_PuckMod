@@ -389,7 +389,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after a push on the goalie to be considered no goal.
         /// </summary>
-        public int PushNoGoalMilliseconds { get; set; } = 3750;
+        public int PushNoGoalMilliseconds { get; set; } = 3500;
 
         /// <summary>
         /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
