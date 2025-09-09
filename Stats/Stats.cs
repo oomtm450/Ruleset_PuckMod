@@ -432,7 +432,7 @@ namespace oomtm450PuckMod_Stats {
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(player.Team.Value);
 
                     if (_puckRaycast.PuckIsGoingToNet[player.Team.Value]) {
-                        if (PlayerFunc.IsGoalie(player)) {
+                        if (PlayerFunc.IsGoalie(player) && Math.Abs(player.PlayerBody.Rigidbody.transform.position.z) < 13.5) {
                             PlayerTeam shooterTeam = TeamFunc.GetOtherTeam(player.Team.Value);
                             string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam];
                             if (!string.IsNullOrEmpty(shooterSteamId)) {
