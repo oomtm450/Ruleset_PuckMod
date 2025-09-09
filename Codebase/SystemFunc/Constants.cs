@@ -36,6 +36,11 @@
         public const string SAVEPERC = STATS_MOD_NAME + "SAVEPERC";
 
         /// <summary>
+        /// Const string, data name for blocked shots.
+        /// </summary>
+        public const string BLOCK = STATS_MOD_NAME + "BLOCK";
+
+        /// <summary>
         /// Const string, data name for pausing mods.
         /// </summary>
         public const string PAUSE = "pause";
