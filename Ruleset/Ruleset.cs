@@ -25,7 +25,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.22.0DEV2";
+        private static readonly string MOD_VERSION = "0.22.0DEV3";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -554,8 +554,9 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         _isIcingPossible[stick.Player.Team.Value] = new IcingObject();
 
+                    // High stick logic.
                     if (puck) {
-                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && puck.Rigidbody.transform.position.y > _serverConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
+                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && GetPlayerSteamIdInPossession(false) != stick.Player.SteamId.Value.ToString() && puck.Rigidbody.transform.position.y > _serverConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
                             _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
 
                             highStickTimer.Change(_serverConfig.HighStick.MaxMilliseconds, Timeout.Infinite);
@@ -1772,23 +1773,49 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Function that returns the player steam Id that has possession.
         /// </summary>
+        /// <param name="checkForChallenge">Bool, false if we only check logic without challenging puck possession from other players to determine possession.</param>
         /// <returns>String, player steam Id with the possession or an empty string if no one has the puck (or it is challenged).</returns>
-        private static string GetPlayerSteamIdInPossession() {
+        private static string GetPlayerSteamIdInPossession(bool checkForChallenge = true) {
             Dictionary<string, Stopwatch> dict;
             dict = _playersLastTimePuckPossession
-                .Where(x => x.Value.ElapsedMilliseconds < _serverConfig.MinPossessionMilliseconds && x.Value.ElapsedMilliseconds > _serverConfig.MaxTippedMilliseconds)
+                .Where(x => x.Value.ElapsedMilliseconds < _serverConfig.MinPossessionMilliseconds &&
+                    _playersCurrentPuckTouch.Keys.Any(y => y == x.Key) &&
+                    _playersCurrentPuckTouch[x.Key].ElapsedMilliseconds > _serverConfig.MaxTippedMilliseconds)
                 .ToDictionary(x => x.Key, x => x.Value);
 
-            if (dict.Count > 1) // Puck possession is challenged.
-                return "";
+            /*if (!checkForChallenge && _playersCurrentPuckTouch.Count != 0) {
+                Logging.Log($"_playersCurrentPuckTouch milliseconds : {_playersCurrentPuckTouch.First().Value.ElapsedMilliseconds}", _serverConfig, true);
+            }*/
+
+            /*if (!checkForChallenge) {
+                Logging.Log($"Number of possession found : {dict.Count}", _serverConfig, true);
+                if (_playersLastTimePuckPossession.Count != 0)
+                    Logging.Log($"Possession milliseconds : {_playersLastTimePuckPossession.First().Value.ElapsedMilliseconds}", _serverConfig, true);
+            }*/
+
+            if (dict.Count > 1) { // Puck possession is challenged.
+                if (checkForChallenge)
+                    return "";
+                else
+                    return dict.OrderBy(x => x.Value.ElapsedMilliseconds).First().Key;
+            }
 
             if (dict.Count == 1)
                 return dict.First().Key;
 
             List<string> steamIds = _playersLastTimePuckPossession
-                .Where(x => x.Value.ElapsedMilliseconds < _serverConfig.MaxPossessionMilliseconds && x.Value.ElapsedMilliseconds > _serverConfig.MaxTippedMilliseconds)
+                .Where(x => x.Value.ElapsedMilliseconds < _serverConfig.MaxPossessionMilliseconds ||
+                    (_playersCurrentPuckTouch.Keys.Any(y => y == x.Key) &&
+                    _playersCurrentPuckTouch[x.Key].ElapsedMilliseconds > _serverConfig.MaxTippedMilliseconds))
                 .OrderBy(x => x.Value.ElapsedMilliseconds)
                 .Select(x => x.Key).ToList();
+
+            /*if (!checkForChallenge && steamIds.Count != 0) {
+                Logging.Log($"Possession {steamIds.First()}.", _serverConfig, true);
+            }
+            else if (!checkForChallenge) {
+                Logging.Log($"No extra possession.", _serverConfig, true);
+            }*/
 
             if (steamIds.Count != 0)
                 return steamIds.First();

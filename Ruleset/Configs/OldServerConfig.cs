@@ -71,7 +71,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; } = 500;
+        public int MaxPossessionMilliseconds { get; } = 500; // TODO : Update for next release.
         #endregion
 
         #region Methods/Functions
