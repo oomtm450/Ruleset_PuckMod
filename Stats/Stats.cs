@@ -28,6 +28,13 @@ namespace oomtm450PuckMod_Stats {
         });
 
         /// <summary>
+        /// ReadOnlyCollection of string, collection of datanames to not log.
+        /// </summary>
+        private static readonly ReadOnlyCollection<string> DATA_NAMES_TO_IGNORE = new ReadOnlyCollection<string>(new List<string> {
+            "eventName",
+        });
+
+        /// <summary>
         /// Const string, data name for batching the SOG.
         /// </summary>
         private const string BATCH_SOG = Constants.MOD_NAME + "BATCHSOG";
@@ -628,7 +635,7 @@ namespace oomtm450PuckMod_Stats {
 
                 Logging.Log($"Enabled.", ServerConfig, true);
 
-                //NetworkCommunication.AddToNotLogList(DATA_NAMES_TO_IGNORE);
+                NetworkCommunication.AddToNotLogList(DATA_NAMES_TO_IGNORE);
 
                 if (ServerFunc.IsDedicatedServer()) {
                     Server_RegisterNamedMessageHandler();
@@ -675,7 +682,7 @@ namespace oomtm450PuckMod_Stats {
                 Logging.Log($"Disabling...", ServerConfig, true);
 
                 Logging.Log("Unsubscribing from events.", ServerConfig, true);
-                //NetworkCommunication.RemoveFromNotLogList(DATA_NAMES_TO_IGNORE);
+                NetworkCommunication.RemoveFromNotLogList(DATA_NAMES_TO_IGNORE);
                 if (ServerFunc.IsDedicatedServer()) {
                     EventManager.Instance.RemoveEventListener("Event_OnClientConnected", Event_OnClientConnected);
                     EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);

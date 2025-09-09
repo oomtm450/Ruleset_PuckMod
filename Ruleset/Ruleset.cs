@@ -51,6 +51,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// ReadOnlyCollection of string, collection of datanames to not log.
         /// </summary>
         private static readonly ReadOnlyCollection<string> DATA_NAMES_TO_IGNORE = new ReadOnlyCollection<string>(new List<string> {
+            "eventName",
             RefSignals.SHOW_SIGNAL_BLUE,
             RefSignals.SHOW_SIGNAL_RED,
             RefSignals.STOP_SIGNAL_BLUE,
