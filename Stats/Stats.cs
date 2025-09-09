@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.2.0DEV";
+        private static readonly string MOD_VERSION = "0.2.0DEV2";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -387,6 +387,7 @@ namespace oomtm450PuckMod_Stats {
                             }
 
                             _checkIfPuckWasSaved[key] = new SaveCheck();
+                            _checkIfPuckWasBlocked[key] = new BlockCheck();
                         }
                         else {
                             if (++saveCheck.FramesChecked > ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate)
@@ -495,7 +496,7 @@ namespace oomtm450PuckMod_Stats {
                         player = playerBody.Player;
                     }
 
-                    if (player == null)
+                    if (player == null || !player)
                         player = stick.Player;
 
                     if (player == null || !player)
