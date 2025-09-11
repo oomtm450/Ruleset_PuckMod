@@ -46,6 +46,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool WarmupMusic { get; set; } = true;
 
         /// <summary>
+        /// Float, scale of the 2D refs from 0.0 to 2.0 for the music.
+        /// </summary>
+        public float TwoDRefsScale { get; set; } = 1.0f;
+
+        /// <summary>
         /// String, full path for the config file.
         /// </summary>
         [JsonIgnore]

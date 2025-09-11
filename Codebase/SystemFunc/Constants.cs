@@ -11,16 +11,6 @@
         internal const string RULESET_MOD_NAME = "oomtm450_ruleset";
 
         /// <summary>
-        /// Const string, name of the stats mod pipe server.
-        /// </summary>
-        internal const string STATS_MOD_NAMED_PIPE_SERVER = "oomtm450_stats";
-
-        /// <summary>
-        /// Const string, name of the stats mod pipe server.
-        /// </summary>
-        internal const string STATS_MOD_NAMED_PIPE_SERVER_TOKEN = "ghreoidhnwu5f43h4ty78ewrqh6f";
-
-        /// <summary>
         /// Const float, radius of the puck.
         /// </summary>
         internal const float PUCK_RADIUS = 0.13f;
@@ -46,8 +36,23 @@
         public const string SAVEPERC = STATS_MOD_NAME + "SAVEPERC";
 
         /// <summary>
-        /// Const string, data name for the save percentage.
+        /// Const string, data name for blocked shots.
         /// </summary>
-        public const string PAUSED = RULESET_MOD_NAME + "PAUSED";
+        public const string BLOCK = STATS_MOD_NAME + "BLOCK";
+
+        /// <summary>
+        /// Const string, data name for passes.
+        /// </summary>
+        public const string PASS = STATS_MOD_NAME + "PASS";
+
+        /// <summary>
+        /// Const string, data name for pausing mods.
+        /// </summary>
+        public const string PAUSE = "pause";
+
+        /// <summary>
+        /// Const string, data name for enabling or disabling the logic in mods.
+        /// </summary>
+        public const string LOGIC = "logic";
     }
 }

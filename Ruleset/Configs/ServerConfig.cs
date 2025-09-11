@@ -88,7 +88,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; set; } = 500;
+        public int MaxPossessionMilliseconds { get; set; } = 750;
         #endregion
 
         #region Methods/Functions
@@ -389,7 +389,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after a push on the goalie to be considered no goal.
         /// </summary>
-        public int PushNoGoalMilliseconds { get; set; } = 3750;
+        public int PushNoGoalMilliseconds { get; set; } = 3500;
 
         /// <summary>
         /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
@@ -399,12 +399,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
-        public float CollisionForceThreshold { get; set; } = 0.972f;
+        public float CollisionForceThreshold { get; set; } = 0.971f;
 
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
-        public float GoalieRadius { get; set; } = 0.7875f;
+        public float GoalieRadius { get; set; } = 0.788f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
