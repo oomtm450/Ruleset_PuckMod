@@ -731,7 +731,7 @@ namespace oomtm450PuckMod_Stats {
                                     }
 
                                     if (_passes.TryGetValue(steamId, out int passes))
-                                        starPoints[steamId] += ((double)passes) * 3d;
+                                        starPoints[steamId] += ((double)passes) * 2d;
 
                                     const double SKATER_GOAL_MODIFIER = 50d;
                                     const double SKATER_ASSIST_MODIFIER = 25d;
