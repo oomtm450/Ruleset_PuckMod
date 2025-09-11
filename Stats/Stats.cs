@@ -9,6 +9,7 @@ using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static oomtm450PuckMod_Stats.Stats;
 
 namespace oomtm450PuckMod_Stats {
     public class Stats : IPuckMod {
@@ -124,6 +125,8 @@ namespace oomtm450PuckMod_Stats {
             { PlayerTeam.Blue, "" },
             { PlayerTeam.Red, "" },
         };
+
+        private static PlayerTeam _lastTeamOnPuckTipIncluded = PlayerTeam.Blue;
 
         private static PuckRaycast _puckRaycast;
 
@@ -588,18 +591,40 @@ namespace oomtm450PuckMod_Stats {
                     if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
                         return;
 
+                    Player player;
+
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
                         PlayerBodyV2 playerBody = SystemFunc.GetPlayerBodyV2(collision.gameObject);
                         if (!playerBody || !playerBody.Player)
                             return;
 
-                        _lastPlayerOnPuckTipIncludedSteamId[playerBody.Player.Team.Value] = playerBody.Player.SteamId.Value.ToString();
-
-                        return;
+                        player = playerBody.Player;
+                    }
+                    else {
+                        if (!stick.Player)
+                            return;
+                        player = stick.Player;
                     }
 
-                    _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = stick.Player.SteamId.Value.ToString();
+                    string playerSteamId = player.SteamId.Value.ToString();
+
+                    string lastPlayerOnPuck = _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value];
+                    if (playerSteamId != lastPlayerOnPuck) {
+                        if (_lastTeamOnPuckTipIncluded == stick.Player.Team.Value) {
+                            if (!_passes.TryGetValue(lastPlayerOnPuck, out int _))
+                                _passes.Add(lastPlayerOnPuck, 0);
+
+                            _passes[lastPlayerOnPuck] += 1;
+                            NetworkCommunication.SendDataToAll(Codebase.Constants.PASS + lastPlayerOnPuck, _passes[lastPlayerOnPuck].ToString(), Constants.FROM_SERVER_TO_CLIENT,
+                                ServerConfig);
+                            LogPass(lastPlayerOnPuck, _passes[lastPlayerOnPuck]);
+                        }
+                        else
+                            _lastTeamOnPuckTipIncluded = stick.Player.Team.Value;
+
+                        _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = playerSteamId;
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Puck_OnCollisionStay_Patch Postfix().\n{ex}", ServerConfig);
@@ -624,6 +649,7 @@ namespace oomtm450PuckMod_Stats {
                         return;
 
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = stick.Player.SteamId.Value.ToString();
+                    _lastTeamOnPuckTipIncluded = stick.Player.Team.Value;
                     _lastShotWasCounted[stick.Player.Team.Value] = false;
                 }
                 catch (Exception ex) {

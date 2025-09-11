@@ -41,6 +41,11 @@
         public const string BLOCK = STATS_MOD_NAME + "BLOCK";
 
         /// <summary>
+        /// Const string, data name for passes.
+        /// </summary>
+        public const string PASS = STATS_MOD_NAME + "PASS";
+
+        /// <summary>
         /// Const string, data name for pausing mods.
         /// </summary>
         public const string PAUSE = "pause";
