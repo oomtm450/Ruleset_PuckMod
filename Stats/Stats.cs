@@ -717,8 +717,6 @@ namespace oomtm450PuckMod_Stats {
                                     starPoints[steamId] += GOALIE_GOAL_MODIFIER * gwgModifier;
                                     starPoints[steamId] += ((double)player.Goals.Value) * GOALIE_GOAL_MODIFIER * gwgModifier;
                                     starPoints[steamId] += ((double)player.Assists.Value) * GOALIE_ASSIST_MODIFIER;
-
-                                    // TODO : Add passes.
                                 }
                                 else {
                                     if (_sog.TryGetValue(steamId, out int shots)) {
@@ -735,8 +733,6 @@ namespace oomtm450PuckMod_Stats {
                                     starPoints[steamId] += SKATER_GOAL_MODIFIER * gwgModifier;
                                     starPoints[steamId] += ((double)player.Goals.Value) * SKATER_GOAL_MODIFIER * gwgModifier;
                                     starPoints[steamId] += ((double)player.Assists.Value) * SKATER_ASSIST_MODIFIER;
-
-                                    // TODO : Add passes.
                                 }
                             }
 
