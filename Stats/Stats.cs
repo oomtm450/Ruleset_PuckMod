@@ -660,6 +660,8 @@ namespace oomtm450PuckMod_Stats {
                                     gwgSteamId = _blueGoals[__instance.GameState.Value.RedScore];
                                 else
                                     gwgSteamId = _redGoals[__instance.GameState.Value.BlueScore];
+
+                                LogGWG(gwgSteamId);
                             }
                             catch (IndexOutOfRangeException) { } // Shootout goal or something, so no GWG.
 
@@ -1399,9 +1401,8 @@ namespace oomtm450PuckMod_Stats {
         /// Method that logs the game winning goal of a player.
         /// </summary>
         /// <param name="playerSteamId">String, steam Id of the player.</param>
-        /// <param name="gwg">Int, number of game winning goal.</param>
-        private static void LogGWG(string playerSteamId, int gwg) {
-            Logging.Log($"playerSteamId:{playerSteamId},gwg:{gwg}", ServerConfig);
+        private static void LogGWG(string playerSteamId) {
+            Logging.Log($"playerSteamId:{playerSteamId},gwg:1", ServerConfig);
         }
 
         private static string GetGoalieSavePerc(int saves, int shots) {
