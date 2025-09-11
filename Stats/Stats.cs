@@ -763,6 +763,16 @@ namespace oomtm450PuckMod_Stats {
                                 _stars[3] = starPoints.ElementAt(2).Key;
                             else
                                 _stars[3] = "";
+
+                            UIChat.Instance.Server_SendSystemChatMessage("STARS OF THE MATCH");
+                            foreach (KeyValuePair<int, string> star in _stars.OrderByDescending(x => x.Key)) {
+                                
+                                if (!string.IsNullOrEmpty(star.Value)) {
+                                    Player player = PlayerManager.Instance.GetPlayerBySteamId(star.Value);
+                                    if (player != null && player)
+                                        UIChat.Instance.Server_SendSystemChatMessage($"The {(star.Key == 1 ? "first" : (star.Key == 2 ? "second" : "third"))} star... #{player.Number.Value} {player.Username.Value} !");
+                                }
+                            }
                         }
                     }
                 }
