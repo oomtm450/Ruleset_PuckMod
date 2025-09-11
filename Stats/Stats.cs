@@ -773,7 +773,7 @@ namespace oomtm450PuckMod_Stats {
                                 if (!string.IsNullOrEmpty(star.Value)) {
                                     Player player = PlayerManager.Instance.GetPlayerBySteamId(star.Value);
                                     if (player != null && player)
-                                        UIChat.Instance.Server_SendSystemChatMessage($"The {(star.Key == 1 ? "first" : (star.Key == 2 ? "second" : "third"))} star... #{player.Number.Value} {player.Username.Value} !");
+                                        UIChat.Instance.Server_SendSystemChatMessage($"The {(star.Key == 1 ? "first" : (star.Key == 2 ? "second" : "third"))} star is... #{player.Number.Value} {player.Username.Value} !");
                                 }
                             }
                         }
