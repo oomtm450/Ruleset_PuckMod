@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.2.0DEV2";
+        private static readonly string MOD_VERSION = "0.2.0DEV5";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -92,6 +92,12 @@ namespace oomtm450PuckMod_Stats {
 
         private static Player _sendSavePercDuringGoalNextFrame_Player = null;
 
+        private static readonly LockDictionary<int, string> _stars = new LockDictionary<int, string> {
+            { 1, "" },
+            { 2, "" },
+            { 3, "" },
+        };
+
         /// <summary>
         /// LockDictionary of ulong and string, dictionary of all players
         /// </summary>
@@ -151,7 +157,13 @@ namespace oomtm450PuckMod_Stats {
 
         private static readonly LockDictionary<string, (int Saves, int Shots)> _savePerc = new LockDictionary<string, (int Saves, int Shots)>();
 
-        private static readonly LockDictionary<string, int> _block = new LockDictionary<string, int>();
+        private static readonly LockDictionary<string, int> _blocks = new LockDictionary<string, int>();
+
+        private static readonly LockDictionary<string, int> _passes = new LockDictionary<string, int>();
+
+        private static readonly LockList<string> _blueGoals = new LockList<string>();
+
+        private static readonly LockList<string> _redGoals = new LockList<string>();
 
         // Client-side.
         /// <summary>
@@ -260,6 +272,23 @@ namespace oomtm450PuckMod_Stats {
 
                 return true;
             }
+
+            [HarmonyPostfix]
+            public static void Postfix(PlayerTeam team, Player lastPlayer, Player goalPlayer, Player assistPlayer, Player secondAssistPlayer, Puck puck) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return;
+
+                    if (team == PlayerTeam.Blue)
+                        _blueGoals.Add(goalPlayer.SteamId.Value.ToString());
+                    else
+                        _redGoals.Add(goalPlayer.SteamId.Value.ToString());
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in GameManager_Server_GoalScored_Patch Postfix().\n{ex}", ServerConfig);
+                }
+            }
         }
 
         /// <summary>
@@ -313,12 +342,24 @@ namespace oomtm450PuckMod_Stats {
                     }
 
                     // Reset blocked shots.
-                    foreach (string key in new List<string>(_block.Keys)) {
+                    foreach (string key in new List<string>(_blocks.Keys)) {
                         if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
-                            _block[key] = 0;
+                            _blocks[key] = 0;
                         else
-                            _block.Remove(key);
+                            _blocks.Remove(key);
                     }
+
+                    // Reset passes.
+                    foreach (string key in new List<string>(_passes.Keys)) {
+                        if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
+                            _passes[key] = 0;
+                        else
+                            _passes.Remove(key);
+                    }
+
+                    // Reset goal trackers.
+                    _blueGoals.Clear();
+                    _redGoals.Clear();
 
                     NetworkCommunication.SendDataToAll(RESET_ALL, "1", Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
@@ -406,12 +447,12 @@ namespace oomtm450PuckMod_Stats {
                         //Logging.Log($"kvp.Check {blockCheck.FramesChecked} for team {key} blocked by {blockCheck.BlockerSteamId}.", ServerConfig, true);
 
                         if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastShotWasCounted[blockCheck.ShooterTeam]) {
-                            if (!_block.TryGetValue(blockCheck.BlockerSteamId, out int _))
-                                _block.Add(blockCheck.BlockerSteamId, 0);
+                            if (!_blocks.TryGetValue(blockCheck.BlockerSteamId, out int _))
+                                _blocks.Add(blockCheck.BlockerSteamId, 0);
 
-                            _block[blockCheck.BlockerSteamId] += 1;
-                            NetworkCommunication.SendDataToAll(Codebase.Constants.BLOCK + blockCheck.BlockerSteamId, _block[blockCheck.BlockerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                            LogBlock(blockCheck.BlockerSteamId, _block[blockCheck.BlockerSteamId]);
+                            _blocks[blockCheck.BlockerSteamId] += 1;
+                            NetworkCommunication.SendDataToAll(Codebase.Constants.BLOCK + blockCheck.BlockerSteamId, _blocks[blockCheck.BlockerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                            LogBlock(blockCheck.BlockerSteamId, _blocks[blockCheck.BlockerSteamId]);
 
                             _lastShotWasCounted[blockCheck.ShooterTeam] = true;
 
@@ -597,7 +638,7 @@ namespace oomtm450PuckMod_Stats {
         [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_SetPhase))]
         public class GameManager_Server_SetPhase_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(GamePhase phase, ref int time) {
+            public static bool Prefix(GameManager __instance, GamePhase phase, ref int time) {
                 try {
                     // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || !_logic)
@@ -611,6 +652,77 @@ namespace oomtm450PuckMod_Stats {
                         // Reset player on puck.
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckTipIncludedSteamId.Keys))
                             _lastPlayerOnPuckTipIncludedSteamId[key] = "";
+
+                        if (phase == GamePhase.GameOver) {
+                            string gwgSteamId = "";
+                            try {
+                                if (__instance.GameState.Value.BlueScore > __instance.GameState.Value.RedScore)
+                                    gwgSteamId = _blueGoals[__instance.GameState.Value.RedScore];
+                                else
+                                    gwgSteamId = _redGoals[__instance.GameState.Value.BlueScore];
+                            }
+                            catch (IndexOutOfRangeException) { } // Shootout goal or something, so no GWG.
+
+                            Dictionary<string, double> starPoints = new Dictionary<string, double>();
+                            foreach (Player player in PlayerManager.Instance.GetPlayers()) {
+                                if (player == null || !player)
+                                    continue;
+
+                                string steamId = player.SteamId.Value.ToString();
+                                starPoints.Add(steamId, 0);
+
+                                double gwgModifier = gwgSteamId == player.SteamId.Value.ToString() ? 0.5d : 0;
+
+                                if (PlayerFunc.IsGoalie(player)) {
+                                    if (_savePerc.TryGetValue(steamId, out var saveValues))
+                                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots) - 0.8d) * ((double)saveValues.Saves) * 10.2d;
+
+                                    if (_sog.TryGetValue(steamId, out int shots))
+                                        starPoints[steamId] += ((double)shots) * 1d;
+
+                                    const double GOALIE_GOAL_MODIFIER = 175d;
+                                    const double GOALIE_ASSIST_MODIFIER = 25d;
+
+                                    starPoints[steamId] += GOALIE_GOAL_MODIFIER* gwgModifier;
+                                    starPoints[steamId] += ((double)player.Goals.Value) * GOALIE_GOAL_MODIFIER * gwgModifier;
+                                    starPoints[steamId] += ((double)player.Assists.Value) * GOALIE_ASSIST_MODIFIER;
+
+                                    // TODO : Add passes.
+                                }
+                                else {
+                                    if (_sog.TryGetValue(steamId, out int shots)) {
+                                        starPoints[steamId] += ((double)shots) * 5d;
+                                        starPoints[steamId] += (((double)(player.Goals.Value + 1)) / ((double)shots) - 0.4d) * ((double)shots) * 5d;
+                                    }
+
+                                    const double SKATER_GOAL_MODIFIER = 50d;
+                                    const double SKATER_ASSIST_MODIFIER = 25d;
+
+                                    starPoints[steamId] += SKATER_GOAL_MODIFIER * gwgModifier;
+                                    starPoints[steamId] += ((double)player.Goals.Value) * SKATER_GOAL_MODIFIER * gwgModifier;
+                                    starPoints[steamId] += ((double)player.Assists.Value) * SKATER_ASSIST_MODIFIER;
+
+                                    // TODO : Add passes.
+                                }
+                            }
+
+                            starPoints = starPoints.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
+
+                            if (starPoints.Count >= 1)
+                                _stars[1] = starPoints.ElementAt(0).Key;
+                            else
+                                _stars[1] = "";
+
+                            if (starPoints.Count >= 2)
+                                _stars[2] = starPoints.ElementAt(1).Key;
+                            else
+                                _stars[2] = "";
+
+                            if (starPoints.Count >= 3)
+                                _stars[3] = starPoints.ElementAt(2).Key;
+                            else
+                                _stars[3] = "";
+                        }
                     }
                 }
                 catch (Exception ex) {
@@ -618,6 +730,28 @@ namespace oomtm450PuckMod_Stats {
                 }
 
                 return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches WrapPlayerUsername event from UIChat.
+        /// </summary>
+        [HarmonyPatch(typeof(UIChat), nameof(UIChat.WrapPlayerUsername))]
+        public static class UIChat_WrapPlayerUsername_Patch {
+            public static void Postfix(Player player, ref string __result) {
+                if (player == null || !player)
+                    return;
+
+                string steamId = player.SteamId.Value.ToString();
+                if (string.IsNullOrEmpty(steamId))
+                    return;
+
+                if (_stars[1] == steamId)
+                    __result = "<color=#FFD700FF><b>★</b></color> " + __result;
+                else if (_stars[2] == steamId)
+                    __result = "<color=#C0C0C0FF><b>★</b></color> " + __result;
+                else if (_stars[3] == steamId)
+                    __result = "<color=#CD7F32FF><b>★</b></color> " + __result;
             }
         }
 

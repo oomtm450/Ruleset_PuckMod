@@ -192,7 +192,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             if (type == MUSIC) {
                 _currentAudioSource = audioSource;
-                ChangeMusicVolume();
+                ChangeMusicVolume(Ruleset._clientConfig.MusicVolume);
             }
             else {
                 _currentAudioSource = null;
@@ -219,11 +219,11 @@ namespace oomtm450PuckMod_Ruleset {
                 soundObject.GetComponent<AudioSource>().Stop();
         }
 
-        internal void ChangeMusicVolume() {
+        internal void ChangeMusicVolume(float musicVol) {
             if (_currentAudioSource == null)
                 return;
 
-            _currentAudioSource.volume = SettingsManager.Instance.GlobalVolume * Ruleset._clientConfig.MusicVolume;
+            _currentAudioSource.volume = SettingsManager.Instance.GlobalVolume * musicVol;
         }
 
         internal static string GetRandomSound(List<string> soundList, int? seed = null) {

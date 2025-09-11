@@ -120,7 +120,7 @@ namespace oomtm450PuckMod_Ruleset {
                         image.enabled = false;
 
                         RectTransform rectTransform = image.GetComponent<RectTransform>();
-                        rectTransform.sizeDelta = new Vector2(300, 300);
+                        rectTransform.sizeDelta = new Vector2(300, 300) * Ruleset._clientConfig.TwoDRefsScale;
                         rectTransform.pivot = new Vector2(0.5f, 0.5f);
 
                         if (team == PlayerTeam.Red) {
@@ -152,6 +152,13 @@ namespace oomtm450PuckMod_Ruleset {
         internal void StopAllSignals() {
             foreach (Image image in _images.Values)
                 image.enabled = false;
+        }
+
+        internal void Change2DRefsScale(float scale) {
+            foreach (Image image in _images.Values) {
+                RectTransform rectTransform = image.GetComponent<RectTransform>();
+                rectTransform.sizeDelta = new Vector2(300, 300) * scale;
+            }
         }
 
         internal static string GetSignalConstant(bool showSignal, PlayerTeam team) {

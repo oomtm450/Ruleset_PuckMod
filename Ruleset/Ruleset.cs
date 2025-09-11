@@ -25,7 +25,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.22.0DEV3";
+        private static readonly string MOD_VERSION = "0.22.0DEV4";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -925,7 +925,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                                     _clientConfig.MusicVolume = vol;
                                     _clientConfig.Save();
-                                    _sounds?.ChangeMusicVolume();
+                                    _sounds?.ChangeMusicVolume(_clientConfig.MusicVolume);
                                     UIChat.Instance.AddChatMessage($"Adjusted client music volume to {vol.ToString(CultureInfo.InvariantCulture)}");
                                 }
                             }
@@ -965,6 +965,26 @@ namespace oomtm450PuckMod_Ruleset {
                                 }
                             }
                         }
+                        else if (message.StartsWith(@"/refscale")) {
+                            message = message.Replace(@"/refscale", "").Trim();
+
+                            if (string.IsNullOrEmpty(message))
+                                UIChat.Instance.AddChatMessage($"Ref scale is currently at {_clientConfig.TwoDRefsScale.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(message, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float scale)) {
+                                    if (scale > 2f)
+                                        scale = 2f;
+                                    else if (scale < 0)
+                                        scale = 0;
+
+                                    _clientConfig.TwoDRefsScale = scale;
+                                    _clientConfig.Save();
+                                    _refSignalsBlueTeam?.Change2DRefsScale(_clientConfig.TwoDRefsScale);
+                                    _refSignalsRedTeam?.Change2DRefsScale(_clientConfig.TwoDRefsScale);
+                                    UIChat.Instance.AddChatMessage($"Adjusted client 2D refs scale to {scale.ToString(CultureInfo.InvariantCulture)}");
+                                }
+                            }
+                        }
                     }
                 }
                 catch (Exception ex) {
@@ -985,7 +1005,7 @@ namespace oomtm450PuckMod_Ruleset {
                         message = message.ToLowerInvariant();
 
                         if (message.StartsWith(@"/help"))
-                            UIChat.Instance.AddChatMessage("Ruleset commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n* <b>/warmupmusic</b> - Disable or enable warmup music (false-true)\n");
+                            UIChat.Instance.AddChatMessage("Ruleset commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n* <b>/warmupmusic</b> - Disable or enable warmup music (false-true)\n* <b>/refscale</b> - Change the scale of the 2D refs images (0.0-2.0)\n");
                     }
                 }
                 catch (Exception ex) {
@@ -1297,7 +1317,7 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPrefix]
             public static bool Prefix(PlayerTeam team, ref Player lastPlayer, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
                 try {
-                    // If this is not the server or game is not started, do not use the patch.
+                    // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || !_logic)
                         return true;
 
