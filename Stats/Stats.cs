@@ -708,10 +708,13 @@ namespace oomtm450PuckMod_Stats {
                                     if (_sog.TryGetValue(steamId, out int shots))
                                         starPoints[steamId] += ((double)shots) * 1d;
 
+                                    if (_passes.TryGetValue(steamId, out int passes))
+                                        starPoints[steamId] += ((double)passes) * 2d;
+
                                     const double GOALIE_GOAL_MODIFIER = 175d;
                                     const double GOALIE_ASSIST_MODIFIER = 25d;
 
-                                    starPoints[steamId] += GOALIE_GOAL_MODIFIER* gwgModifier;
+                                    starPoints[steamId] += GOALIE_GOAL_MODIFIER * gwgModifier;
                                     starPoints[steamId] += ((double)player.Goals.Value) * GOALIE_GOAL_MODIFIER * gwgModifier;
                                     starPoints[steamId] += ((double)player.Assists.Value) * GOALIE_ASSIST_MODIFIER;
 
@@ -722,6 +725,9 @@ namespace oomtm450PuckMod_Stats {
                                         starPoints[steamId] += ((double)shots) * 5d;
                                         starPoints[steamId] += (((double)(player.Goals.Value + 1)) / ((double)shots) - 0.4d) * ((double)shots) * 5d;
                                     }
+
+                                    if (_passes.TryGetValue(steamId, out int passes))
+                                        starPoints[steamId] += ((double)passes) * 3d;
 
                                     const double SKATER_GOAL_MODIFIER = 50d;
                                     const double SKATER_ASSIST_MODIFIER = 25d;
