@@ -534,17 +534,18 @@ namespace oomtm450PuckMod_Stats {
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
                         PlayerBodyV2 playerBody = SystemFunc.GetPlayerBodyV2(collision.gameObject);
-                        if (!playerBody)
+                        if (!playerBody || !playerBody.Player)
                             return;
 
                         player = playerBody.Player;
                     }
+                    else {
+                        if (!stick.Player)
+                            return;
 
-                    if (player == null || !player)
+                        _lastShotWasCounted[stick.Player.Team.Value] = false;
                         player = stick.Player;
-
-                    if (player == null || !player)
-                        return;
+                    }
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(player.Team.Value);
 
@@ -657,7 +658,6 @@ namespace oomtm450PuckMod_Stats {
 
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = (stick.Player.SteamId.Value.ToString(), DateTime.UtcNow);
                     _lastTeamOnPuckTipIncluded = stick.Player.Team.Value;
-                    _lastShotWasCounted[stick.Player.Team.Value] = false;
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}", ServerConfig);
@@ -685,6 +685,10 @@ namespace oomtm450PuckMod_Stats {
                         // Reset player on puck.
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckTipIncludedSteamId.Keys))
                             _lastPlayerOnPuckTipIncludedSteamId[key] = ("", DateTime.MinValue);
+
+                        // Reset shot counted states.
+                        foreach (PlayerTeam key in new List<PlayerTeam>(_lastShotWasCounted.Keys))
+                            _lastShotWasCounted[key] = true;
 
                         if (phase == GamePhase.GameOver) {
                             string gwgSteamId = "";
@@ -1184,7 +1188,7 @@ namespace oomtm450PuckMod_Stats {
                         for (int i = 0; i < splittedSavePerc.Length; i++) {
                             if (i % 2 == 0) // SteamId
                                 steamIdSavePerc = splittedSavePerc[i];
-                            else // SOG
+                            else // SavePerc
                                 ReceiveData_SavePerc(steamIdSavePerc, splittedSavePerc[i]);
                         }
                         break;
