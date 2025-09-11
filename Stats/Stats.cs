@@ -9,7 +9,6 @@ using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
-using static oomtm450PuckMod_Stats.Stats;
 
 namespace oomtm450PuckMod_Stats {
     public class Stats : IPuckMod {
@@ -17,7 +16,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.2.0DEV5";
+        private static readonly string MOD_VERSION = "0.2.0DEV9";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -121,9 +120,9 @@ namespace oomtm450PuckMod_Stats {
             { PlayerTeam.Red, true },
         };
 
-        private static readonly LockDictionary<PlayerTeam, string> _lastPlayerOnPuckTipIncludedSteamId = new LockDictionary<PlayerTeam, string> {
-            { PlayerTeam.Blue, "" },
-            { PlayerTeam.Red, "" },
+        private static readonly LockDictionary<PlayerTeam, (string SteamId, DateTime Time)> _lastPlayerOnPuckTipIncludedSteamId = new LockDictionary<PlayerTeam, (string, DateTime)> {
+            { PlayerTeam.Blue, ("", DateTime.MinValue) },
+            { PlayerTeam.Red, ("", DateTime.MinValue) },
         };
 
         private static PlayerTeam _lastTeamOnPuckTipIncluded = PlayerTeam.Blue;
@@ -239,11 +238,11 @@ namespace oomtm450PuckMod_Stats {
                         return true;
 
                     if (goalPlayer != null) {
-                        Player lastTouchPlayerTipIncluded = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
+                        Player lastTouchPlayerTipIncluded = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team].SteamId).FirstOrDefault();
                         if (lastTouchPlayerTipIncluded != null && lastTouchPlayerTipIncluded.SteamId.Value.ToString() != goalPlayer.SteamId.Value.ToString()) {
                             secondAssistPlayer = assistPlayer;
                             assistPlayer = goalPlayer;
-                            goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
+                            goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team].SteamId).FirstOrDefault();
 
                             while (assistPlayer != null && assistPlayer.SteamId.Value.ToString() == goalPlayer.SteamId.Value.ToString()) {
                                 assistPlayer = secondAssistPlayer;
@@ -258,8 +257,8 @@ namespace oomtm450PuckMod_Stats {
                     }
 
                     // If own goal, add goal attribution to last player on puck on the other team.
-                    UIChat.Instance.Server_SendSystemChatMessage($"OWN GOAL BY {PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(team)]).Username.Value}");
-                    goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
+                    UIChat.Instance.Server_SendSystemChatMessage($"OWN GOAL BY {PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(team)].SteamId).Username.Value}");
+                    goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team].SteamId).FirstOrDefault();
 
                     bool saveWasCounted = false;
                     if (goalPlayer != null) {
@@ -551,7 +550,7 @@ namespace oomtm450PuckMod_Stats {
                     if (_puckRaycast.PuckIsGoingToNet[player.Team.Value]) {
                         if (PlayerFunc.IsGoalie(player) && Math.Abs(player.PlayerBody.Rigidbody.transform.position.z) > 13.5) {
                             PlayerTeam shooterTeam = TeamFunc.GetOtherTeam(player.Team.Value);
-                            string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam];
+                            string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam].SteamId;
                             if (!string.IsNullOrEmpty(shooterSteamId)) {
                                 _checkIfPuckWasSaved[player.Team.Value] = new SaveCheck {
                                     HasToCheck = true,
@@ -562,7 +561,7 @@ namespace oomtm450PuckMod_Stats {
                         }
                         else {
                             PlayerTeam shooterTeam = TeamFunc.GetOtherTeam(player.Team.Value);
-                            string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam];
+                            string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam].SteamId;
                             if (!string.IsNullOrEmpty(shooterSteamId)) {
                                 _checkIfPuckWasBlocked[player.Team.Value] = new BlockCheck {
                                     HasToCheck = true,
@@ -604,27 +603,31 @@ namespace oomtm450PuckMod_Stats {
                     else {
                         if (!stick.Player)
                             return;
+
                         player = stick.Player;
                     }
 
                     string playerSteamId = player.SteamId.Value.ToString();
 
-                    string lastPlayerOnPuck = _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value];
+                    string lastPlayerOnPuck = _lastPlayerOnPuckTipIncludedSteamId[player.Team.Value].SteamId;
+
                     if (playerSteamId != lastPlayerOnPuck) {
-                        if (_lastTeamOnPuckTipIncluded == stick.Player.Team.Value) {
-                            if (!_passes.TryGetValue(lastPlayerOnPuck, out int _))
-                                _passes.Add(lastPlayerOnPuck, 0);
+                        if (!string.IsNullOrEmpty(lastPlayerOnPuck) && _lastTeamOnPuckTipIncluded == player.Team.Value) {
+                            if ((DateTime.UtcNow - _lastPlayerOnPuckTipIncludedSteamId[player.Team.Value].Time).TotalMilliseconds < 5000) {
+                                if (!_passes.TryGetValue(lastPlayerOnPuck, out int _))
+                                    _passes.Add(lastPlayerOnPuck, 0);
 
-                            _passes[lastPlayerOnPuck] += 1;
-                            NetworkCommunication.SendDataToAll(Codebase.Constants.PASS + lastPlayerOnPuck, _passes[lastPlayerOnPuck].ToString(), Constants.FROM_SERVER_TO_CLIENT,
-                                ServerConfig);
-                            LogPass(lastPlayerOnPuck, _passes[lastPlayerOnPuck]);
+                                _passes[lastPlayerOnPuck] += 1;
+                                NetworkCommunication.SendDataToAll(Codebase.Constants.PASS + lastPlayerOnPuck, _passes[lastPlayerOnPuck].ToString(), Constants.FROM_SERVER_TO_CLIENT,
+                                    ServerConfig);
+                                LogPass(lastPlayerOnPuck, _passes[lastPlayerOnPuck]);
+                            }
                         }
-                        else
-                            _lastTeamOnPuckTipIncluded = stick.Player.Team.Value;
 
-                        _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = playerSteamId;
+                        _lastPlayerOnPuckTipIncludedSteamId[player.Team.Value] = (playerSteamId, DateTime.UtcNow);
                     }
+
+                    _lastTeamOnPuckTipIncluded = player.Team.Value;
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Puck_OnCollisionStay_Patch Postfix().\n{ex}", ServerConfig);
@@ -644,11 +647,14 @@ namespace oomtm450PuckMod_Stats {
                     if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
                         return;
 
+                    if (!__instance.IsTouchingStick)
+                        return;
+
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick)
                         return;
 
-                    _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = stick.Player.SteamId.Value.ToString();
+                    _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = (stick.Player.SteamId.Value.ToString(), DateTime.UtcNow);
                     _lastTeamOnPuckTipIncluded = stick.Player.Team.Value;
                     _lastShotWasCounted[stick.Player.Team.Value] = false;
                 }
@@ -677,7 +683,7 @@ namespace oomtm450PuckMod_Stats {
 
                         // Reset player on puck.
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckTipIncludedSteamId.Keys))
-                            _lastPlayerOnPuckTipIncludedSteamId[key] = "";
+                            _lastPlayerOnPuckTipIncludedSteamId[key] = ("", DateTime.MinValue);
 
                         if (phase == GamePhase.GameOver) {
                             string gwgSteamId = "";
