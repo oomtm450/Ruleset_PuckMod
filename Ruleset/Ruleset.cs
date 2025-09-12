@@ -510,8 +510,8 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
                         return;
 
-                    if (!__instance.IsTouchingStick)
-                        return;
+                    //if (!__instance.IsTouchingStick)
+                        //return;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick)
@@ -1752,7 +1752,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 if (!player)
                                     continue;
 
-                                float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 275d) + 9500d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 340f);
+                                float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 275d) + 9250d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 340f);
                                 Logging.Log($"Possible time is : {maxPossibleTime}. Limit is : {maxPossibleTimeLimit}. Puck Y is : {puck.Rigidbody.transform.position.y}.", _serverConfig, true); // TODO TEST REMOVE
 
                                 if (maxPossibleTime >= maxPossibleTimeLimit) {
