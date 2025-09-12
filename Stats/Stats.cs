@@ -731,7 +731,7 @@ namespace oomtm450PuckMod_Stats {
 
                                 if (PlayerFunc.IsGoalie(player)) {
                                     if (_savePerc.TryGetValue(steamId, out var saveValues))
-                                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots) - 0.750d) * ((double)saveValues.Saves) * 10.2d;
+                                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots) - 0.725d) * ((double)saveValues.Saves) * 11d;
 
                                     if (_sog.TryGetValue(steamId, out int shots))
                                         starPoints[steamId] += ((double)shots) * 1d;
@@ -740,7 +740,7 @@ namespace oomtm450PuckMod_Stats {
                                         starPoints[steamId] += ((double)passes) * 2d;
 
                                     const double GOALIE_GOAL_MODIFIER = 175d;
-                                    const double GOALIE_ASSIST_MODIFIER = 27d;
+                                    const double GOALIE_ASSIST_MODIFIER = 30d;
 
                                     starPoints[steamId] += GOALIE_GOAL_MODIFIER * gwgModifier;
                                     starPoints[steamId] += ((double)player.Goals.Value) * GOALIE_GOAL_MODIFIER * gwgModifier;
@@ -749,17 +749,17 @@ namespace oomtm450PuckMod_Stats {
                                 else {
                                     if (_sog.TryGetValue(steamId, out int shots)) {
                                         starPoints[steamId] += ((double)shots) * 5d;
-                                        starPoints[steamId] += (((double)(player.Goals.Value + 1)) / ((double)shots) - 0.4d) * ((double)shots) * 5d;
+                                        starPoints[steamId] += (((double)(player.Goals.Value + 1)) / ((double)shots) - 0.4d) * ((double)shots) * 4d;
                                     }
 
                                     if (_passes.TryGetValue(steamId, out int passes))
                                         starPoints[steamId] += ((double)passes) * 2d;
 
                                     if (_blocks.TryGetValue(steamId, out int blocks))
-                                        starPoints[steamId] += ((double)blocks) * 5d;
+                                        starPoints[steamId] += ((double)blocks) * 6d;
 
-                                    const double SKATER_GOAL_MODIFIER = 50d;
-                                    const double SKATER_ASSIST_MODIFIER = 27d;
+                                    const double SKATER_GOAL_MODIFIER = 70d;
+                                    const double SKATER_ASSIST_MODIFIER = 30d;
 
                                     starPoints[steamId] += SKATER_GOAL_MODIFIER * gwgModifier;
                                     starPoints[steamId] += ((double)player.Goals.Value) * SKATER_GOAL_MODIFIER * gwgModifier;
