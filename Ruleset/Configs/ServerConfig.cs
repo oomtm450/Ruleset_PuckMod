@@ -285,7 +285,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, delta used to calculate the dynamic icing possible times.
         /// </summary>
-        public float Delta { get; set; } = 21f;
+        public float Delta { get; set; } = 21.5f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
