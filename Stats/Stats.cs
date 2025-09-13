@@ -709,11 +709,16 @@ namespace oomtm450PuckMod_Stats {
 
                         if (phase == GamePhase.GameOver) {
                             string gwgSteamId = "";
+                            PlayerTeam winningTeam = PlayerTeam.None;
                             try {
-                                if (__instance.GameState.Value.BlueScore > __instance.GameState.Value.RedScore)
+                                if (__instance.GameState.Value.BlueScore > __instance.GameState.Value.RedScore) {
+                                    winningTeam = PlayerTeam.Blue;
                                     gwgSteamId = _blueGoals[__instance.GameState.Value.RedScore];
-                                else
+                                }
+                                else {
+                                    winningTeam = PlayerTeam.Red;
                                     gwgSteamId = _redGoals[__instance.GameState.Value.BlueScore];
+                                }
 
                                 LogGWG(gwgSteamId);
                             }
@@ -728,10 +733,11 @@ namespace oomtm450PuckMod_Stats {
                                 starPoints.Add(steamId, 0);
 
                                 double gwgModifier = gwgSteamId == player.SteamId.Value.ToString() ? 0.5d : 0;
+                                double teamModifier = winningTeam == player.Team.Value ? 1.1d : 1d;
 
                                 if (PlayerFunc.IsGoalie(player)) {
                                     if (_savePerc.TryGetValue(steamId, out var saveValues))
-                                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots) - 0.725d) * ((double)saveValues.Saves) * 17d;
+                                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots) - 0.700d) * ((double)saveValues.Saves) * 18d;
 
                                     if (_sog.TryGetValue(steamId, out int shots))
                                         starPoints[steamId] += ((double)shots) * 1d;
@@ -765,6 +771,8 @@ namespace oomtm450PuckMod_Stats {
                                     starPoints[steamId] += ((double)player.Goals.Value) * SKATER_GOAL_MODIFIER * gwgModifier;
                                     starPoints[steamId] += ((double)player.Assists.Value) * SKATER_ASSIST_MODIFIER;
                                 }
+
+                                starPoints[steamId] *= teamModifier;
                             }
 
                             starPoints = starPoints.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
