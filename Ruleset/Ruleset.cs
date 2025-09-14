@@ -1948,7 +1948,6 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         DateTime getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(int.Parse((string)extraMessageKvp.Value));
-                        // TODO add dive mechanic compatibility to not gint.
                         if (!_dives.TryGetValue(value, out DateTime _))
                             _dives.Add(value, getUpTime);
                         else
