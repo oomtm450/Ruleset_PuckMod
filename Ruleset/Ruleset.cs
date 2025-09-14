@@ -210,6 +210,11 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, false },
         };
 
+        /// <summary>
+        /// LockDictionary of string and DateTime, steamId of a player that dived and when he's supposed to get up.
+        /// </summary>
+        private static readonly LockDictionary<string, DateTime> _dives = new LockDictionary<string, DateTime>();
+
         private static float _lastForceOnGoalie = 0;
 
         private static string _lastForceOnGoaliePlayerSteamId = "";
@@ -646,7 +651,13 @@ namespace oomtm450PuckMod_Ruleset {
 
                     PlayerTeam goalieOtherTeam = TeamFunc.GetOtherTeam(goalie.Team.Value);
 
-                    bool goalieDown = goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped;
+                    bool hasGoalieDived;
+                    if (_dives.TryGetValue(goalie.SteamId.Value.ToString(), out DateTime dateTime) && dateTime > DateTime.UtcNow)
+                        hasGoalieDived = true;
+                    else
+                        hasGoalieDived = false;
+
+                        bool goalieDown = (goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived;
                     _lastGoalieStateCollision[goalieOtherTeam] = goalieDown;
 
                     if (goalieDown || (force > _serverConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease)) {
@@ -730,6 +741,9 @@ namespace oomtm450PuckMod_Ruleset {
                         // Reset puck rule states.
                         foreach (Rule key in new List<Rule>(_puckLastStateBeforeCall.Keys))
                             _puckLastStateBeforeCall[key] = (Vector3.zero, ZoneFunc.DEFAULT_ZONE);
+
+                        // Reset dives.
+                        _dives.Clear();
 
                         ResetOffsides();
                         ResetHighSticks();
@@ -1929,7 +1943,16 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case "dive":
+                        KeyValuePair<string, object> extraMessageKvp = message.ElementAt(1);
+                        if (extraMessageKvp.Key != "duration")
+                            break;
+
+                        DateTime getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(int.Parse((string)extraMessageKvp.Value));
                         // TODO add dive mechanic compatibility to not gint.
+                        if (!_dives.TryGetValue(value, out DateTime _))
+                            _dives.Add(value, getUpTime);
+                        else
+                            _dives[value] = getUpTime;
 
                         break;
                 }
