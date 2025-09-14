@@ -1905,29 +1905,33 @@ namespace oomtm450PuckMod_Ruleset {
         #region Events
         public static void Event_OnRulesetTrigger(Dictionary<string, object> message) {
             try {
-                foreach (KeyValuePair<string, object> kvp in message) {
-                    string value = (string)kvp.Value;
-                    if (!NetworkCommunication.GetDataNamesToIgnore().Contains(kvp.Key))
-                        Logging.Log($"Received data {kvp.Key}. Content : {value}", _serverConfig);
+                KeyValuePair<string, object> messageKvp = message.ElementAt(0);
+                string value = (string)messageKvp.Value;
+                if (!NetworkCommunication.GetDataNamesToIgnore().Contains(messageKvp.Key))
+                    Logging.Log($"Received data {messageKvp.Key}. Content : {value}", _serverConfig);
 
-                    switch (kvp.Key) {
-                        case Codebase.Constants.PAUSE:
-                            _paused = bool.Parse(value);
+                switch (messageKvp.Key) {
+                    case Codebase.Constants.PAUSE:
+                        _paused = bool.Parse(value);
+                        break;
+
+                    case Codebase.Constants.LOGIC:
+                        _logic = bool.Parse(value);
+                        break;
+
+                    case Sounds.STOP_SOUND:
+                        if (_sounds == null)
                             break;
 
-                        case Codebase.Constants.LOGIC:
-                            _logic = bool.Parse(value);
-                            break;
+                        if (value == Sounds.ALL)
+                            _sounds.StopAll();
 
-                        case Sounds.STOP_SOUND:
-                            if (_sounds == null)
-                                break;
+                        break;
 
-                            if (value == Sounds.ALL)
-                                _sounds.StopAll();
+                    case "dive":
+                        // TODO add dive mechanic compatibility to not gint.
 
-                            break;
-                    }
+                        break;
                 }
             }
             catch (Exception ex) {
