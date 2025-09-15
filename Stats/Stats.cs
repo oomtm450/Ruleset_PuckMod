@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.2.0";
+        private static readonly string MOD_VERSION = "0.2.1";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -25,6 +25,7 @@ namespace oomtm450PuckMod_Stats {
             "0.1.0",
             "0.1.1",
             "0.1.2",
+            "0.2.0",
         });
 
         /// <summary>
@@ -69,6 +70,11 @@ namespace oomtm450PuckMod_Stats {
         /// </summary>
         private const string RESET_ALL = Constants.MOD_NAME + "RESETALL";
 
+        /// <summary>
+        /// Const string, data name for receiving a star player.
+        /// </summary>
+        private const string STAR = Constants.MOD_NAME + "STAR";
+
         private const string SOG_HEADER_LABEL_NAME = "SOGHeaderLabel";
 
         private const string SOG_LABEL = "SOGLabel";
@@ -91,12 +97,6 @@ namespace oomtm450PuckMod_Stats {
         private static bool _sendSavePercDuringGoalNextFrame = false;
 
         private static Player _sendSavePercDuringGoalNextFrame_Player = null;
-
-        private static readonly LockDictionary<int, string> _stars = new LockDictionary<int, string> {
-            { 1, "" },
-            { 2, "" },
-            { 3, "" },
-        };
 
         /// <summary>
         /// LockDictionary of ulong and string, dictionary of all players
@@ -166,6 +166,12 @@ namespace oomtm450PuckMod_Stats {
         private static readonly LockList<string> _blueGoals = new LockList<string>();
 
         private static readonly LockList<string> _redGoals = new LockList<string>();
+
+        private static readonly LockDictionary<int, string> _stars = new LockDictionary<int, string> {
+            { 1, "" },
+            { 2, "" },
+            { 3, "" },
+        };
 
         // Client-side.
         /// <summary>
@@ -484,7 +490,7 @@ namespace oomtm450PuckMod_Stats {
         [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.UpdatePlayer))]
         public class UIScoreboard_UpdatePlayer_Patch {
             [HarmonyPostfix]
-            public static void Postfix(Player player) {
+            public static void Postfix(UIScoreboard __instance, Player player) {
                 try {
                     // If this is the server, do not use the patch.
                     if (ServerFunc.IsDedicatedServer())
@@ -510,6 +516,18 @@ namespace oomtm450PuckMod_Stats {
                     }
 
                     ScoreboardModifications(true);
+
+                    string playerSteamId = player.SteamId.Value.ToString();
+                    if (!string.IsNullOrEmpty(playerSteamId) && _stars.Values.Contains(playerSteamId)) {
+                        Dictionary<Player, VisualElement> playerVisualElementMap =
+                            SystemFunc.GetPrivateField<Dictionary<Player, VisualElement>>(typeof(UIScoreboard), __instance, "playerVisualElementMap");
+
+                        if (playerVisualElementMap.ContainsKey(player)) {
+                            VisualElement visualElement = playerVisualElementMap[player];
+                            Label label = visualElement.Query<Label>("UsernameLabel");
+                            label.text = GetStarTag(playerSteamId) + label.text;
+                        }
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in UIScoreboard_UpdateServer_Patch Postfix().\n{ex}", _clientConfig);
@@ -533,17 +551,18 @@ namespace oomtm450PuckMod_Stats {
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
                         PlayerBodyV2 playerBody = SystemFunc.GetPlayerBodyV2(collision.gameObject);
-                        if (!playerBody)
+                        if (!playerBody || !playerBody.Player)
                             return;
 
                         player = playerBody.Player;
                     }
+                    else {
+                        if (!stick.Player)
+                            return;
 
-                    if (player == null || !player)
+                        _lastShotWasCounted[stick.Player.Team.Value] = false;
                         player = stick.Player;
-
-                    if (player == null || !player)
-                        return;
+                    }
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(player.Team.Value);
 
@@ -656,7 +675,6 @@ namespace oomtm450PuckMod_Stats {
 
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = (stick.Player.SteamId.Value.ToString(), DateTime.UtcNow);
                     _lastTeamOnPuckTipIncluded = stick.Player.Team.Value;
-                    _lastShotWasCounted[stick.Player.Team.Value] = false;
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}", ServerConfig);
@@ -685,13 +703,22 @@ namespace oomtm450PuckMod_Stats {
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckTipIncludedSteamId.Keys))
                             _lastPlayerOnPuckTipIncludedSteamId[key] = ("", DateTime.MinValue);
 
+                        // Reset shot counted states.
+                        foreach (PlayerTeam key in new List<PlayerTeam>(_lastShotWasCounted.Keys))
+                            _lastShotWasCounted[key] = true;
+
                         if (phase == GamePhase.GameOver) {
                             string gwgSteamId = "";
+                            PlayerTeam winningTeam = PlayerTeam.None;
                             try {
-                                if (__instance.GameState.Value.BlueScore > __instance.GameState.Value.RedScore)
+                                if (__instance.GameState.Value.BlueScore > __instance.GameState.Value.RedScore) {
+                                    winningTeam = PlayerTeam.Blue;
                                     gwgSteamId = _blueGoals[__instance.GameState.Value.RedScore];
-                                else
+                                }
+                                else {
+                                    winningTeam = PlayerTeam.Red;
                                     gwgSteamId = _redGoals[__instance.GameState.Value.BlueScore];
+                                }
 
                                 LogGWG(gwgSteamId);
                             }
@@ -706,10 +733,11 @@ namespace oomtm450PuckMod_Stats {
                                 starPoints.Add(steamId, 0);
 
                                 double gwgModifier = gwgSteamId == player.SteamId.Value.ToString() ? 0.5d : 0;
+                                double teamModifier = winningTeam == player.Team.Value ? 1.1d : 1d;
 
                                 if (PlayerFunc.IsGoalie(player)) {
                                     if (_savePerc.TryGetValue(steamId, out var saveValues))
-                                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots) - 0.8d) * ((double)saveValues.Saves) * 10.2d;
+                                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots) - 0.700d) * ((double)saveValues.Saves) * 18d;
 
                                     if (_sog.TryGetValue(steamId, out int shots))
                                         starPoints[steamId] += ((double)shots) * 1d;
@@ -718,7 +746,7 @@ namespace oomtm450PuckMod_Stats {
                                         starPoints[steamId] += ((double)passes) * 2d;
 
                                     const double GOALIE_GOAL_MODIFIER = 175d;
-                                    const double GOALIE_ASSIST_MODIFIER = 25d;
+                                    const double GOALIE_ASSIST_MODIFIER = 30d;
 
                                     starPoints[steamId] += GOALIE_GOAL_MODIFIER * gwgModifier;
                                     starPoints[steamId] += ((double)player.Goals.Value) * GOALIE_GOAL_MODIFIER * gwgModifier;
@@ -727,19 +755,24 @@ namespace oomtm450PuckMod_Stats {
                                 else {
                                     if (_sog.TryGetValue(steamId, out int shots)) {
                                         starPoints[steamId] += ((double)shots) * 5d;
-                                        starPoints[steamId] += (((double)(player.Goals.Value + 1)) / ((double)shots) - 0.4d) * ((double)shots) * 5d;
+                                        starPoints[steamId] += (((double)(player.Goals.Value + 1)) / ((double)shots) - 0.4d) * ((double)shots) * 4d;
                                     }
 
                                     if (_passes.TryGetValue(steamId, out int passes))
                                         starPoints[steamId] += ((double)passes) * 2d;
 
-                                    const double SKATER_GOAL_MODIFIER = 50d;
-                                    const double SKATER_ASSIST_MODIFIER = 25d;
+                                    if (_blocks.TryGetValue(steamId, out int blocks))
+                                        starPoints[steamId] += ((double)blocks) * 6d;
+
+                                    const double SKATER_GOAL_MODIFIER = 70d;
+                                    const double SKATER_ASSIST_MODIFIER = 30d;
 
                                     starPoints[steamId] += SKATER_GOAL_MODIFIER * gwgModifier;
                                     starPoints[steamId] += ((double)player.Goals.Value) * SKATER_GOAL_MODIFIER * gwgModifier;
                                     starPoints[steamId] += ((double)player.Assists.Value) * SKATER_ASSIST_MODIFIER;
                                 }
+
+                                starPoints[steamId] *= teamModifier;
                             }
 
                             starPoints = starPoints.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
@@ -758,6 +791,18 @@ namespace oomtm450PuckMod_Stats {
                                 _stars[3] = starPoints.ElementAt(2).Key;
                             else
                                 _stars[3] = "";
+
+                            UIChat.Instance.Server_SendSystemChatMessage("STARS OF THE MATCH");
+                            foreach (KeyValuePair<int, string> star in _stars.OrderByDescending(x => x.Key)) {
+                                if (!string.IsNullOrEmpty(star.Value)) {
+                                    Player player = PlayerManager.Instance.GetPlayerBySteamId(star.Value);
+                                    if (player != null && player)
+                                        UIChat.Instance.Server_SendSystemChatMessage($"The {(star.Key == 1 ? "first" : (star.Key == 2 ? "second" : "third"))} star is... #{player.Number.Value} {player.Username.Value} !");
+
+                                    NetworkCommunication.SendDataToAll(STAR, $"{star.Value};{star.Key}", Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                                    LogStar(star.Value, star.Key);
+                                }
+                            }
                         }
                     }
                 }
@@ -782,12 +827,7 @@ namespace oomtm450PuckMod_Stats {
                 if (string.IsNullOrEmpty(steamId))
                     return;
 
-                if (_stars[1] == steamId)
-                    __result = "<color=#FFD700FF><b>★</b></color> " + __result;
-                else if (_stars[2] == steamId)
-                    __result = "<color=#C0C0C0FF><b>★</b></color> " + __result;
-                else if (_stars[3] == steamId)
-                    __result = "<color=#CD7F32FF><b>★</b></color> " + __result;
+                 __result = GetStarTag(steamId) + __result;
             }
         }
 
@@ -1003,6 +1043,13 @@ namespace oomtm450PuckMod_Stats {
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
 
+                foreach (int key in new List<int>(_stars.Keys))
+                    _stars[key] = "";
+                _passes.Clear();
+                _blocks.Clear();
+                _blueGoals.Clear();
+                _redGoals.Clear();
+
                 ScoreboardModifications(false);
             }
             catch (Exception ex) {
@@ -1136,6 +1183,9 @@ namespace oomtm450PuckMod_Stats {
                             batchSavePerc = batchSavePerc.Remove(batchSavePerc.Length - 1);
                             NetworkCommunication.SendData(BATCH_SAVEPERC, batchSavePerc, clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                         }
+
+                        foreach (int key in new List<int>(_stars.Keys))
+                            NetworkCommunication.SendData(STAR, $"{_stars[key]};{key}", clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                         break;
 
                     case RESET_SOG:
@@ -1183,8 +1233,19 @@ namespace oomtm450PuckMod_Stats {
                         for (int i = 0; i < splittedSavePerc.Length; i++) {
                             if (i % 2 == 0) // SteamId
                                 steamIdSavePerc = splittedSavePerc[i];
-                            else // SOG
+                            else // SavePerc
                                 ReceiveData_SavePerc(steamIdSavePerc, splittedSavePerc[i]);
+                        }
+                        break;
+
+                    case STAR:
+                        string[] splittedStar = dataStr.Split(';');
+                        string steamIdStar = "";
+                        for (int i = 0; i < splittedStar.Length; i++) {
+                            if (i % 2 == 0) // SteamId
+                                steamIdStar = splittedStar[i];
+                            else // Star index
+                                ReceiveData_Star(steamIdStar, splittedStar[i]);
                         }
                         break;
 
@@ -1240,6 +1301,15 @@ namespace oomtm450PuckMod_Stats {
                 _savePerc.Add(playerSteamId, (saves, shots));
         }
 
+        private static void ReceiveData_Star(string playerSteamId, string dataStr) {
+            int starIndex = int.Parse(dataStr);
+
+            if (_stars.TryGetValue(starIndex, out string _))
+                _stars[starIndex] = playerSteamId;
+            else
+                _stars.Add(starIndex, playerSteamId);
+        }
+
         /// <summary>
         /// Method used to modify the scoreboard to add additional stats.
         /// </summary>
@@ -1256,7 +1326,7 @@ namespace oomtm450PuckMod_Stats {
                         VisualElement templateContainer = ve.Children().First();
 
                         Label sogHeader = new Label("SOG/s%") {
-                            name = SOG_HEADER_LABEL_NAME
+                            name = SOG_HEADER_LABEL_NAME,
                         };
                         templateContainer.Add(sogHeader);
                         sogHeader.transform.position = new Vector3(sogHeader.transform.position.x - 260, sogHeader.transform.position.y + 15, sogHeader.transform.position.z);
@@ -1439,6 +1509,15 @@ namespace oomtm450PuckMod_Stats {
             Logging.Log($"playerSteamId:{playerSteamId},gwg:1", ServerConfig);
         }
 
+        /// <summary>
+        /// Method that logs the match star of a player.
+        /// </summary>
+        /// <param name="playerSteamId">String, steam Id of the player.</param>
+        /// <param name="starIndex">Int, star number of the player (1 is first star, etc.).</param>
+        private static void LogStar(string playerSteamId, int starIndex) {
+            Logging.Log($"playerSteamId:{playerSteamId},star:{starIndex}", ServerConfig);
+        }
+
         private static string GetGoalieSavePerc(int saves, int shots) {
             if (shots == 0)
                 return "0.000";
@@ -1448,6 +1527,18 @@ namespace oomtm450PuckMod_Stats {
 
         private static bool RulesetModEnabled() {
             return _rulesetModEnabled != null && (bool)_rulesetModEnabled;
+        }
+
+        private static string GetStarTag(string playerSteamId) {
+            string star = "";
+            if (_stars[1] == playerSteamId)
+                star = "<color=#FFD700FF><b>★</b></color> ";
+            else if (_stars[2] == playerSteamId)
+                star = "<color=#C0C0C0FF><b>★</b></color> ";
+            else if (_stars[3] == playerSteamId)
+                star = "<color=#CD7F32FF><b>★</b></color> ";
+
+            return star;
         }
         #endregion
 

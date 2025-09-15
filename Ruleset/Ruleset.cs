@@ -25,7 +25,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.22.0";
+        private static readonly string MOD_VERSION = "0.22.1";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -45,6 +45,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.21.0",
             "0.21.1",
             "0.21.2",
+            "0.22.0",
         });
 
         /// <summary>
@@ -208,6 +209,11 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Blue, false },
             { PlayerTeam.Red, false },
         };
+
+        /// <summary>
+        /// LockDictionary of string and DateTime, steamId of a player that dived and when he's supposed to get up.
+        /// </summary>
+        private static readonly LockDictionary<string, DateTime> _dives = new LockDictionary<string, DateTime>();
 
         private static float _lastForceOnGoalie = 0;
 
@@ -509,8 +515,8 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
                         return;
 
-                    if (!__instance.IsTouchingStick)
-                        return;
+                    //if (!__instance.IsTouchingStick)
+                        //return;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick)
@@ -645,7 +651,13 @@ namespace oomtm450PuckMod_Ruleset {
 
                     PlayerTeam goalieOtherTeam = TeamFunc.GetOtherTeam(goalie.Team.Value);
 
-                    bool goalieDown = goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped;
+                    bool hasGoalieDived;
+                    if (_dives.TryGetValue(goalie.SteamId.Value.ToString(), out DateTime dateTime) && dateTime > DateTime.UtcNow)
+                        hasGoalieDived = true;
+                    else
+                        hasGoalieDived = false;
+
+                        bool goalieDown = (goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived;
                     _lastGoalieStateCollision[goalieOtherTeam] = goalieDown;
 
                     if (goalieDown || (force > _serverConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease)) {
@@ -729,6 +741,9 @@ namespace oomtm450PuckMod_Ruleset {
                         // Reset puck rule states.
                         foreach (Rule key in new List<Rule>(_puckLastStateBeforeCall.Keys))
                             _puckLastStateBeforeCall[key] = (Vector3.zero, ZoneFunc.DEFAULT_ZONE);
+
+                        // Reset dives.
+                        _dives.Clear();
 
                         ResetOffsides();
                         ResetHighSticks();
@@ -1751,7 +1766,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 if (!player)
                                     continue;
 
-                                float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 270d) + 9000d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 340f);
+                                float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 275d) + 9250d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 335f);
                                 Logging.Log($"Possible time is : {maxPossibleTime}. Limit is : {maxPossibleTimeLimit}. Puck Y is : {puck.Rigidbody.transform.position.y}.", _serverConfig, true); // TODO TEST REMOVE
 
                                 if (maxPossibleTime >= maxPossibleTimeLimit) {
@@ -1904,29 +1919,41 @@ namespace oomtm450PuckMod_Ruleset {
         #region Events
         public static void Event_OnRulesetTrigger(Dictionary<string, object> message) {
             try {
-                foreach (KeyValuePair<string, object> kvp in message) {
-                    string value = (string)kvp.Value;
-                    if (!NetworkCommunication.GetDataNamesToIgnore().Contains(kvp.Key))
-                        Logging.Log($"Received data {kvp.Key}. Content : {value}", _serverConfig);
+                KeyValuePair<string, object> messageKvp = message.ElementAt(0);
+                string value = (string)messageKvp.Value;
+                if (!NetworkCommunication.GetDataNamesToIgnore().Contains(messageKvp.Key))
+                    Logging.Log($"Received data {messageKvp.Key}. Content : {value}", _serverConfig);
 
-                    switch (kvp.Key) {
-                        case Codebase.Constants.PAUSE:
-                            _paused = bool.Parse(value);
+                switch (messageKvp.Key) {
+                    case Codebase.Constants.PAUSE:
+                        _paused = bool.Parse(value);
+                        break;
+
+                    case Codebase.Constants.LOGIC:
+                        _logic = bool.Parse(value);
+                        break;
+
+                    case Sounds.STOP_SOUND:
+                        if (_sounds == null)
                             break;
 
-                        case Codebase.Constants.LOGIC:
-                            _logic = bool.Parse(value);
+                        if (value == Sounds.ALL)
+                            _sounds.StopAll();
+
+                        break;
+
+                    case "dive":
+                        KeyValuePair<string, object> extraMessageKvp = message.ElementAt(1);
+                        if (extraMessageKvp.Key != "duration")
                             break;
 
-                        case Sounds.STOP_SOUND:
-                            if (_sounds == null)
-                                break;
+                        DateTime getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(int.Parse((string)extraMessageKvp.Value));
+                        if (!_dives.TryGetValue(value, out DateTime _))
+                            _dives.Add(value, getUpTime);
+                        else
+                            _dives[value] = getUpTime;
 
-                            if (value == Sounds.ALL)
-                                _sounds.StopAll();
-
-                            break;
-                    }
+                        break;
                 }
             }
             catch (Exception ex) {
