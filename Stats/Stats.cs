@@ -67,6 +67,16 @@ namespace oomtm450PuckMod_Stats {
         private const string RESET_BLOCK = Constants.MOD_NAME + "RESETBLOCK";
 
         /// <summary>
+        /// Const string, data name for batching the passes.
+        /// </summary>
+        private const string BATCH_PASSES = Constants.MOD_NAME + "BATCHPASS";
+
+        /// <summary>
+        /// Const string, data name for resetting the passes.
+        /// </summary>
+        private const string RESET_PASSES = Constants.MOD_NAME + "RESETPASS";
+
+        /// <summary>
         /// Const string, data name for resetting all stats.
         /// </summary>
         private const string RESET_ALL = Constants.MOD_NAME + "RESETALL";
