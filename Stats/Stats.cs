@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace oomtm450PuckMod_Stats {
@@ -716,9 +717,7 @@ namespace oomtm450PuckMod_Stats {
                         return true;
 
                     if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver) {
-                        // Reset puck was saved states.
-                        foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys))
-                            _checkIfPuckWasSaved[key] = new SaveCheck();
+                        ResetPuckWasSavedOrBlockedChecks();
 
                         // Reset player on puck.
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckTipIncludedSteamId.Keys))
@@ -1440,6 +1439,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="player">Player, player that scored.</param>
         /// <returns>Bool, true if it was already sent and set.</returns>
         private static bool SendSOGDuringGoal(Player player) {
+            ResetPuckWasSavedOrBlockedChecks();
+
             if (!_lastShotWasCounted[player.Team.Value]) {
                 string playerSteamId = player.SteamId.Value.ToString();
 
@@ -1460,6 +1461,16 @@ namespace oomtm450PuckMod_Stats {
             }
 
             return true;
+        }
+
+        private static void ResetPuckWasSavedOrBlockedChecks() {
+            // Reset puck was saved states.
+            foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys))
+                _checkIfPuckWasSaved[key] = new SaveCheck();
+
+            // Reset puck was blocked states.
+            foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasBlocked.Keys))
+                _checkIfPuckWasBlocked[key] = new BlockCheck();
         }
 
         /// <summary>
