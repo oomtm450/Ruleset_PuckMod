@@ -1204,28 +1204,24 @@ namespace oomtm450PuckMod_Stats {
                         if (dataStr != "1")
                             break;
 
-                        foreach (string key in new List<string>(_sog.Keys)) {
-                            if (_sogLabels.TryGetValue(key, out Label label)) {
-                                _sog[key] = 0;
-                                label.text = "0";
-
-                                Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(key);
-                                if (currentPlayer != null && currentPlayer && Codebase.PlayerFunc.IsGoalie(currentPlayer))
-                                    label.text = "0.000";
-                            }
-                            else {
-                                _sog.Remove(key);
-                                _savePerc.Remove(key);
-                            }
-                        }
+                        Client_ResetSOG();
                         break;
 
                     case RESET_SAVEPERC:
                         if (dataStr != "1")
                             break;
 
-                        foreach (string key in new List<string>(_savePerc.Keys))
-                            _savePerc[key] = (0, 0);
+                        Client_ResetSavePerc();
+                        break;
+
+                    case RESET_ALL:
+                        if (dataStr != "1")
+                            break;
+
+                        Client_ResetSOG();
+                        Client_ResetSavePerc();
+                        Client_ResetPasses();
+                        Client_ResetBlocks();
                         break;
 
                     case BATCH_SOG:
@@ -1551,6 +1547,38 @@ namespace oomtm450PuckMod_Stats {
                 star = "<color=#CD7F32FF><b>★</b></color> ";
 
             return star;
+        }
+
+        private static void Client_ResetSOG() {
+            foreach (string key in new List<string>(_sog.Keys)) {
+                if (_sogLabels.TryGetValue(key, out Label label)) {
+                    _sog[key] = 0;
+                    label.text = "0";
+
+                    Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(key);
+                    if (currentPlayer != null && currentPlayer && PlayerFunc.IsGoalie(currentPlayer))
+                        label.text = "0.000";
+                }
+                else {
+                    _sog.Remove(key);
+                    _savePerc.Remove(key);
+                }
+            }
+        }
+
+        private static void Client_ResetSavePerc() {
+            foreach (string key in new List<string>(_savePerc.Keys))
+                _savePerc[key] = (0, 0);
+        }
+
+        private static void Client_ResetPasses() {
+            foreach (string key in new List<string>(_passes.Keys))
+                _passes[key] = 0;
+        }
+
+        private static void Client_ResetBlocks() {
+            foreach (string key in new List<string>(_blocks.Keys))
+                _blocks[key] = 0;
         }
         #endregion
 
