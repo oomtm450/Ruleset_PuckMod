@@ -1767,7 +1767,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 if (!player)
                                     continue;
 
-                                float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 275d) + 9250d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 335f);
+                                float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 275d) + 9250d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 330f);
                                 Logging.Log($"Possible time is : {maxPossibleTime}. Limit is : {maxPossibleTimeLimit}. Puck Y is : {puck.Rigidbody.transform.position.y}.", _serverConfig, true); // TODO TEST REMOVE
 
                                 if (maxPossibleTime >= maxPossibleTimeLimit) {
