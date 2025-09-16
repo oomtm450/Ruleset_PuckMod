@@ -407,7 +407,8 @@ namespace oomtm450PuckMod_Stats {
                     if (!ServerFunc.IsDedicatedServer() || !_logic)
                         return;
 
-                    if (_sendSavePercDuringGoalNextFrame) {
+                    bool sendSavePercDuringGoalNextFrame = _sendSavePercDuringGoalNextFrame;
+                    if (sendSavePercDuringGoalNextFrame) {
                         _sendSavePercDuringGoalNextFrame = false;
                         SendSavePercDuringGoal(_sendSavePercDuringGoalNextFrame_Player.Team.Value, SendSOGDuringGoal(_sendSavePercDuringGoalNextFrame_Player));
                     }
@@ -417,78 +418,80 @@ namespace oomtm450PuckMod_Stats {
                         return;
 
                     // Save logic.
-                    foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys)) {
-                        SaveCheck saveCheck = _checkIfPuckWasSaved[key];
-                        if (!saveCheck.HasToCheck) {
-                            _checkIfPuckWasSaved[key] = new SaveCheck();
-                            continue;
-                        }
-
-                        //Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId}.", ServerConfig, true);
-
-                        if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastShotWasCounted[saveCheck.ShooterTeam]) {
-                            if (!_sog.TryGetValue(saveCheck.ShooterSteamId, out int _))
-                                _sog.Add(saveCheck.ShooterSteamId, 0);
-
-                            _sog[saveCheck.ShooterSteamId] += 1;
-                            NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                            LogSOG(saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId]);
-
-                            _lastShotWasCounted[saveCheck.ShooterTeam] = true;
-
-                            // Get other team goalie.
-                            Player goalie = PlayerFunc.GetOtherTeamGoalie(saveCheck.ShooterTeam);
-                            if (goalie != null) {
-                                string _goaliePlayerSteamId = goalie.SteamId.Value.ToString();
-                                if (!_savePerc.TryGetValue(_goaliePlayerSteamId, out var savePercValue)) {
-                                    _savePerc.Add(_goaliePlayerSteamId, (0, 0));
-                                    savePercValue = (0, 0);
-                                }
-
-                                (int saves, int sog) = _savePerc[_goaliePlayerSteamId] = (++savePercValue.Saves, ++savePercValue.Shots);
-
-                                NetworkCommunication.SendDataToAll(Codebase.Constants.SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                                LogSavePerc(_goaliePlayerSteamId, saves, sog);
+                    if (!sendSavePercDuringGoalNextFrame) {
+                        foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys)) {
+                            SaveCheck saveCheck = _checkIfPuckWasSaved[key];
+                            if (!saveCheck.HasToCheck) {
+                                _checkIfPuckWasSaved[key] = new SaveCheck();
+                                continue;
                             }
 
-                            _checkIfPuckWasSaved[key] = new SaveCheck();
-                            _checkIfPuckWasBlocked[key] = new BlockCheck();
-                        }
-                        else {
-                            if (++saveCheck.FramesChecked > ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate)
+                            //Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId}.", ServerConfig, true);
+
+                            if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastShotWasCounted[saveCheck.ShooterTeam]) {
+                                if (!_sog.TryGetValue(saveCheck.ShooterSteamId, out int _))
+                                    _sog.Add(saveCheck.ShooterSteamId, 0);
+
+                                _sog[saveCheck.ShooterSteamId] += 1;
+                                NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                                LogSOG(saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId]);
+
+                                _lastShotWasCounted[saveCheck.ShooterTeam] = true;
+
+                                // Get other team goalie.
+                                Player goalie = PlayerFunc.GetOtherTeamGoalie(saveCheck.ShooterTeam);
+                                if (goalie != null) {
+                                    string _goaliePlayerSteamId = goalie.SteamId.Value.ToString();
+                                    if (!_savePerc.TryGetValue(_goaliePlayerSteamId, out var savePercValue)) {
+                                        _savePerc.Add(_goaliePlayerSteamId, (0, 0));
+                                        savePercValue = (0, 0);
+                                    }
+
+                                    (int saves, int sog) = _savePerc[_goaliePlayerSteamId] = (++savePercValue.Saves, ++savePercValue.Shots);
+
+                                    NetworkCommunication.SendDataToAll(Codebase.Constants.SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                                    LogSavePerc(_goaliePlayerSteamId, saves, sog);
+                                }
+
                                 _checkIfPuckWasSaved[key] = new SaveCheck();
-                        }
-                    }
-
-                    // Block logic.
-                    foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasBlocked.Keys)) {
-                        BlockCheck blockCheck = _checkIfPuckWasBlocked[key];
-                        if (!blockCheck.HasToCheck) {
-                            _checkIfPuckWasBlocked[key] = new BlockCheck();
-                            continue;
-                        }
-
-                        //Logging.Log($"kvp.Check {blockCheck.FramesChecked} for team {key} blocked by {blockCheck.BlockerSteamId}.", ServerConfig, true);
-
-                        if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastBlockWasCounted[blockCheck.ShooterTeam]) {
-                            if (!_blocks.TryGetValue(blockCheck.BlockerSteamId, out int _))
-                                _blocks.Add(blockCheck.BlockerSteamId, 0);
-
-                            _blocks[blockCheck.BlockerSteamId] += 1;
-                            NetworkCommunication.SendDataToAll(Codebase.Constants.BLOCK + blockCheck.BlockerSteamId, _blocks[blockCheck.BlockerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                            LogBlock(blockCheck.BlockerSteamId, _blocks[blockCheck.BlockerSteamId]);
-
-                            _lastBlockWasCounted[blockCheck.ShooterTeam] = true;
-
-                            // Get other team goalie.
-                            Player goalie = PlayerFunc.GetOtherTeamGoalie(blockCheck.ShooterTeam);
-
-                            _checkIfPuckWasSaved[key] = new SaveCheck();
-                            _checkIfPuckWasBlocked[key] = new BlockCheck();
-                        }
-                        else {
-                            if (++blockCheck.FramesChecked > ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate)
                                 _checkIfPuckWasBlocked[key] = new BlockCheck();
+                            }
+                            else {
+                                if (++saveCheck.FramesChecked > ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate)
+                                    _checkIfPuckWasSaved[key] = new SaveCheck();
+                            }
+                        }
+
+                        // Block logic.
+                        foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasBlocked.Keys)) {
+                            BlockCheck blockCheck = _checkIfPuckWasBlocked[key];
+                            if (!blockCheck.HasToCheck) {
+                                _checkIfPuckWasBlocked[key] = new BlockCheck();
+                                continue;
+                            }
+
+                            //Logging.Log($"kvp.Check {blockCheck.FramesChecked} for team {key} blocked by {blockCheck.BlockerSteamId}.", ServerConfig, true);
+
+                            if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastBlockWasCounted[blockCheck.ShooterTeam]) {
+                                if (!_blocks.TryGetValue(blockCheck.BlockerSteamId, out int _))
+                                    _blocks.Add(blockCheck.BlockerSteamId, 0);
+
+                                _blocks[blockCheck.BlockerSteamId] += 1;
+                                NetworkCommunication.SendDataToAll(Codebase.Constants.BLOCK + blockCheck.BlockerSteamId, _blocks[blockCheck.BlockerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                                LogBlock(blockCheck.BlockerSteamId, _blocks[blockCheck.BlockerSteamId]);
+
+                                _lastBlockWasCounted[blockCheck.ShooterTeam] = true;
+
+                                // Get other team goalie.
+                                Player goalie = PlayerFunc.GetOtherTeamGoalie(blockCheck.ShooterTeam);
+
+                                _checkIfPuckWasSaved[key] = new SaveCheck();
+                                _checkIfPuckWasBlocked[key] = new BlockCheck();
+                            }
+                            else {
+                                if (++blockCheck.FramesChecked > ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate)
+                                    _checkIfPuckWasBlocked[key] = new BlockCheck();
+                            }
                         }
                     }
                 }
