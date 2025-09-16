@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace oomtm450PuckMod_Stats {
@@ -16,7 +17,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.2.1";
+        private static readonly string MOD_VERSION = "0.2.2";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -26,6 +27,7 @@ namespace oomtm450PuckMod_Stats {
             "0.1.1",
             "0.1.2",
             "0.2.0",
+            "0.2.1",
         });
 
         /// <summary>
@@ -64,6 +66,16 @@ namespace oomtm450PuckMod_Stats {
         /// Const string, data name for resetting the blocked shots.
         /// </summary>
         private const string RESET_BLOCK = Constants.MOD_NAME + "RESETBLOCK";
+
+        /// <summary>
+        /// Const string, data name for batching the passes.
+        /// </summary>
+        private const string BATCH_PASSES = Constants.MOD_NAME + "BATCHPASS";
+
+        /// <summary>
+        /// Const string, data name for resetting the passes.
+        /// </summary>
+        private const string RESET_PASSES = Constants.MOD_NAME + "RESETPASS";
 
         /// <summary>
         /// Const string, data name for resetting all stats.
@@ -116,6 +128,11 @@ namespace oomtm450PuckMod_Stats {
         };
 
         private static readonly LockDictionary<PlayerTeam, bool> _lastShotWasCounted = new LockDictionary<PlayerTeam, bool> {
+            { PlayerTeam.Blue, true },
+            { PlayerTeam.Red, true },
+        };
+
+        private static readonly LockDictionary<PlayerTeam, bool> _lastBlockWasCounted = new LockDictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, true },
             { PlayerTeam.Red, true },
         };
@@ -391,7 +408,8 @@ namespace oomtm450PuckMod_Stats {
                     if (!ServerFunc.IsDedicatedServer() || !_logic)
                         return;
 
-                    if (_sendSavePercDuringGoalNextFrame) {
+                    bool sendSavePercDuringGoalNextFrame = _sendSavePercDuringGoalNextFrame;
+                    if (sendSavePercDuringGoalNextFrame) {
                         _sendSavePercDuringGoalNextFrame = false;
                         SendSavePercDuringGoal(_sendSavePercDuringGoalNextFrame_Player.Team.Value, SendSOGDuringGoal(_sendSavePercDuringGoalNextFrame_Player));
                     }
@@ -401,78 +419,80 @@ namespace oomtm450PuckMod_Stats {
                         return;
 
                     // Save logic.
-                    foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys)) {
-                        SaveCheck saveCheck = _checkIfPuckWasSaved[key];
-                        if (!saveCheck.HasToCheck) {
-                            _checkIfPuckWasSaved[key] = new SaveCheck();
-                            continue;
-                        }
-
-                        //Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId}.", ServerConfig, true);
-
-                        if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastShotWasCounted[saveCheck.ShooterTeam]) {
-                            if (!_sog.TryGetValue(saveCheck.ShooterSteamId, out int _))
-                                _sog.Add(saveCheck.ShooterSteamId, 0);
-
-                            _sog[saveCheck.ShooterSteamId] += 1;
-                            NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                            LogSOG(saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId]);
-
-                            _lastShotWasCounted[saveCheck.ShooterTeam] = true;
-
-                            // Get other team goalie.
-                            Player goalie = PlayerFunc.GetOtherTeamGoalie(saveCheck.ShooterTeam);
-                            if (goalie != null) {
-                                string _goaliePlayerSteamId = goalie.SteamId.Value.ToString();
-                                if (!_savePerc.TryGetValue(_goaliePlayerSteamId, out var savePercValue)) {
-                                    _savePerc.Add(_goaliePlayerSteamId, (0, 0));
-                                    savePercValue = (0, 0);
-                                }
-
-                                (int saves, int sog) = _savePerc[_goaliePlayerSteamId] = (++savePercValue.Saves, ++savePercValue.Shots);
-
-                                NetworkCommunication.SendDataToAll(Codebase.Constants.SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                                LogSavePerc(_goaliePlayerSteamId, saves, sog);
+                    if (!sendSavePercDuringGoalNextFrame) {
+                        foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys)) {
+                            SaveCheck saveCheck = _checkIfPuckWasSaved[key];
+                            if (!saveCheck.HasToCheck) {
+                                _checkIfPuckWasSaved[key] = new SaveCheck();
+                                continue;
                             }
 
-                            _checkIfPuckWasSaved[key] = new SaveCheck();
-                            _checkIfPuckWasBlocked[key] = new BlockCheck();
-                        }
-                        else {
-                            if (++saveCheck.FramesChecked > ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate)
+                            //Logging.Log($"kvp.Check {saveCheck.FramesChecked} for team net {key} by {saveCheck.ShooterSteamId}.", ServerConfig, true);
+
+                            if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastShotWasCounted[saveCheck.ShooterTeam]) {
+                                if (!_sog.TryGetValue(saveCheck.ShooterSteamId, out int _))
+                                    _sog.Add(saveCheck.ShooterSteamId, 0);
+
+                                _sog[saveCheck.ShooterSteamId] += 1;
+                                NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                                LogSOG(saveCheck.ShooterSteamId, _sog[saveCheck.ShooterSteamId]);
+
+                                _lastShotWasCounted[saveCheck.ShooterTeam] = true;
+
+                                // Get other team goalie.
+                                Player goalie = PlayerFunc.GetOtherTeamGoalie(saveCheck.ShooterTeam);
+                                if (goalie != null) {
+                                    string _goaliePlayerSteamId = goalie.SteamId.Value.ToString();
+                                    if (!_savePerc.TryGetValue(_goaliePlayerSteamId, out var savePercValue)) {
+                                        _savePerc.Add(_goaliePlayerSteamId, (0, 0));
+                                        savePercValue = (0, 0);
+                                    }
+
+                                    (int saves, int sog) = _savePerc[_goaliePlayerSteamId] = (++savePercValue.Saves, ++savePercValue.Shots);
+
+                                    NetworkCommunication.SendDataToAll(Codebase.Constants.SAVEPERC + _goaliePlayerSteamId, _savePerc[_goaliePlayerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                                    LogSavePerc(_goaliePlayerSteamId, saves, sog);
+                                }
+
                                 _checkIfPuckWasSaved[key] = new SaveCheck();
-                        }
-                    }
-
-                    // Block logic.
-                    foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasBlocked.Keys)) {
-                        BlockCheck blockCheck = _checkIfPuckWasBlocked[key];
-                        if (!blockCheck.HasToCheck) {
-                            _checkIfPuckWasBlocked[key] = new BlockCheck();
-                            continue;
-                        }
-
-                        //Logging.Log($"kvp.Check {blockCheck.FramesChecked} for team {key} blocked by {blockCheck.BlockerSteamId}.", ServerConfig, true);
-
-                        if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastShotWasCounted[blockCheck.ShooterTeam]) {
-                            if (!_blocks.TryGetValue(blockCheck.BlockerSteamId, out int _))
-                                _blocks.Add(blockCheck.BlockerSteamId, 0);
-
-                            _blocks[blockCheck.BlockerSteamId] += 1;
-                            NetworkCommunication.SendDataToAll(Codebase.Constants.BLOCK + blockCheck.BlockerSteamId, _blocks[blockCheck.BlockerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                            LogBlock(blockCheck.BlockerSteamId, _blocks[blockCheck.BlockerSteamId]);
-
-                            _lastShotWasCounted[blockCheck.ShooterTeam] = true;
-
-                            // Get other team goalie.
-                            Player goalie = PlayerFunc.GetOtherTeamGoalie(blockCheck.ShooterTeam);
-
-                            _checkIfPuckWasSaved[key] = new SaveCheck();
-                            _checkIfPuckWasBlocked[key] = new BlockCheck();
-                        }
-                        else {
-                            if (++blockCheck.FramesChecked > ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate)
                                 _checkIfPuckWasBlocked[key] = new BlockCheck();
+                            }
+                            else {
+                                if (++saveCheck.FramesChecked > ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate)
+                                    _checkIfPuckWasSaved[key] = new SaveCheck();
+                            }
+                        }
+
+                        // Block logic.
+                        foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasBlocked.Keys)) {
+                            BlockCheck blockCheck = _checkIfPuckWasBlocked[key];
+                            if (!blockCheck.HasToCheck) {
+                                _checkIfPuckWasBlocked[key] = new BlockCheck();
+                                continue;
+                            }
+
+                            //Logging.Log($"kvp.Check {blockCheck.FramesChecked} for team {key} blocked by {blockCheck.BlockerSteamId}.", ServerConfig, true);
+
+                            if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastBlockWasCounted[blockCheck.ShooterTeam]) {
+                                if (!_blocks.TryGetValue(blockCheck.BlockerSteamId, out int _))
+                                    _blocks.Add(blockCheck.BlockerSteamId, 0);
+
+                                _blocks[blockCheck.BlockerSteamId] += 1;
+                                NetworkCommunication.SendDataToAll(Codebase.Constants.BLOCK + blockCheck.BlockerSteamId, _blocks[blockCheck.BlockerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                                LogBlock(blockCheck.BlockerSteamId, _blocks[blockCheck.BlockerSteamId]);
+
+                                _lastBlockWasCounted[blockCheck.ShooterTeam] = true;
+
+                                // Get other team goalie.
+                                Player goalie = PlayerFunc.GetOtherTeamGoalie(blockCheck.ShooterTeam);
+
+                                _checkIfPuckWasSaved[key] = new SaveCheck();
+                                _checkIfPuckWasBlocked[key] = new BlockCheck();
+                            }
+                            else {
+                                if (++blockCheck.FramesChecked > ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate)
+                                    _checkIfPuckWasBlocked[key] = new BlockCheck();
+                            }
                         }
                     }
                 }
@@ -560,7 +580,6 @@ namespace oomtm450PuckMod_Stats {
                         if (!stick.Player)
                             return;
 
-                        _lastShotWasCounted[stick.Player.Team.Value] = false;
                         player = stick.Player;
                     }
 
@@ -666,11 +685,14 @@ namespace oomtm450PuckMod_Stats {
                     if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
                         return;
 
-                    if (!__instance.IsTouchingStick)
-                        return;
-
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick)
+                        return;
+
+                    _lastShotWasCounted[stick.Player.Team.Value] = false;
+                    _lastBlockWasCounted[stick.Player.Team.Value] = false;
+
+                    if (!__instance.IsTouchingStick)
                         return;
 
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = (stick.Player.SteamId.Value.ToString(), DateTime.UtcNow);
@@ -695,9 +717,7 @@ namespace oomtm450PuckMod_Stats {
                         return true;
 
                     if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver) {
-                        // Reset puck was saved states.
-                        foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys))
-                            _checkIfPuckWasSaved[key] = new SaveCheck();
+                        ResetPuckWasSavedOrBlockedChecks();
 
                         // Reset player on puck.
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckTipIncludedSteamId.Keys))
@@ -706,6 +726,10 @@ namespace oomtm450PuckMod_Stats {
                         // Reset shot counted states.
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastShotWasCounted.Keys))
                             _lastShotWasCounted[key] = true;
+
+                        // Reset block counted states.
+                        foreach (PlayerTeam key in new List<PlayerTeam>(_lastBlockWasCounted.Keys))
+                            _lastBlockWasCounted[key] = true;
 
                         if (phase == GamePhase.GameOver) {
                             string gwgSteamId = "";
@@ -759,7 +783,7 @@ namespace oomtm450PuckMod_Stats {
                                     }
 
                                     if (_passes.TryGetValue(steamId, out int passes))
-                                        starPoints[steamId] += ((double)passes) * 2d;
+                                        starPoints[steamId] += ((double)passes) * 0.5d;
 
                                     if (_blocks.TryGetValue(steamId, out int blocks))
                                         starPoints[steamId] += ((double)blocks) * 6d;
@@ -1111,6 +1135,7 @@ namespace oomtm450PuckMod_Stats {
                 return;
 
             _rulesetModEnabled = ModManagerV2.Instance.EnabledModIds.Contains(3501446576) || ModManagerV2.Instance.EnabledModIds.Contains(3500559233);
+            Logging.Log($"Ruleset mod is enabled : {_rulesetModEnabled}.", ServerConfig, true);
         }
 
         /// <summary>
@@ -1192,28 +1217,24 @@ namespace oomtm450PuckMod_Stats {
                         if (dataStr != "1")
                             break;
 
-                        foreach (string key in new List<string>(_sog.Keys)) {
-                            if (_sogLabels.TryGetValue(key, out Label label)) {
-                                _sog[key] = 0;
-                                label.text = "0";
-
-                                Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(key);
-                                if (currentPlayer != null && currentPlayer && Codebase.PlayerFunc.IsGoalie(currentPlayer))
-                                    label.text = "0.000";
-                            }
-                            else {
-                                _sog.Remove(key);
-                                _savePerc.Remove(key);
-                            }
-                        }
+                        Client_ResetSOG();
                         break;
 
                     case RESET_SAVEPERC:
                         if (dataStr != "1")
                             break;
 
-                        foreach (string key in new List<string>(_savePerc.Keys))
-                            _savePerc[key] = (0, 0);
+                        Client_ResetSavePerc();
+                        break;
+
+                    case RESET_ALL:
+                        if (dataStr != "1")
+                            break;
+
+                        Client_ResetSOG();
+                        Client_ResetSavePerc();
+                        Client_ResetPasses();
+                        Client_ResetBlocks();
                         break;
 
                     case BATCH_SOG:
@@ -1419,6 +1440,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="player">Player, player that scored.</param>
         /// <returns>Bool, true if it was already sent and set.</returns>
         private static bool SendSOGDuringGoal(Player player) {
+            ResetPuckWasSavedOrBlockedChecks();
+
             if (!_lastShotWasCounted[player.Team.Value]) {
                 string playerSteamId = player.SteamId.Value.ToString();
 
@@ -1439,6 +1462,16 @@ namespace oomtm450PuckMod_Stats {
             }
 
             return true;
+        }
+
+        private static void ResetPuckWasSavedOrBlockedChecks() {
+            // Reset puck was saved states.
+            foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasSaved.Keys))
+                _checkIfPuckWasSaved[key] = new SaveCheck();
+
+            // Reset puck was blocked states.
+            foreach (PlayerTeam key in new List<PlayerTeam>(_checkIfPuckWasBlocked.Keys))
+                _checkIfPuckWasBlocked[key] = new BlockCheck();
         }
 
         /// <summary>
@@ -1539,6 +1572,38 @@ namespace oomtm450PuckMod_Stats {
                 star = "<color=#CD7F32FF><b>★</b></color> ";
 
             return star;
+        }
+
+        private static void Client_ResetSOG() {
+            foreach (string key in new List<string>(_sog.Keys)) {
+                if (_sogLabels.TryGetValue(key, out Label label)) {
+                    _sog[key] = 0;
+                    label.text = "0";
+
+                    Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(key);
+                    if (currentPlayer != null && currentPlayer && PlayerFunc.IsGoalie(currentPlayer))
+                        label.text = "0.000";
+                }
+                else {
+                    _sog.Remove(key);
+                    _savePerc.Remove(key);
+                }
+            }
+        }
+
+        private static void Client_ResetSavePerc() {
+            foreach (string key in new List<string>(_savePerc.Keys))
+                _savePerc[key] = (0, 0);
+        }
+
+        private static void Client_ResetPasses() {
+            foreach (string key in new List<string>(_passes.Keys))
+                _passes[key] = 0;
+        }
+
+        private static void Client_ResetBlocks() {
+            foreach (string key in new List<string>(_blocks.Keys))
+                _blocks[key] = 0;
         }
         #endregion
 

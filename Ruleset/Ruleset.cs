@@ -25,7 +25,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.22.1";
+        private static readonly string MOD_VERSION = "0.22.2";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -46,6 +46,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.21.1",
             "0.21.2",
             "0.22.0",
+            "0.22.1",
         });
 
         /// <summary>
@@ -369,14 +370,14 @@ namespace oomtm450PuckMod_Ruleset {
                         lastTimeCollisionExitWatch.Start();
                         _lastTimeOnCollisionExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionExitWatch);
                     }
-                    else if (lastTimeCollisionExitWatch.ElapsedMilliseconds > _serverConfig.MaxTippedMilliseconds || lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId) {
-                        //if (lastPlayerOnPuckSteamId == currentPlayerSteamId || string.IsNullOrEmpty(lastPlayerOnPuckSteamId))
+                    else if (lastTimeCollisionExitWatch.ElapsedMilliseconds > _serverConfig.MaxPossessionMilliseconds || (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId) && lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId)) {
+                        //if (lastPlayerOnPuckTipIncludedSteamId == currentPlayerSteamId || string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId))
                             //Logging.Log($"{stick.Player.Username.Value} had the puck for {((double)(watch.ElapsedMilliseconds - lastTimeCollisionExitWatch.ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
                         watch.Restart();
 
                         if (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId) && lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId) {
                             if (_playersCurrentPuckTouch.TryGetValue(lastPlayerOnPuckTipIncludedSteamId, out Stopwatch lastPlayerWatch)) {
-                                //Logging.Log($"{lastPlayerOnPuckSteamId} had the puck for {((double)(lastPlayerWatch.ElapsedMilliseconds - _lastTimeOnCollisionExitWasCalled[lastPlayerOnPuckSteamId].ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
+                                //Logging.Log($"{lastPlayerOnPuckTipIncludedSteamId} had the puck for {((double)(lastPlayerWatch.ElapsedMilliseconds - _lastTimeOnCollisionExitWasCalled[lastPlayerOnPuckTipIncludedSteamId].ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
                                 lastPlayerWatch.Reset();
                             }
                         }
@@ -1766,7 +1767,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 if (!player)
                                     continue;
 
-                                float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 275d) + 9250d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 335f);
+                                float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 275d) + 9250d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 330f);
                                 Logging.Log($"Possible time is : {maxPossibleTime}. Limit is : {maxPossibleTimeLimit}. Puck Y is : {puck.Rigidbody.transform.position.y}.", _serverConfig, true); // TODO TEST REMOVE
 
                                 if (maxPossibleTime >= maxPossibleTimeLimit) {
