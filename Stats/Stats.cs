@@ -121,6 +121,11 @@ namespace oomtm450PuckMod_Stats {
             { PlayerTeam.Red, true },
         };
 
+        private static readonly LockDictionary<PlayerTeam, bool> _lastBlockWasCounted = new LockDictionary<PlayerTeam, bool> {
+            { PlayerTeam.Blue, true },
+            { PlayerTeam.Red, true },
+        };
+
         private static readonly LockDictionary<PlayerTeam, (string SteamId, DateTime Time)> _lastPlayerOnPuckTipIncludedSteamId = new LockDictionary<PlayerTeam, (string, DateTime)> {
             { PlayerTeam.Blue, ("", DateTime.MinValue) },
             { PlayerTeam.Red, ("", DateTime.MinValue) },
@@ -455,7 +460,7 @@ namespace oomtm450PuckMod_Stats {
 
                         //Logging.Log($"kvp.Check {blockCheck.FramesChecked} for team {key} blocked by {blockCheck.BlockerSteamId}.", ServerConfig, true);
 
-                        if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastShotWasCounted[blockCheck.ShooterTeam]) {
+                        if (!_puckRaycast.PuckIsGoingToNet[key] && !_lastBlockWasCounted[blockCheck.ShooterTeam]) {
                             if (!_blocks.TryGetValue(blockCheck.BlockerSteamId, out int _))
                                 _blocks.Add(blockCheck.BlockerSteamId, 0);
 
@@ -463,7 +468,7 @@ namespace oomtm450PuckMod_Stats {
                             NetworkCommunication.SendDataToAll(Codebase.Constants.BLOCK + blockCheck.BlockerSteamId, _blocks[blockCheck.BlockerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             LogBlock(blockCheck.BlockerSteamId, _blocks[blockCheck.BlockerSteamId]);
 
-                            _lastShotWasCounted[blockCheck.ShooterTeam] = true;
+                            _lastBlockWasCounted[blockCheck.ShooterTeam] = true;
 
                             // Get other team goalie.
                             Player goalie = PlayerFunc.GetOtherTeamGoalie(blockCheck.ShooterTeam);
@@ -561,7 +566,6 @@ namespace oomtm450PuckMod_Stats {
                         if (!stick.Player)
                             return;
 
-                        _lastShotWasCounted[stick.Player.Team.Value] = false;
                         player = stick.Player;
                     }
 
@@ -667,11 +671,14 @@ namespace oomtm450PuckMod_Stats {
                     if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
                         return;
 
-                    if (!__instance.IsTouchingStick)
-                        return;
-
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick)
+                        return;
+
+                    _lastShotWasCounted[stick.Player.Team.Value] = false;
+                    _lastBlockWasCounted[stick.Player.Team.Value] = false;
+
+                    if (!__instance.IsTouchingStick)
                         return;
 
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = (stick.Player.SteamId.Value.ToString(), DateTime.UtcNow);
@@ -707,6 +714,10 @@ namespace oomtm450PuckMod_Stats {
                         // Reset shot counted states.
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastShotWasCounted.Keys))
                             _lastShotWasCounted[key] = true;
+
+                        // Reset block counted states.
+                        foreach (PlayerTeam key in new List<PlayerTeam>(_lastBlockWasCounted.Keys))
+                            _lastBlockWasCounted[key] = true;
 
                         if (phase == GamePhase.GameOver) {
                             string gwgSteamId = "";
