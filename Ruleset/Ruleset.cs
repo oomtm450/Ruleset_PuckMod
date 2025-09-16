@@ -371,13 +371,13 @@ namespace oomtm450PuckMod_Ruleset {
                         _lastTimeOnCollisionExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionExitWatch);
                     }
                     else if (lastTimeCollisionExitWatch.ElapsedMilliseconds > _serverConfig.MaxPossessionMilliseconds || (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId) && lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId)) {
-                        if (lastPlayerOnPuckTipIncludedSteamId == currentPlayerSteamId || string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId)) // TODO : Remove test code.
-                            Logging.Log($"{stick.Player.Username.Value} had the puck for {((double)(watch.ElapsedMilliseconds - lastTimeCollisionExitWatch.ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig); // TODO : Remove test code.
+                        //if (lastPlayerOnPuckTipIncludedSteamId == currentPlayerSteamId || string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId))
+                            //Logging.Log($"{stick.Player.Username.Value} had the puck for {((double)(watch.ElapsedMilliseconds - lastTimeCollisionExitWatch.ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
                         watch.Restart();
 
                         if (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId) && lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId) {
                             if (_playersCurrentPuckTouch.TryGetValue(lastPlayerOnPuckTipIncludedSteamId, out Stopwatch lastPlayerWatch)) {
-                                Logging.Log($"{lastPlayerOnPuckTipIncludedSteamId} had the puck for {((double)(lastPlayerWatch.ElapsedMilliseconds - _lastTimeOnCollisionExitWasCalled[lastPlayerOnPuckTipIncludedSteamId].ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig); // TODO : Remove test code.
+                                //Logging.Log($"{lastPlayerOnPuckTipIncludedSteamId} had the puck for {((double)(lastPlayerWatch.ElapsedMilliseconds - _lastTimeOnCollisionExitWasCalled[lastPlayerOnPuckTipIncludedSteamId].ElapsedMilliseconds)) / 1000d} seconds.", _serverConfig);
                                 lastPlayerWatch.Reset();
                             }
                         }
