@@ -17,19 +17,19 @@ namespace oomtm450PuckMod_Stats {
         private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
 
         private Ray _rayBottomLeft;
-        private LineRenderer _lineRendererBottomLeft;
+        //private LineRenderer _lineRendererBottomLeft;
 
         private Ray _rayBottomRight;
-        private LineRenderer _lineRendererBottomRight;
+        //private LineRenderer _lineRendererBottomRight;
 
         private Ray _rayFarBottomLeft;
-        private LineRenderer _lineRendererFarBottomLeft;
+        //private LineRenderer _lineRendererFarBottomLeft;
 
         private Ray _rayFarBottomRight;
-        private LineRenderer _lineRendererFarBottomRight;
+        //private LineRenderer _lineRendererFarBottomRight;
 
-        private Material _noHitMaterial = new Material(Shader.Find("Shader Graphs/Stick Shader"));
-        private Material _hitMaterial = new Material(Shader.Find("Shader Graphs/Stick Simple"));
+        //private Material _noHitMaterial = new Material(Shader.Find("Shader Graphs/Stick Shader"));
+        //private Material _hitMaterial = new Material(Shader.Find("Shader Graphs/Stick Simple"));
 
         private Vector3 _startingPosition;
 
@@ -41,10 +41,10 @@ namespace oomtm450PuckMod_Stats {
         };
 
         internal void Start() {
-            _lineRendererBottomLeft = CreateLineRenderer();
+            /*_lineRendererBottomLeft = CreateLineRenderer();
             _lineRendererBottomRight = CreateLineRenderer();
             _lineRendererFarBottomLeft = CreateLineRenderer();
-            _lineRendererFarBottomRight = CreateLineRenderer();
+            _lineRendererFarBottomRight = CreateLineRenderer();*/
 
             ResetStartingPosition();
             _increment = CHECK_EVERY_X_FRAMES - 1;
@@ -85,7 +85,7 @@ namespace oomtm450PuckMod_Stats {
         }
 
         private void CheckForColliders() {
-            _lineRendererBottomLeft.SetPosition(0, _rayBottomLeft.origin);
+            /*_lineRendererBottomLeft.SetPosition(0, _rayBottomLeft.origin);
             _lineRendererBottomLeft.SetPosition(1, _rayBottomLeft.origin + (_rayBottomLeft.direction * MAX_DISTANCE));
             _lineRendererBottomLeft.material = _noHitMaterial;
 
@@ -99,7 +99,7 @@ namespace oomtm450PuckMod_Stats {
 
             _lineRendererFarBottomRight.SetPosition(0, _rayFarBottomRight.origin);
             _lineRendererFarBottomRight.SetPosition(1, _rayFarBottomRight.origin + (_rayFarBottomRight.direction * MAX_DISTANCE));
-            _lineRendererFarBottomRight.material = _noHitMaterial;
+            _lineRendererFarBottomRight.material = _noHitMaterial;*/
 
             bool hasHit = Physics.Raycast(_rayBottomLeft, out RaycastHit hit, MAX_DISTANCE, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
             if (!hasHit) {
@@ -110,26 +110,25 @@ namespace oomtm450PuckMod_Stats {
                         hasHit = Physics.Raycast(_rayFarBottomRight, out hit, MAX_DISTANCE, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
                         if (!hasHit)
                             return;
-                        else {
+                        /*else {
                             _lineRendererFarBottomRight.material = _hitMaterial;
                             //Logging.Log("Far bottom right ray has hit !", Stats.ServerConfig, true);
-                        }
+                        }*/
                     }
-                    else {
+                    /*else {
                         _lineRendererFarBottomLeft.material = _hitMaterial;
                         //Logging.Log("Far bottom left ray has hit !", Stats.ServerConfig, true);
-                    }
+                    }*/
                 }
-                else {
+                /*else {
                     _lineRendererBottomRight.material = _hitMaterial;
                     //Logging.Log("Bottom right ray has hit !", Stats.ServerConfig, true);
-                }
-
+                }*/
             }
-            else {
+            /*else {
                 _lineRendererBottomLeft.material = _hitMaterial;
                 //Logging.Log("Bottom left ray has hit !", Stats.ServerConfig, true);
-            }
+            }*/
 
             Goal goal = SystemFunc.GetPrivateField<Goal>(typeof(GoalTrigger), hit.collider.gameObject.GetComponent<GoalTrigger>(), "goal");
             PlayerTeam team = SystemFunc.GetPrivateField<PlayerTeam>(typeof(Goal), goal, "Team");
@@ -150,13 +149,13 @@ namespace oomtm450PuckMod_Stats {
             return layerMask;
         }
 
-        private LineRenderer CreateLineRenderer() {
+        /*private LineRenderer CreateLineRenderer() {
             LineRenderer lineRenderer = new GameObject().gameObject.AddComponent<LineRenderer>();
             lineRenderer.useWorldSpace = true;
             lineRenderer.startWidth = 0.0275f;
             lineRenderer.endWidth = 0.0275f;
             lineRenderer.material = _noHitMaterial;
             return lineRenderer;
-        }
+        }*/
     }
 }
