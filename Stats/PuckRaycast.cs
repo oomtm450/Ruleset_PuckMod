@@ -9,12 +9,10 @@ namespace oomtm450PuckMod_Stats {
     /// Class containing code for the puck raycasts with the goal trigger to know if the puck is going towards the net or not.
     /// </summary>
     internal class PuckRaycast : MonoBehaviour {
-        private const int CHECK_EVERY_X_FRAMES = 4;
+        private const int CHECK_EVERY_X_FRAMES = 8;
         //private readonly Vector3 TOP_VECTOR = new Vector3(0, 0.175f, 0);
-        private readonly Vector3 RIGHT_VECTOR = new Vector3(Codebase.Constants.PUCK_RADIUS + 0.018f, 0.001f, 0);
-        private readonly Vector3 DOWN_VECTOR = new Vector3(0, -0.53f, 0);
-        private Vector3 DOWN_RIGHT_VECTOR;
-        private Vector3 DOWN_LEFT_VECTOR;
+        private readonly float RIGHT_COORDINATE = Codebase.Constants.PUCK_RADIUS + 0.018f;
+        private readonly Vector3 BOTTOM_VECTOR = new Vector3(0, -0.53f, 0);
         private readonly float MAX_DISTANCE = 26f;
         private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
 
@@ -43,9 +41,6 @@ namespace oomtm450PuckMod_Stats {
         };
 
         internal void Start() {
-            DOWN_RIGHT_VECTOR = DOWN_VECTOR + RIGHT_VECTOR;
-            DOWN_LEFT_VECTOR = DOWN_VECTOR - RIGHT_VECTOR;
-
             _lineRendererBottomLeft = CreateLineRenderer();
             _lineRendererBottomRight = CreateLineRenderer();
             _lineRendererFarBottomLeft = CreateLineRenderer();
@@ -66,10 +61,15 @@ namespace oomtm450PuckMod_Stats {
 
                 _startingPosition.y = transform.position.y; // Adjust Y of starting position so that the rays are all parallel to the ice.
 
-                _rayBottomLeft = new Ray(transform.position - RIGHT_VECTOR, transform.position - _startingPosition);
-                _rayBottomRight = new Ray(transform.position + RIGHT_VECTOR, transform.position - _startingPosition);
-                _rayFarBottomLeft = new Ray(transform.position + DOWN_LEFT_VECTOR, transform.position - _startingPosition);
-                _rayFarBottomRight = new Ray(transform.position + DOWN_RIGHT_VECTOR, transform.position - _startingPosition);
+                Vector3 normalizedDirection = (transform.position - _startingPosition).normalized;
+
+                Vector3 leftVector = Vector3.Cross(Vector3.down, normalizedDirection).normalized;
+                Vector3 rightVector = Vector3.Cross(Vector3.up, normalizedDirection).normalized;
+
+                _rayBottomLeft = new Ray((transform.position + leftVector * RIGHT_COORDINATE) + new Vector3(0, 0.001f, 0), transform.position - _startingPosition);
+                _rayBottomRight = new Ray((transform.position + rightVector * RIGHT_COORDINATE) + new Vector3(0, 0.001f, 0), transform.position - _startingPosition);
+                _rayFarBottomLeft = new Ray((transform.position + leftVector * RIGHT_COORDINATE) + BOTTOM_VECTOR, transform.position - _startingPosition);
+                _rayFarBottomRight = new Ray((transform.position + rightVector * RIGHT_COORDINATE) + BOTTOM_VECTOR, transform.position - _startingPosition);
                 CheckForColliders();
 
                 ResetStartingPosition();
