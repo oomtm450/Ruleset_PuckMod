@@ -12,7 +12,7 @@ namespace oomtm450PuckMod_Stats {
         private const int CHECK_EVERY_X_FRAMES = 8;
         //private readonly Vector3 TOP_VECTOR = new Vector3(0, 0.175f, 0);
         private readonly float RIGHT_COORDINATE = Codebase.Constants.PUCK_RADIUS + 0.018f;
-        private readonly Vector3 BOTTOM_VECTOR = new Vector3(0, -0.53f, 0);
+        private readonly Vector3 BOTTOM_VECTOR = new Vector3(0, -0.6f, 0);
         private readonly float MAX_DISTANCE = 26f;
         private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
 
