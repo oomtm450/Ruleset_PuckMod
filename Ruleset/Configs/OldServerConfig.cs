@@ -71,7 +71,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; } = 500; // TODO : Update for next release.
+        public int MaxPossessionMilliseconds { get; } = 750;
         #endregion
 
         #region Methods/Functions
@@ -151,13 +151,13 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
-        public Dictionary<Zone, float> MaxPossibleTime { get; } = new Dictionary<Zone, float> { // TODO : Update for next release.
-            { Zone.BlueTeam_BehindGoalLine, 8500f },
-            { Zone.RedTeam_BehindGoalLine, 8500f },
-            { Zone.BlueTeam_Zone, 6750f },
-            { Zone.RedTeam_Zone, 6750f },
-            { Zone.BlueTeam_Center, 5000f },
-            { Zone.RedTeam_Center, 5000f },
+        public Dictionary<Zone, float> MaxPossibleTime { get; } = new Dictionary<Zone, float> {
+            { Zone.BlueTeam_BehindGoalLine, 8750f },
+            { Zone.RedTeam_BehindGoalLine, 8750f },
+            { Zone.BlueTeam_Zone, 7000f },
+            { Zone.RedTeam_Zone, 7000f },
+            { Zone.BlueTeam_Center, 5250f },
+            { Zone.RedTeam_Center, 5250f },
         };
 
         /// <summary>
@@ -168,7 +168,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, delta used to calculate the dynamic icing possible times.
         /// </summary>
-        public float Delta { get; set; } = 21f; // TODO : Update for next release.
+        public float Delta { get; set; } = 21.5f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -231,7 +231,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after a push on the goalie to be considered no goal.
         /// </summary>
-        public int PushNoGoalMilliseconds { get; } = 3750; // TODO : Update for next release.
+        public int PushNoGoalMilliseconds { get; } = 3500;
 
         /// <summary>
         /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
@@ -241,12 +241,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
-        public float CollisionForceThreshold { get; } = 0.972f; // TODO : Update for next release.
+        public float CollisionForceThreshold { get; } = 0.971f;
 
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
-        public float GoalieRadius { get; } = 0.7875f; // TODO : Update for next release.
+        public float GoalieRadius { get; } = 0.788f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
