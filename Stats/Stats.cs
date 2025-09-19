@@ -1019,7 +1019,6 @@ namespace oomtm450PuckMod_Stats {
 
             try {
                 Server_RegisterNamedMessageHandler();
-                CheckForRulesetMod();
 
                 ulong clientId = (ulong)message["clientId"];
                 string clientSteamId = PlayerManager.Instance.GetPlayerByClientId(clientId).SteamId.Value.ToString();
@@ -1030,6 +1029,8 @@ namespace oomtm450PuckMod_Stats {
                     _players_ClientId_SteamId.Remove(clientId);
                     _players_ClientId_SteamId.Add(clientId, "");
                 }
+
+                CheckForRulesetMod();
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in Event_OnClientConnected.\n{ex}", ServerConfig);
@@ -1153,11 +1154,11 @@ namespace oomtm450PuckMod_Stats {
         }
 
         private static void CheckForRulesetMod() {
-            if (ModManagerV2.Instance == null || ModManagerV2.Instance.EnabledModIds == null || _rulesetModEnabled == null || !(bool)_rulesetModEnabled)
+            if (ModManagerV2.Instance == null || ModManagerV2.Instance.EnabledModIds == null || (_rulesetModEnabled != null && (bool)_rulesetModEnabled))
                 return;
 
-            _rulesetModEnabled = ServerManager.Instance.ServerConfigurationManager.EnabledModIds.Contains(3501446576) ||
-                                 ServerManager.Instance.ServerConfigurationManager.EnabledModIds.Contains(3500559233);
+            _rulesetModEnabled = ModManagerV2.Instance.EnabledModIds.Contains(3501446576) ||
+                                 ModManagerV2.Instance.EnabledModIds.Contains(3500559233);
             Logging.Log($"Ruleset mod is enabled : {_rulesetModEnabled}.", ServerConfig, true);
         }
 
