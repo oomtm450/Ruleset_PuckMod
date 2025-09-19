@@ -1153,10 +1153,11 @@ namespace oomtm450PuckMod_Stats {
         }
 
         private static void CheckForRulesetMod() {
-            if (ModManagerV2.Instance == null || ModManagerV2.Instance.EnabledModIds == null || _rulesetModEnabled != null)
+            if (ModManagerV2.Instance == null || ModManagerV2.Instance.EnabledModIds == null || _rulesetModEnabled == null || !(bool)_rulesetModEnabled)
                 return;
 
-            _rulesetModEnabled = ModManagerV2.Instance.EnabledModIds.Contains(3501446576) || ModManagerV2.Instance.EnabledModIds.Contains(3500559233);
+            _rulesetModEnabled = ServerManager.Instance.ServerConfigurationManager.EnabledModIds.Contains(3501446576) ||
+                                 ServerManager.Instance.ServerConfigurationManager.EnabledModIds.Contains(3500559233);
             Logging.Log($"Ruleset mod is enabled : {_rulesetModEnabled}.", ServerConfig, true);
         }
 
