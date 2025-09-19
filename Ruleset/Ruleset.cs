@@ -100,6 +100,11 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly LockDictionary<string, (PlayerTeam Team, bool IsOffside)> _isOffside = new LockDictionary<string, (PlayerTeam, bool)>();
 
         /// <summary>
+        /// LockDictionary of string and bool, dictionary of number of frames since player has been in a no high stick situation with steam Id as a key.
+        /// </summary>
+        private static readonly LockDictionary<string,  int> _noHighStickFrames = new LockDictionary<string, int>();
+
+        /// <summary>
         /// LockDictionary of PlayerTeam and bool, dictionary for teams if high stick has to be called next frame.
         /// </summary>
         private static readonly LockDictionary<PlayerTeam, bool> _callHighStickNextFrame = new LockDictionary<PlayerTeam, bool> {
@@ -444,6 +449,13 @@ namespace oomtm450PuckMod_Ruleset {
 
                     string playerSteamId = stick.Player.SteamId.Value.ToString();
 
+                    if (!_noHighStickFrames.TryGetValue(playerSteamId, out int _))
+                        _noHighStickFrames.Add(playerSteamId, int.MaxValue);
+
+                    Puck puck = PuckManager.Instance.GetPuck();
+                    if (puck && puck.Rigidbody.transform.position.y <= _serverConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y)
+                        _noHighStickFrames[playerSteamId] = 0;
+
                     var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
 
                     if (!PuckIsTipped(playerSteamId)) {
@@ -452,7 +464,6 @@ namespace oomtm450PuckMod_Ruleset {
                             ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
                         _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = playerSteamId;
 
-                        Puck puck = PuckManager.Instance.GetPuck();
                         if (puck)
                             _puckLastStateBeforeCall[Rule.GoalieInt] = _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
                     }
@@ -566,8 +577,16 @@ namespace oomtm450PuckMod_Ruleset {
                         _isIcingPossible[stick.Player.Team.Value] = new IcingObject();
 
                     // High stick logic.
-                    if (puck) {
-                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && GetPlayerSteamIdInPossession(false) != stick.Player.SteamId.Value.ToString() && puck.Rigidbody.transform.position.y > _serverConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
+                    if (puck &&
+                        !Codebase.PlayerFunc.IsGoalie(stick.Player) &&
+                        GetPlayerSteamIdInPossession(false) != currentPlayerSteamId &&
+                        puck.Rigidbody.transform.position.y > _serverConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
+                        if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
+                            noHighStickFrames = int.MaxValue;
+                            _noHighStickFrames.Add(currentPlayerSteamId, noHighStickFrames);
+                        }
+
+                        if (noHighStickFrames >= ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate / 20) {
                             _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
 
                             highStickTimer.Change(_serverConfig.HighStick.MaxMilliseconds, Timeout.Infinite);
@@ -1298,6 +1317,14 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 6.\n{ex}", _serverConfig);
                 }
 
+                try {
+                    foreach (string playerSteamId in new List<string>(_noHighStickFrames.Keys))
+                        _noHighStickFrames[playerSteamId] += 1;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 7.\n{ex}", _serverConfig);
+                }
+
                 return true;
             }
         }
@@ -1647,6 +1674,8 @@ namespace oomtm450PuckMod_Ruleset {
 
             foreach (PlayerTeam key in new List<PlayerTeam>(_callHighStickNextFrame.Keys))
                 _callHighStickNextFrame[key] = false;
+
+            _noHighStickFrames.Clear();
         }
 
         private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3750, int millisecondsPauseMax = 6000) {
