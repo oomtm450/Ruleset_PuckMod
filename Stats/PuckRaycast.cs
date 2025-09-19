@@ -12,7 +12,7 @@ namespace oomtm450PuckMod_Stats {
         private const int CHECK_EVERY_X_FRAMES = 6;
         //private readonly Vector3 TOP_VECTOR = new Vector3(0, 0.175f, 0);
         private readonly Vector3 ABOVE_GROUND_VECTOR = new Vector3(0, 0.001f, 0);
-        private readonly float RIGHT_COORDINATE = Codebase.Constants.PUCK_RADIUS + 0.019f;
+        private readonly float RIGHT_OFFSET = Codebase.Constants.PUCK_RADIUS + 0.02f;
         private readonly Vector3 BOTTOM_VECTOR = new Vector3(0, -0.6f, 0);
         private readonly float MAX_DISTANCE = 26f;
         private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
@@ -79,8 +79,8 @@ namespace oomtm450PuckMod_Stats {
 
             Vector3 direction = transform.position - _startingPosition;
 
-            Vector3 leftVector = transform.position + Vector3.Cross(Vector3.down, direction.normalized).normalized * RIGHT_COORDINATE;
-            Vector3 rightVector = transform.position + Vector3.Cross(Vector3.up, direction.normalized).normalized * RIGHT_COORDINATE;
+            Vector3 leftVector = transform.position + Vector3.Cross(Vector3.down, direction.normalized).normalized * RIGHT_OFFSET;
+            Vector3 rightVector = transform.position + Vector3.Cross(Vector3.up, direction.normalized).normalized * RIGHT_OFFSET;
 
             /*_lineRendererBottomLeft.SetPosition(0, _rayBottomLeft.origin);
             _lineRendererBottomLeft.SetPosition(1, _rayBottomLeft.origin + (_rayBottomLeft.direction * MAX_DISTANCE));
