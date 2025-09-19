@@ -793,7 +793,7 @@ namespace oomtm450PuckMod_Stats {
                                     const double GOALIE_ASSIST_MODIFIER = 30d;
 
                                     starPoints[steamId] += GOALIE_GOAL_MODIFIER * gwgModifier;
-                                    starPoints[steamId] += ((double)player.Goals.Value) * GOALIE_GOAL_MODIFIER * gwgModifier;
+                                    starPoints[steamId] += ((double)player.Goals.Value) * GOALIE_GOAL_MODIFIER;
                                     starPoints[steamId] += ((double)player.Assists.Value) * GOALIE_ASSIST_MODIFIER;
                                 }
                                 else {
@@ -812,7 +812,7 @@ namespace oomtm450PuckMod_Stats {
                                     const double SKATER_ASSIST_MODIFIER = 30d;
 
                                     starPoints[steamId] += SKATER_GOAL_MODIFIER * gwgModifier;
-                                    starPoints[steamId] += ((double)player.Goals.Value) * SKATER_GOAL_MODIFIER * gwgModifier;
+                                    starPoints[steamId] += ((double)player.Goals.Value) * SKATER_GOAL_MODIFIER;
                                     starPoints[steamId] += ((double)player.Assists.Value) * SKATER_ASSIST_MODIFIER;
                                 }
 
