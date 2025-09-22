@@ -4,9 +4,9 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 
-namespace oomtm450PuckMod_Ruleset.Configs {
+namespace oomtm450PuckMod_Sounds.Configs {
     /// <summary>
-    /// Class containing the configuration from oomtm450_ruleset_clientconfig.json used for this mod.
+    /// Class containing the configuration from oomtm450_sounds_clientconfig.json used for this mod.
     /// </summary>
     public class ClientConfig : IConfig {
         /// <summary>
@@ -15,20 +15,30 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool LogInfo { get; set; } = true;
 
         /// <summary>
+        /// Bool, true if the music must be played ingame.
+        /// </summary>
+        public bool Music { get; set; } = true;
+
+        /// <summary>
+        /// Float, volume from 0.0 to 1.0 for the music.
+        /// </summary>
+        public float MusicVolume { get; set; } = 0.8f;
+
+        /// <summary>
+        /// Bool, true if the custom goal horns must be set.
+        /// </summary>
+        public bool CustomGoalHorns { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if the warmup music must be played. Won't work if Music is false.
+        /// </summary>
+        public bool WarmupMusic { get; set; } = true;
+
+        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]
         public string ModName { get; } = Constants.MOD_NAME;
-
-        /// <summary>
-        /// Bool, true if the refs has to be team color coded.
-        /// </summary>
-        public bool TeamColor2DRefs { get; set; } = true;
-
-        /// <summary>
-        /// Float, scale of the 2D refs from 0.0 to 2.0 for the music.
-        /// </summary>
-        public float TwoDRefsScale { get; set; } = 1.0f;
 
         /// <summary>
         /// String, full path for the config file.

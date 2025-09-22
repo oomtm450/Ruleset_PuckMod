@@ -1,4 +1,5 @@
 ﻿using Codebase;
+using oomtm450PuckMod_Sounds;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 namespace oomtm450PuckMod_Ruleset {
-    internal class Sounds : MonoBehaviour {
+    internal class SoundsSystem : MonoBehaviour {
         #region Constants
         private const string SOUNDS_FOLDER_PATH = "sounds";
         private const string SOUND_EXTENSION = ".ogg";
@@ -67,24 +68,24 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Methods/Functions
-        internal void LoadSounds() {
+        internal void LoadSounds(bool loadMusics, bool setCustomGoalHorns) {
             try {
                 string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), SOUNDS_FOLDER_PATH);
 
-                if (_audioClips.Count == 0 && Ruleset._clientConfig.Music) {
+                if (_audioClips.Count == 0 && loadMusics) {
                     DontDestroyOnLoad(gameObject);
 
                     if (!Directory.Exists(fullPath)) {
-                        Logging.LogError($"Sounds not found at: {fullPath}", Ruleset._clientConfig);
+                        Logging.LogError($"Sounds not found at: {fullPath}", Sounds.ClientConfig);
                         return;
                     }
                 }
 
-                Logging.Log("LoadSounds launching GetAudioClips.", Ruleset._clientConfig);
-                StartCoroutine(GetAudioClips(fullPath));
+                Logging.Log("LoadSounds launching GetAudioClips.", Sounds.ClientConfig);
+                StartCoroutine(GetAudioClips(fullPath, loadMusics, setCustomGoalHorns));
             }
             catch (Exception ex) {
-                Logging.LogError($"Error loading Sounds.\n{ex}", Ruleset._clientConfig);
+                Logging.LogError($"Error loading Sounds.\n{ex}", Sounds.ClientConfig);
             }
         }
 
@@ -108,9 +109,11 @@ namespace oomtm450PuckMod_Ruleset {
         /// Function that downloads the streamed audio clips from the mods' folder using WebRequest locally.
         /// </summary>
         /// <param name="path">String, full path to the directory containing the sounds to load.</param>
+        /// <param name="loadMusics">Bool, true if the music has to be loaded with the other sounds.</param>
+        /// <param name="setCustomGoalHorns">Bool, true if the custom goal horns has to be set.</param>
         /// <returns>IEnumerator, enumerator used by the Coroutine to load the audio clips.</returns>
-        private IEnumerator GetAudioClips(string path) {
-            if (_audioClips.Count == 0 && Ruleset._clientConfig.Music) {
+        private IEnumerator GetAudioClips(string path, bool loadMusics, bool setCustomGoalHorns) {
+            if (_audioClips.Count == 0 && loadMusics) {
                 foreach (string file in Directory.GetFiles(path, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
                     string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
                     UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS);
@@ -145,7 +148,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
 
-            if (Ruleset._clientConfig.CustomGoalHorns)
+            if (setCustomGoalHorns)
                 SetGoalHorns();
         }
 

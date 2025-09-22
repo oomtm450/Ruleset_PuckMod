@@ -91,11 +91,6 @@ namespace oomtm450PuckMod_Stats {
         private const string SOG_HEADER_LABEL_NAME = "SOGHeaderLabel";
 
         private const string SOG_LABEL = "SOGLabel";
-
-        /// <summary>
-        /// Const string, tag to ask the server for the startup data.
-        /// </summary>
-        private const string ASK_SERVER_FOR_STARTUP_DATA = Constants.MOD_NAME + "ASKDATA";
         #endregion
 
         #region Fields and Properties
@@ -543,7 +538,7 @@ namespace oomtm450PuckMod_Stats {
                         DateTime now = DateTime.UtcNow;
                         if (_lastDateTimeAskStartupData + TimeSpan.FromSeconds(1) < now && _askServerForStartupDataCount++ < 10) {
                             _lastDateTimeAskStartupData = now;
-                            NetworkCommunication.SendData(ASK_SERVER_FOR_STARTUP_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, _clientConfig);
+                            NetworkCommunication.SendData(Constants.ASK_SERVER_FOR_STARTUP_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, _clientConfig);
                         }
                     }
                     else if (_askForKick) {
@@ -911,6 +906,7 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.Instance.AddEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     EventManager.Instance.AddEventListener(Codebase.Constants.STATS_MOD_NAME, Event_OnStatsTrigger);
+                    EventManager.Instance.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                 }
                 else {
                     EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
@@ -944,6 +940,7 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     EventManager.Instance.RemoveEventListener(Codebase.Constants.STATS_MOD_NAME, Event_OnStatsTrigger);
+                    EventManager.Instance.RemoveEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
@@ -989,11 +986,6 @@ namespace oomtm450PuckMod_Stats {
                                 Logging.LogError($"{nameof(_sendSavePercDuringGoalNextFrame_Player)} is null.", ServerConfig);
                             else
                                 _sendSavePercDuringGoalNextFrame = true;
-
-                            break;
-
-                        case Codebase.Constants.PAUSE:
-                            _paused = bool.Parse(value);
                             break;
 
                         case Codebase.Constants.LOGIC:
@@ -1003,7 +995,26 @@ namespace oomtm450PuckMod_Stats {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnStatsTrigger.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_OnStatsTrigger)}.\n{ex}", ServerConfig);
+            }
+        }
+
+        public static void Event_OnRulesetTrigger(Dictionary<string, object> message) {
+            try {
+                foreach (KeyValuePair<string, object> kvp in message) {
+                    string value = (string)kvp.Value;
+                    if (!NetworkCommunication.GetDataNamesToIgnore().Contains(kvp.Key))
+                        Logging.Log($"Received data {kvp.Key}. Content : {value}", ServerConfig);
+
+                    switch (kvp.Key) {
+                        case Codebase.Constants.PAUSE:
+                            _paused = bool.Parse(value);
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(Event_OnRulesetTrigger)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -1016,7 +1027,7 @@ namespace oomtm450PuckMod_Stats {
             if (!ServerFunc.IsDedicatedServer())
                 return;
 
-            Logging.Log("Event_OnClientConnected", ServerConfig);
+            //Logging.Log("Event_OnClientConnected", ServerConfig);
 
             try {
                 Server_RegisterNamedMessageHandler();
@@ -1034,7 +1045,7 @@ namespace oomtm450PuckMod_Stats {
                 CheckForRulesetMod();
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnClientConnected.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_OnClientConnected)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -1047,7 +1058,7 @@ namespace oomtm450PuckMod_Stats {
             if (!ServerFunc.IsDedicatedServer())
                 return;
 
-            Logging.Log("Event_OnClientDisconnected", ServerConfig);
+            //Logging.Log("Event_OnClientDisconnected", ServerConfig);
 
             try {
                 ulong clientId = (ulong)message["clientId"];
@@ -1069,7 +1080,7 @@ namespace oomtm450PuckMod_Stats {
                 _players_ClientId_SteamId.Remove(clientId);
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnClientDisconnected.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_OnClientDisconnected)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -1101,7 +1112,7 @@ namespace oomtm450PuckMod_Stats {
                 ScoreboardModifications(false);
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_Client_OnClientStopped.\n{ex}", _clientConfig);
+                Logging.LogError($"Error in {nameof(Event_Client_OnClientStopped)}.\n{ex}", _clientConfig);
             }
         }
 
@@ -1212,7 +1223,7 @@ namespace oomtm450PuckMod_Stats {
                         }
                         break;
 
-                    case ASK_SERVER_FOR_STARTUP_DATA: // SERVER-SIDE : Send the necessary data to client.
+                    case Constants.ASK_SERVER_FOR_STARTUP_DATA: // SERVER-SIDE : Send the necessary data to client.
                         if (dataStr != "1")
                             break;
 
