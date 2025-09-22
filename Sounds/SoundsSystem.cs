@@ -1,5 +1,4 @@
 ﻿using Codebase;
-using oomtm450PuckMod_Sounds;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,39 +8,11 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace oomtm450PuckMod_Ruleset {
+namespace oomtm450PuckMod_Sounds {
     internal class SoundsSystem : MonoBehaviour {
         #region Constants
         private const string SOUNDS_FOLDER_PATH = "sounds";
         private const string SOUND_EXTENSION = ".ogg";
-
-        internal const string LOAD_SOUNDS = "loadsounds";
-        internal const string PLAY_SOUND = "playsound";
-        internal const string STOP_SOUND = "stopsound";
-
-        internal const string ALL = "all";
-        internal const string MUSIC = "music";
-        internal const string WHISTLE = "whistle";
-        internal const string BLUEGOALHORN = "bluegoalhorn";
-        internal const string REDGOALHORN = "redgoalhorn";
-        internal const string FACEOFF_MUSIC = "faceoffmusic";
-        internal const string FACEOFF_MUSIC_DELAYED = FACEOFF_MUSIC + "d";
-
-        internal const string BLUE_GOAL_MUSIC = "bluegoalmusic";
-        internal const string RED_GOAL_MUSIC = "redgoalmusic";
-        internal const string BETWEEN_PERIODS_MUSIC = "betweenperiodsmusic";
-        internal const string WARMUP_MUSIC = "warmupmusic";
-
-        internal const string LAST_MINUTE_MUSIC = "lastminutemusic";
-        internal const string LAST_MINUTE_MUSIC_DELAYED = LAST_MINUTE_MUSIC + "d";
-
-        internal const string FIRST_FACEOFF_MUSIC = "faceofffirstmusic";
-        internal const string FIRST_FACEOFF_MUSIC_DELAYED = FIRST_FACEOFF_MUSIC + "d";
-
-        internal const string SECOND_FACEOFF_MUSIC = "faceoffsecondmusic";
-        internal const string SECOND_FACEOFF_MUSIC_DELAYED = SECOND_FACEOFF_MUSIC + "d";
-
-        internal const string GAMEOVER_MUSIC = "gameovermusic";
         #endregion
 
         #region Fields
@@ -153,23 +124,23 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private void AddClipNameToCorrectList(string clipName) {
-            if (clipName.Contains(FACEOFF_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.FACEOFF_MUSIC))
                 FaceoffMusicList.Add(clipName);
-            if (clipName.Contains(BLUE_GOAL_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.BLUE_GOAL_MUSIC))
                 BlueGoalMusicList.Add(clipName);
-            if (clipName.Contains(RED_GOAL_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.RED_GOAL_MUSIC))
                 RedGoalMusicList.Add(clipName);
-            if (clipName.Contains(BETWEEN_PERIODS_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC))
                 BetweenPeriodsMusicList.Add(clipName);
-            if (clipName.Contains(WARMUP_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.WARMUP_MUSIC))
                 WarmupMusicList.Add(clipName);
-            if (clipName.Contains(LAST_MINUTE_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.LAST_MINUTE_MUSIC))
                 LastMinuteMusicList.Add(clipName);
-            if (clipName.Contains(FIRST_FACEOFF_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC))
                 FirstFaceoffMusicList.Add(clipName);
-            if (clipName.Contains(SECOND_FACEOFF_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC))
                 SecondFaceoffMusicList.Add(clipName);
-            if (clipName.Contains(GAMEOVER_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.GAMEOVER_MUSIC))
                 GameOverMusicList.Add(clipName);
         }
 
@@ -193,9 +164,9 @@ namespace oomtm450PuckMod_Ruleset {
             AudioSource audioSource = soundObject.GetComponent<AudioSource>();
             audioSource.loop = loop;
 
-            if (type == MUSIC) {
+            if (type == Codebase.SoundsSystem.MUSIC) {
                 _currentAudioSource = audioSource;
-                ChangeMusicVolume(Ruleset._clientConfig.MusicVolume);
+                ChangeMusicVolume(Sounds.ClientConfig.MusicVolume);
             }
             else {
                 _currentAudioSource = null;
@@ -282,7 +253,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 AudioSource blueGoalAudioSource = blueGoalObj.GetComponent<AudioSource>();
-                blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == REDGOALHORN);
+                blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == Codebase.SoundsSystem.REDGOALHORN);
                 blueGoalAudioSource.maxDistance = 400f;
 
                 GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
@@ -293,7 +264,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 AudioSource redGoalAudioSource = redGoalObj.GetComponent<AudioSource>();
-                redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == BLUEGOALHORN);
+                redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == Codebase.SoundsSystem.BLUEGOALHORN);
                 redGoalAudioSource.maxDistance = 400f;
             }
             catch (Exception ex) {

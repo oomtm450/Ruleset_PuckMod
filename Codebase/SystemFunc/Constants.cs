@@ -21,6 +21,11 @@
         internal const string SOUNDS_MOD_NAME = MODS_PREFIX + "sounds";
 
         /// <summary>
+        /// Const string, used for the communication from the server for the Sounds mod.
+        /// </summary>
+        internal const string SOUNDS_FROM_SERVER_TO_CLIENT = SOUNDS_MOD_NAME + "_server";
+
+        /// <summary>
         /// Const float, radius of the puck.
         /// </summary>
         internal const float PUCK_RADIUS = 0.13f;

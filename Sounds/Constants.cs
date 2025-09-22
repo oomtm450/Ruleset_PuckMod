@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, used for the communication from the server.
         /// </summary>
-        internal const string FROM_SERVER_TO_CLIENT = MOD_NAME + "_server";
+        internal const string FROM_SERVER_TO_CLIENT = Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT;
 
         /// <summary>
         /// Const string, used for the communication from the server.
