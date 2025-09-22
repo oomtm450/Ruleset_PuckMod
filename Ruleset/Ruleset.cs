@@ -25,7 +25,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.23.0";
+        private static readonly string MOD_VERSION = "0.24.0";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -48,6 +48,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.22.0",
             "0.22.1",
             "0.22.2",
+            "0.23.0",
         });
 
         /// <summary>
