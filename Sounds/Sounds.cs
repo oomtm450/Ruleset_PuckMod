@@ -15,7 +15,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.1.0DEV";
+        private static readonly string MOD_VERSION = "0.1.0DEV3";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -564,6 +564,10 @@ namespace oomtm450PuckMod_Sounds {
                                 _currentMusicPlaying = "";
                             }
                             break;
+
+                        case Codebase.SoundsSystem.LOAD_EXTRA_SOUNDS:
+                            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.LOAD_EXTRA_SOUNDS, value, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                            break;
                     }
                 }
             }
@@ -886,6 +890,10 @@ namespace oomtm450PuckMod_Sounds {
                             _soundsSystem.StopAll();
 
                         _currentMusicPlaying = "";
+                        break;
+
+                    case Codebase.SoundsSystem.LOAD_EXTRA_SOUNDS:
+                        _soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns, dataStr);
                         break;
 
                     default:

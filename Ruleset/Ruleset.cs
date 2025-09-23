@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -25,7 +26,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.24.0DEV";
+        private static readonly string MOD_VERSION = "0.24.0DEV3";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -1547,8 +1548,8 @@ namespace oomtm450PuckMod_Ruleset {
 
             Paused = true;
 
-
-            NetworkCommunication.SendDataToAll(SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(SoundsSystem.WHISTLE), Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT, _serverConfig);
+            NetworkCommunication.SendDataToAll(SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(SoundsSystem.WHISTLE),
+                Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT, _serverConfig);
 
             if (!string.IsNullOrEmpty(dataName) && !string.IsNullOrEmpty(dataStr)) {
                 NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
@@ -1557,7 +1558,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 EventManager.Instance.TriggerEvent(Codebase.Constants.SOUNDS_MOD_NAME, new Dictionary<string, object> { { SoundsSystem.PLAY_SOUND, SoundsSystem.FACEOFF_MUSIC } });
-                if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.PAUSE))
+                if (!NetworkCommunication.GetDataNamesToIgnore().Contains(SoundsSystem.PLAY_SOUND))
                     Logging.Log($"Sent data \"{SoundsSystem.PLAY_SOUND}\" ({SoundsSystem.FACEOFF_MUSIC}) to {Codebase.Constants.SOUNDS_MOD_NAME}.", _serverConfig);
             }
             catch (Exception ex) {
@@ -2029,6 +2030,7 @@ namespace oomtm450PuckMod_Ruleset {
                 switch (dataName) {
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
                         _serverHasResponded = true;
+
                         if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
                             break;
                         else if (OLD_MOD_VERSIONS.Contains(dataStr)) {
@@ -2114,6 +2116,8 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, clientId, Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+                        NetworkCommunication.SendData(SoundsSystem.LOAD_EXTRA_SOUNDS, Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "sounds"),
+                            clientId, Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT, _serverConfig);
                         break;
                 }
             }

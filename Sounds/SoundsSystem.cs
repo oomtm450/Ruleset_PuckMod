@@ -39,17 +39,34 @@ namespace oomtm450PuckMod_Sounds {
         #endregion
 
         #region Methods/Functions
-        internal void LoadSounds(bool loadMusics, bool setCustomGoalHorns) {
+        internal void LoadSounds(bool loadMusics, bool setCustomGoalHorns, string path = "") {
             try {
-                string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), SOUNDS_FOLDER_PATH);
-
-                if (_audioClips.Count == 0 && loadMusics) {
+                if (_audioClips.Count == 0)
                     DontDestroyOnLoad(gameObject);
 
-                    if (!Directory.Exists(fullPath)) {
-                        Logging.LogError($"Sounds not found at: {fullPath}", Sounds.ClientConfig);
-                        return;
-                    }
+                string fullPath = "";
+                if (string.IsNullOrEmpty(path))
+                    fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), SOUNDS_FOLDER_PATH);
+                else {
+                    string[] splittedPath = new string[] { path };
+                    if (path.Contains('/')) // Linux path
+                        splittedPath = path.Split('/');
+                    else // Windows path
+                        splittedPath = path.Split('\\');
+
+                    string rootPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                    int lastIndexOf = rootPath.LastIndexOf('/');
+                    if (lastIndexOf == -1)
+                        lastIndexOf = rootPath.LastIndexOf('\\');
+                    rootPath = rootPath.Substring(0, lastIndexOf);
+                    fullPath = Path.Combine(Path.Combine(rootPath, splittedPath[splittedPath.Count() - 2]), splittedPath.Last());
+
+                    Logging.LogWarning($"Extra sounds at: {fullPath}", Sounds.ClientConfig, true); // TODO : Remove debug log.
+                }
+
+                if (!Directory.Exists(fullPath)) {
+                    Logging.LogError($"Sounds not found at: {fullPath}", Sounds.ClientConfig);
+                    return;
                 }
 
                 Logging.Log("LoadSounds launching GetAudioClips.", Sounds.ClientConfig);
@@ -84,37 +101,35 @@ namespace oomtm450PuckMod_Sounds {
         /// <param name="setCustomGoalHorns">Bool, true if the custom goal horns has to be set.</param>
         /// <returns>IEnumerator, enumerator used by the Coroutine to load the audio clips.</returns>
         private IEnumerator GetAudioClips(string path, bool loadMusics, bool setCustomGoalHorns) {
-            if (_audioClips.Count == 0 && loadMusics) {
-                foreach (string file in Directory.GetFiles(path, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
-                    string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
-                    UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS);
-                    yield return webRequest.SendWebRequest();
+            foreach (string file in Directory.GetFiles(path, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
+                string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
+                UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS);
+                yield return webRequest.SendWebRequest();
 
-                    if (webRequest.result != UnityWebRequest.Result.Success)
-                        Errors.Add(webRequest.error);
-                    else {
-                        try {
-                            AudioClip clip = DownloadHandlerAudioClip.GetContent(webRequest);
-                            if (!clip) {
-                                Errors.Add($"Sounds.{nameof(GetAudioClips)} clip null.");
-                                continue;
-                            }
+                if (webRequest.result != UnityWebRequest.Result.Success)
+                    Errors.Add(webRequest.error);
+                else {
+                    try {
+                        AudioClip clip = DownloadHandlerAudioClip.GetContent(webRequest);
+                        if (!clip) {
+                            Errors.Add($"Sounds.{nameof(GetAudioClips)} clip null.");
+                            continue;
+                        }
 
-                            clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
-                            DontDestroyOnLoad(clip);
-                            _audioClips.Add(clip);
+                        clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
+                        DontDestroyOnLoad(clip);
+                        _audioClips.Add(clip);
 
+                        AddClipNameToCorrectList(clip.name);
+
+                        // Add a faceoff music twice to the list to double the chance of playing if it's a not a multi part music.
+                        // This is going to help music with one ogg to play more.
+                        if (!char.IsDigit(clip.name[clip.name.Length - 1]))
                             AddClipNameToCorrectList(clip.name);
 
-                            // Add a faceoff music twice to the list to double the chance of playing if it's a not a multi part music.
-                            // This is going to help music with one ogg to play more.
-                            if (!char.IsDigit(clip.name[clip.name.Length - 1]))
-                                AddClipNameToCorrectList(clip.name);
-
-                        }
-                        catch (Exception ex) {
-                            Errors.Add(ex.ToString());
-                        }
+                    }
+                    catch (Exception ex) {
+                        Errors.Add(ex.ToString());
                     }
                 }
             }
@@ -146,6 +161,9 @@ namespace oomtm450PuckMod_Sounds {
 
         internal void Play(string name, string type, float delay = 0, bool loop = false) {
             if (string.IsNullOrEmpty(name))
+                return;
+
+            if (type == Codebase.SoundsSystem.MUSIC && !Sounds.ClientConfig.Music)
                 return;
 
             if (!_soundObjects.TryGetValue(name, out GameObject soundObject)) {

@@ -5,6 +5,8 @@
         internal const string PLAY_SOUND = "playsound";
         internal const string STOP_SOUND = "stopsound";
 
+        internal const string LOAD_EXTRA_SOUNDS = "loadextrasounds";
+
         internal const string ALL = "all";
         internal const string MUSIC = "music";
         internal const string WHISTLE = "whistle";
