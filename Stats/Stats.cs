@@ -240,7 +240,7 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix(ref Puck __result, Vector3 position, Quaternion rotation, Vector3 velocity, bool isReplay) {
                 try {
                     // If this is not the server or this is a replay or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff)) // TODO : Remove test.
+                    if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff))
                         return;
 
                     __result.gameObject.AddComponent<PuckRaycast>();
@@ -520,7 +520,6 @@ namespace oomtm450PuckMod_Stats {
                     Puck puck = PuckManager.Instance.GetPuck();
                     if (puck) {
                         _puckZCoordinateDifference = (puck.Rigidbody.transform.position.z - _puckLastCoordinate.z) / 240 * ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate;
-                        Logging.Log(_puckZCoordinateDifference.ToString(CultureInfo.InvariantCulture), ServerConfig, true); // TODO : Remove debug log.
                         _puckLastCoordinate = new Vector3(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.y, puck.Rigidbody.transform.position.z);
                     }
                 }
