@@ -60,8 +60,6 @@ namespace oomtm450PuckMod_Sounds {
                         lastIndexOf = rootPath.LastIndexOf('\\');
                     rootPath = rootPath.Substring(0, lastIndexOf);
                     fullPath = Path.Combine(Path.Combine(rootPath, splittedPath[splittedPath.Count() - 2]), splittedPath.Last());
-
-                    Logging.LogWarning($"Extra sounds at: {fullPath}", Sounds.ClientConfig, true); // TODO : Remove debug log.
                 }
 
                 if (!Directory.Exists(fullPath)) {

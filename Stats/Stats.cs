@@ -17,7 +17,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.4.0DEV";
+        private static readonly string MOD_VERSION = "0.4.0DEV2";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -894,7 +894,7 @@ namespace oomtm450PuckMod_Stats {
                             };
 
                             string jsonContent = JsonConvert.SerializeObject(jsonDict);
-                            Logging.Log(jsonContent, ServerConfig);
+                            Logging.Log("Stats:" + jsonContent, ServerConfig);
 
                             // TODO : Save the JSON somewhere.
                         }
