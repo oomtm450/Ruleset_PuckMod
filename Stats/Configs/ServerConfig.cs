@@ -28,6 +28,11 @@ namespace oomtm450PuckMod_Stats.Configs {
         public float GoalieRadius { get; set; } = 0.788f;
 
         /// <summary>
+        /// Bool, true if the end of game stats JSON must be saved as file on the server.
+        /// </summary>
+        public bool SaveEOGJSON { get; set; } = true;
+
+        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]
@@ -51,6 +56,9 @@ namespace oomtm450PuckMod_Stats.Configs {
 
             if (GoalieRadius == _oldConfig.GoalieRadius)
                 GoalieRadius = newConfig.GoalieRadius;
+
+            if (SaveEOGJSON == _oldConfig.SaveEOGJSON)
+                SaveEOGJSON = newConfig.SaveEOGJSON;
         }
 
         /// <summary>

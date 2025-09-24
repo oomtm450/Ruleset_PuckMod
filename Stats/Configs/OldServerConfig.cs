@@ -15,6 +15,11 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
         public float GoalieRadius { get; } = 0.788f;
+
+        /// <summary>
+        /// Bool, true if the end of game stats JSON must be saved as file on the server.
+        /// </summary>
+        public bool SaveEOGJSON { get; } = true;
         #endregion
 
         #region Methods/Functions
