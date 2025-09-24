@@ -23,9 +23,14 @@ namespace oomtm450PuckMod_Stats.Configs {
         public bool LogInfo { get; set; } = true;
 
         /// <summary>
-        /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
+        /// Float, radius of a goalie. Make higher to augment the crease size for goalie save crease system.
         /// </summary>
-        public float GoalieRadius { get; set; } = 0.788f;
+        public float GoalieRadius { get; set; } = 0.7f;
+
+        /// <summary>
+        /// Float, delta of the puck Z direction to use with the goalie save crease system.
+        /// </summary>
+        public float GoalieSaveCreaseSystemZDelta { get; set; } = 0.0125f;
 
         /// <summary>
         /// Bool, true if the end of game stats JSON must be saved as file on the server.
@@ -56,6 +61,9 @@ namespace oomtm450PuckMod_Stats.Configs {
 
             if (GoalieRadius == _oldConfig.GoalieRadius)
                 GoalieRadius = newConfig.GoalieRadius;
+
+            if (GoalieSaveCreaseSystemZDelta == _oldConfig.GoalieSaveCreaseSystemZDelta)
+                GoalieSaveCreaseSystemZDelta = newConfig.GoalieSaveCreaseSystemZDelta;
 
             if (SaveEOGJSON == _oldConfig.SaveEOGJSON)
                 SaveEOGJSON = newConfig.SaveEOGJSON;

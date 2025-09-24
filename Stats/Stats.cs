@@ -18,7 +18,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.4.0DEV2";
+        private static readonly string MOD_VERSION = "0.4.0DEV4";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -519,7 +519,7 @@ namespace oomtm450PuckMod_Stats {
 
                     Puck puck = PuckManager.Instance.GetPuck();
                     if (puck) {
-                        _puckZCoordinateDifference = Math.Abs(puck.Rigidbody.transform.position.z - _puckLastCoordinate.z);
+                        _puckZCoordinateDifference = (puck.Rigidbody.transform.position.z - _puckLastCoordinate.z) / 240 * ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate;
                         Logging.Log(_puckZCoordinateDifference.ToString(CultureInfo.InvariantCulture), ServerConfig, true); // TODO : Remove debug log.
                         _puckLastCoordinate = new Vector3(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.y, puck.Rigidbody.transform.position.z);
                     }
@@ -640,35 +640,37 @@ namespace oomtm450PuckMod_Stats {
                     }
                     else {
                         if (_lastTeamOnPuckTipIncluded == otherTeam && PlayerFunc.IsGoalie(player) && Math.Abs(player.PlayerBody.Rigidbody.transform.position.z) > 13.5) {
-                            (double startX, double endX) = (0, 0);
-                            (double startZ, double endZ) = (0, 0);
-                            if (player.Team.Value == PlayerTeam.Blue) {
-                                (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.BlueTeam_BluePaint];
-                                (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BluePaint];
-                            }
-                            else {
-                                (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.RedTeam_BluePaint];
-                                (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[IceElement.RedTeam_BluePaint];
-                            }
+                            if ((player.Team.Value == PlayerTeam.Blue && _puckZCoordinateDifference > ServerConfig.GoalieSaveCreaseSystemZDelta) || (player.Team.Value == PlayerTeam.Red && _puckZCoordinateDifference < -ServerConfig.GoalieSaveCreaseSystemZDelta)) {
+                                (double startX, double endX) = (0, 0);
+                                (double startZ, double endZ) = (0, 0);
+                                if (player.Team.Value == PlayerTeam.Blue) {
+                                    (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.BlueTeam_BluePaint];
+                                    (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BluePaint];
+                                }
+                                else {
+                                    (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.RedTeam_BluePaint];
+                                    (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[IceElement.RedTeam_BluePaint];
+                                }
 
-                            bool goalieIsInHisCrease = true;
-                            if (player.PlayerBody.Rigidbody.transform.position.x - ServerConfig.GoalieRadius < startX ||
-                                player.PlayerBody.Rigidbody.transform.position.x + ServerConfig.GoalieRadius > endX ||
-                                player.PlayerBody.Rigidbody.transform.position.z - ServerConfig.GoalieRadius < startZ ||
-                                player.PlayerBody.Rigidbody.transform.position.z + ServerConfig.GoalieRadius > endZ) {
-                                goalieIsInHisCrease = false;
-                            }
+                                bool goalieIsInHisCrease = true;
+                                if (player.PlayerBody.Rigidbody.transform.position.x - ServerConfig.GoalieRadius < startX ||
+                                    player.PlayerBody.Rigidbody.transform.position.x + ServerConfig.GoalieRadius > endX ||
+                                    player.PlayerBody.Rigidbody.transform.position.z - ServerConfig.GoalieRadius < startZ ||
+                                    player.PlayerBody.Rigidbody.transform.position.z + ServerConfig.GoalieRadius > endZ) {
+                                    goalieIsInHisCrease = false;
+                                }
 
-                            if (goalieIsInHisCrease) {
-                                PlayerTeam shooterTeam = TeamFunc.GetOtherTeam(player.Team.Value);
-                                string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam].SteamId;
-                                if (!string.IsNullOrEmpty(shooterSteamId)) {
-                                    _checkIfPuckWasSaved[player.Team.Value] = new SaveCheck {
-                                        HasToCheck = true,
-                                        ShooterSteamId = shooterSteamId,
-                                        ShooterTeam = shooterTeam,
-                                        HitStick = stick,
-                                    };
+                                if (goalieIsInHisCrease) {
+                                    PlayerTeam shooterTeam = TeamFunc.GetOtherTeam(player.Team.Value);
+                                    string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam].SteamId;
+                                    if (!string.IsNullOrEmpty(shooterSteamId)) {
+                                        _checkIfPuckWasSaved[player.Team.Value] = new SaveCheck {
+                                            HasToCheck = true,
+                                            ShooterSteamId = shooterSteamId,
+                                            ShooterTeam = shooterTeam,
+                                            HitStick = stick,
+                                        };
+                                    }
                                 }
                             }
                         }
