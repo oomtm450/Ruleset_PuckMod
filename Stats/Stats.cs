@@ -6,10 +6,12 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static UnityEngine.Rendering.STP;
 
 namespace oomtm450PuckMod_Stats {
     public class Stats : IPuckMod {
@@ -893,10 +895,20 @@ namespace oomtm450PuckMod_Stats {
                                 { "stars", _stars },
                             };
 
-                            string jsonContent = JsonConvert.SerializeObject(jsonDict);
+                            string jsonContent = JsonConvert.SerializeObject(jsonDict, Formatting.Indented);
                             Logging.Log("Stats:" + jsonContent, ServerConfig);
 
-                            // TODO : Save the JSON somewhere.
+                            try {
+                                string statsFolderPath = Path.Combine(Path.GetFullPath("."), "stats");
+                                if (!Directory.Exists(statsFolderPath))
+                                    Directory.CreateDirectory(statsFolderPath);
+                                string jsonPath = Path.Combine(statsFolderPath, Constants.MOD_NAME + "_" + DateTime.UtcNow.ToString("dd-MM-yyyy_HH-mm-ss") + ".json");
+
+                                File.WriteAllText(jsonPath, jsonContent);
+                            }
+                            catch (Exception ex) {
+                                Logging.LogError($"Can't write the end of game stats in the stats folder. (Permission error ?)\n{ex}", ServerConfig);
+                            }
                         }
                     }
                 }
