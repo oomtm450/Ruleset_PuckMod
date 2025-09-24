@@ -10,6 +10,11 @@ namespace oomtm450PuckMod_Sounds.Configs {
         /// Bool, true if the info logs must be printed.
         /// </summary>
         public bool LogInfo { get; } = true;
+
+        /// <summary>
+        /// Bool, true if music is enabled.
+        /// </summary>
+        public bool EnableMusic { get; } = true;
         #endregion
 
         #region Methods/Functions

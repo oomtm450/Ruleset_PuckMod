@@ -23,6 +23,11 @@ namespace oomtm450PuckMod_Sounds.Configs {
         public bool LogInfo { get; set; } = true;
 
         /// <summary>
+        /// Bool, true if music is enabled.
+        /// </summary>
+        public bool EnableMusic { get; set; } = true;
+
+        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]
@@ -43,6 +48,9 @@ namespace oomtm450PuckMod_Sounds.Configs {
 
             //if (LogInfo == _oldConfig.LogInfo)
                 //LogInfo = newConfig.LogInfo;
+
+            if (EnableMusic == _oldConfig.EnableMusic)
+                EnableMusic = newConfig.EnableMusic;
         }
 
         /// <summary>
