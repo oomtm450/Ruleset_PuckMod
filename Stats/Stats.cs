@@ -602,7 +602,7 @@ namespace oomtm450PuckMod_Stats {
 
                     if (_puckRaycast.PuckIsGoingToNet[player.Team.Value]) {
                         if (PlayerFunc.IsGoalie(player) && Math.Abs(player.PlayerBody.Rigidbody.transform.position.z) > 13.5) {
-                            PlayerTeam shooterTeam = TeamFunc.GetOtherTeam(player.Team.Value);
+                            PlayerTeam shooterTeam = otherTeam;
                             string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam].SteamId;
                             if (!string.IsNullOrEmpty(shooterSteamId)) {
                                 _checkIfPuckWasSaved[player.Team.Value] = new SaveCheck {
@@ -614,7 +614,7 @@ namespace oomtm450PuckMod_Stats {
                             }
                         }
                         else {
-                            PlayerTeam shooterTeam = TeamFunc.GetOtherTeam(player.Team.Value);
+                            PlayerTeam shooterTeam = otherTeam;
                             string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam].SteamId;
                             if (!string.IsNullOrEmpty(shooterSteamId)) {
                                 _checkIfPuckWasBlocked[player.Team.Value] = new BlockCheck {
@@ -622,6 +622,41 @@ namespace oomtm450PuckMod_Stats {
                                     BlockerSteamId = player.SteamId.Value.ToString(),
                                     ShooterTeam = shooterTeam,
                                 };
+                            }
+                        }
+                    }
+                    else {
+                        if (_lastTeamOnPuckTipIncluded == otherTeam && PlayerFunc.IsGoalie(player) && Math.Abs(player.PlayerBody.Rigidbody.transform.position.z) > 13.5) {
+                            (double startX, double endX) = (0, 0);
+                            (double startZ, double endZ) = (0, 0);
+                            if (player.Team.Value == PlayerTeam.Blue) {
+                                (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.BlueTeam_BluePaint];
+                                (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BluePaint];
+                            }
+                            else {
+                                (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.RedTeam_BluePaint];
+                                (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[IceElement.RedTeam_BluePaint];
+                            }
+
+                            bool goalieIsInHisCrease = true;
+                            if (player.PlayerBody.Rigidbody.transform.position.x - ServerConfig.GoalieRadius < startX ||
+                                player.PlayerBody.Rigidbody.transform.position.x + ServerConfig.GoalieRadius > endX ||
+                                player.PlayerBody.Rigidbody.transform.position.z - ServerConfig.GoalieRadius < startZ ||
+                                player.PlayerBody.Rigidbody.transform.position.z + ServerConfig.GoalieRadius > endZ) {
+                                goalieIsInHisCrease = false;
+                            }
+
+                            if (goalieIsInHisCrease) {
+                                PlayerTeam shooterTeam = TeamFunc.GetOtherTeam(player.Team.Value);
+                                string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam].SteamId;
+                                if (!string.IsNullOrEmpty(shooterSteamId)) {
+                                    _checkIfPuckWasSaved[player.Team.Value] = new SaveCheck {
+                                        HasToCheck = true,
+                                        ShooterSteamId = shooterSteamId,
+                                        ShooterTeam = shooterTeam,
+                                        HitStick = stick,
+                                    };
+                                }
                             }
                         }
                     }

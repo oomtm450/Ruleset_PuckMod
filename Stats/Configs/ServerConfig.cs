@@ -23,6 +23,11 @@ namespace oomtm450PuckMod_Stats.Configs {
         public bool LogInfo { get; set; } = true;
 
         /// <summary>
+        /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
+        /// </summary>
+        public float GoalieRadius { get; set; } = 0.788f;
+
+        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]
@@ -43,6 +48,9 @@ namespace oomtm450PuckMod_Stats.Configs {
 
             //if (LogInfo == _oldConfig.LogInfo)
                 //LogInfo = newConfig.LogInfo;
+
+            if (GoalieRadius == _oldConfig.GoalieRadius)
+                GoalieRadius = newConfig.GoalieRadius;
         }
 
         /// <summary>

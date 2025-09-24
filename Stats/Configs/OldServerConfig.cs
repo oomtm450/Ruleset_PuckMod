@@ -10,6 +10,11 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// Bool, true if the info logs must be printed.
         /// </summary>
         public bool LogInfo { get; } = true;
+
+        /// <summary>
+        /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
+        /// </summary>
+        public float GoalieRadius { get; } = 0.788f;
         #endregion
 
         #region Methods/Functions
