@@ -110,7 +110,7 @@ namespace oomtm450PuckMod_Stats {
 
         private static Vector3 _puckLastCoordinate = Vector3.zero;
 
-        private static float _puckSlope = 0;
+        private static float _puckZCoordinateDifference = 0;
 
         /// <summary>
         /// LockDictionary of ulong and string, dictionary of all players
@@ -519,8 +519,8 @@ namespace oomtm450PuckMod_Stats {
 
                     Puck puck = PuckManager.Instance.GetPuck();
                     if (puck) {
-                        _puckSlope = (puck.Rigidbody.transform.position.y - _puckLastCoordinate.y) / (puck.Rigidbody.transform.position.x - _puckLastCoordinate.x);
-                        Logging.Log(_puckSlope.ToString(CultureInfo.InvariantCulture), ServerConfig, true); // TODO : Remove debug log.
+                        _puckZCoordinateDifference = Math.Abs(puck.Rigidbody.transform.position.z - _puckLastCoordinate.z);
+                        Logging.Log(_puckZCoordinateDifference.ToString(CultureInfo.InvariantCulture), ServerConfig, true); // TODO : Remove debug log.
                         _puckLastCoordinate = new Vector3(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.y, puck.Rigidbody.transform.position.z);
                     }
                 }
@@ -784,7 +784,7 @@ namespace oomtm450PuckMod_Stats {
                         ResetPuckWasSavedOrBlockedChecks();
 
                         _puckLastCoordinate = Vector3.zero;
-                        _puckSlope = 0;
+                        _puckZCoordinateDifference = 0;
 
                         // Reset player on puck.
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckTipIncludedSteamId.Keys))
