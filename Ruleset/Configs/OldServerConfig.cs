@@ -1,4 +1,5 @@
-﻿using Codebase.Configs;
+﻿using Codebase;
+using Codebase.Configs;
 using System.Collections.Generic;
 
 namespace oomtm450PuckMod_Ruleset.Configs {
