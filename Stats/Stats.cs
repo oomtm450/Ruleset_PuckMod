@@ -1,5 +1,6 @@
 ﻿using Codebase;
 using HarmonyLib;
+using Newtonsoft.Json;
 using oomtm450PuckMod_Stats.Configs;
 using System;
 using System.Collections.Generic;
@@ -878,6 +879,24 @@ namespace oomtm450PuckMod_Stats {
                                     LogStar(star.Value, star.Key);
                                 }
                             }
+
+                            // Log JSON for game stats.
+                            Dictionary<string, object> jsonDict = new Dictionary<string, object> {
+                                { "sog", _sog },
+                                { "passes", _passes },
+                                { "blocks", _blocks },
+                                { "saveperc", _savePerc },
+                                { "sticksaves", _stickSaves },
+                                { "redgoals", _redGoals },
+                                { "bluegoals", _blueGoals },
+                                { "gwg", gwgSteamId },
+                                { "stars", _stars },
+                            };
+
+                            string jsonContent = JsonConvert.SerializeObject(jsonDict);
+                            Logging.Log(jsonContent, ServerConfig);
+
+                            // TODO : Save the JSON somewhere.
                         }
                     }
                 }
