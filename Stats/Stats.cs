@@ -11,7 +11,6 @@ using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
-using static UnityEngine.Rendering.STP;
 
 namespace oomtm450PuckMod_Stats {
     public class Stats : IPuckMod {
@@ -108,6 +107,10 @@ namespace oomtm450PuckMod_Stats {
         private static bool _sendSavePercDuringGoalNextFrame = false;
 
         private static Player _sendSavePercDuringGoalNextFrame_Player = null;
+
+        private static Vector3 _puckLastCoordinate = Vector3.zero;
+
+        private static float _puckSlope = 0;
 
         /// <summary>
         /// LockDictionary of ulong and string, dictionary of all players
@@ -513,6 +516,13 @@ namespace oomtm450PuckMod_Stats {
                             }
                         }
                     }
+
+                    Puck puck = PuckManager.Instance.GetPuck();
+                    if (puck) {
+                        _puckSlope = (puck.Rigidbody.transform.position.y - _puckLastCoordinate.y) / (puck.Rigidbody.transform.position.x - _puckLastCoordinate.x);
+                        Logging.Log(_puckSlope.ToString(CultureInfo.InvariantCulture), ServerConfig, true); // TODO : Remove debug log.
+                        _puckLastCoordinate = new Vector3(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.y, puck.Rigidbody.transform.position.z);
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Postfix().\n{ex}", ServerConfig);
@@ -772,6 +782,9 @@ namespace oomtm450PuckMod_Stats {
 
                     if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver) {
                         ResetPuckWasSavedOrBlockedChecks();
+
+                        _puckLastCoordinate = Vector3.zero;
+                        _puckSlope = 0;
 
                         // Reset player on puck.
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckTipIncludedSteamId.Keys))
