@@ -8,39 +8,11 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace oomtm450PuckMod_Ruleset {
-    internal class Sounds : MonoBehaviour {
+namespace oomtm450PuckMod_Sounds {
+    internal class SoundsSystem : MonoBehaviour {
         #region Constants
         private const string SOUNDS_FOLDER_PATH = "sounds";
         private const string SOUND_EXTENSION = ".ogg";
-
-        internal const string LOAD_SOUNDS = "loadsounds";
-        internal const string PLAY_SOUND = "playsound";
-        internal const string STOP_SOUND = "stopsound";
-
-        internal const string ALL = "all";
-        internal const string MUSIC = "music";
-        internal const string WHISTLE = "whistle";
-        internal const string BLUEGOALHORN = "bluegoalhorn";
-        internal const string REDGOALHORN = "redgoalhorn";
-        internal const string FACEOFF_MUSIC = "faceoffmusic";
-        internal const string FACEOFF_MUSIC_DELAYED = FACEOFF_MUSIC + "d";
-
-        internal const string BLUE_GOAL_MUSIC = "bluegoalmusic";
-        internal const string RED_GOAL_MUSIC = "redgoalmusic";
-        internal const string BETWEEN_PERIODS_MUSIC = "betweenperiodsmusic";
-        internal const string WARMUP_MUSIC = "warmupmusic";
-
-        internal const string LAST_MINUTE_MUSIC = "lastminutemusic";
-        internal const string LAST_MINUTE_MUSIC_DELAYED = LAST_MINUTE_MUSIC + "d";
-
-        internal const string FIRST_FACEOFF_MUSIC = "faceofffirstmusic";
-        internal const string FIRST_FACEOFF_MUSIC_DELAYED = FIRST_FACEOFF_MUSIC + "d";
-
-        internal const string SECOND_FACEOFF_MUSIC = "faceoffsecondmusic";
-        internal const string SECOND_FACEOFF_MUSIC_DELAYED = SECOND_FACEOFF_MUSIC + "d";
-
-        internal const string GAMEOVER_MUSIC = "gameovermusic";
         #endregion
 
         #region Fields
@@ -67,24 +39,39 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Methods/Functions
-        internal void LoadSounds() {
+        internal void LoadSounds(bool loadMusics, bool setCustomGoalHorns, string path = "") {
             try {
-                string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), SOUNDS_FOLDER_PATH);
-
-                if (_audioClips.Count == 0 && Ruleset._clientConfig.Music) {
+                if (_audioClips.Count == 0)
                     DontDestroyOnLoad(gameObject);
 
-                    if (!Directory.Exists(fullPath)) {
-                        Logging.LogError($"Sounds not found at: {fullPath}", Ruleset._clientConfig);
-                        return;
-                    }
+                string fullPath = "";
+                if (string.IsNullOrEmpty(path))
+                    fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), SOUNDS_FOLDER_PATH);
+                else {
+                    string[] splittedPath = new string[] { path };
+                    if (path.Contains('/')) // Linux path
+                        splittedPath = path.Split('/');
+                    else // Windows path
+                        splittedPath = path.Split('\\');
+
+                    string rootPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                    int lastIndexOf = rootPath.LastIndexOf('/');
+                    if (lastIndexOf == -1)
+                        lastIndexOf = rootPath.LastIndexOf('\\');
+                    rootPath = rootPath.Substring(0, lastIndexOf);
+                    fullPath = Path.Combine(Path.Combine(rootPath, splittedPath[splittedPath.Count() - 2]), splittedPath.Last());
                 }
 
-                Logging.Log("LoadSounds launching GetAudioClips.", Ruleset._clientConfig);
-                StartCoroutine(GetAudioClips(fullPath));
+                if (!Directory.Exists(fullPath)) {
+                    Logging.LogError($"Sounds not found at: {fullPath}", Sounds.ClientConfig);
+                    return;
+                }
+
+                Logging.Log("LoadSounds launching GetAudioClips.", Sounds.ClientConfig);
+                StartCoroutine(GetAudioClips(fullPath, loadMusics, setCustomGoalHorns));
             }
             catch (Exception ex) {
-                Logging.LogError($"Error loading Sounds.\n{ex}", Ruleset._clientConfig);
+                Logging.LogError($"Error loading Sounds.\n{ex}", Sounds.ClientConfig);
             }
         }
 
@@ -108,70 +95,73 @@ namespace oomtm450PuckMod_Ruleset {
         /// Function that downloads the streamed audio clips from the mods' folder using WebRequest locally.
         /// </summary>
         /// <param name="path">String, full path to the directory containing the sounds to load.</param>
+        /// <param name="loadMusics">Bool, true if the music has to be loaded with the other sounds.</param>
+        /// <param name="setCustomGoalHorns">Bool, true if the custom goal horns has to be set.</param>
         /// <returns>IEnumerator, enumerator used by the Coroutine to load the audio clips.</returns>
-        private IEnumerator GetAudioClips(string path) {
-            if (_audioClips.Count == 0 && Ruleset._clientConfig.Music) {
-                foreach (string file in Directory.GetFiles(path, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
-                    string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
-                    UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS);
-                    yield return webRequest.SendWebRequest();
+        private IEnumerator GetAudioClips(string path, bool loadMusics, bool setCustomGoalHorns) {
+            foreach (string file in Directory.GetFiles(path, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
+                string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
+                UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS);
+                yield return webRequest.SendWebRequest();
 
-                    if (webRequest.result != UnityWebRequest.Result.Success)
-                        Errors.Add(webRequest.error);
-                    else {
-                        try {
-                            AudioClip clip = DownloadHandlerAudioClip.GetContent(webRequest);
-                            if (!clip) {
-                                Errors.Add($"Sounds.{nameof(GetAudioClips)} clip null.");
-                                continue;
-                            }
+                if (webRequest.result != UnityWebRequest.Result.Success)
+                    Errors.Add(webRequest.error);
+                else {
+                    try {
+                        AudioClip clip = DownloadHandlerAudioClip.GetContent(webRequest);
+                        if (!clip) {
+                            Errors.Add($"Sounds.{nameof(GetAudioClips)} clip null.");
+                            continue;
+                        }
 
-                            clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
-                            DontDestroyOnLoad(clip);
-                            _audioClips.Add(clip);
+                        clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
+                        DontDestroyOnLoad(clip);
+                        _audioClips.Add(clip);
 
+                        AddClipNameToCorrectList(clip.name);
+
+                        // Add a faceoff music twice to the list to double the chance of playing if it's a not a multi part music.
+                        // This is going to help music with one ogg to play more.
+                        if (!char.IsDigit(clip.name[clip.name.Length - 1]))
                             AddClipNameToCorrectList(clip.name);
 
-                            // Add a faceoff music twice to the list to double the chance of playing if it's a not a multi part music.
-                            // This is going to help music with one ogg to play more.
-                            if (!char.IsDigit(clip.name[clip.name.Length - 1]))
-                                AddClipNameToCorrectList(clip.name);
-
-                        }
-                        catch (Exception ex) {
-                            Errors.Add(ex.ToString());
-                        }
+                    }
+                    catch (Exception ex) {
+                        Errors.Add(ex.ToString());
                     }
                 }
             }
 
-            if (Ruleset._clientConfig.CustomGoalHorns)
+            if (setCustomGoalHorns)
                 SetGoalHorns();
         }
 
         private void AddClipNameToCorrectList(string clipName) {
-            if (clipName.Contains(FACEOFF_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.FACEOFF_MUSIC))
                 FaceoffMusicList.Add(clipName);
-            if (clipName.Contains(BLUE_GOAL_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.BLUE_GOAL_MUSIC))
                 BlueGoalMusicList.Add(clipName);
-            if (clipName.Contains(RED_GOAL_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.RED_GOAL_MUSIC))
                 RedGoalMusicList.Add(clipName);
-            if (clipName.Contains(BETWEEN_PERIODS_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC))
                 BetweenPeriodsMusicList.Add(clipName);
-            if (clipName.Contains(WARMUP_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.WARMUP_MUSIC))
                 WarmupMusicList.Add(clipName);
-            if (clipName.Contains(LAST_MINUTE_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.LAST_MINUTE_MUSIC))
                 LastMinuteMusicList.Add(clipName);
-            if (clipName.Contains(FIRST_FACEOFF_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC))
                 FirstFaceoffMusicList.Add(clipName);
-            if (clipName.Contains(SECOND_FACEOFF_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC))
                 SecondFaceoffMusicList.Add(clipName);
-            if (clipName.Contains(GAMEOVER_MUSIC))
+            if (clipName.Contains(Codebase.SoundsSystem.GAMEOVER_MUSIC))
                 GameOverMusicList.Add(clipName);
         }
 
         internal void Play(string name, string type, float delay = 0, bool loop = false) {
             if (string.IsNullOrEmpty(name))
+                return;
+
+            if (type == Codebase.SoundsSystem.MUSIC && !Sounds.ClientConfig.Music)
                 return;
 
             if (!_soundObjects.TryGetValue(name, out GameObject soundObject)) {
@@ -190,9 +180,9 @@ namespace oomtm450PuckMod_Ruleset {
             AudioSource audioSource = soundObject.GetComponent<AudioSource>();
             audioSource.loop = loop;
 
-            if (type == MUSIC) {
+            if (type == Codebase.SoundsSystem.MUSIC) {
                 _currentAudioSource = audioSource;
-                ChangeMusicVolume(Ruleset._clientConfig.MusicVolume);
+                ChangeMusicVolume(Sounds.ClientConfig.MusicVolume);
             }
             else {
                 _currentAudioSource = null;
@@ -279,7 +269,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 AudioSource blueGoalAudioSource = blueGoalObj.GetComponent<AudioSource>();
-                blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == REDGOALHORN);
+                blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == Codebase.SoundsSystem.REDGOALHORN);
                 blueGoalAudioSource.maxDistance = 400f;
 
                 GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
@@ -290,7 +280,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 AudioSource redGoalAudioSource = redGoalObj.GetComponent<AudioSource>();
-                redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == BLUEGOALHORN);
+                redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == Codebase.SoundsSystem.BLUEGOALHORN);
                 redGoalAudioSource.maxDistance = 400f;
             }
             catch (Exception ex) {

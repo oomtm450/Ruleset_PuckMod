@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Codebase;
+using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
     /// <summary>
@@ -121,20 +122,5 @@ namespace oomtm450PuckMod_Ruleset {
                     return new Vector3(0f, 0.01f, 0f);
             }
         }
-    }
-
-    /// <summary>
-    /// Enum of the faceoff locations.
-    /// </summary>
-    public enum FaceoffSpot : ushort {
-        Center,
-        BlueteamBLLeft,
-        BlueteamBLRight,
-        RedteamBLLeft,
-        RedteamBLRight,
-        BlueteamDZoneLeft,
-        BlueteamDZoneRight,
-        RedteamDZoneLeft,
-        RedteamDZoneRight,
     }
 }

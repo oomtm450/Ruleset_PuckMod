@@ -22,5 +22,10 @@ namespace oomtm450PuckMod_Ruleset {
         /// Const string, used for the communication from the client.
         /// </summary>
         internal const string FROM_CLIENT_TO_SERVER = MOD_NAME + "_client";
+
+        /// <summary>
+        /// Const string, tag to ask the server for the startup data.
+        /// </summary>
+        internal const string ASK_SERVER_FOR_STARTUP_DATA = MOD_NAME + "ASKDATA";
     }
 }

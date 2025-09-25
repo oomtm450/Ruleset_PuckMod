@@ -1,10 +1,12 @@
 ﻿using Codebase;
 using HarmonyLib;
+using Newtonsoft.Json;
 using oomtm450PuckMod_Stats.Configs;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
@@ -16,7 +18,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.3.0";
+        private static readonly string MOD_VERSION = "0.4.0";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -28,6 +30,7 @@ namespace oomtm450PuckMod_Stats {
             "0.2.0",
             "0.2.1",
             "0.2.2",
+            "0.3.0",
         });
 
         /// <summary>
@@ -90,11 +93,6 @@ namespace oomtm450PuckMod_Stats {
         private const string SOG_HEADER_LABEL_NAME = "SOGHeaderLabel";
 
         private const string SOG_LABEL = "SOGLabel";
-
-        /// <summary>
-        /// Const string, tag to ask the server for the startup data.
-        /// </summary>
-        private const string ASK_SERVER_FOR_STARTUP_DATA = Constants.MOD_NAME + "ASKDATA";
         #endregion
 
         #region Fields and Properties
@@ -109,6 +107,10 @@ namespace oomtm450PuckMod_Stats {
         private static bool _sendSavePercDuringGoalNextFrame = false;
 
         private static Player _sendSavePercDuringGoalNextFrame_Player = null;
+
+        private static Vector3 _puckLastCoordinate = Vector3.zero;
+
+        private static float _puckZCoordinateDifference = 0;
 
         /// <summary>
         /// LockDictionary of ulong and string, dictionary of all players
@@ -238,7 +240,7 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix(ref Puck __result, Vector3 position, Quaternion rotation, Vector3 velocity, bool isReplay) {
                 try {
                     // If this is not the server or this is a replay or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff)) // TODO : Remove test.
+                    if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff))
                         return;
 
                     __result.gameObject.AddComponent<PuckRaycast>();
@@ -514,6 +516,12 @@ namespace oomtm450PuckMod_Stats {
                             }
                         }
                     }
+
+                    Puck puck = PuckManager.Instance.GetPuck();
+                    if (puck) {
+                        _puckZCoordinateDifference = (puck.Rigidbody.transform.position.z - _puckLastCoordinate.z) / 240 * ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate;
+                        _puckLastCoordinate = new Vector3(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.y, puck.Rigidbody.transform.position.z);
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Postfix().\n{ex}", ServerConfig);
@@ -542,7 +550,7 @@ namespace oomtm450PuckMod_Stats {
                         DateTime now = DateTime.UtcNow;
                         if (_lastDateTimeAskStartupData + TimeSpan.FromSeconds(1) < now && _askServerForStartupDataCount++ < 10) {
                             _lastDateTimeAskStartupData = now;
-                            NetworkCommunication.SendData(ASK_SERVER_FOR_STARTUP_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, _clientConfig);
+                            NetworkCommunication.SendData(Constants.ASK_SERVER_FOR_STARTUP_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, _clientConfig);
                         }
                     }
                     else if (_askForKick) {
@@ -606,7 +614,7 @@ namespace oomtm450PuckMod_Stats {
 
                     if (_puckRaycast.PuckIsGoingToNet[player.Team.Value]) {
                         if (PlayerFunc.IsGoalie(player) && Math.Abs(player.PlayerBody.Rigidbody.transform.position.z) > 13.5) {
-                            PlayerTeam shooterTeam = TeamFunc.GetOtherTeam(player.Team.Value);
+                            PlayerTeam shooterTeam = otherTeam;
                             string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam].SteamId;
                             if (!string.IsNullOrEmpty(shooterSteamId)) {
                                 _checkIfPuckWasSaved[player.Team.Value] = new SaveCheck {
@@ -618,7 +626,7 @@ namespace oomtm450PuckMod_Stats {
                             }
                         }
                         else {
-                            PlayerTeam shooterTeam = TeamFunc.GetOtherTeam(player.Team.Value);
+                            PlayerTeam shooterTeam = otherTeam;
                             string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam].SteamId;
                             if (!string.IsNullOrEmpty(shooterSteamId)) {
                                 _checkIfPuckWasBlocked[player.Team.Value] = new BlockCheck {
@@ -626,6 +634,43 @@ namespace oomtm450PuckMod_Stats {
                                     BlockerSteamId = player.SteamId.Value.ToString(),
                                     ShooterTeam = shooterTeam,
                                 };
+                            }
+                        }
+                    }
+                    else {
+                        if (_lastTeamOnPuckTipIncluded == otherTeam && PlayerFunc.IsGoalie(player) && Math.Abs(player.PlayerBody.Rigidbody.transform.position.z) > 13.5) {
+                            if ((player.Team.Value == PlayerTeam.Blue && _puckZCoordinateDifference > ServerConfig.GoalieSaveCreaseSystemZDelta) || (player.Team.Value == PlayerTeam.Red && _puckZCoordinateDifference < -ServerConfig.GoalieSaveCreaseSystemZDelta)) {
+                                (double startX, double endX) = (0, 0);
+                                (double startZ, double endZ) = (0, 0);
+                                if (player.Team.Value == PlayerTeam.Blue) {
+                                    (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.BlueTeam_BluePaint];
+                                    (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BluePaint];
+                                }
+                                else {
+                                    (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.RedTeam_BluePaint];
+                                    (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[IceElement.RedTeam_BluePaint];
+                                }
+
+                                bool goalieIsInHisCrease = true;
+                                if (player.PlayerBody.Rigidbody.transform.position.x - ServerConfig.GoalieRadius < startX ||
+                                    player.PlayerBody.Rigidbody.transform.position.x + ServerConfig.GoalieRadius > endX ||
+                                    player.PlayerBody.Rigidbody.transform.position.z - ServerConfig.GoalieRadius < startZ ||
+                                    player.PlayerBody.Rigidbody.transform.position.z + ServerConfig.GoalieRadius > endZ) {
+                                    goalieIsInHisCrease = false;
+                                }
+
+                                if (goalieIsInHisCrease) {
+                                    PlayerTeam shooterTeam = TeamFunc.GetOtherTeam(player.Team.Value);
+                                    string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam].SteamId;
+                                    if (!string.IsNullOrEmpty(shooterSteamId)) {
+                                        _checkIfPuckWasSaved[player.Team.Value] = new SaveCheck {
+                                            HasToCheck = true,
+                                            ShooterSteamId = shooterSteamId,
+                                            ShooterTeam = shooterTeam,
+                                            HitStick = stick,
+                                        };
+                                    }
+                                }
                             }
                         }
                     }
@@ -739,6 +784,9 @@ namespace oomtm450PuckMod_Stats {
                     if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver) {
                         ResetPuckWasSavedOrBlockedChecks();
 
+                        _puckLastCoordinate = Vector3.zero;
+                        _puckZCoordinateDifference = 0;
+
                         // Reset player on puck.
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckTipIncludedSteamId.Keys))
                             _lastPlayerOnPuckTipIncludedSteamId[key] = ("", DateTime.MinValue);
@@ -847,6 +895,36 @@ namespace oomtm450PuckMod_Stats {
                                     LogStar(star.Value, star.Key);
                                 }
                             }
+
+                            // Log JSON for game stats.
+                            Dictionary<string, object> jsonDict = new Dictionary<string, object> {
+                                { "sog", _sog },
+                                { "passes", _passes },
+                                { "blocks", _blocks },
+                                { "saveperc", _savePerc },
+                                { "sticksaves", _stickSaves },
+                                { "redgoals", _redGoals },
+                                { "bluegoals", _blueGoals },
+                                { "gwg", gwgSteamId },
+                                { "stars", _stars },
+                            };
+
+                            string jsonContent = JsonConvert.SerializeObject(jsonDict, Formatting.Indented);
+                            Logging.Log("Stats:" + jsonContent, ServerConfig);
+
+                            if (ServerConfig.SaveEOGJSON) {
+                                try {
+                                    string statsFolderPath = Path.Combine(Path.GetFullPath("."), "stats");
+                                    if (!Directory.Exists(statsFolderPath))
+                                        Directory.CreateDirectory(statsFolderPath);
+                                    string jsonPath = Path.Combine(statsFolderPath, Constants.MOD_NAME + "_" + DateTime.UtcNow.ToString("dd-MM-yyyy_HH-mm-ss") + ".json");
+
+                                    File.WriteAllText(jsonPath, jsonContent);
+                                }
+                                catch (Exception ex) {
+                                    Logging.LogError($"Can't write the end of game stats in the stats folder. (Permission error ?)\n{ex}", ServerConfig);
+                                }
+                            }
                         }
                     }
                 }
@@ -910,6 +988,7 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.Instance.AddEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     EventManager.Instance.AddEventListener(Codebase.Constants.STATS_MOD_NAME, Event_OnStatsTrigger);
+                    EventManager.Instance.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                 }
                 else {
                     EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
@@ -943,6 +1022,7 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     EventManager.Instance.RemoveEventListener(Codebase.Constants.STATS_MOD_NAME, Event_OnStatsTrigger);
+                    EventManager.Instance.RemoveEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
@@ -988,11 +1068,6 @@ namespace oomtm450PuckMod_Stats {
                                 Logging.LogError($"{nameof(_sendSavePercDuringGoalNextFrame_Player)} is null.", ServerConfig);
                             else
                                 _sendSavePercDuringGoalNextFrame = true;
-
-                            break;
-
-                        case Codebase.Constants.PAUSE:
-                            _paused = bool.Parse(value);
                             break;
 
                         case Codebase.Constants.LOGIC:
@@ -1002,7 +1077,26 @@ namespace oomtm450PuckMod_Stats {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnStatsTrigger.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_OnStatsTrigger)}.\n{ex}", ServerConfig);
+            }
+        }
+
+        public static void Event_OnRulesetTrigger(Dictionary<string, object> message) {
+            try {
+                foreach (KeyValuePair<string, object> kvp in message) {
+                    string value = (string)kvp.Value;
+                    if (!NetworkCommunication.GetDataNamesToIgnore().Contains(kvp.Key))
+                        Logging.Log($"Received data {kvp.Key}. Content : {value}", ServerConfig);
+
+                    switch (kvp.Key) {
+                        case Codebase.Constants.PAUSE:
+                            _paused = bool.Parse(value);
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(Event_OnRulesetTrigger)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -1015,7 +1109,7 @@ namespace oomtm450PuckMod_Stats {
             if (!ServerFunc.IsDedicatedServer())
                 return;
 
-            Logging.Log("Event_OnClientConnected", ServerConfig);
+            //Logging.Log("Event_OnClientConnected", ServerConfig);
 
             try {
                 Server_RegisterNamedMessageHandler();
@@ -1033,7 +1127,7 @@ namespace oomtm450PuckMod_Stats {
                 CheckForRulesetMod();
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnClientConnected.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_OnClientConnected)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -1046,7 +1140,7 @@ namespace oomtm450PuckMod_Stats {
             if (!ServerFunc.IsDedicatedServer())
                 return;
 
-            Logging.Log("Event_OnClientDisconnected", ServerConfig);
+            //Logging.Log("Event_OnClientDisconnected", ServerConfig);
 
             try {
                 ulong clientId = (ulong)message["clientId"];
@@ -1068,7 +1162,7 @@ namespace oomtm450PuckMod_Stats {
                 _players_ClientId_SteamId.Remove(clientId);
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnClientDisconnected.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_OnClientDisconnected)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -1100,7 +1194,7 @@ namespace oomtm450PuckMod_Stats {
                 ScoreboardModifications(false);
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_Client_OnClientStopped.\n{ex}", _clientConfig);
+                Logging.LogError($"Error in {nameof(Event_Client_OnClientStopped)}.\n{ex}", _clientConfig);
             }
         }
 
@@ -1211,7 +1305,7 @@ namespace oomtm450PuckMod_Stats {
                         }
                         break;
 
-                    case ASK_SERVER_FOR_STARTUP_DATA: // SERVER-SIDE : Send the necessary data to client.
+                    case Constants.ASK_SERVER_FOR_STARTUP_DATA: // SERVER-SIDE : Send the necessary data to client.
                         if (dataStr != "1")
                             break;
 

@@ -88,7 +88,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; set; } = 750;
+        public int MaxPossessionMilliseconds { get; set; } = 700;
         #endregion
 
         #region Methods/Functions
@@ -269,12 +269,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
         public Dictionary<Zone, float> MaxPossibleTime { get; set; } = new Dictionary<Zone, float> {
-            { Zone.BlueTeam_BehindGoalLine, 8750f },
-            { Zone.RedTeam_BehindGoalLine, 8750f },
-            { Zone.BlueTeam_Zone, 7000f },
-            { Zone.RedTeam_Zone, 7000f },
-            { Zone.BlueTeam_Center, 5250f },
-            { Zone.RedTeam_Center, 5250f },
+            { Zone.BlueTeam_BehindGoalLine, 9000f },
+            { Zone.RedTeam_BehindGoalLine, 9000f },
+            { Zone.BlueTeam_Zone, 7250f },
+            { Zone.RedTeam_Zone, 7250f },
+            { Zone.BlueTeam_Center, 5500f },
+            { Zone.RedTeam_Center, 5500f },
         };
 
         /// <summary>

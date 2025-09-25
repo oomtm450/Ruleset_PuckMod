@@ -1,4 +1,5 @@
-﻿using Codebase.Configs;
+﻿using Codebase;
+using Codebase.Configs;
 using System.Collections.Generic;
 
 namespace oomtm450PuckMod_Ruleset.Configs {
@@ -71,7 +72,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; } = 750;
+        public int MaxPossessionMilliseconds { get; } = 750; // TODO : Change next release.
         #endregion
 
         #region Methods/Functions
@@ -151,7 +152,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
-        public Dictionary<Zone, float> MaxPossibleTime { get; } = new Dictionary<Zone, float> {
+        public Dictionary<Zone, float> MaxPossibleTime { get; } = new Dictionary<Zone, float> { // TODO : Change after next release.
             { Zone.BlueTeam_BehindGoalLine, 8750f },
             { Zone.RedTeam_BehindGoalLine, 8750f },
             { Zone.BlueTeam_Zone, 7000f },
@@ -236,7 +237,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
         /// </summary>
-        public int HitNoGoalMilliseconds { get; } = 11000; // TODO : Remove when penalty is added.
+        public int HitNoGoalMilliseconds { get; } = 11000;
 
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.

@@ -1,14 +1,29 @@
 ﻿namespace Codebase {
     internal static class Constants {
         /// <summary>
-        /// Const string, name of the stats mod.
+        /// Const string, prefix of all the mod's names.
         /// </summary>
-        internal const string STATS_MOD_NAME = "oomtm450_stats";
+        private const string MODS_PREFIX = "oomtm450_";
 
         /// <summary>
-        /// Const string, name of the ruleset mod.
+        /// Const string, name of the Stats mod.
         /// </summary>
-        internal const string RULESET_MOD_NAME = "oomtm450_ruleset";
+        internal const string STATS_MOD_NAME = MODS_PREFIX + "stats";
+
+        /// <summary>
+        /// Const string, name of the Ruleset mod.
+        /// </summary>
+        internal const string RULESET_MOD_NAME = MODS_PREFIX + "ruleset";
+
+        /// <summary>
+        /// Const string, name of the Sounds mod.
+        /// </summary>
+        internal const string SOUNDS_MOD_NAME = MODS_PREFIX + "sounds";
+
+        /// <summary>
+        /// Const string, used for the communication from the server for the Sounds mod.
+        /// </summary>
+        internal const string SOUNDS_FROM_SERVER_TO_CLIENT = SOUNDS_MOD_NAME + "_server";
 
         /// <summary>
         /// Const float, radius of the puck.
@@ -54,5 +69,10 @@
         /// Const string, data name for enabling or disabling the logic in mods.
         /// </summary>
         public const string LOGIC = "logic";
+
+        /// <summary>
+        /// Const string, data name for telling mods that Ruleset changed phase manually.
+        /// </summary>
+        public const string CHANGED_PHASE = "chphase";
     }
 }

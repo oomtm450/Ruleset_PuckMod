@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEngine;
 
-namespace oomtm450PuckMod_Ruleset {
+namespace Codebase {
     /// <summary>
     /// Class containing the code for the zones and ice elements.
     /// </summary>
@@ -253,6 +253,21 @@ namespace oomtm450PuckMod_Ruleset {
         RedTeam_HashMarks,
         BlueTeam_BluePaint,
         RedTeam_BluePaint,
+    }
+
+    /// <summary>
+    /// Enum of the faceoff locations.
+    /// </summary>
+    public enum FaceoffSpot : ushort {
+        Center,
+        BlueteamBLLeft,
+        BlueteamBLRight,
+        RedteamBLLeft,
+        RedteamBLRight,
+        BlueteamDZoneLeft,
+        BlueteamDZoneRight,
+        RedteamDZoneLeft,
+        RedteamDZoneRight,
     }
     #endregion
 }

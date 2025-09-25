@@ -4,9 +4,9 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 
-namespace oomtm450PuckMod_Stats.Configs {
+namespace oomtm450PuckMod_Sounds.Configs {
     /// <summary>
-    /// Class containing the configuration from oomtm450_stats_serverconfig.json used for this mod.
+    /// Class containing the configuration from oomtm450_sounds_serverconfig.json used for this mod.
     /// </summary>
     public class ServerConfig : IConfig, ISubConfig {
         #region Constants
@@ -23,19 +23,9 @@ namespace oomtm450PuckMod_Stats.Configs {
         public bool LogInfo { get; set; } = true;
 
         /// <summary>
-        /// Float, radius of a goalie. Make higher to augment the crease size for goalie save crease system.
+        /// Bool, true if music is enabled.
         /// </summary>
-        public float GoalieRadius { get; set; } = 0.7f;
-
-        /// <summary>
-        /// Float, delta of the puck Z direction to use with the goalie save crease system.
-        /// </summary>
-        public float GoalieSaveCreaseSystemZDelta { get; set; } = 0.0125f;
-
-        /// <summary>
-        /// Bool, true if the end of game stats JSON must be saved as file on the server.
-        /// </summary>
-        public bool SaveEOGJSON { get; set; } = true;
+        public bool EnableMusic { get; set; } = true;
 
         /// <summary>
         /// String, name of the mod.
@@ -59,14 +49,8 @@ namespace oomtm450PuckMod_Stats.Configs {
             //if (LogInfo == _oldConfig.LogInfo)
                 //LogInfo = newConfig.LogInfo;
 
-            if (GoalieRadius == _oldConfig.GoalieRadius)
-                GoalieRadius = newConfig.GoalieRadius;
-
-            if (GoalieSaveCreaseSystemZDelta == _oldConfig.GoalieSaveCreaseSystemZDelta)
-                GoalieSaveCreaseSystemZDelta = newConfig.GoalieSaveCreaseSystemZDelta;
-
-            if (SaveEOGJSON == _oldConfig.SaveEOGJSON)
-                SaveEOGJSON = newConfig.SaveEOGJSON;
+            if (EnableMusic == _oldConfig.EnableMusic)
+                EnableMusic = newConfig.EnableMusic;
         }
 
         /// <summary>
