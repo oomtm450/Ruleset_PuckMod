@@ -730,7 +730,7 @@ namespace oomtm450PuckMod_Sounds {
                 _soundsSystem = soundsGameObject.AddComponent<SoundsSystem>();
             }
 
-            _soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns);
+            //_soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns);
         }
 
         /// <summary>

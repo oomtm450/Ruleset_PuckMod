@@ -39,28 +39,23 @@ namespace oomtm450PuckMod_Sounds {
         #endregion
 
         #region Methods/Functions
-        internal void LoadSounds(bool loadMusics, bool setCustomGoalHorns, string path = "") {
+        internal void LoadSounds(bool loadMusics, bool setCustomGoalHorns, string path) {
             try {
                 if (_audioClips.Count == 0)
                     DontDestroyOnLoad(gameObject);
 
-                string fullPath = "";
-                if (string.IsNullOrEmpty(path))
-                    fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), SOUNDS_FOLDER_PATH);
-                else {
-                    string[] splittedPath = new string[] { path };
-                    if (path.Contains('/')) // Linux path
-                        splittedPath = path.Split('/');
-                    else // Windows path
-                        splittedPath = path.Split('\\');
+                string[] splittedPath = new string[] { path };
+                if (path.Contains('/')) // Linux path
+                    splittedPath = path.Split('/');
+                else // Windows path
+                    splittedPath = path.Split('\\');
 
-                    string rootPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                    int lastIndexOf = rootPath.LastIndexOf('/');
-                    if (lastIndexOf == -1)
-                        lastIndexOf = rootPath.LastIndexOf('\\');
-                    rootPath = rootPath.Substring(0, lastIndexOf);
-                    fullPath = Path.Combine(Path.Combine(rootPath, splittedPath[splittedPath.Count() - 2]), splittedPath.Last());
-                }
+                string rootPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                int lastIndexOf = rootPath.LastIndexOf('/');
+                if (lastIndexOf == -1)
+                    lastIndexOf = rootPath.LastIndexOf('\\');
+                rootPath = rootPath.Substring(0, lastIndexOf);
+                string fullPath = Path.Combine(Path.Combine(rootPath, splittedPath[splittedPath.Count() - 2]), splittedPath.Last());
 
                 if (!Directory.Exists(fullPath)) {
                     Logging.LogError($"Sounds not found at: {fullPath}", Sounds.ClientConfig);
