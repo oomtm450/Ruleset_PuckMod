@@ -26,7 +26,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.24.0";
+        private static readonly string MOD_VERSION = "0.25.0DEV";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -999,7 +999,7 @@ namespace oomtm450PuckMod_Ruleset {
                     players = PlayerManager.Instance.GetPlayers();
                     puck = PuckManager.Instance.GetPuck();
 
-                    if (players.Count == 0 || puck == null || Paused)
+                    if (players.Count == 0 || puck == null || !puck || Paused)
                         return true;
                 }
                 catch (Exception ex) {
