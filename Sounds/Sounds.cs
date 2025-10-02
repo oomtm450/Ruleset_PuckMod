@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
 using Unity.Netcode;
 using UnityEngine;
@@ -23,6 +22,7 @@ namespace oomtm450PuckMod_Sounds {
         /// List of string, last released versions of the mod.
         /// </summary>
         private static readonly ReadOnlyCollection<string> OLD_MOD_VERSIONS = new ReadOnlyCollection<string>(new List<string> {
+            "0.1.0",
         });
 
         /// <summary>

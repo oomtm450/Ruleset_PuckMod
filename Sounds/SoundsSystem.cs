@@ -129,6 +129,9 @@ namespace oomtm450PuckMod_Sounds {
 
             if (setCustomGoalHorns)
                 SetGoalHorns();
+
+            // Reorder all lists to get the same index values for all players.
+            ReorderAllLists();
         }
 
         private void AddClipNameToCorrectList(string clipName) {
@@ -285,6 +288,18 @@ namespace oomtm450PuckMod_Sounds {
 
         internal static string FormatSoundStrForCommunication(string sound) {
             return sound + $";{new System.Random().Next(0, 100000)}";
+        }
+
+        private void ReorderAllLists() {
+            FaceoffMusicList = FaceoffMusicList.OrderBy(x => x).ToList();
+            BlueGoalMusicList = BlueGoalMusicList.OrderBy(x => x).ToList();
+            RedGoalMusicList = RedGoalMusicList.OrderBy(x => x).ToList();
+            BetweenPeriodsMusicList = BetweenPeriodsMusicList.OrderBy(x => x).ToList();
+            WarmupMusicList = WarmupMusicList.OrderBy(x => x).ToList();
+            LastMinuteMusicList = LastMinuteMusicList.OrderBy(x => x).ToList();
+            FirstFaceoffMusicList = FirstFaceoffMusicList.OrderBy(x => x).ToList();
+            SecondFaceoffMusicList = SecondFaceoffMusicList.OrderBy(x => x).ToList();
+            GameOverMusicList = GameOverMusicList.OrderBy(x => x).ToList();
         }
         #endregion
     }
