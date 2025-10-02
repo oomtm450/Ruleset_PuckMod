@@ -378,7 +378,7 @@ namespace oomtm450PuckMod_Sounds {
         [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.UpdatePlayer))]
         public class UIScoreboard_UpdatePlayer_Patch {
             [HarmonyPostfix]
-            public static void Postfix(UIScoreboard __instance, Player player) {
+            public static void Postfix(Player player) {
                 try {
                     // If this is the server, do not use the patch.
                     if (ServerFunc.IsDedicatedServer())
@@ -404,7 +404,7 @@ namespace oomtm450PuckMod_Sounds {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in UIScoreboard_UpdateServer_Patch Postfix().\n{ex}", ClientConfig);
+                    Logging.LogError($"Error in {nameof(UIScoreboard_UpdatePlayer_Patch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
         }
@@ -444,7 +444,6 @@ namespace oomtm450PuckMod_Sounds {
                     EventManager.Instance.AddEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     EventManager.Instance.AddEventListener(Codebase.Constants.SOUNDS_MOD_NAME, Event_OnSoundsTrigger);
-                    //EventManager.Instance.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                 }
                 else {
                     EventManager.Instance.AddEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
@@ -478,7 +477,6 @@ namespace oomtm450PuckMod_Sounds {
                     EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     EventManager.Instance.RemoveEventListener(Codebase.Constants.SOUNDS_MOD_NAME, Event_OnSoundsTrigger);
-                    //EventManager.Instance.RemoveEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {

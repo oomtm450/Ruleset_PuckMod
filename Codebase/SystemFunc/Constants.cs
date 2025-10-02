@@ -21,6 +21,11 @@
         internal const string SOUNDS_MOD_NAME = MODS_PREFIX + "sounds";
 
         /// <summary>
+        /// Const string, name of the Sounds mod.
+        /// </summary>
+        internal const string SOUNDSPACK_MOD_NAME = MODS_PREFIX + "soundspack";
+
+        /// <summary>
         /// Const string, used for the communication from the server for the Sounds mod.
         /// </summary>
         internal const string SOUNDS_FROM_SERVER_TO_CLIENT = SOUNDS_MOD_NAME + "_server";
