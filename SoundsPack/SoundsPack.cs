@@ -85,13 +85,14 @@ namespace oomtm450PuckMod_SoundsPack {
                         return;
 
                     if (!_hasRegisteredWithNamedMessageHandler || !_serverHasResponded) {
-                        NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(ModName + Constants.FROM_SERVER_TO_CLIENT, ReceiveData);
+                        NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(ModName + Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT, ReceiveData);
                         _hasRegisteredWithNamedMessageHandler = true;
 
                         DateTime now = DateTime.UtcNow;
-                        if (_lastDateTimeAskStartupData + TimeSpan.FromSeconds(1) < now && _askServerForStartupDataCount++ < 10) {
+                        if (_lastDateTimeAskStartupData + TimeSpan.FromSeconds(3) < now && _askServerForStartupDataCount++ < 5) {
                             _lastDateTimeAskStartupData = now;
-                            NetworkCommunication.SendData(ModName + Constants.ASK_SERVER_FOR_STARTUP_DATA, "1", NetworkManager.ServerClientId, ModName + Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            (string, string) extraSoundsInfo = (ModName, Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "sounds"));
+                            NetworkCommunication.SendData(Codebase.Constants.SOUNDS_MOD_NAME + Constants.ASK_SERVER_FOR_STARTUP_DATA, extraSoundsInfo.ToString(), NetworkManager.ServerClientId, Codebase.Constants.SOUNDS_FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                     }
                 }
@@ -116,14 +117,6 @@ namespace oomtm450PuckMod_SoundsPack {
 
                 if (dataName == ModName + "_" + nameof(MOD_VERSION)) // CLIENT-SIDE
                     _serverHasResponded = true;
-                else if (dataName == ModName + Constants.ASK_SERVER_FOR_STARTUP_DATA) { // SERVER-SIDE : Send the necessary data to client.
-                    if (dataStr != "1")
-                        return;
-
-                    NetworkCommunication.SendData(ModName + "_" + nameof(MOD_VERSION), MOD_VERSION, clientId, ModName + Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                    NetworkCommunication.SendData(SoundsSystem.LOAD_EXTRA_SOUNDS, Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "sounds"),
-                        clientId, Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT, ServerConfig);
-                }
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(ReceiveData)}.\n{ex}", ServerConfig);
@@ -141,7 +134,7 @@ namespace oomtm450PuckMod_SoundsPack {
 
                 Logging.Log($"Reading sound pack name...", ServerConfig, true);
 
-                ModName = Constants.MOD_NAME + "_" + Assembly.GetExecutingAssembly().GetName().Name;
+                ModName = Assembly.GetExecutingAssembly().GetName().Name;
                 ServerConfig.ModName = ModName;
                 ClientConfig.ModName = ModName;
 
@@ -172,8 +165,11 @@ namespace oomtm450PuckMod_SoundsPack {
                 if (ServerFunc.IsDedicatedServer()) {
                     EventManager.Instance.AddEventListener("Event_OnClientConnected", Event_OnClientConnected);
                 }
+                else {
+                    EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
+                }
 
-                _harmonyPatched = true;
+                    _harmonyPatched = true;
                 return true;
             }
             catch (Exception ex) {
@@ -197,10 +193,12 @@ namespace oomtm450PuckMod_SoundsPack {
                 NetworkCommunication.RemoveFromNotLogList(DATA_NAMES_TO_IGNORE);
                 if (ServerFunc.IsDedicatedServer()) {
                     EventManager.Instance.RemoveEventListener("Event_OnClientConnected", Event_OnClientConnected);
-                    NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(ModName + Constants.FROM_CLIENT_TO_SERVER);
+                    //NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Codebase.Constants.SOUNDS_FROM_CLIENT_TO_SERVER);
                 }
-                else
-                    NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(ModName + Constants.FROM_SERVER_TO_CLIENT);
+                else {
+                    EventManager.Instance.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
+                    NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(ModName + Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT);
+                }
 
                 _hasRegisteredWithNamedMessageHandler = false;
                 _serverHasResponded = false;
@@ -237,13 +235,35 @@ namespace oomtm450PuckMod_SoundsPack {
                 Logging.LogError($"Error in {nameof(Event_OnClientConnected)}.\n{ex}", ServerConfig);
             }
         }
+
+        /// <summary>
+        /// Method called when the client has stopped on the client-side.
+        /// Used to reset the config so that it doesn't carry over between servers.
+        /// </summary>
+        /// <param name="message">Dictionary of string and object, content of the event.</param>
+        public static void Event_Client_OnClientStopped(Dictionary<string, object> message) {
+            if (NetworkManager.Singleton == null || ServerFunc.IsDedicatedServer())
+                return;
+
+            //Logging.Log("Event_Client_OnClientStopped", ClientConfig);
+
+            try {
+                ServerConfig = new ServerConfig();
+
+                _serverHasResponded = false;
+                _askServerForStartupDataCount = 0;
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(Event_Client_OnClientStopped)}.\n{ex}", ClientConfig);
+            }
+        }
         #endregion
 
         #region Methods/Functions
         private static void Server_RegisterNamedMessageHandler() {
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.CustomMessagingManager != null && !_hasRegisteredWithNamedMessageHandler) {
-                Logging.Log($"RegisterNamedMessageHandler {ModName + Constants.FROM_CLIENT_TO_SERVER}.", ServerConfig);
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(ModName + Constants.FROM_CLIENT_TO_SERVER, ReceiveData);
+                //Logging.Log($"RegisterNamedMessageHandler {Codebase.Constants.SOUNDS_FROM_CLIENT_TO_SERVER}.", ServerConfig);
+                //NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Codebase.Constants.SOUNDS_FROM_CLIENT_TO_SERVER, ReceiveData);
 
                 _hasRegisteredWithNamedMessageHandler = true;
             }

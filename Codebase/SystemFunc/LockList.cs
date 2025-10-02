@@ -52,6 +52,11 @@ namespace Codebase {
                 return _list.Remove(value);
         }
 
+        public bool Contains(T item) {
+            lock (_locker)
+                return _list.Contains(item);
+        }
+
         public IEnumerator<T> GetEnumerator() {
             lock (_locker)
                 return _list.GetEnumerator();

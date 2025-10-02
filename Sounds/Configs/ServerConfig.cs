@@ -28,6 +28,11 @@ namespace oomtm450PuckMod_Sounds.Configs {
         public bool EnableMusic { get; set; } = true;
 
         /// <summary>
+        /// Bool, true if the music/goal horn packs authorized on this server has to be the one set by server.
+        /// </summary>
+        public bool ForceServerPacks { get; set; } = true;
+
+        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]
@@ -51,6 +56,9 @@ namespace oomtm450PuckMod_Sounds.Configs {
 
             if (EnableMusic == _oldConfig.EnableMusic)
                 EnableMusic = newConfig.EnableMusic;
+
+            if (ForceServerPacks == _oldConfig.ForceServerPacks)
+                ForceServerPacks = newConfig.ForceServerPacks;
         }
 
         /// <summary>
