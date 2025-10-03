@@ -124,6 +124,9 @@ namespace oomtm450PuckMod_Sounds {
         /// String, current music playing.
         /// </summary>
         private static string _currentMusicPlaying = "";
+
+        // Client-side.
+        private static LockList<string> _extraSoundsToLoad = new LockList<string>();
         #endregion
 
         #region Harmony Patches
@@ -405,6 +408,14 @@ namespace oomtm450PuckMod_Sounds {
                     else if (_addServerModVersionOutOfDateMessage) {
                         _addServerModVersionOutOfDateMessage = false;
                         UIChat.Instance.AddChatMessage($"Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
+                    }
+
+                    if (_soundsSystem != null) {
+                        while (_extraSoundsToLoad.Count != 0) {
+                            string path = _extraSoundsToLoad.First();
+                            _soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns, path);
+                            _extraSoundsToLoad.Remove(path);
+                        }
                     }
                 }
                 catch (Exception ex) {
@@ -904,7 +915,18 @@ namespace oomtm450PuckMod_Sounds {
                         break;
 
                     case Codebase.SoundsSystem.LOAD_EXTRA_SOUNDS:
+                        if (_soundsSystem == null) {
+                            _extraSoundsToLoad.Add(dataStr);
+                            break;
+                        }
+
                         _soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns, dataStr);
+
+                        while (_extraSoundsToLoad.Count != 0) {
+                            string path = _extraSoundsToLoad.First();
+                            _soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns, path);
+                            _extraSoundsToLoad.Remove(path);
+                        }
                         break;
 
                     default:

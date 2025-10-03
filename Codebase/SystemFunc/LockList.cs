@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Codebase {
     /// <summary>
@@ -50,6 +51,11 @@ namespace Codebase {
         public bool Remove(T value) {
             lock (_locker)
                 return _list.Remove(value);
+        }
+
+        public T First() {
+            lock (_locker)
+                return _list.First();
         }
 
         public bool Contains(T item) {
