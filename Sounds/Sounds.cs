@@ -413,7 +413,7 @@ namespace oomtm450PuckMod_Sounds {
                     if (_soundsSystem != null) {
                         while (_extraSoundsToLoad.Count != 0) {
                             string path = _extraSoundsToLoad.First();
-                            _soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns, path);
+                            _soundsSystem.LoadSounds(ClientConfig.CustomGoalHorns, path);
                             _extraSoundsToLoad.Remove(path);
                         }
                     }
@@ -926,11 +926,11 @@ namespace oomtm450PuckMod_Sounds {
                             break;
                         }
 
-                        _soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns, dataStr);
+                        _soundsSystem.LoadSounds(ClientConfig.CustomGoalHorns, dataStr);
 
                         while (_extraSoundsToLoad.Count != 0) {
                             string path = _extraSoundsToLoad.First();
-                            _soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns, path);
+                            _soundsSystem.LoadSounds(ClientConfig.CustomGoalHorns, path);
                             _extraSoundsToLoad.Remove(path);
                         }
                         break;

@@ -22,6 +22,8 @@ namespace oomtm450PuckMod_Sounds {
         private AudioSource _currentAudioSource = null;
 
         private static string _lastRandomSound = "";
+
+        private static bool _isLoading = false;
         #endregion
 
         #region Properties
@@ -39,8 +41,13 @@ namespace oomtm450PuckMod_Sounds {
         #endregion
 
         #region Methods/Functions
-        internal void LoadSounds(bool loadMusics, bool setCustomGoalHorns, string path) {
+        internal void LoadSounds(bool setCustomGoalHorns, string path) {
             try {
+                if (_isLoading)
+                    return;
+
+                _isLoading = true;
+
                 if (_audioClips.Count == 0)
                     DontDestroyOnLoad(gameObject);
 
@@ -59,11 +66,12 @@ namespace oomtm450PuckMod_Sounds {
 
                 if (!Directory.Exists(fullPath)) {
                     Logging.LogError($"Sounds not found at: {fullPath}", Sounds.ClientConfig);
+                    _isLoading = false;
                     return;
                 }
 
                 Logging.Log("LoadSounds launching GetAudioClips.", Sounds.ClientConfig);
-                StartCoroutine(GetAudioClips(fullPath, loadMusics, setCustomGoalHorns));
+                StartCoroutine(GetAudioClips(fullPath, setCustomGoalHorns));
             }
             catch (Exception ex) {
                 Logging.LogError($"Error loading Sounds.\n{ex}", Sounds.ClientConfig);
@@ -90,14 +98,14 @@ namespace oomtm450PuckMod_Sounds {
         /// Function that downloads the streamed audio clips from the mods' folder using WebRequest locally.
         /// </summary>
         /// <param name="path">String, full path to the directory containing the sounds to load.</param>
-        /// <param name="loadMusics">Bool, true if the music has to be loaded with the other sounds.</param>
         /// <param name="setCustomGoalHorns">Bool, true if the custom goal horns has to be set.</param>
         /// <returns>IEnumerator, enumerator used by the Coroutine to load the audio clips.</returns>
-        private IEnumerator GetAudioClips(string path, bool loadMusics, bool setCustomGoalHorns) {
+        private IEnumerator GetAudioClips(string path, bool setCustomGoalHorns) {
             foreach (string file in Directory.GetFiles(path, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
                 string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
                 UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS);
                 yield return webRequest.SendWebRequest();
+                yield return null;
 
                 if (webRequest.result != UnityWebRequest.Result.Success)
                     Errors.Add(webRequest.error);
@@ -125,7 +133,11 @@ namespace oomtm450PuckMod_Sounds {
                         Errors.Add("GetAudioClips 1 : " + ex.ToString());
                     }
                 }
+
+                yield return null;
             }
+
+            yield return null;
 
             try {
                 if (setCustomGoalHorns)
@@ -137,6 +149,8 @@ namespace oomtm450PuckMod_Sounds {
             catch (Exception ex) {
                 Errors.Add("GetAudioClips 2 : " + ex.ToString());
             }
+
+            _isLoading = false;
         }
 
         private void AddClipNameToCorrectList(string clipName) {
