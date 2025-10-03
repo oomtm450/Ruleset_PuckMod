@@ -2252,6 +2252,18 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!_harmonyPatched)
                     return true;
 
+                if (_refSignalsBlueTeam.Errors.Count != 0) {
+                    Logging.LogError("There was an error when initializing _refSignalsBlueTeam.", _serverConfig);
+                    foreach (string error in _refSignalsBlueTeam.Errors)
+                        Logging.LogError(error, _serverConfig);
+                }
+
+                if (_refSignalsRedTeam.Errors.Count != 0) {
+                    Logging.LogError("There was an error when initializing _refSignalsRedTeam.", _serverConfig);
+                    foreach (string error in _refSignalsRedTeam.Errors)
+                        Logging.LogError(error, _serverConfig);
+                }
+
                 Logging.Log($"Disabling...", _serverConfig, true);
 
                 Logging.Log("Unsubscribing from events.", _serverConfig, true);

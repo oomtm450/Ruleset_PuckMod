@@ -122,16 +122,21 @@ namespace oomtm450PuckMod_Sounds {
 
                     }
                     catch (Exception ex) {
-                        Errors.Add(ex.ToString());
+                        Errors.Add("GetAudioClips 1 : " + ex.ToString());
                     }
                 }
             }
 
-            if (setCustomGoalHorns)
-                SetGoalHorns();
+            try {
+                if (setCustomGoalHorns)
+                    SetGoalHorns();
 
-            // Reorder all lists to get the same index values for all players.
-            ReorderAllLists();
+                // Reorder all lists to get the same index values for all players.
+                ReorderAllLists();
+            }
+            catch (Exception ex) {
+                Errors.Add("GetAudioClips 2 : " + ex.ToString());
+            }
         }
 
         private void AddClipNameToCorrectList(string clipName) {
