@@ -2252,13 +2252,13 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!_harmonyPatched)
                     return true;
 
-                if (_refSignalsBlueTeam.Errors.Count != 0) {
+                if (_refSignalsBlueTeam != null && _refSignalsBlueTeam.Errors.Count != 0) {
                     Logging.LogError("There was an error when initializing _refSignalsBlueTeam.", _serverConfig);
                     foreach (string error in _refSignalsBlueTeam.Errors)
                         Logging.LogError(error, _serverConfig);
                 }
 
-                if (_refSignalsRedTeam.Errors.Count != 0) {
+                if (_refSignalsRedTeam != null && _refSignalsRedTeam.Errors.Count != 0) {
                     Logging.LogError("There was an error when initializing _refSignalsRedTeam.", _serverConfig);
                     foreach (string error in _refSignalsRedTeam.Errors)
                         Logging.LogError(error, _serverConfig);

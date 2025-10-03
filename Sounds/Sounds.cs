@@ -484,7 +484,7 @@ namespace oomtm450PuckMod_Sounds {
                 if (!_harmonyPatched)
                     return true;
 
-                if (_soundsSystem.Errors.Count != 0) {
+                if (_soundsSystem != null && _soundsSystem.Errors.Count != 0) {
                     Logging.LogError("There was an error when initializing _soundsSystem.", ServerConfig);
                     foreach (string error in _soundsSystem.Errors)
                         Logging.LogError(error, ServerConfig);
