@@ -784,7 +784,7 @@ namespace oomtm450PuckMod_Sounds {
 
                     case Constants.ASK_SERVER_FOR_STARTUP_DATA: // SERVER-SIDE : Send the necessary data to client.
                         if (dataStr != "1") {
-                            string[] dataStrSplitted = SystemFunc.RemoveWhitespace(dataStr.Replace("(", "").Replace(")", "")).Split(',');
+                            string[] dataStrSplitted = dataStr.Substring(1).Substring(0, dataStr.Length - 2).Split(',');
 
                             NetworkCommunication.SendData(dataStrSplitted[0] + "_" + nameof(MOD_VERSION), MOD_VERSION, clientId, dataStrSplitted[0] + Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
