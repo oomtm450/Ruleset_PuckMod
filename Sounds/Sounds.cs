@@ -801,7 +801,7 @@ namespace oomtm450PuckMod_Sounds {
 
                             if (ServerConfig.ForceServerPacks && !GetModsList().Contains(dataStrSplitted[0])) {
                                 Logging.Log($"Can't load the SoundsPack \"{dataStrSplitted[0]}\" because of server's ForceServerPacks option.", ServerConfig);
-                                return;
+                                break;
                             }
 
                             NetworkCommunication.SendData(Codebase.SoundsSystem.LOAD_EXTRA_SOUNDS, dataStrSplitted[1], clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
