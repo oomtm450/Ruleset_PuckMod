@@ -251,6 +251,7 @@ namespace oomtm450PuckMod_SoundsPack {
 
             try {
                 ServerConfig = new ServerConfig();
+                ServerConfig.ModName = ModName;
 
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
