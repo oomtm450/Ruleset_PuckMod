@@ -410,12 +410,10 @@ namespace oomtm450PuckMod_Sounds {
                         UIChat.Instance.AddChatMessage($"Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
                     }
 
-                    if (_soundsSystem != null) {
-                        if (_extraSoundsToLoad.Count != 0) {
-                            string path = _extraSoundsToLoad.First();
-                            if (_soundsSystem.LoadSounds(ClientConfig.CustomGoalHorns, path))
-                                _extraSoundsToLoad.Remove(path);
-                        }
+                    if (_soundsSystem != null && _extraSoundsToLoad.Count != 0) {
+                        string path = _extraSoundsToLoad.First();
+                        if (_soundsSystem.LoadSounds(ClientConfig.CustomGoalHorns, path))
+                            _extraSoundsToLoad.Remove(path);
                     }
                 }
                 catch (Exception ex) {
