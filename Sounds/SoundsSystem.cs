@@ -85,7 +85,7 @@ namespace oomtm450PuckMod_Sounds {
                 StartCoroutine(GetAudioClips(fullPath, setCustomGoalHorns));
             }
             catch (Exception ex) {
-                Logging.LogError($"Error loading Sounds.\n{ex}", Sounds.ClientConfig);
+                Logging.LogError($"Error loading Sounds {path}.\n{ex}", Sounds.ClientConfig);
                 IsLoading = false;
             }
 
