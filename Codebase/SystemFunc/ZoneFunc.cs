@@ -19,8 +19,8 @@ namespace Codebase {
         /// </summary>
         internal static ReadOnlyDictionary<IceElement, (double Start, double End)> ICE_Z_POSITIONS { get; } = new ReadOnlyDictionary<IceElement, (double, double)>(
             new Dictionary<IceElement, (double, double)> {
-                { IceElement.BlueTeam_BlueLine, (13.0, 13.5) },
-                { IceElement.RedTeam_BlueLine, (-13.5, -13.0) },
+                { IceElement.BlueTeam_BlueLine, (13.11, 13.45) },
+                { IceElement.RedTeam_BlueLine, (-13.45, -13.11) },
                 { IceElement.CenterLine, (-0.25, 0.25) },
                 { IceElement.BlueTeam_GoalLine, (39.75, 40) },
                 { IceElement.RedTeam_GoalLine, (-40, -39.75) },
