@@ -62,7 +62,7 @@ namespace Codebase {
                 writer.Dispose();
 
                 if (!DataNamesToIgnore.Contains(dataName))
-                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to {clientId}.", config);
+                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to {clientId} with listener {listener}.", config);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error when writing streamed data: {ex}", config);
@@ -91,7 +91,7 @@ namespace Codebase {
                 writer.Dispose();
 
                 if (!DataNamesToIgnore.Contains(dataName))
-                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to all clients.", config);
+                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to all clients with listener {listener}.", config);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error when writing streamed data: {ex}", config);

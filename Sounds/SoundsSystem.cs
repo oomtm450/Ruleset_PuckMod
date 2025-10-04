@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -22,6 +23,18 @@ namespace oomtm450PuckMod_Sounds {
         private AudioSource _currentAudioSource = null;
 
         private static string _lastRandomSound = "";
+
+        private int _isLoadingValue = 0;
+
+        private bool IsLoading {
+            get { return Interlocked.CompareExchange(ref _isLoadingValue, 1, 1) == 1; }
+            set {
+                if (value)
+                    Interlocked.CompareExchange(ref _isLoadingValue, 1, 0);
+                else
+                    Interlocked.CompareExchange(ref _isLoadingValue, 0, 1);
+            }
+        }
         #endregion
 
         #region Properties
@@ -39,40 +52,44 @@ namespace oomtm450PuckMod_Sounds {
         #endregion
 
         #region Methods/Functions
-        internal void LoadSounds(bool loadMusics, bool setCustomGoalHorns, string path = "") {
+        internal bool LoadSounds(bool setCustomGoalHorns, string path) {
             try {
+                if (IsLoading)
+                    return false;
+
+                IsLoading = true;
+
                 if (_audioClips.Count == 0)
                     DontDestroyOnLoad(gameObject);
 
-                string fullPath = "";
-                if (string.IsNullOrEmpty(path))
-                    fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), SOUNDS_FOLDER_PATH);
-                else {
-                    string[] splittedPath = new string[] { path };
-                    if (path.Contains('/')) // Linux path
-                        splittedPath = path.Split('/');
-                    else // Windows path
-                        splittedPath = path.Split('\\');
+                string[] splittedPath = new string[] { path };
+                if (path.Contains('/')) // Linux path
+                    splittedPath = path.Split('/');
+                else // Windows path
+                    splittedPath = path.Split('\\');
 
-                    string rootPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                    int lastIndexOf = rootPath.LastIndexOf('/');
-                    if (lastIndexOf == -1)
-                        lastIndexOf = rootPath.LastIndexOf('\\');
-                    rootPath = rootPath.Substring(0, lastIndexOf);
-                    fullPath = Path.Combine(Path.Combine(rootPath, splittedPath[splittedPath.Count() - 2]), splittedPath.Last());
-                }
+                string rootPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                int lastIndexOf = rootPath.LastIndexOf('/');
+                if (lastIndexOf == -1)
+                    lastIndexOf = rootPath.LastIndexOf('\\');
+                rootPath = rootPath.Substring(0, lastIndexOf);
+                string fullPath = Path.Combine(Path.Combine(rootPath, splittedPath[splittedPath.Count() - 2]), splittedPath.Last());
 
                 if (!Directory.Exists(fullPath)) {
                     Logging.LogError($"Sounds not found at: {fullPath}", Sounds.ClientConfig);
-                    return;
+                    IsLoading = false;
+                    return true;
                 }
 
-                Logging.Log("LoadSounds launching GetAudioClips.", Sounds.ClientConfig);
-                StartCoroutine(GetAudioClips(fullPath, loadMusics, setCustomGoalHorns));
+                Logging.Log($"{nameof(LoadSounds)} launching {nameof(GetAudioClips)}. ({fullPath})", Sounds.ClientConfig);
+                StartCoroutine(GetAudioClips(fullPath, setCustomGoalHorns));
             }
             catch (Exception ex) {
-                Logging.LogError($"Error loading Sounds.\n{ex}", Sounds.ClientConfig);
+                Logging.LogError($"Error loading Sounds {path}.\n{ex}", Sounds.ClientConfig);
+                IsLoading = false;
             }
+
+            return true;
         }
 
         internal void DestroyGameObjects() {
@@ -95,14 +112,14 @@ namespace oomtm450PuckMod_Sounds {
         /// Function that downloads the streamed audio clips from the mods' folder using WebRequest locally.
         /// </summary>
         /// <param name="path">String, full path to the directory containing the sounds to load.</param>
-        /// <param name="loadMusics">Bool, true if the music has to be loaded with the other sounds.</param>
         /// <param name="setCustomGoalHorns">Bool, true if the custom goal horns has to be set.</param>
         /// <returns>IEnumerator, enumerator used by the Coroutine to load the audio clips.</returns>
-        private IEnumerator GetAudioClips(string path, bool loadMusics, bool setCustomGoalHorns) {
+        private IEnumerator GetAudioClips(string path, bool setCustomGoalHorns) {
             foreach (string file in Directory.GetFiles(path, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
                 string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
                 UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS);
                 yield return webRequest.SendWebRequest();
+                yield return null;
 
                 if (webRequest.result != UnityWebRequest.Result.Success)
                     Errors.Add(webRequest.error);
@@ -127,13 +144,27 @@ namespace oomtm450PuckMod_Sounds {
 
                     }
                     catch (Exception ex) {
-                        Errors.Add(ex.ToString());
+                        Errors.Add($"Sounds.{nameof(GetAudioClips)} 1 : " + ex.ToString());
                     }
                 }
+
+                yield return null;
             }
 
-            if (setCustomGoalHorns)
-                SetGoalHorns();
+            yield return null;
+
+            try {
+                if (setCustomGoalHorns)
+                    SetGoalHorns();
+
+                // Reorder all lists to get the same index values for all players.
+                ReorderAllLists();
+            }
+            catch (Exception ex) {
+                Errors.Add($"Sounds.{nameof(GetAudioClips)} 2 : " + ex.ToString());
+            }
+
+            IsLoading = false;
         }
 
         private void AddClipNameToCorrectList(string clipName) {
@@ -218,24 +249,26 @@ namespace oomtm450PuckMod_Sounds {
 
         internal static string GetRandomSound(List<string> soundList, int? seed = null) {
             string sound = "";
-            if (soundList.Count != 0) {
-                if (seed == null)
-                    sound = soundList[new System.Random().Next(0, soundList.Count)];
+
+            if (soundList.Count == 0)
+                return sound;
+
+            if (seed == null)
+                sound = soundList[new System.Random().Next(0, soundList.Count)];
+            else
+                sound = soundList[new System.Random((int)seed).Next(0, soundList.Count)];
+
+            if (sound == _lastRandomSound) {
+                int soundIndex = soundList.FindIndex(x => x == sound);
+                if (soundIndex == soundList.Count - 1)
+                    soundIndex = 0;
                 else
-                    sound = soundList[new System.Random((int)seed).Next(0, soundList.Count)];
+                    soundIndex++;
 
-                if (sound == _lastRandomSound) {
-                    int soundIndex = soundList.FindIndex(x => x == sound);
-                    if (soundIndex == soundList.Count - 1)
-                        soundIndex = 0;
-                    else
-                        soundIndex++;
-
-                    sound = soundList[soundIndex];
-                }
-
-                _lastRandomSound = sound;
+                sound = soundList[soundIndex];
             }
+
+            _lastRandomSound = sound;
 
             return sound;
         }
@@ -269,7 +302,7 @@ namespace oomtm450PuckMod_Sounds {
                 }
 
                 AudioSource blueGoalAudioSource = blueGoalObj.GetComponent<AudioSource>();
-                blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == Codebase.SoundsSystem.REDGOALHORN);
+                blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.REDGOALHORN));
                 blueGoalAudioSource.maxDistance = 400f;
 
                 GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
@@ -280,7 +313,7 @@ namespace oomtm450PuckMod_Sounds {
                 }
 
                 AudioSource redGoalAudioSource = redGoalObj.GetComponent<AudioSource>();
-                redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == Codebase.SoundsSystem.BLUEGOALHORN);
+                redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUEGOALHORN));
                 redGoalAudioSource.maxDistance = 400f;
             }
             catch (Exception ex) {
@@ -290,6 +323,18 @@ namespace oomtm450PuckMod_Sounds {
 
         internal static string FormatSoundStrForCommunication(string sound) {
             return sound + $";{new System.Random().Next(0, 100000)}";
+        }
+
+        private void ReorderAllLists() {
+            FaceoffMusicList = FaceoffMusicList.OrderBy(x => x).ToList();
+            BlueGoalMusicList = BlueGoalMusicList.OrderBy(x => x).ToList();
+            RedGoalMusicList = RedGoalMusicList.OrderBy(x => x).ToList();
+            BetweenPeriodsMusicList = BetweenPeriodsMusicList.OrderBy(x => x).ToList();
+            WarmupMusicList = WarmupMusicList.OrderBy(x => x).ToList();
+            LastMinuteMusicList = LastMinuteMusicList.OrderBy(x => x).ToList();
+            FirstFaceoffMusicList = FirstFaceoffMusicList.OrderBy(x => x).ToList();
+            SecondFaceoffMusicList = SecondFaceoffMusicList.OrderBy(x => x).ToList();
+            GameOverMusicList = GameOverMusicList.OrderBy(x => x).ToList();
         }
         #endregion
     }

@@ -1,6 +1,6 @@
 ﻿using Codebase.Configs;
 
-namespace oomtm450PuckMod_Sounds.Configs {
+namespace oomtm450PuckMod_SoundsPack.Configs {
     /// <summary>
     /// Class containing the old configuration from oomtm450_sounds_serverconfig.json used for this mod.
     /// </summary>
@@ -10,16 +10,6 @@ namespace oomtm450PuckMod_Sounds.Configs {
         /// Bool, true if the info logs must be printed.
         /// </summary>
         public bool LogInfo { get; } = true;
-
-        /// <summary>
-        /// Bool, true if music is enabled.
-        /// </summary>
-        public bool EnableMusic { get; } = true;
-
-        /// <summary>
-        /// Bool, true if the music/goal horn packs authorized on this server has to be the one set by server.
-        /// </summary>
-        public bool ForceServerPacks { get; } = true;
         #endregion
 
         #region Methods/Functions

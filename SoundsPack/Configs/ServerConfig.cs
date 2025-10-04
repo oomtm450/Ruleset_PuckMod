@@ -4,18 +4,11 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 
-namespace oomtm450PuckMod_Sounds.Configs {
+namespace oomtm450PuckMod_SoundsPack.Configs {
     /// <summary>
     /// Class containing the configuration from oomtm450_sounds_serverconfig.json used for this mod.
     /// </summary>
     public class ServerConfig : IConfig, ISubConfig {
-        #region Constants
-        /// <summary>
-        /// Const string, name used when sending the config data to the client.
-        /// </summary>
-        public const string CONFIG_DATA_NAME = Constants.MOD_NAME + "_config";
-        #endregion
-
         #region Properties
         /// <summary>
         /// Bool, true if the info logs must be printed.
@@ -23,20 +16,10 @@ namespace oomtm450PuckMod_Sounds.Configs {
         public bool LogInfo { get; set; } = true;
 
         /// <summary>
-        /// Bool, true if music is enabled.
-        /// </summary>
-        public bool EnableMusic { get; set; } = true;
-
-        /// <summary>
-        /// Bool, true if the music/goal horn packs authorized on this server has to be the one set by server.
-        /// </summary>
-        public bool ForceServerPacks { get; set; } = true;
-
-        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]
-        public string ModName { get; } = Constants.MOD_NAME;
+        public string ModName { get; set; } = Constants.MOD_NAME;
         #endregion
 
         #region Methods/Functions
@@ -53,12 +36,6 @@ namespace oomtm450PuckMod_Sounds.Configs {
 
             //if (LogInfo == _oldConfig.LogInfo)
                 //LogInfo = newConfig.LogInfo;
-
-            if (EnableMusic == _oldConfig.EnableMusic)
-                EnableMusic = newConfig.EnableMusic;
-
-            if (ForceServerPacks == _oldConfig.ForceServerPacks)
-                ForceServerPacks = newConfig.ForceServerPacks;
         }
 
         /// <summary>
@@ -84,14 +61,17 @@ namespace oomtm450PuckMod_Sounds.Configs {
         /// </summary>
         /// <returns>ServerConfig, parsed config.</returns>
         internal static ServerConfig ReadConfig() {
-            ServerConfig config = new ServerConfig();
+            ServerConfig config = new ServerConfig {
+                ModName = SoundsPack.ModName,
+            };
 
             try {
                 string rootPath = Path.GetFullPath(".");
-                string configPath = Path.Combine(rootPath, Constants.MOD_NAME + "_serverconfig.json");
+                string configPath = Path.Combine(rootPath, SoundsPack.ModName + "_serverconfig.json");
                 if (File.Exists(configPath)) {
                     string configFileContent = File.ReadAllText(configPath);
                     config = SetConfig(configFileContent);
+                    config.ModName = SoundsPack.ModName;
                     Logging.Log($"Server config read.", config, true);
                 }
 

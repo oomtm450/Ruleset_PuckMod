@@ -26,7 +26,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.24.0";
+        private static readonly string MOD_VERSION = "0.24.1";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -50,6 +50,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.22.1",
             "0.22.2",
             "0.23.0",
+            "0.24.0",
         });
 
         /// <summary>
@@ -881,7 +882,7 @@ namespace oomtm450PuckMod_Ruleset {
                         
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in PlayerInput_Update_Patch Prefix().\n{ex}");
+                    Logging.LogError($"Error in PlayerInput_Update_Patch Prefix().\n{ex}", _clientConfig);
                 }
 
                 return true;
@@ -999,7 +1000,7 @@ namespace oomtm450PuckMod_Ruleset {
                     players = PlayerManager.Instance.GetPlayers();
                     puck = PuckManager.Instance.GetPuck();
 
-                    if (players.Count == 0 || puck == null || Paused)
+                    if (players.Count == 0 || puck == null || !puck || Paused)
                         return true;
                 }
                 catch (Exception ex) {
@@ -1858,25 +1859,6 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        /*/// <summary>
-                            /// Method called when the client has started on the client-side.
-                            /// Used to register to load assets.
-                            /// </summary>
-                            /// <param name="message">Dictionary of string and object, content of the event.</param>
-        public static void Event_Client_OnClientStarted(Dictionary<string, object> message) {
-            if (ServerFunc.IsDedicatedServer() || NetworkManager.Singleton == null || NetworkManager.Singleton.CustomMessagingManager == null)
-                return;
-
-            //Logging.Log("Event_Client_OnClientStarted", _clientConfig);
-
-            try {
-                LoadAssets();
-            }
-            catch (Exception ex) {
-                Logging.LogError($"Error in Event_Client_OnClientStarted.\n{ex}");
-            }
-        }*/
-
         /// <summary>
         /// Method called when the client has stopped on the client-side.
         /// Used to reset the config so that it doesn't carry over between servers.
@@ -1885,8 +1867,6 @@ namespace oomtm450PuckMod_Ruleset {
         public static void Event_Client_OnClientStopped(Dictionary<string, object> message) {
             if (NetworkManager.Singleton == null || ServerFunc.IsDedicatedServer())
                 return;
-
-            //Logging.Log("Event_Client_OnClientStopped", _clientConfig);
 
             try {
                 _serverConfig = new ServerConfig();
@@ -2250,6 +2230,18 @@ namespace oomtm450PuckMod_Ruleset {
             try {
                 if (!_harmonyPatched)
                     return true;
+
+                if (_refSignalsBlueTeam != null && _refSignalsBlueTeam.Errors.Count != 0) {
+                    Logging.LogError("There was an error when initializing _refSignalsBlueTeam.", _serverConfig);
+                    foreach (string error in _refSignalsBlueTeam.Errors)
+                        Logging.LogError(error, _serverConfig);
+                }
+
+                if (_refSignalsRedTeam != null && _refSignalsRedTeam.Errors.Count != 0) {
+                    Logging.LogError("There was an error when initializing _refSignalsRedTeam.", _serverConfig);
+                    foreach (string error in _refSignalsRedTeam.Errors)
+                        Logging.LogError(error, _serverConfig);
+                }
 
                 Logging.Log($"Disabling...", _serverConfig, true);
 

@@ -12,3 +12,6 @@
 /packages/Newtonsoft.Json.13.0.4
 /Sounds/obj/Release
 /Sounds/bin/Release
+/SoundsPack/.vs
+/SoundsPack/bin/Release
+/SoundsPack/obj/Release

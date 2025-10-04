@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Reflection;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -15,12 +16,13 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.1.0";
+        private static readonly string MOD_VERSION = "0.2.0";
 
         /// <summary>
         /// List of string, last released versions of the mod.
         /// </summary>
         private static readonly ReadOnlyCollection<string> OLD_MOD_VERSIONS = new ReadOnlyCollection<string>(new List<string> {
+            "0.1.0",
         });
 
         /// <summary>
@@ -122,6 +124,9 @@ namespace oomtm450PuckMod_Sounds {
         /// String, current music playing.
         /// </summary>
         private static string _currentMusicPlaying = "";
+
+        // Client-side.
+        private static LockList<string> _extraSoundsToLoad = new LockList<string>();
         #endregion
 
         #region Harmony Patches
@@ -378,7 +383,7 @@ namespace oomtm450PuckMod_Sounds {
         [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.UpdatePlayer))]
         public class UIScoreboard_UpdatePlayer_Patch {
             [HarmonyPostfix]
-            public static void Postfix(UIScoreboard __instance, Player player) {
+            public static void Postfix(Player player) {
                 try {
                     // If this is the server, do not use the patch.
                     if (ServerFunc.IsDedicatedServer())
@@ -389,10 +394,12 @@ namespace oomtm450PuckMod_Sounds {
                         _hasRegisteredWithNamedMessageHandler = true;
 
                         DateTime now = DateTime.UtcNow;
-                        if (_lastDateTimeAskStartupData + TimeSpan.FromSeconds(1) < now && _askServerForStartupDataCount++ < 10) {
+                        if (_lastDateTimeAskStartupData != DateTime.MinValue && _lastDateTimeAskStartupData + TimeSpan.FromSeconds(5) < now && _askServerForStartupDataCount++ < 6) {
                             _lastDateTimeAskStartupData = now;
                             NetworkCommunication.SendData(Constants.ASK_SERVER_FOR_STARTUP_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
+                        else if (_lastDateTimeAskStartupData == DateTime.MinValue)
+                            _lastDateTimeAskStartupData = now;
                     }
                     else if (_askForKick) {
                         _askForKick = false;
@@ -402,9 +409,15 @@ namespace oomtm450PuckMod_Sounds {
                         _addServerModVersionOutOfDateMessage = false;
                         UIChat.Instance.AddChatMessage($"Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
                     }
+
+                    if (_soundsSystem != null && _extraSoundsToLoad.Count != 0) {
+                        string path = _extraSoundsToLoad.First();
+                        if (_soundsSystem.LoadSounds(ClientConfig.CustomGoalHorns, path))
+                            _extraSoundsToLoad.Remove(path);
+                    }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in UIScoreboard_UpdateServer_Patch Postfix().\n{ex}", ClientConfig);
+                    Logging.LogError($"Error in {nameof(UIScoreboard_UpdatePlayer_Patch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
         }
@@ -444,10 +457,10 @@ namespace oomtm450PuckMod_Sounds {
                     EventManager.Instance.AddEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     EventManager.Instance.AddEventListener(Codebase.Constants.SOUNDS_MOD_NAME, Event_OnSoundsTrigger);
-                    //EventManager.Instance.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                 }
                 else {
                     EventManager.Instance.AddEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
+                    EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                 }
 
                 _harmonyPatched = true;
@@ -469,6 +482,12 @@ namespace oomtm450PuckMod_Sounds {
                 if (!_harmonyPatched)
                     return true;
 
+                if (_soundsSystem != null && _soundsSystem.Errors.Count != 0) {
+                    Logging.LogError("There was an error when initializing _soundsSystem.", ServerConfig);
+                    foreach (string error in _soundsSystem.Errors)
+                        Logging.LogError(error, ServerConfig);
+                }
+
                 Logging.Log($"Disabling...", ServerConfig, true);
 
                 Logging.Log("Unsubscribing from events.", ServerConfig, true);
@@ -478,11 +497,11 @@ namespace oomtm450PuckMod_Sounds {
                     EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     EventManager.Instance.RemoveEventListener(Codebase.Constants.SOUNDS_MOD_NAME, Event_OnSoundsTrigger);
-                    //EventManager.Instance.RemoveEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
                     EventManager.Instance.RemoveEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
+                    EventManager.Instance.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER_TO_CLIENT);
                 }
 
@@ -563,10 +582,6 @@ namespace oomtm450PuckMod_Sounds {
                                 NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                                 _currentMusicPlaying = "";
                             }
-                            break;
-
-                        case Codebase.SoundsSystem.LOAD_EXTRA_SOUNDS:
-                            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.LOAD_EXTRA_SOUNDS, value, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             break;
                     }
                 }
@@ -730,7 +745,7 @@ namespace oomtm450PuckMod_Sounds {
                 _soundsSystem = soundsGameObject.AddComponent<SoundsSystem>();
             }
 
-            _soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns);
+            //_soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns);
         }
 
         /// <summary>
@@ -783,8 +798,19 @@ namespace oomtm450PuckMod_Sounds {
                         break;
 
                     case Constants.ASK_SERVER_FOR_STARTUP_DATA: // SERVER-SIDE : Send the necessary data to client.
-                        if (dataStr != "1")
+                        if (dataStr != "1") {
+                            string[] dataStrSplitted = dataStr.Substring(1).Substring(0, dataStr.Length - 2).Split(',');
+
+                            NetworkCommunication.SendData(dataStrSplitted[0] + "_" + nameof(MOD_VERSION), MOD_VERSION, clientId, dataStrSplitted[0] + Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+
+                            if (ServerConfig.ForceServerPacks && !GetModsList().Contains(dataStrSplitted[0])) {
+                                Logging.Log($"Can't load the SoundsPack \"{dataStrSplitted[0]}\" because of server's ForceServerPacks option.", ServerConfig);
+                                break;
+                            }
+
+                            NetworkCommunication.SendData(Codebase.SoundsSystem.LOAD_EXTRA_SOUNDS, dataStrSplitted[1], clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             break;
+                        }
 
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                         break;
@@ -799,71 +825,71 @@ namespace oomtm450PuckMod_Sounds {
                         }
 
                         int? seed = null;
-                        string[] dataStrSplitted = dataStr.Split(';');
+                        string[] playSoundDataStrSplitted = dataStr.Split(';');
 
-                        if (int.TryParse(dataStrSplitted[1], out int _seed))
+                        if (int.TryParse(playSoundDataStrSplitted[1], out int _seed))
                             seed = _seed;
 
                         bool isFaceoffMusic = false;
                         float delay = 0;
-                        if (dataStrSplitted[0] == Codebase.SoundsSystem.FACEOFF_MUSIC) {
+                        if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FACEOFF_MUSIC) {
                             _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FaceoffMusicList, seed);
                             isFaceoffMusic = true;
                         }
-                        else if (dataStrSplitted[0] == Codebase.SoundsSystem.FACEOFF_MUSIC_DELAYED) {
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FACEOFF_MUSIC_DELAYED) {
                             _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FaceoffMusicList, seed);
                             isFaceoffMusic = true;
                             delay = 1f;
                         }
-                        else if (dataStrSplitted[0] == Codebase.SoundsSystem.BLUE_GOAL_MUSIC) {
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.BLUE_GOAL_MUSIC) {
                             _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BlueGoalMusicList, seed);
                             _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 2.25f);
                         }
-                        else if (dataStrSplitted[0] == Codebase.SoundsSystem.RED_GOAL_MUSIC) {
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.RED_GOAL_MUSIC) {
                             _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.RedGoalMusicList, seed);
                             _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 2.25f);
                         }
-                        else if (dataStrSplitted[0] == Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC) {
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC) {
                             _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BetweenPeriodsMusicList, seed);
                             _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 1.5f);
                         }
-                        else if (dataStrSplitted[0] == Codebase.SoundsSystem.WARMUP_MUSIC) {
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.WARMUP_MUSIC) {
                             _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.WarmupMusicList, seed);
                             if (ClientConfig.WarmupMusic)
                                 _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0, true);
                         }
-                        else if (dataStrSplitted[0] == Codebase.SoundsSystem.LAST_MINUTE_MUSIC) {
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.LAST_MINUTE_MUSIC) {
                             _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.LastMinuteMusicList, seed);
                             isFaceoffMusic = true;
                         }
-                        else if (dataStrSplitted[0] == Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC) {
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC) {
                             _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FirstFaceoffMusicList, seed);
                             isFaceoffMusic = true;
                         }
-                        else if (dataStrSplitted[0] == Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC) {
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC) {
                             _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.SecondFaceoffMusicList, seed);
                             isFaceoffMusic = true;
                         }
-                        else if (dataStrSplitted[0] == Codebase.SoundsSystem.LAST_MINUTE_MUSIC_DELAYED) {
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.LAST_MINUTE_MUSIC_DELAYED) {
                             _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.LastMinuteMusicList, seed);
                             isFaceoffMusic = true;
                             delay = 1f;
                         }
-                        else if (dataStrSplitted[0] == Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC_DELAYED) {
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC_DELAYED) {
                             _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FirstFaceoffMusicList, seed);
                             isFaceoffMusic = true;
                             delay = 1f;
                         }
-                        else if (dataStrSplitted[0] == Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC_DELAYED) {
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC_DELAYED) {
                             _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.SecondFaceoffMusicList, seed);
                             isFaceoffMusic = true;
                             delay = 1f;
                         }
-                        else if (dataStrSplitted[0] == Codebase.SoundsSystem.GAMEOVER_MUSIC) {
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.GAMEOVER_MUSIC) {
                             _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.GameOverMusicList, seed);
                             _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0.5f);
                         }
-                        else if (dataStrSplitted[0] == Codebase.SoundsSystem.WHISTLE)
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.WHISTLE)
                             _soundsSystem.Play(Codebase.SoundsSystem.WHISTLE, "");
 
                         if (isFaceoffMusic) {
@@ -893,7 +919,7 @@ namespace oomtm450PuckMod_Sounds {
                         break;
 
                     case Codebase.SoundsSystem.LOAD_EXTRA_SOUNDS:
-                        _soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns, dataStr);
+                        _extraSoundsToLoad.Add(dataStr);
                         break;
 
                     default:
@@ -926,6 +952,26 @@ namespace oomtm450PuckMod_Sounds {
 
             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
             _currentMusicPlaying = Codebase.SoundsSystem.FACEOFF_MUSIC;
+        }
+
+        /// <summary>
+        /// Function that returns a list of all mods assembly's name.
+        /// </summary>
+        /// <returns>List of string, all mods assembly's name.</returns>
+        private static List<string> GetModsList() {
+            List<string> mods = new List<string>();
+            if (ModManagerV2.Instance == null || !ModManagerV2.Instance)
+                return mods;
+
+            foreach (Mod mod in ModManagerV2.Instance.Mods) {
+                Assembly modAssembly = SystemFunc.GetPrivateField<Assembly>(typeof(Mod), mod, "assembly");
+                if (modAssembly == null)
+                    continue;
+
+                mods.Add(modAssembly.GetName().Name);
+            }
+
+            return mods;
         }
         #endregion
     }
