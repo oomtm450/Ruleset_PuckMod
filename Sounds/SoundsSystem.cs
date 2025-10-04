@@ -300,7 +300,7 @@ namespace oomtm450PuckMod_Sounds {
                 }
 
                 AudioSource blueGoalAudioSource = blueGoalObj.GetComponent<AudioSource>();
-                blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == Codebase.SoundsSystem.REDGOALHORN);
+                blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.REDGOALHORN));
                 blueGoalAudioSource.maxDistance = 400f;
 
                 GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
@@ -311,7 +311,7 @@ namespace oomtm450PuckMod_Sounds {
                 }
 
                 AudioSource redGoalAudioSource = redGoalObj.GetComponent<AudioSource>();
-                redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name == Codebase.SoundsSystem.BLUEGOALHORN);
+                redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUEGOALHORN));
                 redGoalAudioSource.maxDistance = 400f;
             }
             catch (Exception ex) {
