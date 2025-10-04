@@ -70,7 +70,7 @@ namespace oomtm450PuckMod_Sounds {
                     return true;
                 }
 
-                Logging.Log("LoadSounds launching GetAudioClips.", Sounds.ClientConfig);
+                Logging.Log($"LoadSounds launching GetAudioClips. ({fullPath})", Sounds.ClientConfig);
                 StartCoroutine(GetAudioClips(fullPath, setCustomGoalHorns));
             }
             catch (Exception ex) {
