@@ -249,24 +249,26 @@ namespace oomtm450PuckMod_Sounds {
 
         internal static string GetRandomSound(List<string> soundList, int? seed = null) {
             string sound = "";
-            if (soundList.Count != 0) {
-                if (seed == null)
-                    sound = soundList[new System.Random().Next(0, soundList.Count)];
+
+            if (soundList.Count == 0)
+                return sound;
+
+            if (seed == null)
+                sound = soundList[new System.Random().Next(0, soundList.Count)];
+            else
+                sound = soundList[new System.Random((int)seed).Next(0, soundList.Count)];
+
+            if (sound == _lastRandomSound) {
+                int soundIndex = soundList.FindIndex(x => x == sound);
+                if (soundIndex == soundList.Count - 1)
+                    soundIndex = 0;
                 else
-                    sound = soundList[new System.Random((int)seed).Next(0, soundList.Count)];
+                    soundIndex++;
 
-                if (sound == _lastRandomSound) {
-                    int soundIndex = soundList.FindIndex(x => x == sound);
-                    if (soundIndex == soundList.Count - 1)
-                        soundIndex = 0;
-                    else
-                        soundIndex++;
-
-                    sound = soundList[soundIndex];
-                }
-
-                _lastRandomSound = sound;
+                sound = soundList[soundIndex];
             }
+
+            _lastRandomSound = sound;
 
             return sound;
         }
