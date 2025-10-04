@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -23,7 +24,15 @@ namespace oomtm450PuckMod_Sounds {
 
         private static string _lastRandomSound = "";
 
-        private static bool _isLoading = false;
+        private int _isLoadingValue = 0;
+
+        private bool IsLoading {
+            get { return (Interlocked.CompareExchange(ref _isLoadingValue, 1, 1) == 1); }
+            set {
+                if (value) Interlocked.CompareExchange(ref _isLoadingValue, 1, 0);
+                else Interlocked.CompareExchange(ref _isLoadingValue, 0, 1);
+            }
+        }
         #endregion
 
         #region Properties
@@ -43,10 +52,10 @@ namespace oomtm450PuckMod_Sounds {
         #region Methods/Functions
         internal bool LoadSounds(bool setCustomGoalHorns, string path) {
             try {
-                if (_isLoading)
+                if (IsLoading)
                     return false;
 
-                _isLoading = true;
+                IsLoading = true;
 
                 if (_audioClips.Count == 0)
                     DontDestroyOnLoad(gameObject);
@@ -66,7 +75,7 @@ namespace oomtm450PuckMod_Sounds {
 
                 if (!Directory.Exists(fullPath)) {
                     Logging.LogError($"Sounds not found at: {fullPath}", Sounds.ClientConfig);
-                    _isLoading = false;
+                    IsLoading = false;
                     return true;
                 }
 
@@ -75,6 +84,7 @@ namespace oomtm450PuckMod_Sounds {
             }
             catch (Exception ex) {
                 Logging.LogError($"Error loading Sounds.\n{ex}", Sounds.ClientConfig);
+                IsLoading = false;
             }
 
             return true;
@@ -152,7 +162,7 @@ namespace oomtm450PuckMod_Sounds {
                 Errors.Add("GetAudioClips 2 : " + ex.ToString());
             }
 
-            _isLoading = false;
+            IsLoading = false;
         }
 
         private void AddClipNameToCorrectList(string clipName) {

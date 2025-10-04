@@ -411,7 +411,7 @@ namespace oomtm450PuckMod_Sounds {
                     }
 
                     if (_soundsSystem != null) {
-                        while (_extraSoundsToLoad.Count != 0) {
+                        if (_extraSoundsToLoad.Count != 0) {
                             string path = _extraSoundsToLoad.First();
                             if (_soundsSystem.LoadSounds(ClientConfig.CustomGoalHorns, path))
                                 _extraSoundsToLoad.Remove(path);
