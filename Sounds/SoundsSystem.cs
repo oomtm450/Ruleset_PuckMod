@@ -27,10 +27,12 @@ namespace oomtm450PuckMod_Sounds {
         private int _isLoadingValue = 0;
 
         private bool IsLoading {
-            get { return (Interlocked.CompareExchange(ref _isLoadingValue, 1, 1) == 1); }
+            get { return Interlocked.CompareExchange(ref _isLoadingValue, 1, 1) == 1; }
             set {
-                if (value) Interlocked.CompareExchange(ref _isLoadingValue, 1, 0);
-                else Interlocked.CompareExchange(ref _isLoadingValue, 0, 1);
+                if (value)
+                    Interlocked.CompareExchange(ref _isLoadingValue, 1, 0);
+                else
+                    Interlocked.CompareExchange(ref _isLoadingValue, 0, 1);
             }
         }
         #endregion
