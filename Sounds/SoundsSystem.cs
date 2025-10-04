@@ -144,7 +144,7 @@ namespace oomtm450PuckMod_Sounds {
 
                     }
                     catch (Exception ex) {
-                        Errors.Add("GetAudioClips 1 : " + ex.ToString());
+                        Errors.Add($"Sounds.{nameof(GetAudioClips)} 1 : " + ex.ToString());
                     }
                 }
 
@@ -161,7 +161,7 @@ namespace oomtm450PuckMod_Sounds {
                 ReorderAllLists();
             }
             catch (Exception ex) {
-                Errors.Add("GetAudioClips 2 : " + ex.ToString());
+                Errors.Add($"Sounds.{nameof(GetAudioClips)} 2 : " + ex.ToString());
             }
 
             IsLoading = false;
