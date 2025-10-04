@@ -925,14 +925,6 @@ namespace oomtm450PuckMod_Sounds {
                             _extraSoundsToLoad.Add(dataStr);
                             break;
                         }
-
-                        _soundsSystem.LoadSounds(ClientConfig.CustomGoalHorns, dataStr);
-
-                        while (_extraSoundsToLoad.Count != 0) {
-                            string path = _extraSoundsToLoad.First();
-                            _soundsSystem.LoadSounds(ClientConfig.CustomGoalHorns, path);
-                            _extraSoundsToLoad.Remove(path);
-                        }
                         break;
 
                     default:
