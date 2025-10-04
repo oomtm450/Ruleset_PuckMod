@@ -41,10 +41,10 @@ namespace oomtm450PuckMod_Sounds {
         #endregion
 
         #region Methods/Functions
-        internal void LoadSounds(bool setCustomGoalHorns, string path) {
+        internal bool LoadSounds(bool setCustomGoalHorns, string path) {
             try {
                 if (_isLoading)
-                    return;
+                    return false;
 
                 _isLoading = true;
 
@@ -67,7 +67,7 @@ namespace oomtm450PuckMod_Sounds {
                 if (!Directory.Exists(fullPath)) {
                     Logging.LogError($"Sounds not found at: {fullPath}", Sounds.ClientConfig);
                     _isLoading = false;
-                    return;
+                    return true;
                 }
 
                 Logging.Log("LoadSounds launching GetAudioClips.", Sounds.ClientConfig);
@@ -76,6 +76,8 @@ namespace oomtm450PuckMod_Sounds {
             catch (Exception ex) {
                 Logging.LogError($"Error loading Sounds.\n{ex}", Sounds.ClientConfig);
             }
+
+            return true;
         }
 
         internal void DestroyGameObjects() {
