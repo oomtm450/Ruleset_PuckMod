@@ -921,10 +921,7 @@ namespace oomtm450PuckMod_Sounds {
                         break;
 
                     case Codebase.SoundsSystem.LOAD_EXTRA_SOUNDS:
-                        if (_soundsSystem == null) {
-                            _extraSoundsToLoad.Add(dataStr);
-                            break;
-                        }
+                        _extraSoundsToLoad.Add(dataStr);
                         break;
 
                     default:
