@@ -1634,7 +1634,7 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool IsIcingPossible(Puck puck, PlayerTeam team, bool checkPossibleTime = true) {
             IcingObject icingObj = _isIcingPossible[team];
 
-            if (!IsIcingEnabled(team) || icingObj.Watch == null || icingObj.AnyPlayersBehindHashmarks)
+            if (!IsIcingEnabled(team) || icingObj.Watch == null || icingObj.AnyPlayersBehindHashmarks || !puck || !puck.Rigidbody)
                 return false;
 
             if (!checkPossibleTime)
@@ -1652,7 +1652,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (otherTeamPlayersSteamId.Count != 0 && puck.Rigidbody.transform.position.y < 0.9f) {
                         foreach (string playerSteamId in otherTeamPlayersSteamId) {
                             Player player = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-                            if (!player)
+                            if (player == null || !player || !player.IsCharacterFullySpawned)
                                 continue;
 
                             float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 275d) + 9500d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 330f);
