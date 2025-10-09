@@ -14,7 +14,7 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie save crease system.
         /// </summary>
-        public float GoalieRadius { get; } = 0.7f;
+        public float GoalieRadius { get; } = 0.7f; // TODO : Change next release.
 
         /// <summary>
         /// Float, delta of the puck Z direction to use with the goalie save crease system.
