@@ -588,7 +588,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (puck &&
                         !Codebase.PlayerFunc.IsGoalie(stick.Player) &&
                         GetPlayerSteamIdInPossession(false) != currentPlayerSteamId &&
-                        puck.Rigidbody.transform.position.y > _serverConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
+                        puck.Rigidbody.transform.position.y > _serverConfig.HighStick.MaxHeight + (stick.Player.PlayerBody.Rigidbody.transform.position.y < 0 ? 0 : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
                         if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
                             noHighStickFrames = int.MaxValue;
                             _noHighStickFrames.Add(currentPlayerSteamId, noHighStickFrames);
