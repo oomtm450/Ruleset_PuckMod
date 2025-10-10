@@ -47,7 +47,9 @@ namespace Codebase {
         /// <param name="clientId">Ulong, Id of the client that is sending the data.</param>
         /// <param name="listener">String, listener where to send the data.</param>
         /// <param name="config">IConfig, config for the logs.</param>
-        public static void SendData(string dataName, string dataStr, ulong clientId, string listener, IConfig config) {
+        /// <param name="networkDelivery">NetworkDelivery, type of delivery for the packets.</param>
+        public static void SendData(string dataName, string dataStr, ulong clientId, string listener, IConfig config,
+            NetworkDelivery networkDelivery = NetworkDelivery.ReliableFragmentedSequenced) {
             try {
                 byte[] data = Encoding.UTF8.GetBytes(dataStr);
 
@@ -57,7 +59,7 @@ namespace Codebase {
                 writer.WriteValue(dataName);
                 writer.WriteBytes(data);
 
-                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage(listener, clientId, writer, NetworkDelivery.ReliableFragmentedSequenced);
+                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage(listener, clientId, writer, networkDelivery);
 
                 writer.Dispose();
 
@@ -76,7 +78,9 @@ namespace Codebase {
         /// <param name="dataStr">String, content of the data.</param>
         /// <param name="listener">String, listener where to send the data.</param>
         /// <param name="config">IConfig, config for the logs.</param>
-        public static void SendDataToAll(string dataName, string dataStr, string listener, IConfig config) {
+        /// <param name="networkDelivery">NetworkDelivery, type of delivery for the packets.</param>
+        public static void SendDataToAll(string dataName, string dataStr, string listener, IConfig config,
+            NetworkDelivery networkDelivery = NetworkDelivery.ReliableFragmentedSequenced) {
             try {
                 byte[] data = Encoding.UTF8.GetBytes(dataStr);
 
@@ -86,7 +90,7 @@ namespace Codebase {
                 writer.WriteValue(dataName);
                 writer.WriteBytes(data);
 
-                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll(listener, writer, NetworkDelivery.ReliableFragmentedSequenced);
+                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll(listener, writer, networkDelivery);
 
                 writer.Dispose();
 

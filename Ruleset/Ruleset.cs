@@ -26,7 +26,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.24.1";
+        private static readonly string MOD_VERSION = "0.25.0";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -51,6 +51,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.22.2",
             "0.23.0",
             "0.24.0",
+            "0.24.1",
         });
 
         /// <summary>
@@ -587,7 +588,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (puck &&
                         !Codebase.PlayerFunc.IsGoalie(stick.Player) &&
                         GetPlayerSteamIdInPossession(false) != currentPlayerSteamId &&
-                        puck.Rigidbody.transform.position.y > _serverConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y) {
+                        puck.Rigidbody.transform.position.y > _serverConfig.HighStick.MaxHeight + (stick.Player.PlayerBody.Rigidbody.transform.position.y < 0 ? 0 : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
                         if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
                             noHighStickFrames = int.MaxValue;
                             _noHighStickFrames.Add(currentPlayerSteamId, noHighStickFrames);
@@ -1632,39 +1633,41 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static bool IsIcingPossible(Puck puck, PlayerTeam team, bool checkPossibleTime = true) {
             IcingObject icingObj = _isIcingPossible[team];
-            if (IsIcingEnabled(team) && icingObj.Watch != null && !icingObj.AnyPlayersBehindHashmarks) {
-                if (!checkPossibleTime)
-                    return true;
-                else {
-                    float maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched] * icingObj.Delta;
 
-                    if (!icingObj.DeltaHasBeenChecked && ++icingObj.FrameCheck > ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate) {
-                        icingObj.DeltaHasBeenChecked = true;
+            if (!IsIcingEnabled(team) || icingObj.Watch == null || icingObj.AnyPlayersBehindHashmarks || !puck || !puck.Rigidbody)
+                return false;
 
-                        PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
-                        List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
-                        List<string> otherTeamPlayersSteamId = _playersZone.Where(x => x.Value.Team == otherTeam && x.Value.Zone == otherTeamZones[0]).Select(x => x.Key).ToList();
+            if (!checkPossibleTime)
+                return true;
+            else {
+                float maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched] * icingObj.Delta;
 
-                        if (otherTeamPlayersSteamId.Count != 0 && puck.Rigidbody.transform.position.y < 0.9f) {
-                            foreach (string playerSteamId in otherTeamPlayersSteamId) {
-                                Player player = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-                                if (!player)
-                                    continue;
+                if (!icingObj.DeltaHasBeenChecked && ++icingObj.FrameCheck > ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate) {
+                    icingObj.DeltaHasBeenChecked = true;
 
-                                float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 275d) + 9500d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 330f);
-                                //Logging.Log($"Possible time is : {maxPossibleTime}. Limit is : {maxPossibleTimeLimit}. Puck Y is : {puck.Rigidbody.transform.position.y}.", _serverConfig, true);
+                    PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
+                    List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
+                    List<string> otherTeamPlayersSteamId = _playersZone.Where(x => x.Value.Team == otherTeam && x.Value.Zone == otherTeamZones[0]).Select(x => x.Key).ToList();
 
-                                if (maxPossibleTime >= maxPossibleTimeLimit) {
-                                    _isIcingPossible[team] = new IcingObject();
-                                    return false;
-                                }
+                    if (otherTeamPlayersSteamId.Count != 0 && puck.Rigidbody.transform.position.y < 0.9f) {
+                        foreach (string playerSteamId in otherTeamPlayersSteamId) {
+                            Player player = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
+                            if (player == null || !player || !player.IsCharacterFullySpawned)
+                                continue;
+
+                            float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 275d) + 9500d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 325f);
+                            //Logging.Log($"Possible time is : {maxPossibleTime}. Limit is : {maxPossibleTimeLimit}. Puck Y is : {puck.Rigidbody.transform.position.y}.", _serverConfig, true);
+
+                            if (maxPossibleTime >= maxPossibleTimeLimit) {
+                                _isIcingPossible[team] = new IcingObject();
+                                return false;
                             }
                         }
                     }
-
-                    if (icingObj.Watch.ElapsedMilliseconds < maxPossibleTime)
-                        return true;
                 }
+
+                if (icingObj.Watch.ElapsedMilliseconds < maxPossibleTime)
+                    return true;
             }
 
             return false;

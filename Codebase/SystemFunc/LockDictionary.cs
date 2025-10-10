@@ -70,6 +70,11 @@ namespace Codebase {
                 return _dictionary.Remove(key);
         }
 
+        public bool ContainsKey(TKey key) {
+            lock (_locker)
+                return _dictionary.ContainsKey(key);
+        }
+
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
             lock (_locker)
                 return _dictionary.GetEnumerator();
