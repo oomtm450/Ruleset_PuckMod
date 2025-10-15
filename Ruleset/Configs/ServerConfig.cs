@@ -340,7 +340,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
         /// </summary>
-        public float MaxHeight { get; set; } = 1.79f;
+        public float MaxHeight { get; set; } = 1.795f;
 
         /// <summary>
         /// Int, number of milliseconds after a high stick to not be considered.
