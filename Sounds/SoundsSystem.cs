@@ -156,12 +156,17 @@ namespace oomtm450PuckMod_Sounds {
             try {
                 if (setCustomGoalHorns)
                     SetGoalHorns();
+            }
+            catch (Exception ex) {
+                Errors.Add($"Sounds.{nameof(GetAudioClips)} 2 : " + ex.ToString());
+            }
 
+            try {
                 // Reorder all lists to get the same index values for all players.
                 ReorderAllLists();
             }
             catch (Exception ex) {
-                Errors.Add($"Sounds.{nameof(GetAudioClips)} 2 : " + ex.ToString());
+                Errors.Add($"Sounds.{nameof(GetAudioClips)} 3 : " + ex.ToString());
             }
 
             IsLoading = false;
