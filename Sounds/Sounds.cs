@@ -16,13 +16,14 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.2.0";
+        private static readonly string MOD_VERSION = "0.3.0";
 
         /// <summary>
         /// List of string, last released versions of the mod.
         /// </summary>
         private static readonly ReadOnlyCollection<string> OLD_MOD_VERSIONS = new ReadOnlyCollection<string>(new List<string> {
             "0.1.0",
+            "0.2.0",
         });
 
         /// <summary>

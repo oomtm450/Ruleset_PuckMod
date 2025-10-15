@@ -3,7 +3,7 @@
   <PropertyGroup>
     <AssemblyName>oomtm450PuckMod_Ruleset</AssemblyName>
     <TargetFramework>net4.8</TargetFramework>
-    <Version>0.25.0</Version>
+    <Version>0.26.0</Version>
     <RootNamespace>oomtm450PuckMod_Ruleset</RootNamespace>
   </PropertyGroup>
 
