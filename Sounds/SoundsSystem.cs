@@ -12,7 +12,6 @@ using UnityEngine.Networking;
 namespace oomtm450PuckMod_Sounds {
     internal class SoundsSystem : MonoBehaviour {
         #region Constants
-        private const string SOUNDS_FOLDER_PATH = "sounds";
         private const string SOUND_EXTENSION = ".ogg";
         #endregion
 
