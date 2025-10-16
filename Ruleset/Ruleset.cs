@@ -687,7 +687,7 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         hasGoalieDived = false;
 
-                        bool goalieDown = (goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived;
+                    bool goalieDown = (goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived;
                     _lastGoalieStateCollision[goalieOtherTeam] = goalieDown;
 
                     if (goalieDown || (force > _serverConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease)) {
@@ -702,7 +702,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in PlayerBodyV2_OnCollisionEnter_Patch Postfix().\n{ex}", _serverConfig);
+                    Logging.LogError($"Error in {nameof(PlayerBodyV2_OnCollisionEnter_Patch)} Postfix().\n{ex}", _serverConfig);
                 }
 
                 return;

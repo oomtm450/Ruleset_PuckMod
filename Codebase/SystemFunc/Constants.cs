@@ -71,6 +71,21 @@
         public const string PASS = STATS_MOD_NAME + "PASS";
 
         /// <summary>
+        /// Const string, data name for hits.
+        /// </summary>
+        public const string HIT = STATS_MOD_NAME + "HIT";
+
+        /// <summary>
+        /// Const string, data name for takeways.
+        /// </summary>
+        public const string TAKEAWAY = STATS_MOD_NAME + "TAKEAWAY";
+
+        /// <summary>
+        /// Const string, data name for turnovers.
+        /// </summary>
+        public const string TURNOVER = STATS_MOD_NAME + "TURNOVER";
+
+        /// <summary>
         /// Const string, data name for pausing mods.
         /// </summary>
         public const string PAUSE = "pause";
