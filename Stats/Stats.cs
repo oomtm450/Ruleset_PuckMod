@@ -5,14 +5,12 @@ using oomtm450PuckMod_Stats.Configs;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
-using static oomtm450PuckMod_Stats.Stats;
 
 namespace oomtm450PuckMod_Stats {
     public class Stats : IPuckMod {
