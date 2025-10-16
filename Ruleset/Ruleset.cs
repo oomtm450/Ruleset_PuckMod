@@ -586,7 +586,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _isIcingPossible[stick.Player.Team.Value] = new IcingObject();
 
                     // High stick logic.
-                    if (puck &&
+                    if (IsHighStickEnabled(stick.Player.Team.Value) && puck &&
                         !Codebase.PlayerFunc.IsGoalie(stick.Player) &&
                         GetPlayerSteamIdInPossession(false) != currentPlayerSteamId &&
                         puck.Rigidbody.transform.position.y > _serverConfig.HighStick.MaxHeight + (stick.Player.PlayerBody.Rigidbody.transform.position.y < 0 ? 0 : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
