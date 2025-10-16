@@ -191,6 +191,10 @@ namespace oomtm450PuckMod_Stats {
 
         private static readonly LockList<string> _redGoals = new LockList<string>();
 
+        private static readonly LockList<string> _blueAssists = new LockList<string>();
+
+        private static readonly LockList<string> _redAssists = new LockList<string>();
+
         private static readonly LockDictionary<int, string> _stars = new LockDictionary<int, string> {
             { 1, "" },
             { 2, "" },
@@ -312,10 +316,20 @@ namespace oomtm450PuckMod_Stats {
                     if (!ServerFunc.IsDedicatedServer())
                         return;
 
-                    if (team == PlayerTeam.Blue)
+                    if (team == PlayerTeam.Blue) {
                         _blueGoals.Add(goalPlayer.SteamId.Value.ToString());
-                    else
+                        if (assistPlayer != null)
+                            _blueAssists.Add(assistPlayer.SteamId.Value.ToString());
+                        if (secondAssistPlayer != null)
+                            _blueAssists.Add(secondAssistPlayer.SteamId.Value.ToString());
+                    }
+                    else {
                         _redGoals.Add(goalPlayer.SteamId.Value.ToString());
+                        if (assistPlayer != null)
+                            _redAssists.Add(assistPlayer.SteamId.Value.ToString());
+                        if (secondAssistPlayer != null)
+                            _redAssists.Add(secondAssistPlayer.SteamId.Value.ToString());
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManager_Server_GoalScored_Patch Postfix().\n{ex}", ServerConfig);
@@ -397,9 +411,11 @@ namespace oomtm450PuckMod_Stats {
                             _passes.Remove(key);
                     }
 
-                    // Reset goal trackers.
+                    // Reset goal and assists trackers.
                     _blueGoals.Clear();
+                    _blueAssists.Clear();
                     _redGoals.Clear();
+                    _redAssists.Clear();
 
                     NetworkCommunication.SendDataToAll(RESET_ALL, "1", Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
@@ -906,8 +922,10 @@ namespace oomtm450PuckMod_Stats {
                                 { "blocks", _blocks },
                                 { "saveperc", _savePerc },
                                 { "sticksaves", _stickSaves },
-                                { "redgoals", _redGoals },
                                 { "bluegoals", _blueGoals },
+                                { "redgoals", _redGoals },
+                                { "blueassists", _blueAssists },
+                                { "redassists", _redAssists },
                                 { "gwg", gwgSteamId },
                                 { "stars", _stars },
                             };
@@ -1192,7 +1210,9 @@ namespace oomtm450PuckMod_Stats {
                 _passes.Clear();
                 _blocks.Clear();
                 _blueGoals.Clear();
+                _blueAssists.Clear();
                 _redGoals.Clear();
+                _redAssists.Clear();
 
                 ScoreboardModifications(false);
             }
