@@ -48,40 +48,70 @@ namespace oomtm450PuckMod_Stats {
         /// </summary>
         private const string BATCH_SOG = Constants.MOD_NAME + "BATCHSOG";
 
-        /// <summary>
+        /*/// <summary>
         /// Const string, data name for resetting the SOG.
         /// </summary>
-        private const string RESET_SOG = Constants.MOD_NAME + "RESETSOG";
+        private const string RESET_SOG = Constants.MOD_NAME + "RESETSOG";*/
 
         /// <summary>
         /// Const string, data name for batching the save percentage.
         /// </summary>
         private const string BATCH_SAVEPERC = Constants.MOD_NAME + "BATCHSAVEPERC";
 
-        /// <summary>
+        /*/// <summary>
         /// Const string, data name for resetting the save percentage.
         /// </summary>
-        private const string RESET_SAVEPERC = Constants.MOD_NAME + "RESETSAVEPERC";
+        private const string RESET_SAVEPERC = Constants.MOD_NAME + "RESETSAVEPERC";*/
 
         /// <summary>
         /// Const string, data name for batching the blocked shots.
         /// </summary>
         private const string BATCH_BLOCK = Constants.MOD_NAME + "BATCHBLOCK";
 
-        /// <summary>
+        /*/// <summary>
         /// Const string, data name for resetting the blocked shots.
         /// </summary>
-        private const string RESET_BLOCK = Constants.MOD_NAME + "RESETBLOCK";
+        private const string RESET_BLOCK = Constants.MOD_NAME + "RESETBLOCK";*/
+
+        /// <summary>
+        /// Const string, data name for batching the hits.
+        /// </summary>
+        private const string BATCH_HIT = Constants.MOD_NAME + "BATCHHIT";
+
+        /*/// <summary>
+        /// Const string, data name for resetting the hits.
+        /// </summary>
+        private const string RESET_HIT = Constants.MOD_NAME + "RESETHIT";*/
+
+        /// <summary>
+        /// Const string, data name for batching the takeaways.
+        /// </summary>
+        private const string BATCH_TAKEAWAY = Constants.MOD_NAME + "BATCHTAKEAWAY";
+
+        /*/// <summary>
+        /// Const string, data name for resetting the takeaways.
+        /// </summary>
+        private const string RESET_TAKEAWAY = Constants.MOD_NAME + "RESETTAKEAWAY";*/
+
+        /// <summary>
+        /// Const string, data name for batching the turnovers.
+        /// </summary>
+        private const string BATCH_TURNOVER = Constants.MOD_NAME + "BATCHTURNOVER";
+
+        /*/// <summary>
+        /// Const string, data name for resetting the turnovers.
+        /// </summary>
+        private const string RESET_TURNOVER = Constants.MOD_NAME + "RESETTURNOVER";*/
 
         /// <summary>
         /// Const string, data name for batching the passes.
         /// </summary>
-        private const string BATCH_PASSES = Constants.MOD_NAME + "BATCHPASS";
+        private const string BATCH_PASS = Constants.MOD_NAME + "BATCHPASS";
 
-        /// <summary>
+        /*/// <summary>
         /// Const string, data name for resetting the passes.
         /// </summary>
-        private const string RESET_PASSES = Constants.MOD_NAME + "RESETPASS";
+        private const string RESET_PASS = Constants.MOD_NAME + "RESETPASS";*/
 
         /// <summary>
         /// Const string, data name for resetting all stats.
@@ -146,6 +176,8 @@ namespace oomtm450PuckMod_Stats {
             { PlayerTeam.Blue, ("", DateTime.MinValue) },
             { PlayerTeam.Red, ("", DateTime.MinValue) },
         };
+
+        private static readonly LockDictionary<string, bool> _playerIsDown = new LockDictionary<string, bool>();
 
         private static PlayerTeam _lastTeamOnPuckTipIncluded = PlayerTeam.Blue;
 
@@ -834,21 +866,47 @@ namespace oomtm450PuckMod_Stats {
                     if (!collisionPlayerBody || !collisionPlayerBody.Player || !collisionPlayerBody.Player.IsCharacterFullySpawned)
                         return;
 
-                    //float force = Utils.GetCollisionForce(collision);
-
-                    Player currentPlayer = __instance.Player;
-                    // If the player has been hit by the same team, return;
-                    if (collisionPlayerBody.Player.Team.Value == currentPlayer.Team.Value)
+                    if (!__instance || !__instance.Player || !__instance.Player.IsCharacterFullySpawned)
                         return;
 
-                    if (collisionPlayerBody.Player.SteamId.Value.ToString() == currentPlayer.SteamId.Value.ToString()) // TODO : Remove debug logging.
+                    //float force = Utils.GetCollisionForce(collision);
+
+                    // If the player has been hit by the same team, return;
+                    if (collisionPlayerBody.Player.Team.Value == __instance.Player.Team.Value)
+                        return;
+
+                    if (collisionPlayerBody.Player.SteamId.Value.ToString() == __instance.Player.SteamId.Value.ToString()) // TODO : Remove debug logging.
                         Logging.LogError("SAME PLAYER HIT HIMSELF ???", ServerConfig); // TODO : Remove debug logging.
 
-                    if (collisionPlayerBody.HasFallen || collisionPlayerBody.HasSlipped) {
-                        if (currentPlayer.PlayerBody.HasFallen || currentPlayer.PlayerBody.HasSlipped)
-                            return;
+                    string collisionPlayerBodySteamId = collisionPlayerBody.Player.SteamId.Value.ToString();
+                    if (!_playerIsDown.TryGetValue(collisionPlayerBodySteamId, out bool collisionPlayerBodyIsDown))
+                        collisionPlayerBodyIsDown = false;
 
-                        ProcessHit(currentPlayer.SteamId.Value.ToString());
+                    string instancePlayerSteamId = __instance.Player.SteamId.Value.ToString();
+
+                    if (!collisionPlayerBodyIsDown && (collisionPlayerBody.HasFallen || collisionPlayerBody.HasSlipped)) {
+                        if (_playerIsDown.TryGetValue(collisionPlayerBodySteamId, out bool _))
+                            _playerIsDown[collisionPlayerBodySteamId] = true;
+                        else
+                            _playerIsDown.Add(collisionPlayerBodySteamId, true);
+
+                        if (__instance.Player.PlayerBody.HasFallen || __instance.Player.PlayerBody.HasSlipped) {
+                            if (_playerIsDown.TryGetValue(instancePlayerSteamId, out bool _))
+                                _playerIsDown[instancePlayerSteamId] = true;
+                            else
+                                _playerIsDown.Add(instancePlayerSteamId, true);
+
+                            return;
+                        }
+
+                        ProcessHit(__instance.Player.SteamId.Value.ToString());
+                    }
+
+                    if (__instance.Player.PlayerBody.HasFallen || __instance.Player.PlayerBody.HasSlipped) {
+                        if (_playerIsDown.TryGetValue(instancePlayerSteamId, out bool _))
+                            _playerIsDown[instancePlayerSteamId] = true;
+                        else
+                            _playerIsDown.Add(instancePlayerSteamId, true);
                     }
                 }
                 catch (Exception ex) {
@@ -859,6 +917,32 @@ namespace oomtm450PuckMod_Stats {
             }
         }
         #endregion
+
+        /// <summary>
+        /// Class that patches the OnStandUp event from PlayerBodyV2.
+        /// </summary>
+        [HarmonyPatch(typeof(PlayerBodyV2), nameof(PlayerBodyV2.OnStandUp))]
+        public class PlayerBodyV2_OnStandUp_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(PlayerBodyV2 __instance) {
+                // If this is not the server or game is not started, do not use the patch.
+                if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
+                    return;
+
+                try {
+                    string playerSteamId = __instance.Player.SteamId.Value.ToString();
+                    if (_playerIsDown.TryGetValue(playerSteamId, out bool _))
+                        _playerIsDown[playerSteamId] = false;
+                    else
+                        _playerIsDown.Add(playerSteamId, false);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(PlayerBodyV2_OnStandUp_Patch)} Postfix().\n{ex}", ServerConfig);
+                }
+
+                return;
+            }
+        }
 
         /// <summary>
         /// Class that patches the Server_SetPhase event from GameManager.
@@ -1260,9 +1344,7 @@ namespace oomtm450PuckMod_Stats {
 
                 _sentOutOfDateMessage.Remove(clientId);
 
-                _sog.Remove(clientSteamId);
-                _stickSaves.Remove(clientSteamId);
-                _savePerc.Remove(clientSteamId);
+                _playerIsDown.Remove(clientSteamId);
 
                 _players_ClientId_SteamId.Remove(clientId);
             }
@@ -1467,7 +1549,7 @@ namespace oomtm450PuckMod_Stats {
                             NetworkCommunication.SendData(STAR, $"{_stars[key]};{key}", clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                         break;
 
-                    case RESET_SOG:
+                    /*case RESET_SOG:
                         if (dataStr != "1")
                             break;
 
@@ -1479,7 +1561,7 @@ namespace oomtm450PuckMod_Stats {
                             break;
 
                         Client_ResetSavePerc();
-                        break;
+                        break;*/
 
                     case RESET_ALL:
                         if (dataStr != "1")
