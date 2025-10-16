@@ -348,6 +348,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public int MaxMilliseconds { get; set; } = 5000;
 
         /// <summary>
+        /// Float, delta used to calculate the high stick maximum frames before activation.
+        /// </summary>
+        public float Delta { get; set; } = 18f;
+
+        /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
         /// </summary>
         /// <param name="oldConfig">ISubConfig, config with old values.</param>
@@ -369,6 +374,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (MaxMilliseconds == _oldConfig.MaxMilliseconds)
                 MaxMilliseconds = newConfig.MaxMilliseconds;
+
+            if (Delta == _oldConfig.Delta)
+                Delta = newConfig.Delta;
         }
     }
 
