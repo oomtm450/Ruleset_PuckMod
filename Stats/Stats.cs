@@ -792,7 +792,8 @@ namespace oomtm450PuckMod_Stats {
 
                     if (playerSteamId != lastPlayerOnPuck) {
                         if (!string.IsNullOrEmpty(lastPlayerOnPuck) && _lastTeamOnPuckTipIncluded == player.Team.Value) {
-                            if ((DateTime.UtcNow - _lastPlayerOnPuckTipIncludedSteamId[player.Team.Value].Time).TotalMilliseconds < 5000) {
+                            double timeSinceLastTouchMs = (DateTime.UtcNow - _lastPlayerOnPuckTipIncludedSteamId[player.Team.Value].Time).TotalMilliseconds;
+                            if (timeSinceLastTouchMs < 5000 && timeSinceLastTouchMs > 80) {
                                 if (!_passes.TryGetValue(lastPlayerOnPuck, out int _))
                                     _passes.Add(lastPlayerOnPuck, 0);
 
