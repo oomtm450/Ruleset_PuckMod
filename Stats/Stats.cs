@@ -18,7 +18,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.6.0DEV";
+        private static readonly string MOD_VERSION = "0.6.0DEV3";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -874,9 +874,6 @@ namespace oomtm450PuckMod_Stats {
                     // If the player has been hit by the same team, return;
                     if (collisionPlayerBody.Player.Team.Value == __instance.Player.Team.Value)
                         return;
-
-                    if (collisionPlayerBody.Player.SteamId.Value.ToString() == __instance.Player.SteamId.Value.ToString()) // TODO : Remove debug logging.
-                        Logging.LogError("SAME PLAYER HIT HIMSELF ???", ServerConfig); // TODO : Remove debug logging.
 
                     string collisionPlayerBodySteamId = collisionPlayerBody.Player.SteamId.Value.ToString();
                     if (!_playerIsDown.TryGetValue(collisionPlayerBodySteamId, out bool collisionPlayerBodyIsDown))
