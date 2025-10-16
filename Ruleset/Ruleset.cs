@@ -595,7 +595,7 @@ namespace oomtm450PuckMod_Ruleset {
                             _noHighStickFrames.Add(currentPlayerSteamId, noHighStickFrames);
                         }
 
-                        if (noHighStickFrames >= ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate / 15) {
+                        if (noHighStickFrames >= ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate / 18) {
                             _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
 
                             highStickTimer.Change(_serverConfig.HighStick.MaxMilliseconds, Timeout.Infinite);
