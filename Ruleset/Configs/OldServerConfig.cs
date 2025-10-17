@@ -73,11 +73,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
         public int MaxPossessionMilliseconds { get; } = 700;
-
-        /// <summary>
-        /// Float, delta used to calculate the high stick maximum frames before activation.
-        /// </summary>
-        public float Delta { get; } = 18f;
         #endregion
 
         #region Methods/Functions
