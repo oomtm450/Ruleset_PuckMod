@@ -6,11 +6,11 @@ namespace Codebase {
     /// </summary>
     public class PuckFunc {
         public static bool PuckIsTipped(string playerSteamId, int maxTippedMilliseconds, LockDictionary<string, Stopwatch> playersCurrentPuckTouch,
-            LockDictionary<string, Stopwatch> lastTimeOnCollisionExitWasCalled) {
+            LockDictionary<string, Stopwatch> lastTimeOnCollisionStayOrExitWasCalled) {
             if (!playersCurrentPuckTouch.TryGetValue(playerSteamId, out Stopwatch currentPuckTouchWatch))
                 return false;
 
-            if (!lastTimeOnCollisionExitWasCalled.TryGetValue(playerSteamId, out Stopwatch lastPuckExitWatch))
+            if (!lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(playerSteamId, out Stopwatch lastPuckExitWatch))
                 return false;
 
             if (currentPuckTouchWatch.ElapsedMilliseconds - lastPuckExitWatch.ElapsedMilliseconds < maxTippedMilliseconds)
