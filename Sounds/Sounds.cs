@@ -42,10 +42,13 @@ namespace oomtm450PuckMod_Sounds {
         internal static ServerConfig ServerConfig { get; set; } = new ServerConfig();
 
         /// <summary>
-        /// LockDictionary of ulong and string, dictionary of all players
+        /// LockDictionary of ulong and string, dictionary of all players clientId and steamId.
         /// </summary>
         private static readonly LockDictionary<ulong, string> _players_ClientId_SteamId = new LockDictionary<ulong, string>();
 
+        /// <summary>
+        /// LockDictionary of ulong and DateTime, last time a mod out of date message was sent to a client (ulong clientId).
+        /// </summary>
         private static readonly LockDictionary<ulong, DateTime> _sentOutOfDateMessage = new LockDictionary<ulong, DateTime>();
 
         /// <summary>

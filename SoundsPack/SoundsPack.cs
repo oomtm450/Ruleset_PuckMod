@@ -171,7 +171,7 @@ namespace oomtm450PuckMod_SoundsPack {
                     EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                 }
 
-                    _harmonyPatched = true;
+                _harmonyPatched = true;
                 return true;
             }
             catch (Exception ex) {
