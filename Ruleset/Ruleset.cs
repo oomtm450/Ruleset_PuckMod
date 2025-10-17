@@ -1941,7 +1941,7 @@ namespace oomtm450PuckMod_Ruleset {
                 _playersZone.Remove(clientSteamId);
                 _playersCurrentPuckTouch.Remove(clientSteamId);
                 _playersLastTimePuckPossession.Remove(clientSteamId);
-                _lastTimeOnCollisionExitWasCalled.Remove(clientSteamId);
+                _lastTimeOnCollisionStayOrExitWasCalled.Remove(clientSteamId);
 
                 PlayerFunc.Players_ClientId_SteamId.Remove(clientId);
             }
