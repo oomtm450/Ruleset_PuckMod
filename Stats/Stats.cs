@@ -886,24 +886,28 @@ namespace oomtm450PuckMod_Stats {
                     watch.Restart();
 
                     // Takeaways/turnovers logic.
-                    string currentPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds,
+                    if (!PlayerFunc.IsGoalie(player)) {
+                        string currentPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds,
                         ServerConfig.MaxTippedMilliseconds, _playersLastTimePuckPossession, _playersCurrentPuckTouch, true);
-                    if (!string.IsNullOrEmpty(currentPossessionSteamId)) {
-                        if (_lastPossession.Team != PlayerTeam.None && player.Team.Value != _lastPossession.Team &&
-                            currentPossessionSteamId != _lastPossession.SteamId && (DateTime.UtcNow - _lastPossession.Date).TotalMilliseconds < 500) {
-                            ProcessTakeaways(currentPossessionSteamId);
-                            ProcessTurnovers(_lastPossession.SteamId);
-                        }
+                        if (!string.IsNullOrEmpty(currentPossessionSteamId)) {
+                            if (_lastPossession.Team != PlayerTeam.None && player.Team.Value != _lastPossession.Team &&
+                                currentPossessionSteamId != _lastPossession.SteamId && (DateTime.UtcNow - _lastPossession.Date).TotalMilliseconds < 500) {
+                                ProcessTakeaways(currentPossessionSteamId);
+                                ProcessTurnovers(_lastPossession.SteamId);
+                            }
 
-                        _lastPossession = new Possession {
-                            SteamId = currentPossessionSteamId,
-                            Team = player.Team.Value,
-                            Date = DateTime.UtcNow,
-                        };
+                            _lastPossession = new Possession {
+                                SteamId = currentPossessionSteamId,
+                                Team = player.Team.Value,
+                                Date = DateTime.UtcNow,
+                            };
+                        }
+                        else { // TODO : Remove debug logs.
+                            Logging.Log("NO POSSESSION", ServerConfig, true);
+                        }
                     }
-                    else { // TODO : Remove debug logs.
-                        Logging.Log("NO POSSESSION", ServerConfig, true);
-                    }
+                    else
+                        _lastPossession = new Possession();
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Puck_OnCollisionStay_Patch Postfix().\n{ex}", ServerConfig);
