@@ -179,8 +179,14 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static readonly LockDictionary<string, (PlayerTeam Team, Zone Zone)> _playersZone = new LockDictionary<string, (PlayerTeam, Zone)>();
 
+        /// <summary>
+        /// LockDictionary of string and Stopwatch, dictionary of all players current puck touch time.
+        /// </summary>
         private static readonly LockDictionary<string, Stopwatch> _playersCurrentPuckTouch = new LockDictionary<string, Stopwatch>();
 
+        /// <summary>
+        /// LockDictionary of string and Stopwatch, dictionary of all players last puck touch time.
+        /// </summary>
         private static readonly LockDictionary<string, Stopwatch> _playersLastTimePuckPossession = new LockDictionary<string, Stopwatch>();
 
         /// <summary>
@@ -190,6 +196,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         //private static InputAction _getStickLocation;
 
+        /// <summary>
+        /// LockDictionary of string and Stopwatch, dictionary of all players last puck OnCollisionExit time.
+        /// </summary>
         private static readonly LockDictionary<string, Stopwatch> _lastTimeOnCollisionExitWasCalled = new LockDictionary<string, Stopwatch>();
 
         /// <summary>
@@ -470,7 +479,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
 
-                    if (!PuckIsTipped(playerSteamId)) {
+                    if (!PuckFunc.PuckIsTipped(playerSteamId, _serverConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionExitWasCalled)) {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                         if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
                             ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
@@ -561,7 +570,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     lastTimeCollisionWatch.Restart();
 
-                    if (!PuckIsTipped(currentPlayerSteamId)) {
+                    if (!PuckFunc.PuckIsTipped(currentPlayerSteamId, _serverConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionExitWasCalled)) {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                         if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
                             ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
@@ -591,7 +600,8 @@ namespace oomtm450PuckMod_Ruleset {
                     // High stick logic.
                     if (IsHighStickEnabled(stick.Player.Team.Value) && puck &&
                         !Codebase.PlayerFunc.IsGoalie(stick.Player) &&
-                        GetPlayerSteamIdInPossession(false) != currentPlayerSteamId &&
+                        Codebase.PlayerFunc.GetPlayerSteamIdInPossession(_serverConfig.MinPossessionMilliseconds, _serverConfig.MaxPossessionMilliseconds,
+                        _serverConfig.MaxTippedMilliseconds, _playersLastTimePuckPossession, _playersCurrentPuckTouch, false) != currentPlayerSteamId &&
                         puck.Rigidbody.transform.position.y > _serverConfig.HighStick.MaxHeight + (stick.Player.PlayerBody.Rigidbody.transform.position.y < 0 ? 0 : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
                         if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
                             noHighStickFrames = int.MaxValue;
@@ -1026,7 +1036,8 @@ namespace oomtm450PuckMod_Ruleset {
                 };
 
                 try {
-                    string playerWithPossessionSteamId = GetPlayerSteamIdInPossession();
+                    string playerWithPossessionSteamId = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(_serverConfig.MinPossessionMilliseconds,
+                        _serverConfig.MaxPossessionMilliseconds, _serverConfig.MaxTippedMilliseconds, _playersLastTimePuckPossession, _playersCurrentPuckTouch);
 
                     _dictPlayersPositionsForIcing.Clear();
                     foreach (Player player in players) {
@@ -1699,72 +1710,6 @@ namespace oomtm450PuckMod_Ruleset {
                 return _serverConfig.GInt.BlueTeam;
             else
                 return _serverConfig.GInt.RedTeam;
-        }
-
-        /// <summary>
-        /// Function that returns the player steam Id that has possession.
-        /// </summary>
-        /// <param name="checkForChallenge">Bool, false if we only check logic without challenging puck possession from other players to determine possession.</param>
-        /// <returns>String, player steam Id with the possession or an empty string if no one has the puck (or it is challenged).</returns>
-        private static string GetPlayerSteamIdInPossession(bool checkForChallenge = true) {
-            Dictionary<string, Stopwatch> dict;
-            dict = _playersLastTimePuckPossession
-                .Where(x => x.Value.ElapsedMilliseconds < _serverConfig.MinPossessionMilliseconds &&
-                    _playersCurrentPuckTouch.Keys.Any(y => y == x.Key) &&
-                    _playersCurrentPuckTouch[x.Key].ElapsedMilliseconds > _serverConfig.MaxTippedMilliseconds)
-                .ToDictionary(x => x.Key, x => x.Value);
-
-            /*if (!checkForChallenge && _playersCurrentPuckTouch.Count != 0) {
-                Logging.Log($"_playersCurrentPuckTouch milliseconds : {_playersCurrentPuckTouch.First().Value.ElapsedMilliseconds}", _serverConfig, true);
-            }*/
-
-            /*if (!checkForChallenge) {
-                Logging.Log($"Number of possession found : {dict.Count}", _serverConfig, true);
-                if (_playersLastTimePuckPossession.Count != 0)
-                    Logging.Log($"Possession milliseconds : {_playersLastTimePuckPossession.First().Value.ElapsedMilliseconds}", _serverConfig, true);
-            }*/
-
-            if (dict.Count > 1) { // Puck possession is challenged.
-                if (checkForChallenge)
-                    return "";
-                else
-                    return dict.OrderBy(x => x.Value.ElapsedMilliseconds).First().Key;
-            }
-
-            if (dict.Count == 1)
-                return dict.First().Key;
-
-            List<string> steamIds = _playersLastTimePuckPossession
-                .Where(x => x.Value.ElapsedMilliseconds < _serverConfig.MaxPossessionMilliseconds ||
-                    (_playersCurrentPuckTouch.Keys.Any(y => y == x.Key) &&
-                    _playersCurrentPuckTouch[x.Key].ElapsedMilliseconds > _serverConfig.MaxTippedMilliseconds))
-                .OrderBy(x => x.Value.ElapsedMilliseconds)
-                .Select(x => x.Key).ToList();
-
-            /*if (!checkForChallenge && steamIds.Count != 0) {
-                Logging.Log($"Possession {steamIds.First()}.", _serverConfig, true);
-            }
-            else if (!checkForChallenge) {
-                Logging.Log($"No extra possession.", _serverConfig, true);
-            }*/
-
-            if (steamIds.Count != 0)
-                return steamIds.First();
-
-            return "";
-        }
-        
-        private static bool PuckIsTipped(string playerSteamId) {
-            if (!_playersCurrentPuckTouch.TryGetValue(playerSteamId, out Stopwatch currentPuckTouchWatch))
-                return false;
-
-            if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(playerSteamId, out Stopwatch lastPuckExitWatch))
-                return false;
-
-            if (currentPuckTouchWatch.ElapsedMilliseconds - lastPuckExitWatch.ElapsedMilliseconds < _serverConfig.MaxTippedMilliseconds)
-                return true;
-
-            return false;
         }
 
         private static void ResetGoalAndAssistAttribution(PlayerTeam team) {

@@ -25,6 +25,21 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// Bool, true if the end of game stats JSON must be saved as file on the server.
         /// </summary>
         public bool SaveEOGJSON { get; } = true;
+
+        /// <summary>
+        /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
+        /// </summary>
+        public int MaxTippedMilliseconds { get; } = 91;
+
+        /// <summary>
+        /// Int, number of milliseconds for a possession to be considered with challenge.
+        /// </summary>
+        public int MinPossessionMilliseconds { get; } = 300;
+
+        /// <summary>
+        /// Int, number of milliseconds for a possession to be considered without challenging.
+        /// </summary>
+        public int MaxPossessionMilliseconds { get; } = 700;
         #endregion
 
         #region Methods/Functions

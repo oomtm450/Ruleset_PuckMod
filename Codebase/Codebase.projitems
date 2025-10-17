@@ -17,6 +17,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\Logging.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\NetworkCommunication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\PlayerFunc.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)systemfunc\PuckFunc.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\ServerFunc.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\SoundsSystem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\SystemFunc.cs" />
