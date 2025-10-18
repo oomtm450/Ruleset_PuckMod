@@ -17,7 +17,7 @@ namespace oomtm450PuckMod_Sounds {
 
         #region Fields
         private readonly LockDictionary<string, GameObject> _soundObjects = new LockDictionary<string, GameObject>();
-        private readonly List<AudioClip> _audioClips = new List<AudioClip>();
+        private readonly LockList<AudioClip> _audioClips = new LockList<AudioClip>();
 
         private AudioSource _currentAudioSource = null;
 
@@ -37,17 +37,19 @@ namespace oomtm450PuckMod_Sounds {
         #endregion
 
         #region Properties
-        internal List<string> FaceoffMusicList { get; set; } = new List<string>();
-        internal List<string> BlueGoalMusicList { get; set; } = new List<string>();
-        internal List<string> RedGoalMusicList { get; set; } = new List<string>();
-        internal List<string> BetweenPeriodsMusicList { get; set; } = new List<string>();
-        internal List<string> WarmupMusicList { get; set; } = new List<string>();
-        internal List<string> LastMinuteMusicList { get; set; } = new List<string>();
-        internal List<string> FirstFaceoffMusicList { get; set; } = new List<string>();
-        internal List<string> SecondFaceoffMusicList { get; set; } = new List<string>();
-        internal List<string> GameOverMusicList { get; set; } = new List<string>();
+        internal LockList<string> FaceoffMusicList { get; set; } = new LockList<string>();
+        internal LockList<string> BlueGoalMusicList { get; set; } = new LockList<string>();
+        internal LockList<string> RedGoalMusicList { get; set; } = new LockList<string>();
+        internal LockList<string> BetweenPeriodsMusicList { get; set; } = new LockList<string>();
+        internal LockList<string> WarmupMusicList { get; set; } = new LockList<string>();
+        internal LockList<string> LastMinuteMusicList { get; set; } = new LockList<string>();
+        internal LockList<string> FirstFaceoffMusicList { get; set; } = new LockList<string>();
+        internal LockList<string> SecondFaceoffMusicList { get; set; } = new LockList<string>();
+        internal LockList<string> GameOverMusicList { get; set; } = new LockList<string>();
         
-        internal List<string> Errors { get; } = new List<string>();
+        internal LockList<string> Errors { get; } = new LockList<string>();
+
+        internal LockList<string> Warnings { get; } = new LockList<string>();
         #endregion
 
         #region Methods/Functions
@@ -114,14 +116,32 @@ namespace oomtm450PuckMod_Sounds {
         /// <param name="setCustomGoalHorns">Bool, true if the custom goal horns has to be set.</param>
         /// <returns>IEnumerator, enumerator used by the Coroutine to load the audio clips.</returns>
         private IEnumerator GetAudioClips(string path, bool setCustomGoalHorns) {
-            foreach (string file in Directory.GetFiles(path, "*" + SOUND_EXTENSION, SearchOption.AllDirectories)) {
+            string[] files = Array.Empty<string>();
+
+            bool tryGetFiles = true;
+            while (tryGetFiles) {
+                tryGetFiles = false;
+
+                try {
+                    files = Directory.GetFiles(path, "*" + SOUND_EXTENSION, SearchOption.AllDirectories);
+                }
+                catch (Exception ex) {
+                    tryGetFiles = true;
+                    Warnings.Add($"Sounds.{nameof(GetAudioClips)} 1 : " + ex.ToString());
+                }
+
+                if (tryGetFiles)
+                    yield return null;
+            }
+
+            foreach (string file in files) {
                 string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
                 UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS);
                 yield return webRequest.SendWebRequest();
                 yield return null;
 
                 if (webRequest.result != UnityWebRequest.Result.Success)
-                    Errors.Add(webRequest.error);
+                    Warnings.Add(webRequest.error);
                 else {
                     try {
                         AudioClip clip = DownloadHandlerAudioClip.GetContent(webRequest);
@@ -143,7 +163,7 @@ namespace oomtm450PuckMod_Sounds {
 
                     }
                     catch (Exception ex) {
-                        Errors.Add($"Sounds.{nameof(GetAudioClips)} 1 : " + ex.ToString());
+                        Errors.Add($"Sounds.{nameof(GetAudioClips)} 2 : " + ex.ToString());
                     }
                 }
 
@@ -157,7 +177,7 @@ namespace oomtm450PuckMod_Sounds {
                     SetGoalHorns();
             }
             catch (Exception ex) {
-                Errors.Add($"Sounds.{nameof(GetAudioClips)} 2 : " + ex.ToString());
+                Errors.Add($"Sounds.{nameof(GetAudioClips)} 3 : " + ex.ToString());
             }
 
             try {
@@ -165,7 +185,7 @@ namespace oomtm450PuckMod_Sounds {
                 ReorderAllLists();
             }
             catch (Exception ex) {
-                Errors.Add($"Sounds.{nameof(GetAudioClips)} 3 : " + ex.ToString());
+                Errors.Add($"Sounds.{nameof(GetAudioClips)} 4 : " + ex.ToString());
             }
 
             IsLoading = false;
@@ -251,25 +271,36 @@ namespace oomtm450PuckMod_Sounds {
             _currentAudioSource.volume = SettingsManager.Instance.GlobalVolume * musicVol;
         }
 
-        internal static string GetRandomSound(List<string> soundList, int? seed = null) {
+        internal static string GetRandomSound(IEnumerable<string> soundList, int? seed = null) {
             string sound = "";
 
-            if (soundList.Count == 0)
+            int soundListCount = soundList.Count();
+
+            if (soundListCount == 0)
                 return sound;
 
             if (seed == null)
-                sound = soundList[new System.Random().Next(0, soundList.Count)];
+                sound = soundList.ElementAt(new System.Random().Next(0, soundListCount));
             else
-                sound = soundList[new System.Random((int)seed).Next(0, soundList.Count)];
+                sound = soundList.ElementAt(new System.Random((int)seed).Next(0, soundListCount));
 
             if (sound == _lastRandomSound) {
-                int soundIndex = soundList.FindIndex(x => x == sound);
-                if (soundIndex == soundList.Count - 1)
+                int soundIndex;
+                if (soundList is IList<string> _soundList)
+                    soundIndex = _soundList.IndexOf(sound);
+                else if (soundList is LockList<string> __soundList)
+                    soundIndex = __soundList.IndexOf(sound);
+                else {
+                    Logging.LogError(nameof(soundList) + " argument must be of type IList or LockList.", Sounds.ClientConfig);
+                    return sound;
+                }
+
+                if (soundIndex == soundListCount - 1)
                     soundIndex = 0;
                 else
                     soundIndex++;
 
-                sound = soundList[soundIndex];
+                sound = soundList.ElementAt(soundIndex);
             }
 
             _lastRandomSound = sound;
@@ -330,15 +361,15 @@ namespace oomtm450PuckMod_Sounds {
         }
 
         private void ReorderAllLists() {
-            FaceoffMusicList = FaceoffMusicList.OrderBy(x => x).ToList();
-            BlueGoalMusicList = BlueGoalMusicList.OrderBy(x => x).ToList();
-            RedGoalMusicList = RedGoalMusicList.OrderBy(x => x).ToList();
-            BetweenPeriodsMusicList = BetweenPeriodsMusicList.OrderBy(x => x).ToList();
-            WarmupMusicList = WarmupMusicList.OrderBy(x => x).ToList();
-            LastMinuteMusicList = LastMinuteMusicList.OrderBy(x => x).ToList();
-            FirstFaceoffMusicList = FirstFaceoffMusicList.OrderBy(x => x).ToList();
-            SecondFaceoffMusicList = SecondFaceoffMusicList.OrderBy(x => x).ToList();
-            GameOverMusicList = GameOverMusicList.OrderBy(x => x).ToList();
+            FaceoffMusicList = new LockList<string>(FaceoffMusicList.OrderBy(x => x).ToList());
+            BlueGoalMusicList = new LockList<string>(BlueGoalMusicList.OrderBy(x => x).ToList());
+            RedGoalMusicList = new LockList<string>(RedGoalMusicList.OrderBy(x => x).ToList());
+            BetweenPeriodsMusicList = new LockList<string>(BetweenPeriodsMusicList.OrderBy(x => x).ToList());
+            WarmupMusicList = new LockList<string>(WarmupMusicList.OrderBy(x => x).ToList());
+            LastMinuteMusicList = new LockList<string>(LastMinuteMusicList.OrderBy(x => x).ToList());
+            FirstFaceoffMusicList = new LockList<string>(FirstFaceoffMusicList.OrderBy(x => x).ToList());
+            SecondFaceoffMusicList = new LockList<string>(SecondFaceoffMusicList.OrderBy(x => x).ToList());
+            GameOverMusicList = new LockList<string>(GameOverMusicList.OrderBy(x => x).ToList());
         }
         #endregion
     }

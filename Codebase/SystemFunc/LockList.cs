@@ -63,6 +63,11 @@ namespace Codebase {
                 return _list.Contains(item);
         }
 
+        public int IndexOf(T item) {
+            lock (_locker)
+                return _list.IndexOf(item);
+        }
+
         public IEnumerator<T> GetEnumerator() {
             lock (_locker)
                 return _list.GetEnumerator();
