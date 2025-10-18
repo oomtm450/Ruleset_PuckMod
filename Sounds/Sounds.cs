@@ -16,13 +16,14 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.2.0";
+        private static readonly string MOD_VERSION = "0.2.1";
 
         /// <summary>
         /// List of string, last released versions of the mod.
         /// </summary>
         private static readonly ReadOnlyCollection<string> OLD_MOD_VERSIONS = new ReadOnlyCollection<string>(new List<string> {
             "0.1.0",
+            "0.2.0",
         });
 
         /// <summary>
@@ -41,10 +42,13 @@ namespace oomtm450PuckMod_Sounds {
         internal static ServerConfig ServerConfig { get; set; } = new ServerConfig();
 
         /// <summary>
-        /// LockDictionary of ulong and string, dictionary of all players
+        /// LockDictionary of ulong and string, dictionary of all players clientId and steamId.
         /// </summary>
         private static readonly LockDictionary<ulong, string> _players_ClientId_SteamId = new LockDictionary<ulong, string>();
 
+        /// <summary>
+        /// LockDictionary of ulong and DateTime, last time a mod out of date message was sent to a client (ulong clientId).
+        /// </summary>
         private static readonly LockDictionary<ulong, DateTime> _sentOutOfDateMessage = new LockDictionary<ulong, DateTime>();
 
         /// <summary>
@@ -126,7 +130,7 @@ namespace oomtm450PuckMod_Sounds {
         private static string _currentMusicPlaying = "";
 
         // Client-side.
-        private static LockList<string> _extraSoundsToLoad = new LockList<string>();
+        private static readonly LockList<string> _extraSoundsToLoad = new LockList<string>();
         #endregion
 
         #region Harmony Patches

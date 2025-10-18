@@ -14,7 +14,7 @@ namespace oomtm450PuckMod_SoundsPack {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.0";
+        private static readonly string MOD_VERSION = "1.0.1DEV";
 
         /// <summary>
         /// ReadOnlyCollection of string, collection of datanames to not log.
@@ -171,7 +171,7 @@ namespace oomtm450PuckMod_SoundsPack {
                     EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                 }
 
-                    _harmonyPatched = true;
+                _harmonyPatched = true;
                 return true;
             }
             catch (Exception ex) {

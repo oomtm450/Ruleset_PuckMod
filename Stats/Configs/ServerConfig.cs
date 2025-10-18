@@ -38,6 +38,21 @@ namespace oomtm450PuckMod_Stats.Configs {
         public bool SaveEOGJSON { get; set; } = true;
 
         /// <summary>
+        /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
+        /// </summary>
+        public int MaxTippedMilliseconds { get; set; } = 91;
+
+        /// <summary>
+        /// Int, number of milliseconds for a possession to be considered with challenge.
+        /// </summary>
+        public int MinPossessionMilliseconds { get; set; } = 300;
+
+        /// <summary>
+        /// Int, number of milliseconds for a possession to be considered without challenging.
+        /// </summary>
+        public int MaxPossessionMilliseconds { get; set; } = 700;
+
+        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]
@@ -67,6 +82,15 @@ namespace oomtm450PuckMod_Stats.Configs {
 
             if (SaveEOGJSON == _oldConfig.SaveEOGJSON)
                 SaveEOGJSON = newConfig.SaveEOGJSON;
+
+            if (MaxTippedMilliseconds == _oldConfig.MaxTippedMilliseconds)
+                MaxTippedMilliseconds = newConfig.MaxTippedMilliseconds;
+
+            if (MinPossessionMilliseconds == _oldConfig.MinPossessionMilliseconds)
+                MinPossessionMilliseconds = newConfig.MinPossessionMilliseconds;
+
+            if (MaxPossessionMilliseconds == _oldConfig.MaxPossessionMilliseconds)
+                MaxPossessionMilliseconds = newConfig.MaxPossessionMilliseconds;
         }
 
         /// <summary>

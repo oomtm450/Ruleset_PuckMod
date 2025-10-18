@@ -26,7 +26,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.25.0";
+        private static readonly string MOD_VERSION = "0.26.0";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -52,6 +52,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.23.0",
             "0.24.0",
             "0.24.1",
+            "0.25.0",
         });
 
         /// <summary>
@@ -178,15 +179,27 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static readonly LockDictionary<string, (PlayerTeam Team, Zone Zone)> _playersZone = new LockDictionary<string, (PlayerTeam, Zone)>();
 
+        /// <summary>
+        /// LockDictionary of string and Stopwatch, dictionary of all players current puck touch time.
+        /// </summary>
         private static readonly LockDictionary<string, Stopwatch> _playersCurrentPuckTouch = new LockDictionary<string, Stopwatch>();
 
+        /// <summary>
+        /// LockDictionary of string and Stopwatch, dictionary of all players last puck touch time.
+        /// </summary>
         private static readonly LockDictionary<string, Stopwatch> _playersLastTimePuckPossession = new LockDictionary<string, Stopwatch>();
 
+        /// <summary>
+        /// LockDictionary of ulong and DateTime, last time a mod out of date message was sent to a client (ulong clientId).
+        /// </summary>
         private static readonly LockDictionary<ulong, DateTime> _sentOutOfDateMessage = new LockDictionary<ulong, DateTime>();
 
         //private static InputAction _getStickLocation;
 
-        private static readonly LockDictionary<string, Stopwatch> _lastTimeOnCollisionExitWasCalled = new LockDictionary<string, Stopwatch>();
+        /// <summary>
+        /// LockDictionary of string and Stopwatch, dictionary of all players last puck OnCollisionStay or OnCollisionExit time.
+        /// </summary>
+        private static readonly LockDictionary<string, Stopwatch> _lastTimeOnCollisionStayOrExitWasCalled = new LockDictionary<string, Stopwatch>();
 
         /// <summary>
         /// Bool, true if phase was changed by Ruleset.
@@ -379,10 +392,10 @@ namespace oomtm450PuckMod_Ruleset {
 
                     string lastPlayerOnPuckTipIncludedSteamId = _lastPlayerOnPuckTipIncludedSteamId[_lastPlayerOnPuckTeamTipIncluded];
 
-                    if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionExitWatch)) {
+                    if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionExitWatch)) {
                         lastTimeCollisionExitWatch = new Stopwatch();
                         lastTimeCollisionExitWatch.Start();
-                        _lastTimeOnCollisionExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionExitWatch);
+                        _lastTimeOnCollisionStayOrExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionExitWatch);
                     }
                     else if (lastTimeCollisionExitWatch.ElapsedMilliseconds > _serverConfig.MaxPossessionMilliseconds || (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId) && lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId)) {
                         //if (lastPlayerOnPuckTipIncludedSteamId == currentPlayerSteamId || string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId))
@@ -457,6 +470,13 @@ namespace oomtm450PuckMod_Ruleset {
 
                     string playerSteamId = stick.Player.SteamId.Value.ToString();
 
+                    if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(playerSteamId, out Stopwatch lastTimeCollisionWatch)) {
+                        lastTimeCollisionWatch = new Stopwatch();
+                        lastTimeCollisionWatch.Start();
+                        _lastTimeOnCollisionStayOrExitWasCalled.Add(playerSteamId, lastTimeCollisionWatch);
+                    }
+                    lastTimeCollisionWatch.Restart();
+
                     if (!_noHighStickFrames.TryGetValue(playerSteamId, out int _))
                         _noHighStickFrames.Add(playerSteamId, int.MaxValue);
 
@@ -466,7 +486,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
 
-                    if (!PuckIsTipped(playerSteamId)) {
+                    if (!PuckFunc.PuckIsTipped(playerSteamId, _serverConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled)) {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                         if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
                             ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
@@ -549,15 +569,15 @@ namespace oomtm450PuckMod_Ruleset {
 
                     string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
 
-                    if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionWatch)) {
+                    if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionWatch)) {
                         lastTimeCollisionWatch = new Stopwatch();
                         lastTimeCollisionWatch.Start();
-                        _lastTimeOnCollisionExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionWatch);
+                        _lastTimeOnCollisionStayOrExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionWatch);
                     }
 
                     lastTimeCollisionWatch.Restart();
 
-                    if (!PuckIsTipped(currentPlayerSteamId)) {
+                    if (!PuckFunc.PuckIsTipped(currentPlayerSteamId, _serverConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled)) {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                         if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
                             ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
@@ -585,16 +605,17 @@ namespace oomtm450PuckMod_Ruleset {
                         _isIcingPossible[stick.Player.Team.Value] = new IcingObject();
 
                     // High stick logic.
-                    if (puck &&
+                    if (IsHighStickEnabled(stick.Player.Team.Value) && puck &&
                         !Codebase.PlayerFunc.IsGoalie(stick.Player) &&
-                        GetPlayerSteamIdInPossession(false) != currentPlayerSteamId &&
+                        Codebase.PlayerFunc.GetPlayerSteamIdInPossession(_serverConfig.MinPossessionMilliseconds, _serverConfig.MaxPossessionMilliseconds,
+                        _serverConfig.MaxTippedMilliseconds, _playersLastTimePuckPossession, _playersCurrentPuckTouch, false) != currentPlayerSteamId &&
                         puck.Rigidbody.transform.position.y > _serverConfig.HighStick.MaxHeight + (stick.Player.PlayerBody.Rigidbody.transform.position.y < 0 ? 0 : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
                         if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
                             noHighStickFrames = int.MaxValue;
                             _noHighStickFrames.Add(currentPlayerSteamId, noHighStickFrames);
                         }
 
-                        if (noHighStickFrames >= ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate / 20) {
+                        if (noHighStickFrames >= ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate / _serverConfig.HighStick.Delta) {
                             _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
 
                             highStickTimer.Change(_serverConfig.HighStick.MaxMilliseconds, Timeout.Infinite);
@@ -686,7 +707,7 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         hasGoalieDived = false;
 
-                        bool goalieDown = (goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived;
+                    bool goalieDown = (goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived;
                     _lastGoalieStateCollision[goalieOtherTeam] = goalieDown;
 
                     if (goalieDown || (force > _serverConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease)) {
@@ -701,7 +722,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in PlayerBodyV2_OnCollisionEnter_Patch Postfix().\n{ex}", _serverConfig);
+                    Logging.LogError($"Error in {nameof(PlayerBodyV2_OnCollisionEnter_Patch)} Postfix().\n{ex}", _serverConfig);
                 }
 
                 return;
@@ -746,10 +767,10 @@ namespace oomtm450PuckMod_Ruleset {
                             watch.Stop();
                         _playersLastTimePuckPossession.Clear();
 
-                        // Reset puck collision exit times.
-                        foreach (Stopwatch watch in _lastTimeOnCollisionExitWasCalled.Values)
+                        // Reset puck collision stay or exit times.
+                        foreach (Stopwatch watch in _lastTimeOnCollisionStayOrExitWasCalled.Values)
                             watch.Stop();
-                        _lastTimeOnCollisionExitWasCalled.Clear();
+                        _lastTimeOnCollisionStayOrExitWasCalled.Clear();
 
                         // Reset tipped times.
                         foreach (Stopwatch watch in _playersCurrentPuckTouch.Values)
@@ -1022,7 +1043,8 @@ namespace oomtm450PuckMod_Ruleset {
                 };
 
                 try {
-                    string playerWithPossessionSteamId = GetPlayerSteamIdInPossession();
+                    string playerWithPossessionSteamId = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(_serverConfig.MinPossessionMilliseconds,
+                        _serverConfig.MaxPossessionMilliseconds, _serverConfig.MaxTippedMilliseconds, _playersLastTimePuckPossession, _playersCurrentPuckTouch);
 
                     _dictPlayersPositionsForIcing.Clear();
                     foreach (Player player in players) {
@@ -1322,7 +1344,8 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // If own goal, add goal attribution to last player on puck on the other team.
-                    UIChat.Instance.Server_SendSystemChatMessage($"OWN GOAL BY {PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(team)]).Username.Value}");
+                    Player ownGoalPlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(team)]);
+                    UIChat.Instance.Server_SendSystemChatMessage($"OWN GOAL BY #{ownGoalPlayer.Number.Value} {ownGoalPlayer.Username.Value}");
                     goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
 
                     if (goalPlayer != null) {
@@ -1655,7 +1678,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (player == null || !player || !player.IsCharacterFullySpawned)
                                 continue;
 
-                            float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 275d) + 9500d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 325f);
+                            float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 275d) + 9500d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 315f);
                             //Logging.Log($"Possible time is : {maxPossibleTime}. Limit is : {maxPossibleTimeLimit}. Puck Y is : {puck.Rigidbody.transform.position.y}.", _serverConfig, true);
 
                             if (maxPossibleTime >= maxPossibleTimeLimit) {
@@ -1694,72 +1717,6 @@ namespace oomtm450PuckMod_Ruleset {
                 return _serverConfig.GInt.BlueTeam;
             else
                 return _serverConfig.GInt.RedTeam;
-        }
-
-        /// <summary>
-        /// Function that returns the player steam Id that has possession.
-        /// </summary>
-        /// <param name="checkForChallenge">Bool, false if we only check logic without challenging puck possession from other players to determine possession.</param>
-        /// <returns>String, player steam Id with the possession or an empty string if no one has the puck (or it is challenged).</returns>
-        private static string GetPlayerSteamIdInPossession(bool checkForChallenge = true) {
-            Dictionary<string, Stopwatch> dict;
-            dict = _playersLastTimePuckPossession
-                .Where(x => x.Value.ElapsedMilliseconds < _serverConfig.MinPossessionMilliseconds &&
-                    _playersCurrentPuckTouch.Keys.Any(y => y == x.Key) &&
-                    _playersCurrentPuckTouch[x.Key].ElapsedMilliseconds > _serverConfig.MaxTippedMilliseconds)
-                .ToDictionary(x => x.Key, x => x.Value);
-
-            /*if (!checkForChallenge && _playersCurrentPuckTouch.Count != 0) {
-                Logging.Log($"_playersCurrentPuckTouch milliseconds : {_playersCurrentPuckTouch.First().Value.ElapsedMilliseconds}", _serverConfig, true);
-            }*/
-
-            /*if (!checkForChallenge) {
-                Logging.Log($"Number of possession found : {dict.Count}", _serverConfig, true);
-                if (_playersLastTimePuckPossession.Count != 0)
-                    Logging.Log($"Possession milliseconds : {_playersLastTimePuckPossession.First().Value.ElapsedMilliseconds}", _serverConfig, true);
-            }*/
-
-            if (dict.Count > 1) { // Puck possession is challenged.
-                if (checkForChallenge)
-                    return "";
-                else
-                    return dict.OrderBy(x => x.Value.ElapsedMilliseconds).First().Key;
-            }
-
-            if (dict.Count == 1)
-                return dict.First().Key;
-
-            List<string> steamIds = _playersLastTimePuckPossession
-                .Where(x => x.Value.ElapsedMilliseconds < _serverConfig.MaxPossessionMilliseconds ||
-                    (_playersCurrentPuckTouch.Keys.Any(y => y == x.Key) &&
-                    _playersCurrentPuckTouch[x.Key].ElapsedMilliseconds > _serverConfig.MaxTippedMilliseconds))
-                .OrderBy(x => x.Value.ElapsedMilliseconds)
-                .Select(x => x.Key).ToList();
-
-            /*if (!checkForChallenge && steamIds.Count != 0) {
-                Logging.Log($"Possession {steamIds.First()}.", _serverConfig, true);
-            }
-            else if (!checkForChallenge) {
-                Logging.Log($"No extra possession.", _serverConfig, true);
-            }*/
-
-            if (steamIds.Count != 0)
-                return steamIds.First();
-
-            return "";
-        }
-        
-        private static bool PuckIsTipped(string playerSteamId) {
-            if (!_playersCurrentPuckTouch.TryGetValue(playerSteamId, out Stopwatch currentPuckTouchWatch))
-                return false;
-
-            if (!_lastTimeOnCollisionExitWasCalled.TryGetValue(playerSteamId, out Stopwatch lastPuckExitWatch))
-                return false;
-
-            if (currentPuckTouchWatch.ElapsedMilliseconds - lastPuckExitWatch.ElapsedMilliseconds < _serverConfig.MaxTippedMilliseconds)
-                return true;
-
-            return false;
         }
 
         private static void ResetGoalAndAssistAttribution(PlayerTeam team) {
@@ -1984,7 +1941,7 @@ namespace oomtm450PuckMod_Ruleset {
                 _playersZone.Remove(clientSteamId);
                 _playersCurrentPuckTouch.Remove(clientSteamId);
                 _playersLastTimePuckPossession.Remove(clientSteamId);
-                _lastTimeOnCollisionExitWasCalled.Remove(clientSteamId);
+                _lastTimeOnCollisionStayOrExitWasCalled.Remove(clientSteamId);
 
                 PlayerFunc.Players_ClientId_SteamId.Remove(clientId);
             }

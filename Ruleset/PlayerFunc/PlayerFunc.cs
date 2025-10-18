@@ -6,7 +6,7 @@ namespace oomtm450PuckMod_Ruleset {
     internal class PlayerFunc {
         #region Properties
         /// <summary>
-        /// LockDictionary of ulong and string, dictionary of all players
+        /// LockDictionary of ulong and string, dictionary of all players clientId and steamId.
         /// </summary>
         internal static LockDictionary<ulong, string> Players_ClientId_SteamId { get; } = new LockDictionary<ulong, string>();
         #endregion

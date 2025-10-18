@@ -198,12 +198,17 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
         /// </summary>
-        public float MaxHeight { get; } = 1.78f; // TODO : Change after release.
+        public float MaxHeight { get; } = 1.79f; // TODO : Change after release.
 
         /// <summary>
         /// Int, number of milliseconds after a high stick to not be considered.
         /// </summary>
         public int MaxMilliseconds { get; } = 5000;
+
+        /// <summary>
+        /// Float, delta used to calculate the high stick maximum frames before activation.
+        /// </summary>
+        public float Delta { get; } = 18f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.

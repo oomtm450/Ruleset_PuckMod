@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>oomtm450PuckMod_SoundsPack</RootNamespace>
-    <AssemblyName>SoundsPacks_PonceMusicPack</AssemblyName>
+    <AssemblyName>SoundsPack_PonceMusicPack</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>

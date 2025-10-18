@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace Codebase {
     /// <summary>
@@ -102,6 +104,60 @@ namespace Codebase {
         /// <returns>Bool, true if the player is a goalie.</returns>
         public static bool IsGoalie(Player player) {
             return player.Role.Value == PlayerRole.Goalie;
+        }
+
+        /// <summary>
+        /// Function that returns the player steam Id that has possession.
+        /// </summary>
+        /// <param name="checkForChallenge">Bool, false if we only check logic without challenging puck possession from other players to determine possession.</param>
+        /// <returns>String, player steam Id with the possession or an empty string if no one has the puck (or it is challenged).</returns>
+        public static string GetPlayerSteamIdInPossession(int minPossessionMilliseconds, int maxPossessionMilliseconds, int maxTippedMilliseconds,
+            LockDictionary<string, Stopwatch> playersLastTimePuckPossession, LockDictionary<string, Stopwatch> playersCurrentPuckTouch, bool checkForChallenge = true) {
+            Dictionary<string, Stopwatch> dict;
+            dict = playersLastTimePuckPossession
+                .Where(x => x.Value.ElapsedMilliseconds < minPossessionMilliseconds &&
+                    playersCurrentPuckTouch.Keys.Any(y => y == x.Key) &&
+                    playersCurrentPuckTouch[x.Key].ElapsedMilliseconds > maxTippedMilliseconds)
+                .ToDictionary(x => x.Key, x => x.Value);
+
+            /*if (!checkForChallenge && playersCurrentPuckTouch.Count != 0) {
+                Logging.Log($"playersCurrentPuckTouch milliseconds : {playersCurrentPuckTouch.First().Value.ElapsedMilliseconds}", _serverConfig, true);
+            }*/
+
+            /*if (!checkForChallenge) {
+                Logging.Log($"Number of possession found : {dict.Count}", _serverConfig, true);
+                if (playersLastTimePuckPossession.Count != 0)
+                    Logging.Log($"Possession milliseconds : {playersLastTimePuckPossession.First().Value.ElapsedMilliseconds}", _serverConfig, true);
+            }*/
+
+            if (dict.Count > 1) { // Puck possession is challenged.
+                if (checkForChallenge)
+                    return "";
+                else
+                    return dict.OrderBy(x => x.Value.ElapsedMilliseconds).First().Key;
+            }
+
+            if (dict.Count == 1)
+                return dict.First().Key;
+
+            List<string> steamIds = playersLastTimePuckPossession
+                .Where(x => x.Value.ElapsedMilliseconds < maxPossessionMilliseconds ||
+                    (playersCurrentPuckTouch.Keys.Any(y => y == x.Key) &&
+                    playersCurrentPuckTouch[x.Key].ElapsedMilliseconds > maxTippedMilliseconds))
+                .OrderBy(x => x.Value.ElapsedMilliseconds)
+                .Select(x => x.Key).ToList();
+
+            /*if (!checkForChallenge && steamIds.Count != 0) {
+                Logging.Log($"Possession {steamIds.First()}.", _serverConfig, true);
+            }
+            else if (!checkForChallenge) {
+                Logging.Log($"No extra possession.", _serverConfig, true);
+            }*/
+
+            if (steamIds.Count != 0)
+                return steamIds.First();
+
+            return "";
         }
         #endregion
     }
