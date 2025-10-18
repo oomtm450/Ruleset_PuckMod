@@ -902,9 +902,6 @@ namespace oomtm450PuckMod_Stats {
                                 Date = DateTime.UtcNow,
                             };
                         }
-                        else { // TODO : Remove debug logs.
-                            Logging.Log("NO POSSESSION", ServerConfig, true);
-                        }
                     }
                     else
                         _lastPossession = new Possession();
