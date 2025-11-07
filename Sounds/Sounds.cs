@@ -656,8 +656,6 @@ namespace oomtm450PuckMod_Sounds {
             if (!ServerFunc.IsDedicatedServer())
                 return;
 
-            //Logging.Log("Event_OnClientDisconnected", ServerConfig);
-
             try {
                 ulong clientId = (ulong)message["clientId"];
                 string clientSteamId;
