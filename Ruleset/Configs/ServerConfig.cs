@@ -266,6 +266,21 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool Deferred { get; set; } = true;
 
         /// <summary>
+        /// Double, deferred icing max possible time multiplicator.
+        /// </summary>
+        public double DeferredMaxPossibleTimeMultiplicator { get; set; } = 280d;
+
+        /// <summary>
+        /// Double, deferred icing max possible time addition (after multiplicator).
+        /// </summary>
+        public double DeferredMaxPossibleTimeAddition { get; set; } = 9500d;
+
+        /// <summary>
+        /// Float, deferred icing max possible time substraction depending of players distance to puck (after addition).
+        /// </summary>
+        public float DeferredMaxPossibleTimeDistanceDelta { get; set; } = 300f;
+
+        /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
         public Dictionary<Zone, float> MaxPossibleTime { get; set; } = new Dictionary<Zone, float> {

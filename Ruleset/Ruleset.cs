@@ -26,7 +26,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.26.0";
+        private static readonly string MOD_VERSION = "0.26.1";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -53,6 +53,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.24.0",
             "0.24.1",
             "0.25.0",
+            "0.26.0",
         });
 
         /// <summary>
@@ -1678,7 +1679,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (player == null || !player || !player.IsCharacterFullySpawned)
                                 continue;
 
-                            float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * 275d) + 9500d)) - (Math.Abs(player.PlayerBody.transform.position.z) * 315f);
+                            float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * _serverConfig.Icing.DeferredMaxPossibleTimeMultiplicator) + _serverConfig.Icing.DeferredMaxPossibleTimeAddition)) - (Math.Abs(player.PlayerBody.transform.position.z) * _serverConfig.Icing.DeferredMaxPossibleTimeDistanceDelta);
                             //Logging.Log($"Possible time is : {maxPossibleTime}. Limit is : {maxPossibleTimeLimit}. Puck Y is : {puck.Rigidbody.transform.position.y}.", _serverConfig, true);
 
                             if (maxPossibleTime >= maxPossibleTimeLimit) {
