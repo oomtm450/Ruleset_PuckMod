@@ -284,10 +284,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
         public Dictionary<Zone, float> MaxPossibleTime { get; set; } = new Dictionary<Zone, float> {
-            { Zone.BlueTeam_BehindGoalLine, 9250f },
-            { Zone.RedTeam_BehindGoalLine, 9250f },
-            { Zone.BlueTeam_Zone, 7500f },
-            { Zone.RedTeam_Zone, 7500f },
+            { Zone.BlueTeam_BehindGoalLine, 9500f },
+            { Zone.RedTeam_BehindGoalLine, 9500f },
+            { Zone.BlueTeam_Zone, 7750f },
+            { Zone.RedTeam_Zone, 7750f },
             { Zone.BlueTeam_Center, 5500f },
             { Zone.RedTeam_Center, 5500f },
         };
@@ -321,6 +321,15 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (Deferred == _oldConfig.Deferred)
                 Deferred = newConfig.Deferred;
+
+            if (DeferredMaxPossibleTimeMultiplicator == _oldConfig.DeferredMaxPossibleTimeMultiplicator)
+                DeferredMaxPossibleTimeMultiplicator = newConfig.DeferredMaxPossibleTimeMultiplicator;
+
+            if (DeferredMaxPossibleTimeAddition == _oldConfig.DeferredMaxPossibleTimeAddition)
+                DeferredMaxPossibleTimeAddition = newConfig.DeferredMaxPossibleTimeAddition;
+
+            if (DeferredMaxPossibleTimeDistanceDelta == _oldConfig.DeferredMaxPossibleTimeDistanceDelta)
+                DeferredMaxPossibleTimeDistanceDelta = newConfig.DeferredMaxPossibleTimeDistanceDelta;
 
             try {
                 foreach (KeyValuePair<Zone, float> kvp in new Dictionary<Zone, float>(MaxPossibleTime)) {
