@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -1793,6 +1794,20 @@ namespace oomtm450PuckMod_Stats {
             }
             else
                 _sog.Add(playerSteamId, sog);
+
+            // Write to client-side file.
+            if (_clientConfig.LogClientSideStats) {
+                StringBuilder csvContent = new StringBuilder();
+                foreach (var kvp in _sog) {
+                    Player player = PlayerManager.Instance.GetPlayerBySteamId(kvp.Key);
+                    if (!player || PlayerFunc.IsGoalie(player))
+                        continue;
+
+                    csvContent.AppendLine($"{player.Username.Value};{player.Number.Value};{player.Team.Value};{kvp.Key};{kvp.Value}");
+                }
+
+                File.WriteAllText(Path.Combine(Path.GetFullPath("."), Constants.MOD_NAME + "_shots.csv"), csvContent.ToString());
+            }
         }
 
         private static void ReceiveData_SavePerc(string playerSteamId, string dataStr) {
@@ -1803,11 +1818,24 @@ namespace oomtm450PuckMod_Stats {
             if (_savePerc.TryGetValue(playerSteamId, out var _)) {
                 _savePerc[playerSteamId] = (saves, shots);
                 Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-                if (currentPlayer != null && currentPlayer && PlayerFunc.IsGoalie(currentPlayer))
+                if (currentPlayer && PlayerFunc.IsGoalie(currentPlayer))
                     _sogLabels[playerSteamId].text = GetGoalieSavePerc(saves, shots);
             }
             else
                 _savePerc.Add(playerSteamId, (saves, shots));
+
+            // Write to client-side file.
+            if (_clientConfig.LogClientSideStats) {
+                StringBuilder csvContent = new StringBuilder();
+                foreach (var kvp in _savePerc) {
+                    Player player = PlayerManager.Instance.GetPlayerBySteamId(kvp.Key);
+                    if (!player || !PlayerFunc.IsGoalie(player))
+                        continue;
+                    csvContent.AppendLine($"{player.Username.Value};{player.Number.Value};{player.Team.Value};{kvp.Key};{kvp.Value.Saves};{kvp.Value.Shots}");
+                }
+
+                File.WriteAllText(Path.Combine(Path.GetFullPath("."), Constants.MOD_NAME + "_saves.csv"), csvContent.ToString());
+            }
         }
 
         private static void ReceiveData_Star(string playerSteamId, string dataStr) {
