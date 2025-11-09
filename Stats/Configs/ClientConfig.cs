@@ -15,6 +15,11 @@ namespace oomtm450PuckMod_Stats.Configs {
         public bool LogInfo { get; set; } = true;
 
         /// <summary>
+        /// Bool, true if the stats must be logged in a text file.
+        /// </summary>
+        public bool LogClientSideStats { get; set; } = false;
+
+        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]
