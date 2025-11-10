@@ -1796,6 +1796,10 @@ namespace oomtm450PuckMod_Stats {
                 _sog.Add(playerSteamId, sog);
 
             // Write to client-side file.
+            WriteClientSideFile_SOG();
+        }
+
+        private static void WriteClientSideFile_SOG() {
             if (_clientConfig.LogClientSideStats) {
                 StringBuilder csvContent = new StringBuilder();
                 foreach (var kvp in _sog) {
@@ -1825,6 +1829,10 @@ namespace oomtm450PuckMod_Stats {
                 _savePerc.Add(playerSteamId, (saves, shots));
 
             // Write to client-side file.
+            WriteClientSideFile_SavePerc();
+        }
+
+        private static void WriteClientSideFile_SavePerc() {
             if (_clientConfig.LogClientSideStats) {
                 StringBuilder csvContent = new StringBuilder();
                 foreach (var kvp in _savePerc) {
@@ -2141,11 +2149,15 @@ namespace oomtm450PuckMod_Stats {
                     _savePerc.Remove(key);
                 }
             }
+
+            WriteClientSideFile_SOG();
         }
 
         private static void Client_ResetSavePerc() {
             foreach (string key in new List<string>(_savePerc.Keys))
                 _savePerc[key] = (0, 0);
+
+            WriteClientSideFile_SavePerc();
         }
 
         private static void Client_ResetPasses() {
