@@ -264,6 +264,26 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static FaceoffSpot _nextFaceoffSpot = FaceoffSpot.Center;
 
+        /// <summary>
+        /// FaceoffSpot, where the next faceoff has to be taken.
+        /// </summary>
+        private static FaceoffSpot NextFaceoffSpot {
+            get {
+                return _nextFaceoffSpot;
+            }
+            set {
+                _nextFaceoffSpot = value;
+                try {
+                    EventManager.Instance.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object> { { Codebase.Constants.NEXT_FACEOFF, _nextFaceoffSpot.ToString() } });
+                    if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.NEXT_FACEOFF))
+                        Logging.Log($"Sent data \"{Codebase.Constants.NEXT_FACEOFF}\" to {Codebase.Constants.RULESET_MOD_NAME}.", _serverConfig);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(Paused)} setter.\n{ex}", _serverConfig);
+                }
+            }
+        }
+
         // Client-side.
         private static RefSignals _refSignalsBlueTeam = null;
 
@@ -302,14 +322,13 @@ namespace oomtm450PuckMod_Ruleset {
             get { return _paused; }
             set {
                 _paused = value;
-
                 try {
                     EventManager.Instance.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object>{ { Codebase.Constants.PAUSE, _paused.ToString() } });
                     if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.PAUSE))
                         Logging.Log($"Sent data \"{Codebase.Constants.PAUSE}\" to {Codebase.Constants.RULESET_MOD_NAME}.", _serverConfig);
                 }
                 catch (Exception ex) {
-                    Logging.LogError(ex.ToString(), _serverConfig);
+                    Logging.LogError($"Error in {nameof(Paused)} setter.\n{ex}", _serverConfig);
                 }
             }
         }
@@ -318,14 +337,13 @@ namespace oomtm450PuckMod_Ruleset {
             get { return _changedPhase; }
             set {
                 _changedPhase = value;
-
                 try {
                     EventManager.Instance.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object> { { Codebase.Constants.CHANGED_PHASE, _changedPhase.ToString() } });
                     if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.CHANGED_PHASE))
                         Logging.Log($"Sent data \"{Codebase.Constants.CHANGED_PHASE}\" to {Codebase.Constants.RULESET_MOD_NAME}.", _serverConfig);
                 }
                 catch (Exception ex) {
-                    Logging.LogError(ex.ToString(), _serverConfig);
+                    Logging.LogError($"Error in {nameof(ChangedPhase)} setter.\n{ex}", _serverConfig);
                 }
             }
         }
@@ -416,7 +434,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (puck) {
                         if (puck.IsGrounded) {
                             if (IsHighStick(stick.Player.Team.Value)) {
-                                _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
 
                                 _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
                                 highStickTimer.Change(Timeout.Infinite, Timeout.Infinite);
@@ -513,7 +531,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // Offside logic.
                     List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == otherTeamZones[0] || _puckZone == otherTeamZones[1])) {
-                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, puckLastStateBeforeCallOffside);
+                        NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, puckLastStateBeforeCallOffside);
                         SendChat(Rule.Offside, stick.Player.Team.Value, true);
                         DoFaceoff();
                     }
@@ -521,7 +539,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // Icing logic.
                     if (IsIcing(otherTeam)) {
                         if (!Codebase.PlayerFunc.IsGoalie(stick.Player)) {
-                            _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
+                            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             SendChat(Rule.Icing, otherTeam, true);
                             DoFaceoff();
                         }
@@ -752,13 +770,13 @@ namespace oomtm450PuckMod_Ruleset {
                     _doFaceoff = false;
 
                     if (phase == GamePhase.PeriodOver) {
-                        _nextFaceoffSpot = FaceoffSpot.Center; // Fix faceoff if the period is over because of deferred icing.
+                        NextFaceoffSpot = FaceoffSpot.Center; // Fix faceoff if the period is over because of deferred icing.
 
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
                     }
                     else if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver) {
                         if (phase == GamePhase.GameOver) // Fix faceoff if the period is over because of deferred icing.
-                            _nextFaceoffSpot = FaceoffSpot.Center;
+                            NextFaceoffSpot = FaceoffSpot.Center;
 
                         // Reset players zone.
                         _playersZone.Clear();
@@ -791,7 +809,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _dictPlayersPositionsForIcing.Clear();
                         ResetGoalieInt();
 
-                        _puckZone = ZoneFunc.GetZone(_nextFaceoffSpot);
+                        _puckZone = ZoneFunc.GetZone(NextFaceoffSpot);
                         _puckZoneLastTouched = _puckZone;
 
                         _lastPlayerOnPuckTeam = TeamFunc.DEFAULT_TEAM;
@@ -835,14 +853,14 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     if (phase == GamePhase.FaceOff) {
-                        if (_nextFaceoffSpot == FaceoffSpot.Center || !_serverConfig.UseCustomFaceoff)
+                        if (NextFaceoffSpot == FaceoffSpot.Center || !_serverConfig.UseCustomFaceoff)
                             return;
 
-                        Vector3 dot = Faceoff.GetFaceoffDot(_nextFaceoffSpot);
+                        Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
 
                         List<Player> players = PlayerManager.Instance.GetPlayers();
                         foreach (Player player in players)
-                            PlayerFunc.TeleportOnFaceoff(player, dot, _nextFaceoffSpot);
+                            PlayerFunc.TeleportOnFaceoff(player, dot, NextFaceoffSpot);
 
                         return;
                     }
@@ -865,14 +883,14 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || isReplay || !_serverConfig.UseCustomFaceoff || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff) || !_logic)
                         return true;
 
-                    Vector3 dot = Faceoff.GetFaceoffDot(_nextFaceoffSpot);
+                    Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
 
                     if (_serverConfig.UseDefaultPuckDropHeight)
                         position = new Vector3(dot.x, position.y, dot.z);
                     else
                         position = new Vector3(dot.x, _serverConfig.PuckDropHeight, dot.z);
 
-                    _nextFaceoffSpot = FaceoffSpot.Center;
+                    NextFaceoffSpot = FaceoffSpot.Center;
                 }
                 catch (Exception ex)  {
                     Logging.LogError($"Error in PuckManager_Server_SpawnPuck_Patch Prefix().\n{ex}", _serverConfig);
@@ -1004,7 +1022,7 @@ namespace oomtm450PuckMod_Ruleset {
                         NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, callOffHighStickTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
                         SendChat(Rule.HighStick, callOffHighStickTeam, true, true);*/
 
-                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(callHighStickTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                        NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(callHighStickTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
                         SendChat(Rule.HighStick, callHighStickTeam, true);
                         ResetHighSticks();
 
@@ -1106,7 +1124,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                                 if (IsIcing(otherTeam) && AreBothNegativeOrPositive(player.PlayerBody.transform.position.x, puck.Rigidbody.transform.position.x)) {
                                     considerForIcing = true;
-                                    _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
+                                    NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                                 }
                             }
 
@@ -1270,7 +1288,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
 
-                    _nextFaceoffSpot = FaceoffSpot.Center;
+                    NextFaceoffSpot = FaceoffSpot.Center;
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in GameManagerController_Event_Server_OnPuckEnterTeamGoal_Patch Prefix().\n{ex}", _serverConfig);
@@ -1302,17 +1320,17 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (isOffside || isHighStick || isGoalieInt) {
                             if (isOffside) {
-                                _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.Offside]);
+                                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.Offside]);
                                 SendChat(Rule.Offside, team, true, false);
                                 DoFaceoff();
                             }
                             else if (isHighStick) {
-                                _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.HighStick]);
                                 SendChat(Rule.HighStick, team, true, false);
                                 DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.HIGHSTICK_REF);
                             }
                             else if (isGoalieInt) {
-                                _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
+                                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
                                 SendChat(Rule.GoalieInt, team, true, false);
                                 DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
                             }
@@ -1338,7 +1356,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     if (isGoalieInt) {
-                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
+                        NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
                         SendChat(Rule.GoalieInt, team, true, false);
                         DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
                         return false;
@@ -1375,7 +1393,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     // If this game is not started or faceoff is on the default dot (center), do not use the patch.
-                    if (GameManager.Instance.Phase != GamePhase.FaceOff || _nextFaceoffSpot == FaceoffSpot.Center || !_serverConfig.UseCustomFaceoff)
+                    if (GameManager.Instance.Phase != GamePhase.FaceOff || NextFaceoffSpot == FaceoffSpot.Center || !_serverConfig.UseCustomFaceoff)
                         return;
 
                     Player player = PlayerManager.Instance.GetPlayers()
@@ -1389,7 +1407,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     // Reteleport player on faceoff to the correct faceoff.
-                    PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(_nextFaceoffSpot), _nextFaceoffSpot);
+                    PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(NextFaceoffSpot), NextFaceoffSpot);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Player_Server_RespawnCharacter_Patch Postfix().\n{ex}", _serverConfig);
@@ -1447,13 +1465,13 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return;
 
-                    if (_nextFaceoffSpot != FaceoffSpot.Center && _logic) {
+                    if (NextFaceoffSpot != FaceoffSpot.Center && _logic) {
                         foreach (Player player in PlayerManager.Instance.GetPlayers()) {
                             if (player.PlayerPosition && player.PlayerBody)
                                 player.PlayerBody.Server_Teleport(player.PlayerPosition.transform.position, player.PlayerPosition.transform.rotation);
                         }
 
-                        _nextFaceoffSpot = FaceoffSpot.Center;
+                        NextFaceoffSpot = FaceoffSpot.Center;
                     }
 
                     _sentOutOfDateMessage.Clear();
@@ -1790,6 +1808,11 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             _dives[value] = getUpTime;
 
+                        break;
+
+                    case Codebase.Constants.INSTANT_FACEOFF:
+                        NextFaceoffSpot = (FaceoffSpot)ushort.Parse(value);
+                        DoFaceoff("", "", 0, 0);
                         break;
                 }
             }
