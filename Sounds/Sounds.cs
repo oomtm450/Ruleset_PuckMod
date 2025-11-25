@@ -970,7 +970,7 @@ namespace oomtm450PuckMod_Sounds {
                 if (modAssembly == null)
                     continue;
 
-                mods.Add(modAssembly.FullName.Substring(0, modAssembly.FullName.IndexOf(','));
+                mods.Add(modAssembly.FullName.Substring(0, modAssembly.FullName.IndexOf(',')));
             }
 
             return mods;
