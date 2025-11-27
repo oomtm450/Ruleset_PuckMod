@@ -26,7 +26,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.26.1";
+        private static readonly string MOD_VERSION = "0.26.2";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -54,6 +54,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.24.1",
             "0.25.0",
             "0.26.0",
+            "0.26.1",
         });
 
         /// <summary>
@@ -1684,7 +1685,7 @@ namespace oomtm450PuckMod_Ruleset {
             else {
                 float maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched] * icingObj.Delta;
 
-                if (!icingObj.DeltaHasBeenChecked && ++icingObj.FrameCheck > ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate) {
+                if (!icingObj.DeltaHasBeenChecked && ++icingObj.FrameCheck > ((float)ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate) / _serverConfig.PuckSpeedRelativeToVanilla) {
                     icingObj.DeltaHasBeenChecked = true;
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);

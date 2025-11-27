@@ -89,6 +89,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
         public int MaxPossessionMilliseconds { get; set; } = 700;
+
+        /// <summary>
+        /// Float, puck speed multiplicator relative to vanilla. (If puck is 1.5x faster in your server, set this to 1.5)
+        /// </summary>
+        public float PuckSpeedRelativeToVanilla { get; set; } = 1f;
         #endregion
 
         #region Methods/Functions
@@ -278,7 +283,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, deferred icing max possible time substraction depending of players distance to puck (after addition).
         /// </summary>
-        public float DeferredMaxPossibleTimeDistanceDelta { get; set; } = 300f;
+        public float DeferredMaxPossibleTimeDistanceDelta { get; set; } = 315f;
 
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
