@@ -30,6 +30,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public string ModName { get; } = Constants.MOD_NAME;
 
         /// <summary>
+        /// Bool, true if the values has to be replaced be the default ones. Make this false to use custom values.
+        /// </summary>
+        public bool UseDefaultValues { get; set; } = true;
+
+        /// <summary>
         /// Bool, true if the custom faceoff (any faceoff not in center) should be used.
         /// </summary>
         public bool UseCustomFaceoff { get; set; } = true;
@@ -183,6 +188,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 }
 
                 Logging.Log($"Wrote server config : {config}", config, true);
+
+                if (config.UseDefaultValues)
+                    config = new ServerConfig();
             }
             catch (Exception ex) {
                 Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", config);
