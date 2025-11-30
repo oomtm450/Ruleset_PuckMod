@@ -285,6 +285,10 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        private static float _puckScale = 1f;
+
+        internal static float PuckRadius => Codebase.Constants.PUCK_RADIUS * _puckScale;
+
         // Client-side.
         private static RefSignals _refSignalsBlueTeam = null;
 
@@ -364,6 +368,7 @@ namespace oomtm450PuckMod_Ruleset {
                     return;
 
                 try {
+                    _puckScale = __instance.transform.localScale.x;
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
                         PlayerBodyV2 playerBody = SystemFunc.GetPlayerBodyV2(collision.gameObject);
@@ -1051,7 +1056,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 try {
                     oldZone = _puckZone;
-                    _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, Codebase.Constants.PUCK_RADIUS);
+                    _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PuckRadius);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}", _serverConfig);
@@ -1253,8 +1258,8 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 try {
-                    _isPuckBehindHashmarks[PlayerTeam.Blue] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Blue, puck.Rigidbody.transform.position, Codebase.Constants.PUCK_RADIUS);
-                    _isPuckBehindHashmarks[PlayerTeam.Red] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Red, puck.Rigidbody.transform.position, Codebase.Constants.PUCK_RADIUS);
+                    _isPuckBehindHashmarks[PlayerTeam.Blue] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Blue, puck.Rigidbody.transform.position, PuckRadius);
+                    _isPuckBehindHashmarks[PlayerTeam.Red] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Red, puck.Rigidbody.transform.position, PuckRadius);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 6.\n{ex}", _serverConfig);
