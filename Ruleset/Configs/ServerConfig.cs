@@ -31,6 +31,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
         /// <summary>
         /// Bool, true if the numeric values has to be replaced be the default ones. Make this false to use custom values.
+        /// Only exception to this is the PuckSpeedRelativeToVanilla.
         /// </summary>
         public bool UseDefaultNumericValues { get; set; } = true;
 
@@ -196,6 +197,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                         UseDefaultPuckDropHeight = config.UseDefaultPuckDropHeight,
                         UseDefaultNumericValues = config.UseDefaultNumericValues,
                         ReAdd1SecondAfterFaceoff = config.ReAdd1SecondAfterFaceoff,
+                        PuckSpeedRelativeToVanilla = config.PuckSpeedRelativeToVanilla,
                         GInt = new GIntConfig {
                             BlueTeam = config.GInt.BlueTeam,
                             RedTeam = config.GInt.RedTeam,
