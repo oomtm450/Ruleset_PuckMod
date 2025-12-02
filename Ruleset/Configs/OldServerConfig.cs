@@ -223,7 +223,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after a high stick to not be considered.
         /// </summary>
-        public int MaxMilliseconds { get; } = 5000;
+        public int MaxMilliseconds { get; } = 5000; // TODO : Change after release.
 
         /// <summary>
         /// Float, delta used to calculate the high stick maximum frames before activation.
