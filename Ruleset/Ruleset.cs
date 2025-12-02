@@ -14,7 +14,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.SceneManagement;
 
@@ -27,7 +26,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.26.3DEV6";
+        private static readonly string MOD_VERSION = "0.26.3";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
