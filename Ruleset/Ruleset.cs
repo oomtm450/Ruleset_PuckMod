@@ -1058,8 +1058,6 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     oldZone = _puckZone;
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PuckRadius);
-                    if (oldZone != _puckZone)
-                        Logging.Log($"Old zone : {oldZone}. New zone : {_puckZone}.", _serverConfig);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}", _serverConfig);
