@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.SceneManagement;
 
@@ -26,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.26.2";
+        private static readonly string MOD_VERSION = "0.26.3DEV1";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -55,6 +56,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.25.0",
             "0.26.0",
             "0.26.1",
+            "0.26.2",
         });
 
         /// <summary>
@@ -71,6 +73,37 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Fields
+        private static InputAction _getStickLocation;
+
+        /// <summary>
+        /// Class that patches the Update event from PlayerInput.
+        /// </summary>
+        [HarmonyPatch(typeof(PlayerInput), "Update")]
+        public class PlayerInput_Update_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix() {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    UIChat chat = UIChat.Instance;
+
+                    if (chat.IsFocused)
+                        return true;
+
+                    if (_getStickLocation.WasPressedThisFrame()) {
+                        Logging.Log($"Puck position : {PuckManager.Instance.GetPuck().Rigidbody.transform.position.y}", _clientConfig);
+                    }
+                        
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in PlayerInput_Update_Patch Prefix().\n{ex}", _clientConfig);
+                }
+
+                return true;
+            }
+        }
         /// <summary>
         /// Harmony, harmony instance to patch the Puck's code.
         /// </summary>
@@ -1697,7 +1730,7 @@ namespace oomtm450PuckMod_Ruleset {
                     List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
                     List<string> otherTeamPlayersSteamId = _playersZone.Where(x => x.Value.Team == otherTeam && x.Value.Zone == otherTeamZones[0]).Select(x => x.Key).ToList();
 
-                    if (otherTeamPlayersSteamId.Count != 0 && puck.Rigidbody.transform.position.y < 0.9f) {
+                    if (otherTeamPlayersSteamId.Count != 0 && puck.Rigidbody.transform.position.y < _serverConfig.Icing.DeferredMaxHeight) {
                         foreach (string playerSteamId in otherTeamPlayersSteamId) {
                             Player player = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
                             if (player == null || !player || !player.IsCharacterFullySpawned)
