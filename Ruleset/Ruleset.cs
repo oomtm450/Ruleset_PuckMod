@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.26.3DEV2";
+        private static readonly string MOD_VERSION = "0.26.3DEV6";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -73,37 +73,6 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Fields
-        private static InputAction _getStickLocation;
-
-        /// <summary>
-        /// Class that patches the Update event from PlayerInput.
-        /// </summary>
-        [HarmonyPatch(typeof(PlayerInput), "Update")]
-        public class PlayerInput_Update_Patch {
-            [HarmonyPrefix]
-            public static bool Prefix() {
-                try {
-                    // If this is the server, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer())
-                        return true;
-
-                    UIChat chat = UIChat.Instance;
-
-                    if (chat.IsFocused)
-                        return true;
-
-                    if (_getStickLocation.WasPressedThisFrame()) {
-                        Logging.Log($"Puck position : ZMin = {PuckManager.Instance.GetPuck().Rigidbody.transform.position.z - PuckRadius}, ZMax = {PuckManager.Instance.GetPuck().Rigidbody.transform.position.z + PuckRadius}", _clientConfig);
-                    }
-                        
-                }
-                catch (Exception ex) {
-                    Logging.LogError($"Error in PlayerInput_Update_Patch Prefix().\n{ex}", _clientConfig);
-                }
-
-                return true;
-            }
-        }
         /// <summary>
         /// Harmony, harmony instance to patch the Puck's code.
         /// </summary>
@@ -1090,6 +1059,8 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     oldZone = _puckZone;
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PuckRadius);
+                    if (oldZone != _puckZone)
+                        Logging.Log($"Old zone : {oldZone}. New zone : {_puckZone}.", _serverConfig);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}", _serverConfig);
@@ -2217,8 +2188,8 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.Log("Setting client sided config.", _serverConfig, true);
                     _clientConfig = ClientConfig.ReadConfig();
 
-                    _getStickLocation = new InputAction(binding: "<keyboard>/#(o)");
-                    _getStickLocation.Enable();
+                    //_getStickLocation = new InputAction(binding: "<keyboard>/#(o)");
+                    //_getStickLocation.Enable();
                 }
 
                 Logging.Log("Subscribing to events.", _serverConfig, true);
@@ -2283,7 +2254,7 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.Instance.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                     Event_Client_OnClientStopped(new Dictionary<string, object>());
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER_TO_CLIENT);
-                    _getStickLocation.Disable();
+                    //_getStickLocation.Disable();
                 }
 
                 _hasRegisteredWithNamedMessageHandler = false;
@@ -2370,6 +2341,39 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
         #endregion
+
+        /*private static InputAction _getStickLocation;
+
+        /// <summary>
+        /// Class that patches the Update event from PlayerInput.
+        /// </summary>
+        [HarmonyPatch(typeof(PlayerInput), "Update")]
+        public class PlayerInput_Update_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix() {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    UIChat chat = UIChat.Instance;
+
+                    if (chat.IsFocused)
+                        return true;
+
+                    if (_getStickLocation.WasPressedThisFrame()) {
+                        Logging.Log($"Puck scale : {_puckScale}. Puck position : ZMin = {PuckManager.Instance.GetPuck().Rigidbody.transform.position.z - PuckRadius}, ZMax = {PuckManager.Instance.GetPuck().Rigidbody.transform.position.z + PuckRadius}", _clientConfig);
+                        Logging.Log($"Player position : {PlayerManager.Instance.GetLocalPlayer().PlayerBody.Rigidbody.transform.position}", _clientConfig);
+                    }
+
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in PlayerInput_Update_Patch Prefix().\n{ex}", _clientConfig);
+                }
+
+                return true;
+            }
+        }*/
     }
 
     public enum Rule {
