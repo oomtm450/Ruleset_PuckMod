@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.26.3DEV1";
+        private static readonly string MOD_VERSION = "0.26.3DEV2";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -93,7 +93,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return true;
 
                     if (_getStickLocation.WasPressedThisFrame()) {
-                        Logging.Log($"Puck position : {PuckManager.Instance.GetPuck().Rigidbody.transform.position.y}", _clientConfig);
+                        Logging.Log($"Puck position : ZMin = {PuckManager.Instance.GetPuck().Rigidbody.transform.position.z - PuckRadius}, ZMax = {PuckManager.Instance.GetPuck().Rigidbody.transform.position.z + PuckRadius}", _clientConfig);
                     }
                         
                 }
@@ -2217,8 +2217,8 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.Log("Setting client sided config.", _serverConfig, true);
                     _clientConfig = ClientConfig.ReadConfig();
 
-                    //_getStickLocation = new InputAction(binding: "<keyboard>/#(o)");
-                    //_getStickLocation.Enable();
+                    _getStickLocation = new InputAction(binding: "<keyboard>/#(o)");
+                    _getStickLocation.Enable();
                 }
 
                 Logging.Log("Subscribing to events.", _serverConfig, true);
@@ -2283,13 +2283,12 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.Instance.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                     Event_Client_OnClientStopped(new Dictionary<string, object>());
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER_TO_CLIENT);
+                    _getStickLocation.Disable();
                 }
 
                 _hasRegisteredWithNamedMessageHandler = false;
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
-
-                //_getStickLocation.Disable();
 
                 if (_refSignalsBlueTeam != null) {
                     _refSignalsBlueTeam.StopAllSignals();
