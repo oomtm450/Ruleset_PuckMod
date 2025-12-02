@@ -30,6 +30,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public string ModName { get; } = Constants.MOD_NAME;
 
         /// <summary>
+        /// Bool, true if the numeric values has to be replaced be the default ones. Make this false to use custom values.
+        /// Only exception to this is the PuckSpeedRelativeToVanilla.
+        /// </summary>
+        public bool UseDefaultNumericValues { get; set; } = true;
+
+        /// <summary>
         /// Bool, true if the custom faceoff (any faceoff not in center) should be used.
         /// </summary>
         public bool UseCustomFaceoff { get; set; } = true;
@@ -89,6 +95,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
         public int MaxPossessionMilliseconds { get; set; } = 700;
+
+        /// <summary>
+        /// Float, puck speed multiplicator relative to vanilla. (If puck is 1.5x faster in your server, set this to 1.5)
+        /// </summary>
+        public float PuckSpeedRelativeToVanilla { get; set; } = 1f;
         #endregion
 
         #region Methods/Functions
@@ -178,6 +189,38 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 }
 
                 Logging.Log($"Wrote server config : {config}", config, true);
+
+                if (config.UseDefaultNumericValues) {
+                    ServerConfig defaultConfig = new ServerConfig {
+                        LogInfo = config.LogInfo,
+                        UseCustomFaceoff = config.UseCustomFaceoff,
+                        UseDefaultPuckDropHeight = config.UseDefaultPuckDropHeight,
+                        UseDefaultNumericValues = config.UseDefaultNumericValues,
+                        ReAdd1SecondAfterFaceoff = config.ReAdd1SecondAfterFaceoff,
+                        PuckSpeedRelativeToVanilla = config.PuckSpeedRelativeToVanilla,
+                        GInt = new GIntConfig {
+                            BlueTeam = config.GInt.BlueTeam,
+                            RedTeam = config.GInt.RedTeam,
+                        },
+                        Offside = new OffsideConfig {
+                            BlueTeam = config.Offside.BlueTeam,
+                            RedTeam = config.Offside.RedTeam,
+                        },
+                        Icing = new IcingConfig {
+                            BlueTeam = config.Icing.BlueTeam,
+                            RedTeam = config.Icing.RedTeam,
+                            Deferred = config.Icing.Deferred,
+                        },
+                        HighStick = new HighStickConfig {
+                            BlueTeam = config.HighStick.BlueTeam,
+                            RedTeam = config.HighStick.RedTeam,
+                        },
+                        Penalty = new PenaltyConfig {
+                        },
+                    };
+
+                    config = defaultConfig;
+                }
             }
             catch (Exception ex) {
                 Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", config);
@@ -278,7 +321,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, deferred icing max possible time substraction depending of players distance to puck (after addition).
         /// </summary>
-        public float DeferredMaxPossibleTimeDistanceDelta { get; set; } = 300f;
+        public float DeferredMaxPossibleTimeDistanceDelta { get; set; } = 250f;
 
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
@@ -364,7 +407,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
         /// </summary>
-        public float MaxHeight { get; set; } = 1.795f;
+        public float MaxHeight { get; set; } = 1.8f;
 
         /// <summary>
         /// Int, number of milliseconds after a high stick to not be considered.

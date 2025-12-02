@@ -99,5 +99,15 @@
         /// Const string, data name for telling mods that Ruleset changed phase manually.
         /// </summary>
         public const string CHANGED_PHASE = "chphase";
+
+        /// <summary>
+        /// Const string, data name for telling mods that Ruleset is going to do a faceoff.
+        /// </summary>
+        public const string NEXT_FACEOFF = "nextfaceoff";
+
+        /// <summary>
+        /// Const string, data name for telling Ruleset to do a faceoff now.
+        /// </summary>
+        public const string INSTANT_FACEOFF = "instantfaceoff";
     }
 }
