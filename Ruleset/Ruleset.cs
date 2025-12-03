@@ -1689,9 +1689,9 @@ namespace oomtm450PuckMod_Ruleset {
             if (!checkPossibleTime)
                 return true;
             else {
-                float maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched] * icingObj.Delta / _serverConfig.PuckSpeedRelativeToVanilla;
+                float maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched] * icingObj.Delta;
 
-                if (!icingObj.DeltaHasBeenChecked && ++icingObj.FrameCheck > ((float)ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate) / _serverConfig.PuckSpeedRelativeToVanilla) {
+                if (!icingObj.DeltaHasBeenChecked && ++icingObj.FrameCheck > ((float)ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate)) {
                     icingObj.DeltaHasBeenChecked = true;
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
