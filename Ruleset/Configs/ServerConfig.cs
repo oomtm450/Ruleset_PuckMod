@@ -31,7 +31,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
         /// <summary>
         /// Bool, true if the numeric values has to be replaced be the default ones. Make this false to use custom values.
-        /// Only exception to this is the PuckSpeedRelativeToVanilla.
         /// </summary>
         public bool UseDefaultNumericValues { get; set; } = true;
 
@@ -95,11 +94,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
         public int MaxPossessionMilliseconds { get; set; } = 700;
-
-        /// <summary>
-        /// Float, puck speed multiplicator relative to vanilla. (If puck is 1.5x faster in your server, set this to 1.5)
-        /// </summary>
-        public float PuckSpeedRelativeToVanilla { get; set; } = 1f;
         #endregion
 
         #region Methods/Functions
@@ -197,7 +191,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                         UseDefaultPuckDropHeight = config.UseDefaultPuckDropHeight,
                         UseDefaultNumericValues = config.UseDefaultNumericValues,
                         ReAdd1SecondAfterFaceoff = config.ReAdd1SecondAfterFaceoff,
-                        PuckSpeedRelativeToVanilla = config.PuckSpeedRelativeToVanilla,
                         GInt = new GIntConfig {
                             BlueTeam = config.GInt.BlueTeam,
                             RedTeam = config.GInt.RedTeam,
@@ -346,6 +339,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float Delta { get; set; } = 21.5f;
 
         /// <summary>
+        /// Float, max height before deferred icing does not check for possibility that the other team touches the puck before icing.
+        /// </summary>
+        public float DeferredMaxHeight { get; set; } = 0.85f;
+
+        /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
         /// </summary>
         /// <param name="oldConfig">ISubConfig, config with old values.</param>
@@ -387,6 +385,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (Delta == _oldConfig.Delta)
                 Delta = newConfig.Delta;
+
+            if (DeferredMaxHeight == _oldConfig.DeferredMaxHeight)
+                DeferredMaxHeight = newConfig.DeferredMaxHeight;
         }
     }
 
@@ -407,12 +408,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
         /// </summary>
-        public float MaxHeight { get; set; } = 1.8f;
+        public float MaxHeight { get; set; } = Codebase.Constants.CROSSBAR_HEIGHT;
 
         /// <summary>
         /// Int, number of milliseconds after a high stick to not be considered.
         /// </summary>
-        public int MaxMilliseconds { get; set; } = 5000;
+        public int MaxMilliseconds { get; set; } = 8000;
 
         /// <summary>
         /// Float, delta used to calculate the high stick maximum frames before activation.

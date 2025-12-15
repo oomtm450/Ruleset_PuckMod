@@ -38,7 +38,7 @@
         /// <summary>
         /// Const float, radius of the puck.
         /// </summary>
-        internal const float PUCK_RADIUS = 0.13f;
+        internal const float PUCK_RADIUS = 0.14f;
 
         /// <summary>
         /// Const float, radius of a player.

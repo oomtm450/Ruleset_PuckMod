@@ -26,7 +26,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.26.2";
+        private static readonly string MOD_VERSION = "0.26.3";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -55,6 +55,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.25.0",
             "0.26.0",
             "0.26.1",
+            "0.26.2",
         });
 
         /// <summary>
@@ -1688,16 +1689,16 @@ namespace oomtm450PuckMod_Ruleset {
             if (!checkPossibleTime)
                 return true;
             else {
-                float maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched] * icingObj.Delta / _serverConfig.PuckSpeedRelativeToVanilla;
+                float maxPossibleTime = _serverConfig.Icing.MaxPossibleTime[_puckZoneLastTouched] * icingObj.Delta;
 
-                if (!icingObj.DeltaHasBeenChecked && ++icingObj.FrameCheck > ((float)ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate) / _serverConfig.PuckSpeedRelativeToVanilla) {
+                if (!icingObj.DeltaHasBeenChecked && ++icingObj.FrameCheck > ((float)ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate)) {
                     icingObj.DeltaHasBeenChecked = true;
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
                     List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
                     List<string> otherTeamPlayersSteamId = _playersZone.Where(x => x.Value.Team == otherTeam && x.Value.Zone == otherTeamZones[0]).Select(x => x.Key).ToList();
 
-                    if (otherTeamPlayersSteamId.Count != 0 && puck.Rigidbody.transform.position.y < 0.9f) {
+                    if (otherTeamPlayersSteamId.Count != 0 && puck.Rigidbody.transform.position.y < _serverConfig.Icing.DeferredMaxHeight) {
                         foreach (string playerSteamId in otherTeamPlayersSteamId) {
                             Player player = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
                             if (player == null || !player || !player.IsCharacterFullySpawned)
@@ -2250,13 +2251,12 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.Instance.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                     Event_Client_OnClientStopped(new Dictionary<string, object>());
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER_TO_CLIENT);
+                    //_getStickLocation.Disable();
                 }
 
                 _hasRegisteredWithNamedMessageHandler = false;
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
-
-                //_getStickLocation.Disable();
 
                 if (_refSignalsBlueTeam != null) {
                     _refSignalsBlueTeam.StopAllSignals();
@@ -2338,6 +2338,39 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
         #endregion
+
+        /*private static InputAction _getStickLocation;
+
+        /// <summary>
+        /// Class that patches the Update event from PlayerInput.
+        /// </summary>
+        [HarmonyPatch(typeof(PlayerInput), "Update")]
+        public class PlayerInput_Update_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix() {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    UIChat chat = UIChat.Instance;
+
+                    if (chat.IsFocused)
+                        return true;
+
+                    if (_getStickLocation.WasPressedThisFrame()) {
+                        Logging.Log($"Puck scale : {_puckScale}. Puck position : ZMin = {PuckManager.Instance.GetPuck().Rigidbody.transform.position.z - PuckRadius}, ZMax = {PuckManager.Instance.GetPuck().Rigidbody.transform.position.z + PuckRadius}", _clientConfig);
+                        Logging.Log($"Player position : {PlayerManager.Instance.GetLocalPlayer().PlayerBody.Rigidbody.transform.position}", _clientConfig);
+                    }
+
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in PlayerInput_Update_Patch Prefix().\n{ex}", _clientConfig);
+                }
+
+                return true;
+            }
+        }*/
     }
 
     public enum Rule {

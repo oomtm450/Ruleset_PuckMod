@@ -22,7 +22,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, the game rounds down the time remaining on every faceoff.
         /// This readds 1 second on every faceoff so the game doesn't end too quickly.
         /// </summary>
-        public bool ReAdd1SecondAfterFaceoff { get; set; } = true;
+        public bool ReAdd1SecondAfterFaceoff { get; } = true;
 
         /// <summary>
         /// Bool, true if the height of the puck drop on faceoffs shouldn't be modified.
@@ -184,7 +184,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, delta used to calculate the dynamic icing possible times.
         /// </summary>
-        public float Delta { get; set; } = 21.5f;
+        public float Delta { get; } = 21.5f;
+
+        /// <summary>
+        /// Float, max height before deferred icing does not check for possibility that the other team touches the puck before icing.
+        /// </summary>
+        public float DeferredMaxHeight { get; } = 0.85f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -218,7 +223,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after a high stick to not be considered.
         /// </summary>
-        public int MaxMilliseconds { get; } = 5000;
+        public int MaxMilliseconds { get; } = 5000; // TODO : Change after release.
 
         /// <summary>
         /// Float, delta used to calculate the high stick maximum frames before activation.
