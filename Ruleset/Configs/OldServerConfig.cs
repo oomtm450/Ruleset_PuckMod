@@ -162,7 +162,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, deferred icing max possible time substraction depending of players distance to puck (after addition).
         /// </summary>
-        public float DeferredMaxPossibleTimeDistanceDelta { get; } = 315f; // TODO : Change after release.
+        public float DeferredMaxPossibleTimeDistanceDelta { get; } = 250f;
 
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
@@ -218,12 +218,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
         /// </summary>
-        public float MaxHeight { get; } = 1.795f; // TODO : Change after release.
+        public float MaxHeight { get; } = Codebase.Constants.CROSSBAR_HEIGHT;
 
         /// <summary>
         /// Int, number of milliseconds after a high stick to not be considered.
         /// </summary>
-        public int MaxMilliseconds { get; } = 5000; // TODO : Change after release.
+        public int MaxMilliseconds { get; } = 8000;
 
         /// <summary>
         /// Float, delta used to calculate the high stick maximum frames before activation.
