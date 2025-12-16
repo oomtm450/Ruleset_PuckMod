@@ -43,7 +43,7 @@
         /// <summary>
         /// Const float, radius of a player.
         /// </summary>
-        internal const float PLAYER_RADIUS = 0.262f;
+        internal const float PLAYER_RADIUS = 0.261f;
 
         /// <summary>
         /// Const float, height of the net's crossbar.
