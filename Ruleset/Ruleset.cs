@@ -56,6 +56,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.26.0",
             "0.26.1",
             "0.26.2",
+            "0.26.3",
         });
 
         /// <summary>
@@ -267,21 +268,24 @@ namespace oomtm450PuckMod_Ruleset {
         private static FaceoffSpot _nextFaceoffSpot = FaceoffSpot.Center;
 
         /// <summary>
-        /// FaceoffSpot, where the next faceoff has to be taken.
+        /// FaceoffSpot, property of _nextFaceoffSpot.
         /// </summary>
         private static FaceoffSpot NextFaceoffSpot {
             get {
                 return _nextFaceoffSpot;
             }
             set {
-                _nextFaceoffSpot = value;
-                try {
-                    EventManager.Instance.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object> { { Codebase.Constants.NEXT_FACEOFF, _nextFaceoffSpot.ToString() } });
-                    if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.NEXT_FACEOFF))
-                        Logging.Log($"Sent data \"{Codebase.Constants.NEXT_FACEOFF}\" to {Codebase.Constants.RULESET_MOD_NAME}.", _serverConfig);
-                }
-                catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(Paused)} setter.\n{ex}", _serverConfig);
+                if (_nextFaceoffSpot != value) {
+                    _nextFaceoffSpot = value;
+
+                    try {
+                        EventManager.Instance.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object> { { Codebase.Constants.NEXT_FACEOFF, _nextFaceoffSpot.ToString() } });
+                        if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.NEXT_FACEOFF))
+                            Logging.Log($"Sent data \"{Codebase.Constants.NEXT_FACEOFF}\" to {Codebase.Constants.RULESET_MOD_NAME}.", _serverConfig);
+                    }
+                    catch (Exception ex) {
+                        Logging.LogError($"Error in {nameof(NextFaceoffSpot)} setter.\n{ex}", _serverConfig);
+                    }
                 }
             }
         }
