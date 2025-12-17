@@ -1752,11 +1752,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void ResetGoalAndAssistAttribution(PlayerTeam team) {
             try {
-                NetworkList<NetworkObjectCollision> buffer = GetPuckBuffer();
-                if (buffer == null) {
-                    Logging.LogError($"Buffer field is null !!!", _serverConfig);
-                    return;
-                }
+                NetworkList<NetworkObjectCollision> buffer = GetPuckBuffer() ?? throw new NullReferenceException("Buffer field is null !!!");
 
                 List<NetworkObjectCollision> collisionToRemove = new List<NetworkObjectCollision>();
                 foreach (NetworkObjectCollision collision in buffer) {
