@@ -1710,7 +1710,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 continue;
 
                             float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * _serverConfig.Icing.DeferredMaxPossibleTimeMultiplicator) + _serverConfig.Icing.DeferredMaxPossibleTimeAddition)) - (Math.Abs(player.PlayerBody.transform.position.z) * _serverConfig.Icing.DeferredMaxPossibleTimeDistanceDelta);
-                            Logging.Log($"Possible time is : {maxPossibleTime}. Limit is : {maxPossibleTimeLimit}. Puck Y is : {puck.Rigidbody.transform.position.y}.", _serverConfig, true);
+                            //Logging.Log($"Possible time is : {maxPossibleTime}. Limit is : {maxPossibleTimeLimit}. Puck Y is : {puck.Rigidbody.transform.position.y}.", _serverConfig, true);
 
                             if (maxPossibleTime >= maxPossibleTimeLimit) {
                                 _isIcingPossible[team] = new IcingObject();
