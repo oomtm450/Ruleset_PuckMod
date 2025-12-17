@@ -13,7 +13,6 @@ using System.Text;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
-using static oomtm450PuckMod_Stats.Stats;
 
 namespace oomtm450PuckMod_Stats {
     public class Stats : IPuckMod {
@@ -50,8 +49,6 @@ namespace oomtm450PuckMod_Stats {
             Codebase.Constants.TAKEAWAY,
             Codebase.Constants.TURNOVER,
             Codebase.Constants.BLOCK,
-            Codebase.Constants.SOG,
-            Codebase.Constants.SAVEPERC,
             Codebase.Constants.HIT,
             Codebase.Constants.PASS,
         });
