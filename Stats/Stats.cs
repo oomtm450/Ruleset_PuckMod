@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.6.0";
+        private static readonly string MOD_VERSION = "0.7.0DEV";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -36,6 +36,7 @@ namespace oomtm450PuckMod_Stats {
             "0.4.0",
             "0.4.1",
             "0.5.0",
+            "0.6.0",
         });
 
         /// <summary>
@@ -43,6 +44,7 @@ namespace oomtm450PuckMod_Stats {
         /// </summary>
         private static readonly ReadOnlyCollection<string> DATA_NAMES_TO_IGNORE = new ReadOnlyCollection<string>(new List<string> {
             "eventName",
+            Codebase.Constants.NEXT_FACEOFF,
         });
 
         /// <summary>
