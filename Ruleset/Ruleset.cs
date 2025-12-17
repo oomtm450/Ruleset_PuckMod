@@ -872,10 +872,6 @@ namespace oomtm450PuckMod_Ruleset {
                         _playersOnPuckTipIncludedDateTime.Clear();
 
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
-
-                        if (phase == GamePhase.FaceOff) {
-                            IcingStaminaDrain();
-                        }
                     }
                     else if (phase == GamePhase.Playing) {
                         if (time == -1 && _serverConfig.ReAdd1SecondAfterFaceoff)
