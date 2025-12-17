@@ -293,7 +293,17 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static float _puckScale = 1f;
 
-        internal static float PuckRadius => Codebase.Constants.PUCK_RADIUS * _puckScale;
+        private static Rule _lastStoppageReason = Rule.None;
+
+        private static readonly LockDictionary<PlayerTeam, DateTime> _lastIcing = new LockDictionary<PlayerTeam, DateTime> {
+            { PlayerTeam.Blue, DateTime.MinValue },
+            { PlayerTeam.Red, DateTime.MinValue },
+        };
+
+        private static readonly LockDictionary<PlayerTeam, int> _icingStaminaDrainPenaltyAmount = new LockDictionary<PlayerTeam, int> {
+            { PlayerTeam.Blue, 0 },
+            { PlayerTeam.Red, 0 },
+        };
 
         // Client-side.
         private static RefSignals _refSignalsBlueTeam = null;
@@ -358,6 +368,8 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
         }
+
+        internal static float PuckRadius => Codebase.Constants.PUCK_RADIUS * _puckScale;
         #endregion
 
         #region Harmony Patches
@@ -452,6 +464,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 highStickTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
                                 SendChat(Rule.HighStick, stick.Player.Team.Value, true);
+                                _lastStoppageReason = Rule.HighStick;
                                 DoFaceoff(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_REF);
                             }
                         }
@@ -545,6 +558,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == otherTeamZones[0] || _puckZone == otherTeamZones[1])) {
                         NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, puckLastStateBeforeCallOffside);
                         SendChat(Rule.Offside, stick.Player.Team.Value, true);
+                        _lastStoppageReason = Rule.Offside;
                         DoFaceoff();
                     }
 
@@ -553,6 +567,14 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!Codebase.PlayerFunc.IsGoalie(stick.Player)) {
                             NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             SendChat(Rule.Icing, otherTeam, true);
+
+                            if (_lastStoppageReason == Rule.Icing && (DateTime.UtcNow - _lastIcing[otherTeam]).TotalMilliseconds < _serverConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
+                                _icingStaminaDrainPenaltyAmount[otherTeam] += 1;
+                            else
+                                _icingStaminaDrainPenaltyAmount[otherTeam] = 0;
+
+                            _lastStoppageReason = Rule.Icing;
+                            _lastIcing[otherTeam] = DateTime.UtcNow;
                             DoFaceoff();
                         }
                         else {
@@ -781,14 +803,29 @@ namespace oomtm450PuckMod_Ruleset {
                     Paused = false;
                     _doFaceoff = false;
 
-                    if (phase == GamePhase.PeriodOver) {
-                        NextFaceoffSpot = FaceoffSpot.Center; // Fix faceoff if the period is over because of deferred icing.
+                    if (phase == GamePhase.PeriodOver || phase == GamePhase.BlueScore || phase == GamePhase.RedScore) {
+                        NextFaceoffSpot = FaceoffSpot.Center;
+                        _lastStoppageReason = Rule.None;
+
+                        foreach (PlayerTeam key in new List<PlayerTeam>(_lastIcing.Keys))
+                            _lastIcing[key] = DateTime.MinValue;
+
+                        foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
+                            _icingStaminaDrainPenaltyAmount[key] = 0;
 
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
                     }
                     else if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver) {
-                        if (phase == GamePhase.GameOver) // Fix faceoff if the period is over because of deferred icing.
+                        if (phase == GamePhase.GameOver || phase == GamePhase.Warmup) {
                             NextFaceoffSpot = FaceoffSpot.Center;
+                            _lastStoppageReason = Rule.None;
+
+                            foreach (PlayerTeam key in new List<PlayerTeam>(_lastIcing.Keys))
+                                _lastIcing[key] = DateTime.MinValue;
+
+                            foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
+                                _icingStaminaDrainPenaltyAmount[key] = 0;
+                        }
 
                         // Reset players zone.
                         _playersZone.Clear();
@@ -835,6 +872,10 @@ namespace oomtm450PuckMod_Ruleset {
                         _playersOnPuckTipIncludedDateTime.Clear();
 
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, _serverConfig);
+
+                        if (phase == GamePhase.FaceOff) {
+                            IcingStaminaDrain();
+                        }
                     }
                     else if (phase == GamePhase.Playing) {
                         if (time == -1 && _serverConfig.ReAdd1SecondAfterFaceoff)
@@ -848,6 +889,8 @@ namespace oomtm450PuckMod_Ruleset {
                         ChangedPhase = false;
                         if (_serverConfig.ReAdd1SecondAfterFaceoff)
                             time = _periodTimeRemaining + 1;
+
+                        IcingStaminaDrain();
                     }
                 }
                 catch (Exception ex) {
@@ -1038,6 +1081,7 @@ namespace oomtm450PuckMod_Ruleset {
                         SendChat(Rule.HighStick, callHighStickTeam, true);
                         ResetHighSticks();
 
+                        _lastStoppageReason = Rule.HighStick;
                         DoFaceoff(RefSignals.GetSignalConstant(true, callHighStickTeam), RefSignals.HIGHSTICK_REF);
                         break;
                     }
@@ -1223,6 +1267,14 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             else if (IsIcing(closestPlayerToEndBoardOtherTeam)) {
                                 SendChat(Rule.Icing, closestPlayerToEndBoardOtherTeam, true);
+
+                                if (_lastStoppageReason == Rule.Icing && (DateTime.UtcNow - _lastIcing[closestPlayerToEndBoardOtherTeam]).TotalMilliseconds < _serverConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
+                                    _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] += 1;
+                                else
+                                    _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] = 0;
+
+                                _lastStoppageReason = Rule.Icing;
+                                _lastIcing[closestPlayerToEndBoardOtherTeam] = DateTime.UtcNow;
                                 DoFaceoff();
                             }
                         }
@@ -1334,16 +1386,19 @@ namespace oomtm450PuckMod_Ruleset {
                             if (isOffside) {
                                 NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.Offside]);
                                 SendChat(Rule.Offside, team, true, false);
+                                _lastStoppageReason = Rule.Offside;
                                 DoFaceoff();
                             }
                             else if (isHighStick) {
                                 NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.HighStick]);
                                 SendChat(Rule.HighStick, team, true, false);
+                                _lastStoppageReason = Rule.HighStick;
                                 DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.HIGHSTICK_REF);
                             }
                             else if (isGoalieInt) {
                                 NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
                                 SendChat(Rule.GoalieInt, team, true, false);
+                                _lastStoppageReason = Rule.GoalieInt;
                                 DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
                             }
                             return false;
@@ -1370,6 +1425,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (isGoalieInt) {
                         NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
                         SendChat(Rule.GoalieInt, team, true, false);
+                        _lastStoppageReason = Rule.GoalieInt;
                         DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
                         return false;
                     }
@@ -1786,6 +1842,29 @@ namespace oomtm450PuckMod_Ruleset {
 
             return SystemFunc.GetPrivateField<NetworkList<NetworkObjectCollision>>(typeof(NetworkObjectCollisionBuffer), puck.NetworkObjectCollisionBuffer, "buffer");
         }
+
+        private static void IcingStaminaDrain() {
+            if (!_serverConfig.Icing.StaminaDrain)
+                return;
+
+            PlayerTeam icingTeam = PlayerTeam.Blue;
+            if ((_lastIcing[PlayerTeam.Red] - _lastIcing[PlayerTeam.Blue]).TotalMilliseconds > 0) // Red team has the last icing.
+                icingTeam = PlayerTeam.Red;
+
+            float staminaDrainDivisionAmount = _serverConfig.Icing.StaminaDrainDivisionAmount;
+            for (int i = 0; i < _icingStaminaDrainPenaltyAmount[icingTeam]; i++)
+                staminaDrainDivisionAmount *= _serverConfig.Icing.StaminaDrainDivisionAmount - _serverConfig.Icing.StaminaDrainDivisionAmountPenaltyDelta;
+
+            foreach (Player player in PlayerManager.Instance.GetPlayersByTeam(icingTeam)) {
+                if (!player)
+                    continue;
+
+                if (Codebase.PlayerFunc.IsGoalie(player) && !_serverConfig.Icing.StaminaDrainGoalie)
+                    continue;
+
+                player.PlayerBody.Stamina = 1f / staminaDrainDivisionAmount;
+            }
+        }
         #endregion
 
         #region Events
@@ -1820,6 +1899,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     case Codebase.Constants.INSTANT_FACEOFF:
                         NextFaceoffSpot = (FaceoffSpot)ushort.Parse(value);
+                        _lastStoppageReason = Rule.None;
                         DoFaceoff("", "", 0, 0);
                         break;
                 }
@@ -2375,6 +2455,7 @@ namespace oomtm450PuckMod_Ruleset {
     }
 
     public enum Rule {
+        None,
         [Description("OFFSIDE"), Category("ToString")]
         Offside,
         [Description("ICING"), Category("ToString")]

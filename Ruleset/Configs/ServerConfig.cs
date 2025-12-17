@@ -344,6 +344,31 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float DeferredMaxHeight { get; set; } = 0.85f;
 
         /// <summary>
+        /// Bool, true if icing team stamina has to be drained.
+        /// </summary>
+        public bool StaminaDrain { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if icing team goalie stamina has to be drained.
+        /// </summary>
+        public bool StaminaDrainGoalie { get; set; } = true;
+
+        /// <summary>
+        /// Float, amount to divide the stamina by for the team causing the icing if StaminaDrain is on.
+        /// </summary>
+        public float StaminaDrainDivisionAmount { get; set; } = 2f;
+
+        /// <summary>
+        /// Float, amount to remove from StaminaDrainDivisionAmount when applying additional stamina drain penalties.
+        /// </summary>
+        public float StaminaDrainDivisionAmountPenaltyDelta { get; set; } = 0.5f;
+
+        /// <summary>
+        /// Int, time between 2 icings to apply additional stamina drain penalties.
+        /// </summary>
+        public int StaminaDrainDivisionAmountPenaltyTime { get; set; } = 15000;
+
+        /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
         /// </summary>
         /// <param name="oldConfig">ISubConfig, config with old values.</param>
@@ -388,6 +413,21 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (DeferredMaxHeight == _oldConfig.DeferredMaxHeight)
                 DeferredMaxHeight = newConfig.DeferredMaxHeight;
+
+            if (StaminaDrain == _oldConfig.StaminaDrain)
+                StaminaDrain = newConfig.StaminaDrain;
+
+            if (StaminaDrainGoalie == _oldConfig.StaminaDrainGoalie)
+                StaminaDrainGoalie = newConfig.StaminaDrainGoalie;
+
+            if (StaminaDrainDivisionAmount == _oldConfig.StaminaDrainDivisionAmount)
+                StaminaDrainDivisionAmount = newConfig.StaminaDrainDivisionAmount;
+
+            if (StaminaDrainDivisionAmountPenaltyDelta == _oldConfig.StaminaDrainDivisionAmountPenaltyDelta)
+                StaminaDrainDivisionAmountPenaltyDelta = newConfig.StaminaDrainDivisionAmountPenaltyDelta;
+
+            if (StaminaDrainDivisionAmountPenaltyTime == _oldConfig.StaminaDrainDivisionAmountPenaltyTime)
+                StaminaDrainDivisionAmountPenaltyTime = newConfig.StaminaDrainDivisionAmountPenaltyTime;
         }
     }
 

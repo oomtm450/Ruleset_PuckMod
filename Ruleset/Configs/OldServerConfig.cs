@@ -192,6 +192,31 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float DeferredMaxHeight { get; } = 0.85f;
 
         /// <summary>
+        /// Bool, true if icing team stamina has to be drained.
+        /// </summary>
+        public bool StaminaDrain { get; } = true;
+
+        /// <summary>
+        /// Bool, true if icing team goalie stamina has to be drained.
+        /// </summary>
+        public bool StaminaDrainGoalie { get; } = true;
+
+        /// <summary>
+        /// Float, amount to divide the stamina by for the team causing the icing if StaminaDrain is on.
+        /// </summary>
+        public float StaminaDrainDivisionAmount { get; } = 2f;
+
+        /// <summary>
+        /// Float, amount to remove from StaminaDrainDivisionAmount when applying additional stamina drain penalties.
+        /// </summary>
+        public float StaminaDrainDivisionAmountPenaltyDelta { get; } = 0.5f;
+
+        /// <summary>
+        /// Int, time between 2 icings to apply additional stamina drain penalties.
+        /// </summary>
+        public int StaminaDrainDivisionAmountPenaltyTime { get; } = 15000;
+
+        /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
         /// </summary>
         /// <param name="oldConfig">ISubConfig, config with old values.</param>
