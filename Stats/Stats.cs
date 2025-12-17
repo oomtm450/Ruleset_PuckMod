@@ -13,6 +13,7 @@ using System.Text;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static oomtm450PuckMod_Stats.Stats;
 
 namespace oomtm450PuckMod_Stats {
     public class Stats : IPuckMod {
@@ -45,6 +46,14 @@ namespace oomtm450PuckMod_Stats {
         private static readonly ReadOnlyCollection<string> DATA_NAMES_TO_IGNORE = new ReadOnlyCollection<string>(new List<string> {
             "eventName",
             Codebase.Constants.NEXT_FACEOFF,
+            Codebase.Constants.PLUSMINUS,
+            Codebase.Constants.TAKEAWAY,
+            Codebase.Constants.TURNOVER,
+            Codebase.Constants.BLOCK,
+            Codebase.Constants.SOG,
+            Codebase.Constants.SAVEPERC,
+            Codebase.Constants.HIT,
+            Codebase.Constants.PASS,
         });
 
         /// <summary>
@@ -116,6 +125,16 @@ namespace oomtm450PuckMod_Stats {
         /// Const string, data name for resetting the passes.
         /// </summary>
         private const string RESET_PASS = Constants.MOD_NAME + "RESETPASS";*/
+
+        /// <summary>
+        /// Const string, data name for batching the +/-.
+        /// </summary>
+        private const string BATCH_PLUSMINUS = Constants.MOD_NAME + "BATCHPLUSMINUS";
+
+        /*/// <summary>
+        /// Const string, data name for resetting the +/-.
+        /// </summary>
+        private const string RESET_PLUSMINUS = Constants.MOD_NAME + "RESETPLUSMINUS";*/
 
         /// <summary>
         /// Const string, data name for resetting all stats.
@@ -270,6 +289,8 @@ namespace oomtm450PuckMod_Stats {
             { 3, "" },
         };
 
+        private static readonly LockDictionary<string, int> _plusMinus = new LockDictionary<string, int>();
+
         // Client-side.
         /// <summary>
         /// ClientConfig, config set by the client.
@@ -384,6 +405,23 @@ namespace oomtm450PuckMod_Stats {
                     // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer())
                         return;
+
+                    foreach (Player player in PlayerManager.Instance.GetPlayers()) {
+                        if (!PlayerFunc.IsPlayerPlaying(player) || PlayerFunc.IsGoalie(player))
+                            continue;
+
+                        string playerSteamId = player.SteamId.Value.ToString();
+                        if (!_plusMinus.TryGetValue(playerSteamId, out int _))
+                            _plusMinus.Add(playerSteamId, 0);
+
+                        if (player.Team.Value == team)
+                            _plusMinus[playerSteamId] += 1;
+                        else
+                            _plusMinus[playerSteamId] -= 1;
+
+                        NetworkCommunication.SendDataToAll(Codebase.Constants.PLUSMINUS + playerSteamId, _plusMinus[playerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                        LogPlusMinus(playerSteamId, _plusMinus[playerSteamId]);
+                    }
 
                     if (team == PlayerTeam.Blue) {
                         _blueGoals.Add(goalPlayer.SteamId.Value.ToString());
@@ -502,6 +540,14 @@ namespace oomtm450PuckMod_Stats {
                             _passes[key] = 0;
                         else
                             _passes.Remove(key);
+                    }
+
+                    // Reset +/-.
+                    foreach (string key in new List<string>(_plusMinus.Keys)) {
+                        if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
+                            _plusMinus[key] = 0;
+                        else
+                            _plusMinus.Remove(key);
                     }
 
                     // Reset goal and assists trackers.
@@ -1178,6 +1224,9 @@ namespace oomtm450PuckMod_Stats {
                                 if (_turnovers.TryGetValue(steamId, out int turnovers))
                                     starPoints[steamId] -= ((double)turnovers) * 0.2d;
 
+                                if (_plusMinus.TryGetValue(steamId, out int plusMinus))
+                                    starPoints[steamId] += ((double)plusMinus) * 5d;
+
                                 starPoints[steamId] *= teamModifier;
                             }
 
@@ -1226,6 +1275,7 @@ namespace oomtm450PuckMod_Stats {
                                 { "redassists", _redAssists },
                                 { "gwg", gwgSteamId },
                                 { "stars", _stars },
+                                { "plusminus", _plusMinus },
                             };
 
                             string jsonContent = JsonConvert.SerializeObject(jsonDict, Formatting.Indented);
@@ -1515,6 +1565,7 @@ namespace oomtm450PuckMod_Stats {
                 _blueAssists.Clear();
                 _redGoals.Clear();
                 _redAssists.Clear();
+                _plusMinus.Clear();
 
                 ScoreboardModifications(false);
             }
@@ -1726,6 +1777,7 @@ namespace oomtm450PuckMod_Stats {
                         Client_ResetTakeaways();
                         Client_ResetTurnovers();
                         Client_ResetStickSaves();
+                        Client_ResetPlusMinus();
                         break;
 
                     case BATCH_SOG:
@@ -2113,6 +2165,15 @@ namespace oomtm450PuckMod_Stats {
             Logging.Log($"playerSteamId:{playerSteamId},star:{starIndex}", ServerConfig);
         }
 
+        /// <summary>
+        /// Method that logs the +/- of a player.
+        /// </summary>
+        /// <param name="playerSteamId">String, steam Id of the player.</param>
+        /// <param name="plusminus">Int, +/-.</param>
+        private static void LogPlusMinus(string playerSteamId, int plusminus) {
+            Logging.Log($"playerSteamId:{playerSteamId},plusminus:{plusminus}", ServerConfig);
+        }
+
         private static string GetGoalieSavePerc(int saves, int shots) {
             if (shots == 0)
                 return "0.000";
@@ -2190,6 +2251,11 @@ namespace oomtm450PuckMod_Stats {
         private static void Client_ResetStickSaves() {
             foreach (string key in new List<string>(_stickSaves.Keys))
                 _stickSaves[key] = 0;
+        }
+
+        private static void Client_ResetPlusMinus() {
+            foreach (string key in new List<string>(_plusMinus.Keys))
+                _plusMinus[key] = 0;
         }
         #endregion
 

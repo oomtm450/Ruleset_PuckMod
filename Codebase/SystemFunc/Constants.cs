@@ -86,6 +86,11 @@
         public const string TURNOVER = STATS_MOD_NAME + "TURNOVER";
 
         /// <summary>
+        /// Const string, data name for +/-.
+        /// </summary>
+        public const string PLUSMINUS = STATS_MOD_NAME + "PLUSMINUS";
+
+        /// <summary>
         /// Const string, data name for pausing mods.
         /// </summary>
         public const string PAUSE = "pause";
