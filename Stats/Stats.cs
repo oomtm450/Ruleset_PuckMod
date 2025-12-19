@@ -1921,7 +1921,7 @@ namespace oomtm450PuckMod_Stats {
                     if (ve is TemplateContainer && ve.childCount == 1) {
                         VisualElement templateContainer = ve.Children().First();
 
-                        Label sogHeader = new Label("SOG/s%") {
+                        Label sogHeader = new Label("S/SV%") {
                             name = SOG_HEADER_LABEL_NAME,
                         };
                         templateContainer.Add(sogHeader);
