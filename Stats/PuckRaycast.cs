@@ -80,9 +80,6 @@ namespace oomtm450PuckMod_Stats {
 
             Vector3 direction = transform.position - _startingPosition;
 
-            Vector3 leftVector = transform.position + Vector3.Cross(Vector3.down, direction.normalized).normalized * RIGHT_OFFSET;
-            Vector3 rightVector = transform.position + Vector3.Cross(Vector3.up, direction.normalized).normalized * RIGHT_OFFSET;
-
             /*_lineRendererBottomLeft.SetPosition(0, _rayBottomLeft.origin);
             _lineRendererBottomLeft.SetPosition(1, _rayBottomLeft.origin + (_rayBottomLeft.direction * puckSpeedDelta));
             _lineRendererBottomLeft.material = _noHitMaterial;
@@ -99,9 +96,12 @@ namespace oomtm450PuckMod_Stats {
             _lineRendererFarBottomRight.SetPosition(1, _rayFarBottomRight.origin + (_rayFarBottomRight.direction * puckSpeedDelta));
             _lineRendererFarBottomRight.material = _noHitMaterial;*/
 
+            Vector3 leftVector = transform.position + Vector3.Cross(Vector3.down, direction.normalized).normalized * RIGHT_OFFSET;
+
             _rayBottomLeft = new Ray(leftVector + ABOVE_GROUND_VECTOR, direction);
             bool hasHit = Physics.Raycast(_rayBottomLeft, out RaycastHit hit, puckSpeedDelta, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
             if (!hasHit) {
+                Vector3 rightVector = transform.position + Vector3.Cross(Vector3.up, direction.normalized).normalized * RIGHT_OFFSET;
                 _rayBottomRight = new Ray(rightVector + ABOVE_GROUND_VECTOR, direction);
                 hasHit = Physics.Raycast(_rayBottomRight, out hit, puckSpeedDelta, _goalTriggerlayerMask, QueryTriggerInteraction.Collide);
                 if (!hasHit) {
