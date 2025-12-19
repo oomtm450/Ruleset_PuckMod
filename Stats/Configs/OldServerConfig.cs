@@ -40,6 +40,11 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
         public int MaxPossessionMilliseconds { get; } = 700;
+
+        /// <summary>
+        /// Int, number of milliseconds for a change of possession to the other team be considered a turnover.
+        /// </summary>
+        public int TurnoverThresholdMilliseconds { get; } = 500;
         #endregion
 
         #region Methods/Functions

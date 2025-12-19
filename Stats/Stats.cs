@@ -46,8 +46,8 @@ namespace oomtm450PuckMod_Stats {
             "eventName",
             Codebase.Constants.NEXT_FACEOFF,
             Codebase.Constants.PLUSMINUS,
-            Codebase.Constants.TAKEAWAY,
-            Codebase.Constants.TURNOVER,
+            //Codebase.Constants.TAKEAWAY, // TODO : Remove debug logs.
+            //Codebase.Constants.TURNOVER, // TODO : Remove debug logs.
             Codebase.Constants.BLOCK,
             Codebase.Constants.HIT,
             Codebase.Constants.PASS,
@@ -934,19 +934,25 @@ namespace oomtm450PuckMod_Stats {
                     // Takeaways/turnovers logic.
                     if (!PlayerFunc.IsGoalie(player)) {
                         string currentPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds,
-                        ServerConfig.MaxTippedMilliseconds, _playersLastTimePuckPossession, _playersCurrentPuckTouch, true);
+                        ServerConfig.MaxTippedMilliseconds, _playersLastTimePuckPossession, _playersCurrentPuckTouch);
                         if (!string.IsNullOrEmpty(currentPossessionSteamId)) {
-                            if (_lastPossession.Team != PlayerTeam.None && player.Team.Value != _lastPossession.Team &&
-                                currentPossessionSteamId != _lastPossession.SteamId && (DateTime.UtcNow - _lastPossession.Date).TotalMilliseconds < 500) {
-                                ProcessTakeaways(currentPossessionSteamId);
-                                ProcessTurnovers(_lastPossession.SteamId);
-                            }
+                            Player possessionPlayer = PlayerManager.Instance.GetPlayerBySteamId(currentPossessionSteamId);
 
-                            _lastPossession = new Possession {
-                                SteamId = currentPossessionSteamId,
-                                Team = player.Team.Value,
-                                Date = DateTime.UtcNow,
-                            };
+                            if (PlayerFunc.IsPlayerPlaying(possessionPlayer)) {
+                                if (_lastPossession.Team != PlayerTeam.None && player.Team.Value != _lastPossession.Team &&
+                                    (DateTime.UtcNow - _lastPossession.Date).TotalMilliseconds < ServerConfig.TurnoverThresholdMilliseconds) {
+                                    ProcessTakeaways(currentPossessionSteamId);
+                                    ProcessTurnovers(_lastPossession.SteamId);
+                                }
+
+                                _lastPossession = new Possession {
+                                    SteamId = currentPossessionSteamId,
+                                    Team = possessionPlayer.Team.Value,
+                                    Date = DateTime.UtcNow,
+                                };
+                            }
+                            else
+                                _lastPossession = new Possession();
                         }
                     }
                     else

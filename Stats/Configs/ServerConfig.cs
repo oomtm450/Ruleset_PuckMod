@@ -53,6 +53,11 @@ namespace oomtm450PuckMod_Stats.Configs {
         public int MaxPossessionMilliseconds { get; set; } = 700;
 
         /// <summary>
+        /// Int, number of milliseconds for a change of possession to the other team be considered a turnover.
+        /// </summary>
+        public int TurnoverThresholdMilliseconds { get; set; } = 500;
+
+        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]
@@ -91,6 +96,9 @@ namespace oomtm450PuckMod_Stats.Configs {
 
             if (MaxPossessionMilliseconds == _oldConfig.MaxPossessionMilliseconds)
                 MaxPossessionMilliseconds = newConfig.MaxPossessionMilliseconds;
+
+            if (TurnoverThresholdMilliseconds == _oldConfig.TurnoverThresholdMilliseconds)
+                TurnoverThresholdMilliseconds = newConfig.TurnoverThresholdMilliseconds;
         }
 
         /// <summary>
