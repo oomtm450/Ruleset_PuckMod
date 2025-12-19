@@ -1257,8 +1257,10 @@ namespace oomtm450PuckMod_Stats {
                             }
 
                             Dictionary<string, string> playersUsername = new Dictionary<string, string>();
-                            foreach ((string steamID, string username) in _playersInfo.Values)
-                                playersUsername.Add(steamID, username);
+                            foreach ((string steamId, string username) in _playersInfo.Values) {
+                                Logging.Log($"steamId {steamId} username {username}", ServerConfig, true); // TODO : Remove debug logs.
+                                playersUsername.Add(steamId, username);
+                            }
 
                             Dictionary<string, (string, int)> sogDict = new Dictionary<string, (string, int)>();
                             foreach (var kvp in _sog)
@@ -1292,21 +1294,21 @@ namespace oomtm450PuckMod_Stats {
                             foreach (var kvp in _stickSaves)
                                 stickSavesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
 
-                            Dictionary<string, string> blueGoalsDict = new Dictionary<string, string>();
+                            List<string> blueGoalsDict = new List<string>();
                             foreach (var goalSteamId in _blueGoals)
-                                blueGoalsDict.Add(goalSteamId, playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : "");
+                                blueGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
 
-                            Dictionary<string, string> redGoalsDict = new Dictionary<string, string>();
+                            List<string> redGoalsDict = new List<string>();
                             foreach (var goalSteamId in _redGoals)
-                                redGoalsDict.Add(goalSteamId, playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : "");
+                                redGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
 
-                            Dictionary<string, string> blueAssistsDict = new Dictionary<string, string>();
-                            foreach (var goalSteamId in _blueAssists)
-                                blueAssistsDict.Add(goalSteamId, playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : "");
+                            List<string> blueAssistsDict = new List<string>();
+                            foreach (var assistSteamId in _blueAssists)
+                                blueAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
 
-                            Dictionary<string, string> redAssistsDict = new Dictionary<string, string>();
-                            foreach (var goalSteamId in _redAssists)
-                                redAssistsDict.Add(goalSteamId, playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : "");
+                            List<string> redAssistsDict = new List<string>();
+                            foreach (var assistSteamId in _redAssists)
+                                redAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
 
                             Dictionary<int, (string, string)> starsDict = new Dictionary<int, (string, string)>();
                             foreach (var kvp in _stars)
