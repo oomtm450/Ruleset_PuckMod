@@ -166,9 +166,9 @@ namespace oomtm450PuckMod_Stats {
         private static float _puckZCoordinateDifference = 0;
 
         /// <summary>
-        /// LockDictionary of ulong and string, dictionary of all players clientId and steamId.
+        /// LockDictionary of ulong and string, dictionary of all players clientId, steamId and username.
         /// </summary>
-        private static readonly LockDictionary<ulong, string> _players_ClientId_SteamId = new LockDictionary<ulong, string>();
+        private static readonly LockDictionary<ulong, (string SteamId, string Username)> _playersInfo = new LockDictionary<ulong, (string, string)>();
 
         /// <summary>
         /// LockDictionary of ulong and DateTime, last time a mod out of date message was sent to a client (ulong clientId).
@@ -1256,23 +1256,83 @@ namespace oomtm450PuckMod_Stats {
                                 }
                             }
 
+                            Dictionary<string, string> playersUsername = new Dictionary<string, string>();
+                            foreach ((string steamID, string username) in _playersInfo.Values)
+                                playersUsername.Add(steamID, username);
+
+                            Dictionary<string, (string, int)> sogDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _sog)
+                                sogDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, (string, int)> passesDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _passes)
+                                passesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, (string, int)> blocksDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _blocks)
+                                blocksDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, (string, int)> hitsDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _hits)
+                                hitsDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, (string, int)> takeawaysDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _takeaways)
+                                takeawaysDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, (string, int)> turnoversDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _turnovers)
+                                turnoversDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, (string, (int, int))> savePercDict = new Dictionary<string, (string, (int, int))>();
+                            foreach (var kvp in _savePerc)
+                                savePercDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, (string, int)> stickSavesDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _stickSaves)
+                                stickSavesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, string> blueGoalsDict = new Dictionary<string, string>();
+                            foreach (var goalSteamId in _blueGoals)
+                                blueGoalsDict.Add(goalSteamId, playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : "");
+
+                            Dictionary<string, string> redGoalsDict = new Dictionary<string, string>();
+                            foreach (var goalSteamId in _redGoals)
+                                redGoalsDict.Add(goalSteamId, playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : "");
+
+                            Dictionary<string, string> blueAssistsDict = new Dictionary<string, string>();
+                            foreach (var goalSteamId in _blueAssists)
+                                blueAssistsDict.Add(goalSteamId, playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : "");
+
+                            Dictionary<string, string> redAssistsDict = new Dictionary<string, string>();
+                            foreach (var goalSteamId in _redAssists)
+                                redAssistsDict.Add(goalSteamId, playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : "");
+
+                            Dictionary<int, (string, string)> starsDict = new Dictionary<int, (string, string)>();
+                            foreach (var kvp in _stars)
+                                starsDict.Add(kvp.Key, (kvp.Value, playersUsername.TryGetValue(kvp.Value, out string username) == true ? username : ""));
+
+                            Dictionary<string, (string, int)> plusMinusDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _plusMinus)
+                                plusMinusDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
                             // Log JSON for game stats.
                             Dictionary<string, object> jsonDict = new Dictionary<string, object> {
-                                { "sog", _sog },
-                                { "passes", _passes },
-                                { "blocks", _blocks },
-                                { "hits", _hits },
-                                { "takeaways", _takeaways },
-                                { "turnovers", _turnovers },
-                                { "saveperc", _savePerc },
-                                { "sticksaves", _stickSaves },
-                                { "bluegoals", _blueGoals },
-                                { "redgoals", _redGoals },
-                                { "blueassists", _blueAssists },
-                                { "redassists", _redAssists },
-                                { "gwg", gwgSteamId },
-                                { "stars", _stars },
-                                { "plusminus", _plusMinus },
+                                { "sog", sogDict },
+                                { "passes", passesDict },
+                                { "blocks", blocksDict },
+                                { "hits", hitsDict },
+                                { "takeaways", takeawaysDict },
+                                { "turnovers", turnoversDict },
+                                { "saveperc", savePercDict },
+                                { "sticksaves", stickSavesDict },
+                                { "bluegoals", blueGoalsDict },
+                                { "redgoals", redGoalsDict },
+                                { "blueassists", blueAssistsDict },
+                                { "redassists", redAssistsDict },
+                                { "gwg", gwgSteamId + "," + (playersUsername.TryGetValue(gwgSteamId, out string gwgUsername) == true ? gwgUsername : "") },
+                                { "stars", starsDict },
+                                { "plusminus", plusMinusDict },
                             };
 
                             string jsonContent = JsonConvert.SerializeObject(jsonDict, Formatting.Indented);
@@ -1483,11 +1543,11 @@ namespace oomtm450PuckMod_Stats {
                 ulong clientId = (ulong)message["clientId"];
                 string clientSteamId = PlayerManager.Instance.GetPlayerByClientId(clientId).SteamId.Value.ToString();
                 try {
-                    _players_ClientId_SteamId.Add(clientId, "");
+                    _playersInfo.Add(clientId, ("", ""));
                 }
                 catch {
-                    _players_ClientId_SteamId.Remove(clientId);
-                    _players_ClientId_SteamId.Add(clientId, "");
+                    _playersInfo.Remove(clientId);
+                    _playersInfo.Add(clientId, ("", ""));
                 }
 
                 CheckForRulesetMod();
@@ -1512,10 +1572,10 @@ namespace oomtm450PuckMod_Stats {
                 ulong clientId = (ulong)message["clientId"];
                 string clientSteamId;
                 try {
-                    clientSteamId = _players_ClientId_SteamId[clientId];
+                    clientSteamId = _playersInfo[clientId].SteamId;
                 }
                 catch {
-                    Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(_players_ClientId_SteamId)}.", ServerConfig);
+                    Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(_playersInfo)}.", ServerConfig);
                     return;
                 }
 
@@ -1526,7 +1586,7 @@ namespace oomtm450PuckMod_Stats {
                 _playersLastTimePuckPossession.Remove(clientSteamId);
                 _lastTimeOnCollisionStayOrExitWasCalled.Remove(clientSteamId);
 
-                _players_ClientId_SteamId.Remove(clientId);
+                _playersInfo.Remove(clientId);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(Event_OnClientDisconnected)}.\n{ex}", ServerConfig);
@@ -1573,16 +1633,18 @@ namespace oomtm450PuckMod_Stats {
 
         public static void Event_OnPlayerRoleChanged(Dictionary<string, object> message) {
             // Use the event to link client Ids to Steam Ids.
-            Dictionary<ulong, string> players_ClientId_SteamId_ToChange = new Dictionary<ulong, string>();
-            foreach (var kvp in _players_ClientId_SteamId) {
-                if (string.IsNullOrEmpty(kvp.Value))
-                    players_ClientId_SteamId_ToChange.Add(kvp.Key, PlayerManager.Instance.GetPlayerByClientId(kvp.Key).SteamId.Value.ToString());
+            Dictionary<ulong, (string SteamId, string Username)> playersInfo_ToChange = new Dictionary<ulong, (string, string)>();
+            foreach (var kvp in _playersInfo) {
+                if (string.IsNullOrEmpty(kvp.Value.SteamId)) {
+                    Player _player = PlayerManager.Instance.GetPlayerByClientId(kvp.Key);
+                    playersInfo_ToChange.Add(kvp.Key, (_player.SteamId.Value.ToString(), _player.Username.Value.ToString()));
+                }
             }
 
-            foreach (var kvp in players_ClientId_SteamId_ToChange) {
-                if (!string.IsNullOrEmpty(kvp.Value)) {
-                    _players_ClientId_SteamId[kvp.Key] = kvp.Value;
-                    Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value}.", ServerConfig);
+            foreach (var kvp in playersInfo_ToChange) {
+                if (!string.IsNullOrEmpty(kvp.Value.SteamId)) {
+                    _playersInfo[kvp.Key] = kvp.Value;
+                    Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value.SteamId} ({kvp.Value.Username}).", ServerConfig);
                 }
             }
 
