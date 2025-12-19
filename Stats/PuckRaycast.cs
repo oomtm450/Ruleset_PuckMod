@@ -74,7 +74,7 @@ namespace oomtm450PuckMod_Stats {
         }
 
         private void CheckForColliders() {
-            float puckSpeedDelta = PuckManager.Instance.GetPuck().Speed * 3.1f;
+            float puckSpeedDelta = PuckManager.Instance.GetPuck().Speed * 3.3f;
 
             _startingPosition.y = transform.position.y; // Adjust Y of starting position so that the rays are all parallel to the ice.
 
