@@ -17,7 +17,7 @@ namespace oomtm450PuckMod_Stats {
         private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
 
         private Ray _rayBottomLeft;
-        private LineRenderer _lineRendererBottomLeft;
+        //private LineRenderer _lineRendererBottomLeft;
 
         private Ray _rayBottomRight;
         //private LineRenderer _lineRendererBottomRight;
@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Stats {
         private Ray _rayFarBottomRight;
         //private LineRenderer _lineRendererFarBottomRight;
 
-        private readonly Material _noHitMaterial = new Material(Shader.Find("Shader Graphs/Stick Shader"));
+        //private readonly Material _noHitMaterial = new Material(Shader.Find("Shader Graphs/Stick Shader"));
         //private readonly Material _hitMaterial = new Material(Shader.Find("Shader Graphs/Stick Simple"));
 
         private Vector3 _startingPosition;
@@ -41,8 +41,8 @@ namespace oomtm450PuckMod_Stats {
         };
 
         internal void Start() {
-            _lineRendererBottomLeft = CreateLineRenderer();
-            /*_lineRendererBottomRight = CreateLineRenderer();
+            /*_lineRendererBottomLeft = CreateLineRenderer();
+            _lineRendererBottomRight = CreateLineRenderer();
             _lineRendererFarBottomLeft = CreateLineRenderer();
             _lineRendererFarBottomRight = CreateLineRenderer();*/
 
@@ -83,11 +83,11 @@ namespace oomtm450PuckMod_Stats {
             Vector3 leftVector = transform.position + Vector3.Cross(Vector3.down, direction.normalized).normalized * RIGHT_OFFSET;
             Vector3 rightVector = transform.position + Vector3.Cross(Vector3.up, direction.normalized).normalized * RIGHT_OFFSET;
 
-            _lineRendererBottomLeft.SetPosition(0, _rayBottomLeft.origin);
+            /*_lineRendererBottomLeft.SetPosition(0, _rayBottomLeft.origin);
             _lineRendererBottomLeft.SetPosition(1, _rayBottomLeft.origin + (_rayBottomLeft.direction * puckSpeedDelta));
             _lineRendererBottomLeft.material = _noHitMaterial;
 
-            /*_lineRendererBottomRight.SetPosition(0, _rayBottomRight.origin);
+            _lineRendererBottomRight.SetPosition(0, _rayBottomRight.origin);
             _lineRendererBottomRight.SetPosition(1, _rayBottomRight.origin + (_rayBottomRight.direction * puckSpeedDelta));
             _lineRendererBottomRight.material = _noHitMaterial;
 
@@ -151,13 +151,13 @@ namespace oomtm450PuckMod_Stats {
             return layerMask;
         }
 
-        private LineRenderer CreateLineRenderer() {
+        /*private LineRenderer CreateLineRenderer() {
             LineRenderer lineRenderer = new GameObject().gameObject.AddComponent<LineRenderer>();
             lineRenderer.useWorldSpace = true;
             lineRenderer.startWidth = 0.0275f;
             lineRenderer.endWidth = 0.0275f;
             lineRenderer.material = _noHitMaterial;
             return lineRenderer;
-        }
+        }*/
     }
 }
