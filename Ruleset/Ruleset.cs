@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.27.0DEV1";
+        private static readonly string MOD_VERSION = "0.27.0DEV4";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -305,6 +305,10 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Blue, 0 },
             { PlayerTeam.Red, 0 },
         };
+
+        private static FaceOffBoundaryManager _boundaryManager;
+        private static FaceOffPlayerUnfreezer _playerUnfreezer;
+        private static FaceOffPuckValidator _puckValidator;
 
         // Client-side.
         private static RefSignals _refSignalsBlueTeam = null;
@@ -1996,8 +2000,6 @@ namespace oomtm450PuckMod_Ruleset {
             if (!ServerFunc.IsDedicatedServer())
                 return;
 
-            Logging.Log("Event_OnClientConnected", ServerConfig);
-
             try {
                 if (NetworkManager.Singleton != null && NetworkManager.Singleton.CustomMessagingManager != null && !_hasRegisteredWithNamedMessageHandler) {
                     Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT_TO_SERVER}.", ServerConfig);
@@ -2028,8 +2030,6 @@ namespace oomtm450PuckMod_Ruleset {
         public static void Event_OnClientDisconnected(Dictionary<string, object> message) {
             if (!ServerFunc.IsDedicatedServer())
                 return;
-
-            Logging.Log("Event_OnClientDisconnected", ServerConfig);
 
             try {
                 ulong clientId = (ulong)message["clientId"];
@@ -2063,7 +2063,23 @@ namespace oomtm450PuckMod_Ruleset {
                 PlayerFunc.Players_ClientId_SteamId.Remove(clientId);
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnClientDisconnected.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_OnClientDisconnected)}.\n{ex}", ServerConfig);
+            }
+        }
+
+        private void Event_OnPlayerBodySpawned(Dictionary<string, object> message) {
+            if (!ServerFunc.IsDedicatedServer())
+                return;
+
+            try {
+                // Prevent the default freeze behavior during faceoffs.
+                if (GameManager.Instance.GameState.Value.Phase == GamePhase.FaceOff) {
+                    PlayerBodyV2 playerBody = (PlayerBodyV2)message["playerBody"];
+                    _playerUnfreezer?.RegisterPlayer(playerBody);
+                }
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(Event_OnPlayerBodySpawned)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -2282,12 +2298,28 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.Instance.AddEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     EventManager.Instance.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
+                    EventManager.Instance.AddEventListener("Event_OnPlayerBodySpawned", Event_OnPlayerBodySpawned);
                 }
                 else {
                     //EventManager.Instance.AddEventListener("Event_Client_OnClientStarted", Event_Client_OnClientStarted);
                     EventManager.Instance.AddEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
                     EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                 }
+
+                // Create boundary manager
+                GameObject boundaryManagerObj = new GameObject("FaceOffBoundaryManager");
+                _boundaryManager = boundaryManagerObj.AddComponent<FaceOffBoundaryManager>();
+                UnityEngine.Object.DontDestroyOnLoad(boundaryManagerObj);
+
+                // Create player unfreezer/tether system
+                GameObject playerUnfreezerObj = new GameObject("FaceOffPlayerUnfreezer");
+                _playerUnfreezer = playerUnfreezerObj.AddComponent<FaceOffPlayerUnfreezer>();
+                UnityEngine.Object.DontDestroyOnLoad(playerUnfreezerObj);
+
+                // Create puck validator
+                GameObject puckValidatorObj = new GameObject("FaceOffPuckValidator");
+                _puckValidator = puckValidatorObj.AddComponent<FaceOffPuckValidator>();
+                UnityEngine.Object.DontDestroyOnLoad(puckValidatorObj);
 
                 _harmonyPatched = true;
                 _logic = true;
@@ -2329,6 +2361,7 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
                     EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     EventManager.Instance.RemoveEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
+                    EventManager.Instance.RemoveEventListener("Event_OnPlayerBodySpawned", Event_OnPlayerBodySpawned);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
@@ -2354,6 +2387,21 @@ namespace oomtm450PuckMod_Ruleset {
                     _refSignalsRedTeam.StopAllSignals();
                     _refSignalsRedTeam.DestroyGameObjects();
                     _refSignalsRedTeam = null;
+                }
+
+                if (_boundaryManager != null) {
+                    UnityEngine.Object.Destroy(_boundaryManager.gameObject);
+                    _boundaryManager = null;
+                }
+
+                if (_playerUnfreezer != null) {
+                    UnityEngine.Object.Destroy(_playerUnfreezer.gameObject);
+                    _playerUnfreezer = null;
+                }
+
+                if (_puckValidator != null) {
+                    UnityEngine.Object.Destroy(_puckValidator.gameObject);
+                    _puckValidator = null;
                 }
 
                 _harmony.UnpatchSelf();

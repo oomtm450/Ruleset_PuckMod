@@ -311,7 +311,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             try {
                 MonoBehaviourSingleton<EventManager>.Instance.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME,
-                    new Dictionary<string, object> { { "instantfaceoff", Ruleset.NextFaceoffSpot } });
+                    new Dictionary<string, object> { { Codebase.Constants.INSTANT_FACEOFF, ((ushort)Ruleset.NextFaceoffSpot).ToString() } });
 
                 // Clear the flag after a short delay to allow the restart to complete
                 StartCoroutine(ClearRestartFlagAfterDelay());

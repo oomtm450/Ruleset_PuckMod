@@ -179,8 +179,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                     tether.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
                 }
             }
-
-            Logging.Log($"Froze {_playerTethers.Count} players before puck drop", Ruleset.ServerConfig); // TODO
         }
 
         public void ReloadConfig() {
@@ -281,8 +279,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 if (Mathf.Abs(clampedPos.x - currentPos.x) > 0.01f)
                     velocity.x = 0f;
                 tether.PlayerBody.Rigidbody.linearVelocity = velocity;
-
-                Logging.Log($"Tethered {tether.PlayerBody.Player.Username.Value} back from {currentPos} to {clampedPos}", Ruleset.ServerConfig); // TODO
             }
         }
     }
