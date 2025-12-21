@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.0";
+        private static readonly string MOD_VERSION = "0.7.0DEV2";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -226,7 +226,7 @@ namespace oomtm450PuckMod_Stats {
 
         private static PlayerTeam _lastTeamOnPuckTipIncluded = PlayerTeam.Blue;
 
-        private static PlayerTeam _lastTeamOnPuck = PlayerTeam.Blue;
+        //private static PlayerTeam _lastTeamOnPuck = PlayerTeam.Blue;
 
         private static PuckRaycast _puckRaycast;
 
@@ -561,7 +561,7 @@ namespace oomtm450PuckMod_Stats {
                     _sentOutOfDateMessage.Clear();
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_ResetGameState_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_ResetGameState_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -919,23 +919,25 @@ namespace oomtm450PuckMod_Stats {
                     _lastTeamOnPuckTipIncluded = player.Team.Value;
 
                     if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled)) {
-                        _lastTeamOnPuck = player.Team.Value;
+                        //_lastTeamOnPuck = player.Team.Value;
                         _lastPlayerOnPuckSteamId[player.Team.Value] = (playerSteamId, DateTime.UtcNow);
                     }
-
-                    if (!_playersLastTimePuckPossession.TryGetValue(playerSteamId, out Stopwatch watch)) {
-                        watch = new Stopwatch();
-                        watch.Start();
-                        _playersLastTimePuckPossession.Add(playerSteamId, watch);
-                    }
-
-                    watch.Restart();
 
                     // Takeaways/turnovers logic.
                     if (!PlayerFunc.IsGoalie(player)) {
                         string currentPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds,
                         ServerConfig.MaxTippedMilliseconds, _playersLastTimePuckPossession, _playersCurrentPuckTouch);
                         if (!string.IsNullOrEmpty(currentPossessionSteamId)) {
+                            if (currentPossessionSteamId == playerSteamId) {
+                                if (!_playersLastTimePuckPossession.TryGetValue(playerSteamId, out Stopwatch watch)) {
+                                    watch = new Stopwatch();
+                                    watch.Start();
+                                    _playersLastTimePuckPossession.Add(playerSteamId, watch);
+                                }
+
+                                watch.Restart();
+                            }
+
                             Player possessionPlayer = PlayerManager.Instance.GetPlayerBySteamId(currentPossessionSteamId);
 
                             if (PlayerFunc.IsPlayerPlaying(possessionPlayer)) {
@@ -999,7 +1001,7 @@ namespace oomtm450PuckMod_Stats {
                     _lastTeamOnPuckTipIncluded = stick.Player.Team.Value;
 
                     if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled)) {
-                        _lastTeamOnPuck = stick.Player.Team.Value;
+                        //_lastTeamOnPuck = stick.Player.Team.Value;
                         _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = (playerSteamId, DateTime.UtcNow);
                     }
                 }
@@ -1769,7 +1771,7 @@ namespace oomtm450PuckMod_Stats {
                         _askForKick = true;
                         break;
 
-                    case Constants.MOD_NAME + "_kick": // SERVER-SIDE : Kick the client that asked to be kicked.
+                    case Constants.MOD_NAME + "_kick": // SERVER-SIDE : Warn the client that the mod is out of date.
                         if (dataStr != "1")
                             break;
 

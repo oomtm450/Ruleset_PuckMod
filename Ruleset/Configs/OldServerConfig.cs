@@ -14,27 +14,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool LogInfo { get; } = true;
 
         /// <summary>
-        /// Bool, true if the custom faceoff (any faceoff not in center) should be used.
-        /// </summary>
-        public bool UseCustomFaceoff { get; } = true;
-
-        /// <summary>
-        /// Bool, the game rounds down the time remaining on every faceoff.
-        /// This readds 1 second on every faceoff so the game doesn't end too quickly.
-        /// </summary>
-        public bool ReAdd1SecondAfterFaceoff { get; } = true;
-
-        /// <summary>
-        /// Bool, true if the height of the puck drop on faceoffs shouldn't be modified.
-        /// </summary>
-        public bool UseDefaultPuckDropHeight { get; } = false;
-
-        /// <summary>
-        /// Float, height of the puck drop on faceoffs.
-        /// </summary>
-        public float PuckDropHeight { get; } = 1.1f;
-
-        /// <summary>
         /// OldOffsideConfig, config related to offsides.
         /// </summary>
         public OldOffsideConfig Offside { get; } = new OldOffsideConfig();
@@ -58,6 +37,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// OldPenaltyConfig, config related to penalties.
         /// </summary>
         public OldPenaltyConfig Penalty { get; } = new OldPenaltyConfig();
+
+        /// <summary>
+        /// OldFaceoffConfig, config related to faceoffs.
+        /// </summary>
+        public OldFaceoffConfig Faceoff { get; } = new OldFaceoffConfig();
 
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
@@ -298,6 +282,100 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
         public float GoalieRadius { get; } = 0.8f; // TODO : Change after release.
+
+        /// <summary>
+        /// Method that updates this config with the new default values, if the old default values were used.
+        /// </summary>
+        /// <param name="oldConfig">ISubConfig, config with old values.</param>
+        /// <exception cref="System.NotImplementedException">The old configs UpdateDefaultValues are not to be used.</exception>
+        public void UpdateDefaultValues(ISubConfig oldConfig) {
+            throw new System.NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Class containing the old config for goalie interferences.
+    /// </summary>
+    public class OldFaceoffConfig : ISubConfig {
+        /// <summary>
+        /// Bool, true if the custom faceoff (any faceoff not in center) should be used.
+        /// </summary>
+        public bool UseCustomFaceoff { get; } = true;
+
+        /// <summary>
+        /// Bool, the game rounds down the time remaining on every faceoff.
+        /// This readds 1 second on every faceoff so the game doesn't end too quickly.
+        /// </summary>
+        public bool ReAdd1SecondAfterFaceoff { get; } = true;
+
+        /// <summary>
+        /// Bool, true if the height of the puck drop on faceoffs shouldn't be modified.
+        /// </summary>
+        public bool UseDefaultPuckDropHeight { get; } = false;
+
+        /// <summary>
+        /// Float, height of the puck drop on faceoffs.
+        /// </summary>
+        public float PuckDropHeight { get; } = 1.1f;
+
+        /// <summary>
+        /// Bool, true if the faceoff violations module is enabled.
+        /// </summary>
+        public bool EnableViolations { get; } = true;
+
+        /// <summary>
+        /// Float, maximum height for the puck to be touched on faceoff.
+        /// </summary>
+        public float PuckIceContactHeight { get; } = 0.3f;
+
+        /// <summary>
+        /// Int, maximum of faceoff violations before getting penalized.
+        /// </summary>
+        public int MaxViolationsBeforePenalty { get; } = 2;
+
+        /// <summary>
+        /// Float, distance to teleport the penalized player.
+        /// </summary>
+        public float PenaltyFreezeDistance { get; } = 5f;
+
+        /// <summary>
+        /// Float, how long to freeze the penalized player.
+        /// </summary>
+        public float PenaltyFreezeDuration { get; } = 5f;
+
+        /// <summary>
+        /// Bool, true if players has to be freezed before puck drops.
+        /// </summary>
+        public bool FreezePlayersBeforeDrop { get; } = true;
+
+        /// <summary>
+        /// Float, number of seconds to freeze players before faceoff ends.
+        /// </summary>
+        public float FreezeBeforeDropTime { get; } = 2.999f;
+
+        // Center position settings
+        public float CenterMaxForward { get; } = 0;       // Centers can't move forward at all
+        public float CenterMaxBackward { get;} = 2f;    // Backward wall
+        public float CenterMaxLeft { get; } = 1f;        // Limited side movement
+        public float CenterMaxRight { get; } = 1f;
+
+        // Winger settings
+        public float WingerMaxForward { get; } = 1f;     // Wingers can move forward a bit
+        public float WingerMaxBackward { get; } = 2f;    // Backward wall
+        public float WingerMaxToward { get; } = 0;      // Limited movement toward center (inward wall)
+        public float WingerMaxAway { get; } = 5f;       // More movement away from center (outward wall toward boards)
+
+        // Defense settings
+        public float DefenseMaxForward { get; } = 0;      // Defense can't move forward at all
+        public float DefenseMaxBackward { get; } = 0f;   // Backward wall
+        public float DefenseMaxToward { get; } = 5f;     // Movement toward center
+        public float DefenseMaxAway { get; } = 5f;      // Movement away from center (toward boards)
+
+        // Goalie settings
+        public float GoalieMaxForward { get; } = 2f;     // Minimal forward movement
+        public float GoalieMaxBackward { get; } = 2f;    // Backward wall
+        public float GoalieMaxLeft { get; } = 2f;
+        public float GoalieMaxRight { get; } = 2f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.

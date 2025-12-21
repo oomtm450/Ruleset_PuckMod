@@ -35,25 +35,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool UseDefaultNumericValues { get; set; } = true;
 
         /// <summary>
-        /// Bool, true if the custom faceoff (any faceoff not in center) should be used.
+        /// FaceoffConfig, config related to faceoffs.
         /// </summary>
-        public bool UseCustomFaceoff { get; set; } = true;
-
-        /// <summary>
-        /// Bool, the game rounds down the time remaining on every faceoff.
-        /// This readds 1 second on every faceoff so the game doesn't end too quickly.
-        /// </summary>
-        public bool ReAdd1SecondAfterFaceoff { get; set; } = true;
-
-        /// <summary>
-        /// Bool, true if the height of the puck drop on faceoffs shouldn't be modified.
-        /// </summary>
-        public bool UseDefaultPuckDropHeight { get; set; } = false;
-
-        /// <summary>
-        /// Float, height of the puck drop on faceoffs.
-        /// </summary>
-        public float PuckDropHeight { get; set; } = 1.1f;
+        public FaceoffConfig Faceoff { get; set; } = new FaceoffConfig();
 
         /// <summary>
         /// OffsideConfig, config related to offsides.
@@ -111,18 +95,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             //if (LogInfo == _oldConfig.LogInfo)
                 //LogInfo = newConfig.LogInfo;
 
-            if (UseCustomFaceoff == _oldConfig.UseCustomFaceoff)
-                UseCustomFaceoff = newConfig.UseCustomFaceoff;
-
-            if (ReAdd1SecondAfterFaceoff == _oldConfig.ReAdd1SecondAfterFaceoff)
-                ReAdd1SecondAfterFaceoff = newConfig.ReAdd1SecondAfterFaceoff;
-
-            if (UseDefaultPuckDropHeight == _oldConfig.UseDefaultPuckDropHeight)
-                UseDefaultPuckDropHeight = newConfig.UseDefaultPuckDropHeight;
-
-            if (PuckDropHeight == _oldConfig.PuckDropHeight)
-                PuckDropHeight = newConfig.PuckDropHeight;
-
             if (MaxTippedMilliseconds == _oldConfig.MaxTippedMilliseconds)
                 MaxTippedMilliseconds = newConfig.MaxTippedMilliseconds;
 
@@ -137,6 +109,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             HighStick.UpdateDefaultValues(_oldConfig.HighStick);
             GInt.UpdateDefaultValues(_oldConfig.GInt);
             Penalty.UpdateDefaultValues(_oldConfig.Penalty);
+            Faceoff.UpdateDefaultValues(_oldConfig.Faceoff);
         }
 
         /// <summary>
@@ -187,10 +160,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 if (config.UseDefaultNumericValues) {
                     ServerConfig defaultConfig = new ServerConfig {
                         LogInfo = config.LogInfo,
-                        UseCustomFaceoff = config.UseCustomFaceoff,
-                        UseDefaultPuckDropHeight = config.UseDefaultPuckDropHeight,
-                        UseDefaultNumericValues = config.UseDefaultNumericValues,
-                        ReAdd1SecondAfterFaceoff = config.ReAdd1SecondAfterFaceoff,
                         GInt = new GIntConfig {
                             BlueTeam = config.GInt.BlueTeam,
                             RedTeam = config.GInt.RedTeam,
@@ -209,6 +178,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                             RedTeam = config.HighStick.RedTeam,
                         },
                         Penalty = new PenaltyConfig {
+                        },
+                        Faceoff = new FaceoffConfig { // TODO
+
                         },
                     };
 
@@ -550,6 +522,163 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (GoalieRadius == _oldConfig.GoalieRadius)
                 GoalieRadius = newConfig.GoalieRadius;
+        }
+    }
+
+    /// <summary>
+    /// Class containing the config for faceoffs.
+    /// </summary>
+    public class FaceoffConfig : ISubConfig {
+        /// <summary>
+        /// Bool, true if the custom faceoff (any faceoff not in center) should be used.
+        /// </summary>
+        public bool UseCustomFaceoff { get; set; } = true;
+
+        /// <summary>
+        /// Bool, the game rounds down the time remaining on every faceoff.
+        /// This readds 1 second on every faceoff so the game doesn't end too quickly.
+        /// </summary>
+        public bool ReAdd1SecondAfterFaceoff { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if the height of the puck drop on faceoffs shouldn't be modified.
+        /// </summary>
+        public bool UseDefaultPuckDropHeight { get; set; } = false;
+
+        /// <summary>
+        /// Float, height of the puck drop on faceoffs.
+        /// </summary>
+        public float PuckDropHeight { get; set; } = 1.1f;
+
+        /// <summary>
+        /// Bool, true if the faceoff violations module is enabled.
+        /// </summary>
+        public bool EnableViolations { get; set; } = true;
+
+        /// <summary>
+        /// Float, maximum height for the puck to be touched on faceoff.
+        /// </summary>
+        public float PuckIceContactHeight { get; set; } = 0.3f;
+
+        /// <summary>
+        /// Int, maximum of faceoff violations before getting penalized.
+        /// </summary>
+        public int MaxViolationsBeforePenalty { get; set; } = 2;
+
+        /// <summary>
+        /// Float, distance to teleport the penalized player.
+        /// </summary>
+        public float PenaltyFreezeDistance { get; set; } = 5f;
+
+        /// <summary>
+        /// Float, how long to freeze the penalized player.
+        /// </summary>
+        public float PenaltyFreezeDuration { get; set; } = 5f;
+
+        /// <summary>
+        /// Bool, true if players has to be freezed before puck drops.
+        /// </summary>
+        public bool FreezePlayersBeforeDrop { get; set; } = true;
+
+        /// <summary>
+        /// Float, number of seconds to freeze players before faceoff ends.
+        /// </summary>
+        public float FreezeBeforeDropTime { get; set; } = 2.999f;
+
+        // Center position settings
+        public float CenterMaxForward { get; set; } = 0;       // Centers can't move forward at all
+        public float CenterMaxBackward { get; set; } = 2f;    // Backward wall
+        public float CenterMaxLeft { get; set; } = 1f;        // Limited side movement
+        public float CenterMaxRight { get; set; } = 1f;
+
+        // Winger settings
+        public float WingerMaxForward { get; set; } = 1f;     // Wingers can move forward a bit
+        public float WingerMaxBackward { get; set; } = 2f;    // Backward wall
+        public float WingerMaxToward { get; set; } = 0;      // Limited movement toward center (inward wall)
+        public float WingerMaxAway { get; set; } = 5f;       // More movement away from center (outward wall toward boards)
+
+        // Defense settings
+        public float DefenseMaxForward { get; set; } = 0;      // Defense can't move forward at all
+        public float DefenseMaxBackward { get; set; } = 0f;   // Backward wall
+        public float DefenseMaxToward { get; set; } = 5f;     // Movement toward center
+        public float DefenseMaxAway { get; set; } = 5f;      // Movement away from center (toward boards)
+
+        // Goalie settings
+        public float GoalieMaxForward { get; set; } = 2f;     // Minimal forward movement
+        public float GoalieMaxBackward { get; set; } = 2f;    // Backward wall
+        public float GoalieMaxLeft { get; set; } = 2f;
+        public float GoalieMaxRight { get; set; } = 2f;
+
+        /// <summary>
+        /// Method that updates this config with the new default values, if the old default values were used.
+        /// </summary>
+        /// <param name="oldConfig">ISubConfig, config with old values.</param>
+        public void UpdateDefaultValues(ISubConfig oldConfig) {
+            if (!(oldConfig is OldFaceoffConfig))
+                throw new ArgumentException($"{nameof(oldConfig)} has to be typeof {nameof(OldFaceoffConfig)}.", nameof(oldConfig));
+
+            OldFaceoffConfig _oldConfig = oldConfig as OldFaceoffConfig;
+            FaceoffConfig newConfig = new FaceoffConfig();
+
+            if (UseCustomFaceoff == _oldConfig.UseCustomFaceoff)
+                UseCustomFaceoff = newConfig.UseCustomFaceoff;
+
+            if (ReAdd1SecondAfterFaceoff == _oldConfig.ReAdd1SecondAfterFaceoff)
+                ReAdd1SecondAfterFaceoff = newConfig.ReAdd1SecondAfterFaceoff;
+
+            if (UseDefaultPuckDropHeight == _oldConfig.UseDefaultPuckDropHeight)
+                UseDefaultPuckDropHeight = newConfig.UseDefaultPuckDropHeight;
+
+            if (PuckDropHeight == _oldConfig.PuckDropHeight)
+                PuckDropHeight = newConfig.PuckDropHeight;
+
+            if (EnableViolations == _oldConfig.EnableViolations)
+                EnableViolations = newConfig.EnableViolations;
+
+            if (PuckIceContactHeight == _oldConfig.PuckIceContactHeight)
+                PuckIceContactHeight = newConfig.PuckIceContactHeight;
+
+            if (MaxViolationsBeforePenalty == _oldConfig.MaxViolationsBeforePenalty)
+                MaxViolationsBeforePenalty = newConfig.MaxViolationsBeforePenalty;
+
+            if (PenaltyFreezeDistance == _oldConfig.PenaltyFreezeDistance)
+                PenaltyFreezeDistance = newConfig.PenaltyFreezeDistance;
+
+            if (PenaltyFreezeDuration == _oldConfig.PenaltyFreezeDuration)
+                PenaltyFreezeDuration = newConfig.PenaltyFreezeDuration;
+
+            if (FreezePlayersBeforeDrop == _oldConfig.FreezePlayersBeforeDrop)
+                FreezePlayersBeforeDrop = newConfig.FreezePlayersBeforeDrop;
+
+            if (FreezeBeforeDropTime == _oldConfig.FreezeBeforeDropTime)
+                FreezeBeforeDropTime = newConfig.FreezeBeforeDropTime;
+
+            if (WingerMaxForward == _oldConfig.WingerMaxForward)
+                WingerMaxForward = newConfig.WingerMaxForward;
+            if (WingerMaxBackward == _oldConfig.WingerMaxBackward)
+                WingerMaxBackward = newConfig.WingerMaxBackward;
+            if (WingerMaxToward == _oldConfig.WingerMaxToward)
+                WingerMaxToward = newConfig.WingerMaxToward;
+            if (WingerMaxAway == _oldConfig.WingerMaxAway)
+                WingerMaxAway = newConfig.WingerMaxAway;
+
+            if (DefenseMaxForward == _oldConfig.DefenseMaxForward)
+                DefenseMaxForward = newConfig.DefenseMaxForward;
+            if (DefenseMaxBackward == _oldConfig.DefenseMaxBackward)
+                DefenseMaxBackward = newConfig.DefenseMaxBackward;
+            if (DefenseMaxToward == _oldConfig.DefenseMaxToward)
+                DefenseMaxToward = newConfig.DefenseMaxToward;
+            if (DefenseMaxAway == _oldConfig.DefenseMaxAway)
+                DefenseMaxAway = newConfig.DefenseMaxAway;
+
+            if (GoalieMaxForward == _oldConfig.GoalieMaxForward)
+                GoalieMaxForward = newConfig.GoalieMaxForward;
+            if (GoalieMaxBackward == _oldConfig.GoalieMaxBackward)
+                GoalieMaxBackward = newConfig.GoalieMaxBackward;
+            if (GoalieMaxLeft == _oldConfig.GoalieMaxLeft)
+                GoalieMaxLeft = newConfig.GoalieMaxLeft;
+            if (GoalieMaxRight == _oldConfig.GoalieMaxRight)
+                GoalieMaxRight = newConfig.GoalieMaxRight;
         }
     }
 }

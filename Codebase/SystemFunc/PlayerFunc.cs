@@ -121,13 +121,13 @@ namespace Codebase {
                 .ToDictionary(x => x.Key, x => x.Value);
 
             /*if (!checkForChallenge && playersCurrentPuckTouch.Count != 0) {
-                Logging.Log($"playersCurrentPuckTouch milliseconds : {playersCurrentPuckTouch.First().Value.ElapsedMilliseconds}", _serverConfig, true);
+                Logging.Log($"playersCurrentPuckTouch milliseconds : {playersCurrentPuckTouch.First().Value.ElapsedMilliseconds}", ServerConfig, true);
             }*/
 
             /*if (!checkForChallenge) {
-                Logging.Log($"Number of possession found : {dict.Count}", _serverConfig, true);
+                Logging.Log($"Number of possession found : {dict.Count}", ServerConfig, true);
                 if (playersLastTimePuckPossession.Count != 0)
-                    Logging.Log($"Possession milliseconds : {playersLastTimePuckPossession.First().Value.ElapsedMilliseconds}", _serverConfig, true);
+                    Logging.Log($"Possession milliseconds : {playersLastTimePuckPossession.First().Value.ElapsedMilliseconds}", ServerConfig, true);
             }*/
 
             if (dict.Count > 1) { // Puck possession is challenged.
@@ -148,10 +148,10 @@ namespace Codebase {
                 .Select(x => x.Key).ToList();
 
             /*if (!checkForChallenge && steamIds.Count != 0) {
-                Logging.Log($"Possession {steamIds.First()}.", _serverConfig, true);
+                Logging.Log($"Possession {steamIds.First()}.", ServerConfig, true);
             }
             else if (!checkForChallenge) {
-                Logging.Log($"No extra possession.", _serverConfig, true);
+                Logging.Log($"No extra possession.", ServerConfig, true);
             }*/
 
             if (steamIds.Count != 0)
