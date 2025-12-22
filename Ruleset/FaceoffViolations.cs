@@ -12,7 +12,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         private class PlayerTether {
             internal PlayerBodyV2 PlayerBody { get; set; }
             internal Vector3 SpawnPosition { get; set; }
-            internal PlayerRole Role { get; set; }
             internal float MaxForwardDistance { get; set; }
             internal float MaxBackwardDistance { get; set; }
             internal float MaxLeftDistance { get; set; }
@@ -79,7 +78,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             _playerTethers.RemoveAll(t => t.PlayerBody == playerBody);
 
             // Get player role and position AFTER ruleset has positioned them
-            PlayerRole role = playerBody.Player.Role.Value;
             string positionName = playerBody.Player.PlayerPosition?.Name ?? "Unknown";
             Vector3 spawnPos = playerBody.transform.position;
 
@@ -87,7 +85,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             PlayerTether tether = new PlayerTether {
                 PlayerBody = playerBody,
                 SpawnPosition = spawnPos,
-                Role = role,
                 MaxForwardDistance = GetMaxForwardDistance(positionName),
                 MaxBackwardDistance = GetMaxBackwardDistance(positionName),
                 MaxLeftDistance = GetMaxLeftDistance(positionName),
