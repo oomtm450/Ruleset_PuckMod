@@ -44,7 +44,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         private bool _isFaceOffActive = false;
         private bool _puckTouchedIce = false;
         private bool _isMonitoring = false;
-        private float _puckDropHeight = 999f; // Track puck height at start
+        private float _puckDropHeight = float.MaxValue; // Track puck height at start
         private readonly Dictionary<ulong, PlayerViolation> _playerViolations = new Dictionary<ulong, PlayerViolation>();
         private readonly List<Player> _frozenPlayers = new List<Player>();
 
