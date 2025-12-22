@@ -1854,7 +1854,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void IcingStaminaDrain() {
-            if (!ServerConfig.Icing.StaminaDrain)
+            if (_lastStoppageReason != Rule.Icing || !ServerConfig.Icing.StaminaDrain)
                 return;
 
             PlayerTeam icingTeam = PlayerTeam.Blue;
@@ -1909,7 +1909,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                     case Codebase.Constants.INSTANT_FACEOFF:
                         NextFaceoffSpot = (FaceoffSpot)ushort.Parse(value);
-                        _lastStoppageReason = Rule.None;
                         DoFaceoff("", "", 0, 0, false);
                         break;
                 }
