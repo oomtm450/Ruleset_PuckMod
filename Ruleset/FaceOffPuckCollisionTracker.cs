@@ -38,7 +38,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         private class PlayerViolation {
             internal Player Player;
             internal int ViolationCount;
-            internal float LastViolationTime;
         }
 
         private bool _isFaceOffActive = false;
@@ -143,20 +142,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 _playerViolations[clientId] = new PlayerViolation {
                     Player = violatingPlayer,
                     ViolationCount = 0,
-                    LastViolationTime = Time.time,
                 };
             }
 
             PlayerViolation violation = _playerViolations[clientId];
-
-            // Check if this is a consecutive violation (within short time window)
-            if (Time.time - violation.LastViolationTime > 10f) {
-                // Reset count if it's been more than 10 seconds since last violation
-                violation.ViolationCount = 0;
-            }
-
             violation.ViolationCount++;
-            violation.LastViolationTime = Time.time;
 
             Logging.Log($"VIOLATION! Player {violatingPlayer.Username.Value} touched puck before ice contact. Count: {violation.ViolationCount}", Ruleset.ServerConfig);
 
@@ -187,42 +177,28 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             yield return new WaitForSeconds(0.5f);
 
             if (player != null && player.PlayerBody != null) {
-                Logging.Log($"Applying penalty to {player.Username.Value} - teleporting to back wall", Ruleset.ServerConfig); // TODO
-
                 // Add to penalized players list (prevents unfreezing during faceoff)
                 FaceOffPlayerUnfreezer.PenalizedPlayers.Add(player);
 
                 // Calculate back wall position based on player position
                 Vector3 currentPos = player.PlayerBody.transform.position;
-                string positionName = player.PlayerPosition?.Name ?? "C";
-
-                // Use config value for backward distance
-                float backwardDistance = Ruleset.ServerConfig.Faceoff.PenaltyFreezeDistance;
-
-                Logging.Log($"PENALTY: Current position: {currentPos}", Ruleset.ServerConfig);
 
                 // Teleport player backward (toward their own goal)
-                // Determine team direction by checking current Z position relative to center
-                bool defendingPositiveZ = currentPos.z > 0;
                 Vector3 penaltyPos = new Vector3(
                     currentPos.x,
                     currentPos.y,
-                    currentPos.z + (defendingPositiveZ ? backwardDistance : -backwardDistance)
+                    currentPos.z + (player.Team.Value == PlayerTeam.Blue ? Ruleset.ServerConfig.Faceoff.PenaltyFreezeDistance : -Ruleset.ServerConfig.Faceoff.PenaltyFreezeDistance)
                 );
-
-                Logging.Log($"PENALTY: Teleporting to: {penaltyPos} (backward distance: {backwardDistance}, defending +Z: {defendingPositiveZ})", Ruleset.ServerConfig); // TODO
 
                 // Use Server_Teleport for proper networked teleportation
                 player.PlayerBody.Server_Teleport(penaltyPos, player.PlayerBody.transform.rotation);
                 player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
 
-                Logging.Log($"PENALTY: Player teleported, new position: {player.PlayerBody.transform.position}", Ruleset.ServerConfig); // TODO
-
                 // Freeze them at the back wall position
                 player.PlayerBody.Server_Freeze();
                 _frozenPlayers.Add(player);
 
-                Logging.Log($"Player {player.Username.Value} ({positionName}) frozen at back wall ({backwardDistance}m back) after {Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty} violations!", Ruleset.ServerConfig);
+                Logging.Log($"Player {player.Username.Value} frozen at back wall ({Ruleset.ServerConfig.Faceoff.PenaltyFreezeDistance}m back) after {Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty} violations!", Ruleset.ServerConfig);
 
                 // Unfreeze after configured duration
                 StartCoroutine(UnfreezePlayerAfterDelay(player, Ruleset.ServerConfig.Faceoff.PenaltyFreezeDuration));
