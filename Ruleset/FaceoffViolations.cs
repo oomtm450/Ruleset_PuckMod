@@ -169,11 +169,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             if (!NetworkManager.Singleton || !NetworkManager.Singleton.IsServer)
                 return;
 
-            if (!_isFaceOffActive || !Ruleset.Logic)
+            if (!_isFaceOffActive)
                 return;
 
             // Continuously freeze players during faceoff if enabled (game will unfreeze when transitioning to Playing)
-            if (Ruleset.ServerConfig.Faceoff.FreezePlayersBeforeDrop && _freezeStartTime > 0) {
+            if (_freezeStartTime > 0) {
                 float timeInFaceoff = Time.time - _freezeStartTime;
                 // Start freezing after specified time before drop
                 if (timeInFaceoff >= Ruleset.ServerConfig.Faceoff.FreezeBeforeDropTime) {

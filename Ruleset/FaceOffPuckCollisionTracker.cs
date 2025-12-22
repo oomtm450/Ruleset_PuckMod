@@ -147,7 +147,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             Logging.Log($"VIOLATION! Player {violatingPlayer.Username.Value} #{violatingPlayer.Number.Value} touched puck before ice contact. Count: {violation.ViolationCount}", Ruleset.ServerConfig);
 
-            // Always restart the faceoff first
+            // Always restart the faceoff first.
             RestartFaceoff();
 
             // Check if player has hit the penalty threshold.
