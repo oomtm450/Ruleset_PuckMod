@@ -1,4 +1,5 @@
 using Codebase;
+using SingularityGroup.HotReload;
 using System;
 using System.Collections.Generic;
 using Unity.Netcode;
@@ -13,7 +14,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         private static bool _isMonitoring;
 
         internal static void NotifyCollision(Puck puck, Stick stick) {
-            if (!_isMonitoring)
+            if (!_isMonitoring || !Ruleset.Logic)
                 return;
 
             LastStickCollision = stick;
@@ -78,7 +79,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         }
 
         private void Update() {
-            if (!_isMonitoring)
+            if (!_isMonitoring || !Ruleset.Logic)
                 return;
 
             // Monitor during faceoff and after drop
@@ -154,7 +155,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             // Check if player has hit the penalty threshold.
             if (violation.ViolationCount >= Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty) {
                 // Send penalty chat message.
-                UIChat.Instance?.Server_SendSystemChatMessage(
+                Ruleset.SystemChatMessages.Add(
                     $"⚠ PENALTY: {violatingPlayer.Username.Value} has {Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty} faceoff violations! Will be frozen after spawn."
                 );
 
@@ -164,7 +165,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
             else {
                 // Just a violation - send chat message.
-                UIChat.Instance?.Server_SendSystemChatMessage(
+                Ruleset.SystemChatMessages.Add(
                     $"⚠ Faceoff Violation: {violatingPlayer.Username.Value} touched puck before ice! Restarting... ({violation.ViolationCount}/{Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty})"
                 );
             }

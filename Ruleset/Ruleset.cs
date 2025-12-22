@@ -252,11 +252,6 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static bool _paused = false;
 
-        /// <summary>
-        /// Bool, true if the mod's logic has to be runned.
-        /// </summary>
-        private static bool _logic = true;
-
         private static bool _doFaceoff = false;
 
         /// <summary>
@@ -374,6 +369,16 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        /// <summary>
+        /// LockList of string, system chat messages to send next frame.
+        /// </summary>
+        internal static LockList<string> SystemChatMessages { get; } = new LockList<string>();
+
+        /// <summary>
+        /// Bool, true if the mod's logic has to be runned.
+        /// </summary>
+        internal static bool Logic { get; set; } = true;
+
         internal static float PuckRadius => Codebase.Constants.PUCK_RADIUS * _puckScale;
         #endregion
 
@@ -387,7 +392,7 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(Puck __instance, Collision collision) {
                 // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
+                if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing || !Logic)
                     return;
 
                 try {
@@ -499,7 +504,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
+                    if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing || !Logic)
                         return;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
@@ -605,7 +610,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(Puck __instance, Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
+                    if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing || !Logic)
                         return;
 
                     //if (!__instance.IsTouchingStick)
@@ -696,7 +701,7 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPostfix]
             public static void Postfix(Collision collision) {
                 // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
+                if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing || !Logic)
                     return;
 
                 try {
@@ -791,7 +796,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static bool Prefix(GamePhase phase, ref int time) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || !_logic)
+                    if (!ServerFunc.IsDedicatedServer() || !Logic)
                         return true;
 
                     if (Paused) {
@@ -903,7 +908,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(GamePhase phase, int time) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || !_logic)
+                    if (!ServerFunc.IsDedicatedServer() || !Logic)
                         return;
 
                     if (phase == GamePhase.FaceOff) {
@@ -934,7 +939,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static bool Prefix(ref Vector3 position, Quaternion rotation, Vector3 velocity, bool isReplay) {
                 try {
                     // If this is not the server or this is a replay or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || isReplay || !ServerConfig.Faceoff.UseCustomFaceoff || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff) || !_logic)
+                    if (!ServerFunc.IsDedicatedServer() || isReplay || !ServerConfig.Faceoff.UseCustomFaceoff || (GameManager.Instance.Phase != GamePhase.Playing && GameManager.Instance.Phase != GamePhase.FaceOff) || !Logic)
                         return true;
 
                     Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
@@ -1054,7 +1059,7 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPrefix]
             public static bool Prefix() {
                 // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
+                if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing || !Logic)
                     return true;
 
                 Puck puck = null;
@@ -1066,6 +1071,12 @@ namespace oomtm450PuckMod_Ruleset {
                 };
 
                 try {
+                    List<string> systemChatMessages = new List<string>(SystemChatMessages);
+                    SystemChatMessages.Clear();
+
+                    foreach (string message in SystemChatMessages)
+                        UIChat.Instance.Server_SendSystemChatMessage(message);
+
                     // Check if high stick has been called by an event that cannot call it off by itself.
                     foreach (PlayerTeam callHighStickTeam in new List<PlayerTeam>(_callHighStickNextFrame.Keys)) {
                         if (!_callHighStickNextFrame[callHighStickTeam])
@@ -1351,7 +1362,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static bool Prefix(Dictionary<string, object> message) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
+                    if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Playing || !Logic)
                         return true;
 
                     if (Paused)
@@ -1378,7 +1389,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static bool Prefix(PlayerTeam team, ref Player lastPlayer, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || !_logic)
+                    if (!ServerFunc.IsDedicatedServer() || !Logic)
                         return true;
 
                     bool isGoalieInt = IsGoalieInt(team);
@@ -1464,7 +1475,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static void Postfix(Vector3 position, Quaternion rotation, PlayerRole role) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || !_logic)
+                    if (!ServerFunc.IsDedicatedServer() || !Logic)
                         return;
 
                     // If this game is not started or faceoff is on the default dot (center), do not use the patch.
@@ -1540,7 +1551,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return;
 
-                    if (NextFaceoffSpot != FaceoffSpot.Center && _logic) {
+                    if (NextFaceoffSpot != FaceoffSpot.Center && Logic) {
                         foreach (Player player in PlayerManager.Instance.GetPlayers()) {
                             if (player.PlayerPosition && player.PlayerBody)
                                 player.PlayerBody.Server_Teleport(player.PlayerPosition.transform.position, player.PlayerPosition.transform.rotation);
@@ -1549,10 +1560,20 @@ namespace oomtm450PuckMod_Ruleset {
                         NextFaceoffSpot = FaceoffSpot.Center;
                     }
 
+                    if (resetPhase) {
+                        _lastStoppageReason = Rule.None;
+
+                        foreach (PlayerTeam key in new List<PlayerTeam>(_lastIcing.Keys))
+                            _lastIcing[key] = int.MinValue;
+
+                        foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
+                            _icingStaminaDrainPenaltyAmount[key] = 0;
+                    }
+
                     _sentOutOfDateMessage.Clear();
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_ResetGameState_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_ResetGameState_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -1573,7 +1594,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return false;
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in UIChat_AddChatMessage_Patch Prefix().\n{ex}", ClientConfig);
+                    Logging.LogError($"Error in {nameof(UIChat_AddChatMessage_Patch)} Prefix().\n{ex}", ClientConfig);
                 }
 
                 return true;
@@ -1893,7 +1914,7 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case Codebase.Constants.LOGIC:
-                        _logic = bool.Parse(value);
+                        Logic = bool.Parse(value);
                         break;
 
                     case "dive":
@@ -2326,7 +2347,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 _harmonyPatched = true;
-                _logic = true;
+                Logic = true;
                 return true;
             }
             catch (Exception ex) {
@@ -2413,7 +2434,7 @@ namespace oomtm450PuckMod_Ruleset {
                 Logging.Log($"Disabled.", ServerConfig, true);
 
                 _harmonyPatched = false;
-                _logic = true;
+                Logic = true;
                 return true;
             }
             catch (Exception ex) {
