@@ -111,11 +111,11 @@ namespace Codebase {
         /// </summary>
         /// <param name="checkForChallenge">Bool, false if we only check logic without challenging puck possession from other players to determine possession.</param>
         /// <returns>String, player steam Id with the possession or an empty string if no one has the puck (or it is challenged).</returns>
-        public static string GetPlayerSteamIdInPossession(int maxPossessionMilliseconds, int maxTippedMilliseconds,
+        public static string GetPlayerSteamIdInPossession(int minPossessionMilliseconds, int maxPossessionMilliseconds, int maxTippedMilliseconds,
             LockDictionary<string, Stopwatch> playersLastTimePuckPossession, LockDictionary<string, Stopwatch> playersCurrentPuckTouch, bool checkForChallenge = true) {
             Dictionary<string, Stopwatch> dict;
             dict = playersLastTimePuckPossession
-                .Where(x =>
+                .Where(x => x.Value.ElapsedMilliseconds < maxPossessionMilliseconds && x.Value.ElapsedMilliseconds > minPossessionMilliseconds &&
                     playersCurrentPuckTouch.Keys.Any(y => y == x.Key) &&
                     playersCurrentPuckTouch[x.Key].ElapsedMilliseconds > maxTippedMilliseconds)
                 .ToDictionary(x => x.Key, x => x.Value);
@@ -139,23 +139,6 @@ namespace Codebase {
 
             if (dict.Count == 1)
                 return dict.First().Key;
-
-            List<string> steamIds = playersLastTimePuckPossession
-                .Where(x => x.Value.ElapsedMilliseconds < maxPossessionMilliseconds ||
-                    (playersCurrentPuckTouch.Keys.Any(y => y == x.Key) &&
-                    playersCurrentPuckTouch[x.Key].ElapsedMilliseconds > maxTippedMilliseconds))
-                .OrderBy(x => x.Value.ElapsedMilliseconds)
-                .Select(x => x.Key).ToList();
-
-            /*if (!checkForChallenge && steamIds.Count != 0) {
-                Logging.Log($"Possession {steamIds.First()}.", ServerConfig, true);
-            }
-            else if (!checkForChallenge) {
-                Logging.Log($"No extra possession.", ServerConfig, true);
-            }*/
-
-            if (steamIds.Count != 0)
-                return steamIds.First();
 
             return "";
         }

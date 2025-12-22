@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.27.0DEV14";
+        private static readonly string MOD_VERSION = "0.27.0DEV15";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -665,7 +665,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // High stick logic.
                     if (IsHighStickEnabled(stick.Player.Team.Value) && puck &&
                         !Codebase.PlayerFunc.IsGoalie(stick.Player) &&
-                        Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MaxPossessionMilliseconds,
+                        Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds,
                             ServerConfig.MaxTippedMilliseconds, _playersLastTimePuckPossession, _playersCurrentPuckTouch, false) != currentPlayerSteamId &&
                         puck.Rigidbody.transform.position.y > ServerConfig.HighStick.MaxHeight + (stick.Player.PlayerBody.Rigidbody.transform.position.y < 0 ? 0 : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
                         if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
@@ -1132,8 +1132,8 @@ namespace oomtm450PuckMod_Ruleset {
                 };
 
                 try {
-                    string playerWithPossessionSteamId = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MaxPossessionMilliseconds,
-                        ServerConfig.MaxTippedMilliseconds, _playersLastTimePuckPossession, _playersCurrentPuckTouch);
+                    string playerWithPossessionSteamId = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds,
+                        ServerConfig.MaxPossessionMilliseconds, ServerConfig.MaxTippedMilliseconds, _playersLastTimePuckPossession, _playersCurrentPuckTouch);
 
                     if (!string.IsNullOrEmpty(playerWithPossessionSteamId)) {
                         if (!_playersLastTimePuckPossession.TryGetValue(playerWithPossessionSteamId, out Stopwatch watch)) {

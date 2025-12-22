@@ -49,6 +49,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public int MaxTippedMilliseconds { get; } = 91;
 
         /// <summary>
+        /// Int, number of milliseconds for a possession to be considered with challenge.
+        /// </summary>
+        public int MinPossessionMilliseconds { get; } = 300;
+
+        /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
         public int MaxPossessionMilliseconds { get; } = 700;
