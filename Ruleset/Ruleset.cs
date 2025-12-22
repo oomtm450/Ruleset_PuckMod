@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.27.0DEV4";
+        private static readonly string MOD_VERSION = "0.27.0DEV6";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -943,8 +943,6 @@ namespace oomtm450PuckMod_Ruleset {
                         position = new Vector3(dot.x, position.y, dot.z);
                     else
                         position = new Vector3(dot.x, ServerConfig.Faceoff.PuckDropHeight, dot.z);
-
-                    NextFaceoffSpot = FaceoffSpot.Center;
                 }
                 catch (Exception ex)  {
                     Logging.LogError($"Error in PuckManager_Server_SpawnPuck_Patch Prefix().\n{ex}", ServerConfig);
@@ -2299,27 +2297,27 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.Instance.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
                     EventManager.Instance.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     EventManager.Instance.AddEventListener("Event_OnPlayerBodySpawned", Event_OnPlayerBodySpawned);
+
+                    // Create boundary manager
+                    GameObject boundaryManagerObj = new GameObject("FaceOffBoundaryManager");
+                    _boundaryManager = boundaryManagerObj.AddComponent<FaceOffBoundaryManager>();
+                    UnityEngine.Object.DontDestroyOnLoad(boundaryManagerObj);
+
+                    // Create player unfreezer/tether system
+                    GameObject playerUnfreezerObj = new GameObject("FaceOffPlayerUnfreezer");
+                    _playerUnfreezer = playerUnfreezerObj.AddComponent<FaceOffPlayerUnfreezer>();
+                    UnityEngine.Object.DontDestroyOnLoad(playerUnfreezerObj);
+
+                    // Create puck validator
+                    GameObject puckValidatorObj = new GameObject("FaceOffPuckValidator");
+                    _puckValidator = puckValidatorObj.AddComponent<FaceOffPuckValidator>();
+                    UnityEngine.Object.DontDestroyOnLoad(puckValidatorObj);
                 }
                 else {
                     //EventManager.Instance.AddEventListener("Event_Client_OnClientStarted", Event_Client_OnClientStarted);
                     EventManager.Instance.AddEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
                     EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
                 }
-
-                // Create boundary manager
-                GameObject boundaryManagerObj = new GameObject("FaceOffBoundaryManager");
-                _boundaryManager = boundaryManagerObj.AddComponent<FaceOffBoundaryManager>();
-                UnityEngine.Object.DontDestroyOnLoad(boundaryManagerObj);
-
-                // Create player unfreezer/tether system
-                GameObject playerUnfreezerObj = new GameObject("FaceOffPlayerUnfreezer");
-                _playerUnfreezer = playerUnfreezerObj.AddComponent<FaceOffPlayerUnfreezer>();
-                UnityEngine.Object.DontDestroyOnLoad(playerUnfreezerObj);
-
-                // Create puck validator
-                GameObject puckValidatorObj = new GameObject("FaceOffPuckValidator");
-                _puckValidator = puckValidatorObj.AddComponent<FaceOffPuckValidator>();
-                UnityEngine.Object.DontDestroyOnLoad(puckValidatorObj);
 
                 _harmonyPatched = true;
                 _logic = true;

@@ -10,25 +10,22 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
     /// </summary>
     internal static class FaceOffPuckCollisionTracker {
         internal static Stick LastStickCollision { get; set; }
-        private static float _lastStickCollisionTime;
         private static bool _isMonitoring;
 
         internal static void NotifyCollision(Puck puck, Stick stick) {
             if (!_isMonitoring) return; // Only track when we're actively monitoring
 
             LastStickCollision = stick;
-            _lastStickCollisionTime = Time.time;
             Logging.Log($"PuckCollisionTracker: {stick.Player.Username.Value} stick collided with puck at y={puck.transform.position.y}", Ruleset.ServerConfig); // TODO : Remove debug logs.
         }
 
-        internal static void Reset(Puck puck) {
+        internal static void Reset() {
             _isMonitoring = true;
             LastStickCollision = null;
-            _lastStickCollisionTime = 0f;
-            Logging.Log($"PuckCollisionTracker reset and monitoring enabled at {puck.transform.position}", Ruleset.ServerConfig); // TODO : Remove debug logs.
         }
 
         internal static void StopMonitoring() {
+            Reset();
             _isMonitoring = false;
             Logging.Log($"PuckCollisionTracker monitoring stopped", Ruleset.ServerConfig); // TODO : Remove debug logs.
         }
@@ -45,22 +42,18 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         }
 
         private bool _isFaceOffActive = false;
-        private bool _puckDropped = false;
         private bool _puckTouchedIce = false;
         private bool _isMonitoring = false;
         private float _puckDropHeight = 999f; // Track puck height at start
-        private Vector3 _faceoffDotPosition = Vector3.zero;
-        private Dictionary<ulong, PlayerViolation> _playerViolations = new Dictionary<ulong, PlayerViolation>();
-        private List<Player> _frozenPlayers = new List<Player>();
-        private bool _isRestartingFaceoff = false; // Flag to prevent position update during our own restart
-        private PlayerTeam _icingTeam = default; // Track which team iced the puck
+        private readonly Dictionary<ulong, PlayerViolation> _playerViolations = new Dictionary<ulong, PlayerViolation>();
+        private readonly List<Player> _frozenPlayers = new List<Player>();
 
         private void Awake() {
-            MonoBehaviourSingleton<EventManager>.Instance.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
+            EventManager.Instance.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
         }
 
         private void OnDestroy() {
-            MonoBehaviourSingleton<EventManager>.Instance?.RemoveEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
+            EventManager.Instance?.RemoveEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
         }
 
         private void OnGamePhaseChanged(Dictionary<string, object> message) {
@@ -70,99 +63,59 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             Logging.Log($"PuckValidator phase change: {oldGamePhase} -> {newGamePhase}", Ruleset.ServerConfig); // TODO : Remove debug logs.
 
             if (newGamePhase == GamePhase.FaceOff) {
-                // Clear restart flag when a new faceoff actually starts
-                _isRestartingFaceoff = false;
-
                 // Faceoff started - prepare for monitoring
                 _isFaceOffActive = true;
-                _puckDropped = false;
                 _puckTouchedIce = false;
-                _isMonitoring = false;
-                _puckDropHeight = 999f;
+                _puckDropHeight = float.MaxValue;
+                _isMonitoring = true;
+
+                FaceOffPuckCollisionTracker.Reset();
 
                 Logging.Log($"Faceoff started - lastFaceoffPosition is currently: '{Ruleset.NextFaceoffSpot}'", Ruleset.ServerConfig); // TODO : Remove debug logs.
-
-                // Try to find faceoff dot position from puck and set up collision tracking
-                var pucks = FindObjectsByType<Puck>(FindObjectsSortMode.None);
-                if (pucks.Length != 0) {
-                    Puck puck = pucks[0];
-                    _faceoffDotPosition = puck.transform.position;
-                    _puckDropHeight = puck.transform.position.y;
-
-                    // Reset static collision tracker for this puck
-                    FaceOffPuckCollisionTracker.Reset(puck);
-                    Logging.Log("Collision tracker reset for puck", Ruleset.ServerConfig); // TODO : Remove debug logs.
-
-                    Logging.Log($"PuckValidator ready! Faceoff at {_faceoffDotPosition}, puck height: {_puckDropHeight}", Ruleset.ServerConfig); // TODO : Remove debug logs.
-                }
-
-                // Start monitoring immediately during faceoff phase
-                _isMonitoring = true;
             }
             else if (oldGamePhase == GamePhase.FaceOff) {
                 // Faceoff ended - keep monitoring
                 _isFaceOffActive = false;
-                _puckDropped = true;
-                _isMonitoring = true;
-                Logging.Log("PuckValidator ACTIVE - Phase changed from FaceOff! Monitoring for violations...", Ruleset.ServerConfig); // TODO : Remove debug logs.
+                Logging.Log($"PuckValidator ACTIVE - Phase changed from FaceOff! Monitoring for violations...", Ruleset.ServerConfig); // TODO : Remove debug logs.
             }
         }
 
         private void Update() {
-            // Remove server check - run on all instances for better detection
-            if (!_isMonitoring)
-                return;
-
-            if (!Ruleset.ServerConfig.Faceoff.EnableViolations)
+            if (!_isMonitoring || !Ruleset.ServerConfig.Faceoff.EnableViolations)
                 return;
 
             // Monitor during faceoff and after drop
-            if ((_puckDropped && !_puckTouchedIce) || _isFaceOffActive) {
-                CheckPuckDrop();
+            if (!_puckTouchedIce || _isFaceOffActive) {
+                if (_puckDropHeight == float.MaxValue) {
+                    Puck puck = PuckManager.Instance.GetPuck();
+                    if (!puck)
+                        return;
+                    _puckDropHeight = puck.transform.position.y;
+                }
+
                 CheckStickContact(); // Check stick contact BEFORE ice contact
                 CheckPuckIceContact(); // Ice contact checked last
             }
         }
 
-        private void CheckPuckDrop() {
-            if (!_isFaceOffActive)
-                return;
-
-            var pucks = FindObjectsByType<Puck>(FindObjectsSortMode.None);
-            if (pucks.Length == 0) return;
-
-            Puck puck = pucks[0];
-
-            // Detect when puck starts falling (drops below initial height)
-            if (puck.transform.position.y < _puckDropHeight - 0.2f && !_puckDropped) {
-                _puckDropped = true;
-                _puckTouchedIce = false;
-                Logging.Log($"PuckValidator: PUCK DROPPED! Height {puck.transform.position.y} (from {_puckDropHeight}) - NOW MONITORING FOR VIOLATIONS!", Ruleset.ServerConfig); // TODO : Remove debug logs.
-            }
-        }
-
         private void CheckPuckIceContact() {
-            Puck[] pucks = FindObjectsByType<Puck>(FindObjectsSortMode.None);
-            if (pucks.Length == 0)
-                return;
+            Puck puck = PuckManager.Instance.GetPuck();
 
-            Puck puck = pucks[0];
+            if (!puck)
+                return;
 
             // Check if puck has dropped below the allowed height threshold
-            if (puck.transform.position.y < Ruleset.ServerConfig.Faceoff.PuckIceContactHeight && !_puckTouchedIce) {
+            if (puck.transform.position.y < Ruleset.ServerConfig.Faceoff.PuckIceContactHeight) {
                 _puckTouchedIce = true;
                 _isMonitoring = false; // Stop monitoring
                 FaceOffPuckCollisionTracker.StopMonitoring();
-                Logging.Log($"✓ Puck dropped below height threshold ({puck.transform.position.y} <= {Ruleset.ServerConfig.Faceoff.PuckIceContactHeight}) - Faceoff VALID! Stopping monitor.", Ruleset.ServerConfig); // TODO : Remove debug logs.
+                Logging.Log($"✓ Puck dropped below height threshold ({puck.transform.position.y} < {Ruleset.ServerConfig.Faceoff.PuckIceContactHeight}) - Faceoff VALID! Stopping monitor.", Ruleset.ServerConfig); // TODO : Remove debug logs.
             }
         }
 
         private void CheckStickContact() {
-            if (_puckTouchedIce) // Already valid, no need to check
-                return;
-
             // Check if static collision tracker detected any stick contact
-            if (FaceOffPuckCollisionTracker.LastStickCollision == null || FaceOffPuckCollisionTracker.LastStickCollision.Player == null)
+            if (FaceOffPuckCollisionTracker.LastStickCollision == null || !FaceOffPuckCollisionTracker.LastStickCollision.Player)
                 return;
 
             Stick stick = FaceOffPuckCollisionTracker.LastStickCollision;
@@ -178,11 +131,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             HandlePuckViolation(stick.Player);
             _isMonitoring = false; // Stop monitoring after violation
             FaceOffPuckCollisionTracker.StopMonitoring();
-
-            // Reset tracker
-            Puck[] pucks = FindObjectsByType<Puck>(FindObjectsSortMode.None);
-            if (pucks.Length != 0)
-                FaceOffPuckCollisionTracker.Reset(pucks[0]);
         }
 
         private void HandlePuckViolation(Player violatingPlayer) {
@@ -296,14 +244,10 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
         private void RestartFaceoff() {
             // Reset monitoring
-            _puckDropped = false;
             _puckTouchedIce = false;
             _isMonitoring = false;
 
             Logging.Log($"⚠ Restarting faceoff due to violation at last position: {Ruleset.NextFaceoffSpot}", Ruleset.ServerConfig); // TODO
-
-            // Set flag to prevent position updates during our restart
-            _isRestartingFaceoff = true;
 
             // Use Ruleset mod's instant faceoff event to restart at the same spot
             if (MonoBehaviourSingleton<EventManager>.Instance == null || !NetworkManager.Singleton.IsServer)
@@ -318,7 +262,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
             catch (Exception ex) {
                 Logging.LogError($"Failed to restart faceoff.\n{ex}", Ruleset.ServerConfig);
-                _isRestartingFaceoff = false;
             }
         }
 
@@ -327,14 +270,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             yield return new WaitForSeconds(0.5f);
             // Flag will be cleared when FaceOff phase starts
             Logging.Log($"Restart delay complete, flag will clear when FaceOff phase begins", Ruleset.ServerConfig);
-        }
-
-        public void SetFaceoffPosition(Vector3 position) {
-            _faceoffDotPosition = position;
-        }
-
-        public void ReloadConfig() {
-            //Logging.Log("PuckValidator config reloaded");
         }
     }
 }

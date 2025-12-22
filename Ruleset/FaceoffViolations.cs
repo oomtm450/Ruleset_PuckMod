@@ -27,13 +27,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         public static HashSet<Player> PenalizedPlayers { get; set; } = new HashSet<Player>();
 
         private void Awake() {
-            MonoBehaviourSingleton<EventManager>.Instance.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
+            EventManager.Instance.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
         }
 
         private void OnDestroy() {
-            if (MonoBehaviourSingleton<EventManager>.Instance != null) {
-                MonoBehaviourSingleton<EventManager>.Instance.RemoveEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
-            }
+            EventManager.Instance?.RemoveEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
         }
 
         private void OnGamePhaseChanged(Dictionary<string, object> message) {
@@ -290,17 +288,15 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
     /// Manages boundary restrictions during faceoffs
     /// </summary>
     public class FaceOffBoundaryManager : MonoBehaviour {
-        private List<FaceOffBoundary> boundaries = new List<FaceOffBoundary>();
-        private GameObject centerIceBoundary;
+        private readonly List<FaceOffBoundary> _boundaries = new List<FaceOffBoundary>();
+        private GameObject _centerIceBoundary;
 
         private void Awake() {
-            MonoBehaviourSingleton<EventManager>.Instance.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
+            EventManager.Instance.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
         }
 
         private void OnDestroy() {
-            if (MonoBehaviourSingleton<EventManager>.Instance != null) {
-                MonoBehaviourSingleton<EventManager>.Instance.RemoveEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
-            }
+            EventManager.Instance?.RemoveEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
         }
 
         private void OnGamePhaseChanged(Dictionary<string, object> message) {
@@ -308,21 +304,21 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             if (newGamePhase == GamePhase.FaceOff) {
                 // Detect if faceoff is at center ice
-                var pucks = FindObjectsByType<Puck>(FindObjectsSortMode.None);
-                if (pucks.Length > 0) {
-                    Vector3 faceoffPos = pucks[0].transform.position;
-                    bool isCenterIce = Mathf.Abs(faceoffPos.z) < 2f; // Within 2m of center
+                Puck puck = PuckManager.Instance.GetPuck();
 
-                    if (centerIceBoundary != null) {
-                        centerIceBoundary.SetActive(isCenterIce);
-                        Logging.Log($"Center ice boundary {(isCenterIce ? "enabled" : "disabled")} for faceoff at {faceoffPos}", Ruleset.ServerConfig); // TODO
-                    }
+                if (!puck)
+                    return;
+
+                bool isCenterIce = Mathf.Abs(puck.transform.position.z) < 2f; // Within 2m of center
+
+                if (_centerIceBoundary != null) {
+                    _centerIceBoundary.SetActive(isCenterIce);
+                    Logging.Log($"Center ice boundary {(isCenterIce ? "enabled" : "disabled")} for faceoff at {puck.transform.position}", Ruleset.ServerConfig); // TODO
                 }
             }
         }
 
         private void Start() {
-            // Create boundary zones
             CreateBoundaries();
         }
 
@@ -335,32 +331,31 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         }
 
         private void CreateCenterIceBoundary() {
-            centerIceBoundary = new GameObject("CenterIceBoundary");
-            centerIceBoundary.transform.parent = transform;
-            centerIceBoundary.transform.position = new Vector3(0, 1f, 0); // Center of rink, 1m up
+            _centerIceBoundary = new GameObject("CenterIceBoundary");
+            _centerIceBoundary.transform.parent = transform;
+            _centerIceBoundary.transform.position = new Vector3(0, 1f, 0); // Center of rink, 1m up
 
-            BoxCollider collider = centerIceBoundary.AddComponent<BoxCollider>();
+            BoxCollider collider = _centerIceBoundary.AddComponent<BoxCollider>();
             collider.isTrigger = true;
             collider.size = new Vector3(1f, 5f, 40f); // Wall across center ice
 
-            FaceOffBoundary boundary = centerIceBoundary.AddComponent<FaceOffBoundary>();
-            boundary.boundaryType = BoundaryType.CenterIce;
-            boundaries.Add(boundary);
+            FaceOffBoundary boundary = _centerIceBoundary.AddComponent<FaceOffBoundary>();
+            boundary.BoundaryType = BoundaryType.CenterIce;
+            _boundaries.Add(boundary);
 
-            centerIceBoundary.SetActive(false);
+            _centerIceBoundary.SetActive(false);
 
             Logging.Log("Created center ice boundary at position (0, 1, 0) with size (1, 5, 40)", Ruleset.ServerConfig); // TODO
         }
 
         private void CreateFaceOffCircleBoundaries() {
             // Create boundaries at typical faceoff dot locations
-            Vector3[] faceoffPositions = new Vector3[]
-            {
-            new Vector3(0, 0, 0),      // Center ice
-            new Vector3(7f, 0, 7f),    // Blue zone - right
-            new Vector3(-7f, 0, 7f),   // Blue zone - left
-            new Vector3(7f, 0, -7f),   // Red zone - right
-            new Vector3(-7f, 0, -7f)   // Red zone - left
+            Vector3[] faceoffPositions = new Vector3[] {
+                new Vector3(0, 0, 0),      // Center ice
+                new Vector3(7f, 0, 7f),    // Blue zone - right
+                new Vector3(-7f, 0, 7f),   // Blue zone - left
+                new Vector3(7f, 0, -7f),   // Red zone - right
+                new Vector3(-7f, 0, -7f),   // Red zone - left
             };
 
             foreach (Vector3 position in faceoffPositions) {
@@ -376,48 +371,40 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 collider.direction = 1; // Y-axis
 
                 FaceOffBoundary boundary = boundaryObj.AddComponent<FaceOffBoundary>();
-                boundary.boundaryType = BoundaryType.FaceOffCircle;
-                boundary.faceoffPosition = position;
-                boundaries.Add(boundary);
+                boundary.BoundaryType = BoundaryType.FaceOffCircle;
+                boundary.FaceoffPosition = position;
+                _boundaries.Add(boundary);
 
                 boundaryObj.SetActive(false);
             }
         }
 
         public void ActivateBoundaries() {
-            foreach (var boundary in boundaries) {
-                if (boundary != null) {
-                    boundary.gameObject.SetActive(true);
-                }
-            }
-            Logging.Log("Boundaries activated", Ruleset.ServerConfig); // TODO
+            foreach (FaceOffBoundary boundary in _boundaries)
+                boundary?.gameObject.SetActive(true);
         }
 
         public void DeactivateBoundaries() {
-            foreach (var boundary in boundaries) {
-                if (boundary != null) {
-                    boundary.gameObject.SetActive(false);
-                }
-            }
-            Logging.Log("Boundaries deactivated", Ruleset.ServerConfig); // TODO
+            foreach (FaceOffBoundary boundary in _boundaries)
+                boundary?.gameObject.SetActive(false);
         }
     }
 
     public enum BoundaryType {
         CenterIce,
-        FaceOffCircle
+        FaceOffCircle,
     }
 
     /// <summary>
     /// Individual boundary component that enforces movement restrictions
     /// </summary>
-    public class FaceOffBoundary : MonoBehaviour {
-        public BoundaryType boundaryType;
-        public Vector3 faceoffPosition;
+    internal class FaceOffBoundary : MonoBehaviour {
+        internal BoundaryType BoundaryType { get; set; }
+        internal Vector3 FaceoffPosition { get; set; }
 
-        private float pushBackForce = 250f; // Increased from 50 to 250
-        private float velocityDampening = 0.7f;
-        private Dictionary<Rigidbody, Vector3> playerStartingSides = new Dictionary<Rigidbody, Vector3>();
+        private const float PUSH_BACK_FORCE = 250f;
+        private const float VELOCITY_DAMPENING = 0.7f;
+        private readonly Dictionary<Rigidbody, Vector3> _playerStartingSides = new Dictionary<Rigidbody, Vector3>();
 
         private void OnTriggerEnter(Collider other) {
             if (!NetworkManager.Singleton || !NetworkManager.Singleton.IsServer) return;
@@ -425,8 +412,8 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             // Store which side the player started on
             PlayerBodyV2 playerBody = other.GetComponentInParent<PlayerBodyV2>();
             if (playerBody != null && playerBody.Rigidbody != null) {
-                if (!playerStartingSides.ContainsKey(playerBody.Rigidbody)) {
-                    playerStartingSides[playerBody.Rigidbody] = playerBody.transform.position;
+                if (!_playerStartingSides.ContainsKey(playerBody.Rigidbody)) {
+                    _playerStartingSides[playerBody.Rigidbody] = playerBody.transform.position;
                     Logging.Log($"Player {playerBody.Player.Username.Value} registered on side: X={playerBody.transform.position.x}", Ruleset.ServerConfig); // TODO
                 }
             }
@@ -444,23 +431,23 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             // Check if it's a stick
             Stick stick = other.GetComponentInParent<Stick>();
-            if (stick != null && boundaryType == BoundaryType.FaceOffCircle) {
+            if (stick != null && BoundaryType == BoundaryType.FaceOffCircle) {
                 HandleStickBoundary(stick, other);
                 return;
             }
         }
 
         private void HandlePlayerBoundary(PlayerBodyV2 playerBody, Collider collider) {
-            if (boundaryType == BoundaryType.CenterIce && playerBody.Rigidbody != null) {
+            if (BoundaryType == BoundaryType.CenterIce && playerBody.Rigidbody != null) {
                 Vector3 currentPos = playerBody.transform.position;
 
                 // Determine which side they should stay on
                 float startingSide;
-                if (playerStartingSides.ContainsKey(playerBody.Rigidbody))
-                    startingSide = playerStartingSides[playerBody.Rigidbody].x;
+                if (_playerStartingSides.ContainsKey(playerBody.Rigidbody))
+                    startingSide = _playerStartingSides[playerBody.Rigidbody].x;
                 else {
                     startingSide = currentPos.x;
-                    playerStartingSides[playerBody.Rigidbody] = currentPos;
+                    _playerStartingSides[playerBody.Rigidbody] = currentPos;
                 }
 
                 // Strong push back to their side
@@ -472,37 +459,31 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                     pushDirection = Vector3.left;
 
                 // Apply strong force
-                playerBody.Rigidbody.AddForce(pushDirection * pushBackForce, ForceMode.Force);
+                playerBody.Rigidbody.AddForce(pushDirection * PUSH_BACK_FORCE, ForceMode.Force);
 
                 // Also dampen velocity crossing center
                 Vector3 velocity = playerBody.Rigidbody.linearVelocity;
                 if ((startingSide > 0 && velocity.x < 0) || (startingSide < 0 && velocity.x > 0)) {
-                    velocity.x *= velocityDampening;
+                    velocity.x *= VELOCITY_DAMPENING;
                     playerBody.Rigidbody.linearVelocity = velocity;
                 }
-
-                Logging.Log($"Pushing player back: direction={pushDirection}, force={pushBackForce}, startSide={startingSide}", Ruleset.ServerConfig); // TODO
             }
         }
 
         private void HandleStickBoundary(Stick stick, Collider collider) {
-            if (boundaryType == BoundaryType.FaceOffCircle) {
-                // Keep stick blade outside the faceoff circle
-                Vector3 stickBladePos = stick.BladeHandlePosition;
-                Vector3 directionFromCenter = (stickBladePos - faceoffPosition).normalized;
+            if (stick.Rigidbody == null || BoundaryType != BoundaryType.FaceOffCircle)
+                return;
 
-                float distance = Vector3.Distance(new Vector3(stickBladePos.x, 0, stickBladePos.z),
-                                                 new Vector3(faceoffPosition.x, 0, faceoffPosition.z));
+            // Keep stick blade outside the faceoff circle.
+            Vector3 stickBladePos = stick.BladeHandlePosition;
+            Vector3 directionFromCenter = (stickBladePos - FaceoffPosition).normalized;
 
-                // If stick is too close to or over the faceoff dot, push it back
-                if (distance < 0.5f) // Within faceoff dot radius
-                {
-                    if (stick.Rigidbody != null) {
-                        Vector3 pushDirection = new Vector3(directionFromCenter.x, 0, directionFromCenter.z).normalized;
-                        stick.Rigidbody.AddForce(pushDirection * pushBackForce * 2f, ForceMode.Force);
-                    }
-                }
-            }
+            if (Vector3.Distance(new Vector3(stickBladePos.x, 0, stickBladePos.z), new Vector3(FaceoffPosition.x, 0, FaceoffPosition.z)) > 0.5f)
+                return;
+
+            // If stick is too close to or over the faceoff dot, push it back.
+            Vector3 pushDirection = new Vector3(directionFromCenter.x, 0, directionFromCenter.z).normalized;
+            stick.Rigidbody.AddForce(pushDirection * PUSH_BACK_FORCE * 2f, ForceMode.Force);
         }
 
         private void OnTriggerExit(Collider other) {
@@ -511,12 +492,12 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
         private void OnDisable() {
             // Clear when boundaries deactivate
-            playerStartingSides.Clear();
+            _playerStartingSides.Clear();
         }
 
         private void OnDrawGizmos() {
             // Visualize boundaries in editor
-            Gizmos.color = boundaryType == BoundaryType.CenterIce ? Color.red : Color.yellow;
+            Gizmos.color = BoundaryType == BoundaryType.CenterIce ? Color.red : Color.yellow;
             Gizmos.DrawWireCube(transform.position, GetComponent<Collider>()?.bounds.size ?? Vector3.one);
         }
     }

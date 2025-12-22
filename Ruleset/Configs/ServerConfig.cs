@@ -558,7 +558,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, maximum height for the puck to be touched on faceoff.
         /// </summary>
-        public float PuckIceContactHeight { get; set; } = 0.3f;
+        public float PuckIceContactHeight { get; set; } = 0.2f;
 
         /// <summary>
         /// Int, maximum of faceoff violations before getting penalized.
