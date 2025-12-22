@@ -20,7 +20,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
         private readonly LockList<PlayerTether> _playerTethers = new LockList<PlayerTether>();
         private bool _isFaceOffActive = false;
-        private Vector3 _currentFaceoffDot = Vector3.zero;
         private float _freezeStartTime = -1f;
 
         internal static HashSet<Player> PenalizedPlayers { get; } = new HashSet<Player>();
@@ -37,26 +36,14 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             _isFaceOffActive = (GamePhase)message["newGamePhase"] == GamePhase.FaceOff;
 
             if (_isFaceOffActive) {
-                // Detect faceoff location from puck position
-                DetectFaceoffLocation();
-
                 // Start countdown to freeze players before puck drop
                 if (Ruleset.ServerConfig.Faceoff.FreezePlayersBeforeDrop)
                     _freezeStartTime = Time.time;
             }
             else {
                 _playerTethers.Clear();
-                _currentFaceoffDot = Vector3.zero;
                 _freezeStartTime = -1f;
             }
-        }
-
-        private void DetectFaceoffLocation() {
-            Puck puck = PuckManager.Instance.GetPuck();
-            if (!puck)
-                return;
-
-            _currentFaceoffDot = puck.transform.position;
         }
 
         internal void RegisterPlayer(PlayerBodyV2 playerBody) {
