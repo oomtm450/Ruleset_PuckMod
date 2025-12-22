@@ -195,8 +195,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         }
 
         private void FixedUpdate() {
-            if (!NetworkManager.Singleton || !NetworkManager.Singleton.IsServer) return;
-            if (!_isFaceOffActive) return;
+            if (!NetworkManager.Singleton || !NetworkManager.Singleton.IsServer)
+                return;
+
+            if (!_isFaceOffActive)
+                return;
 
             // Continuously freeze players during faceoff if enabled (game will unfreeze when transitioning to Playing)
             if (Ruleset.ServerConfig.Faceoff.FreezePlayersBeforeDrop && _freezeStartTime > 0) {

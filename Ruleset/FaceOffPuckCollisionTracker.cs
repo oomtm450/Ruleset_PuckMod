@@ -108,7 +108,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
         }
 
-        private void FixedUpdate() {
+        private void Update() {
             // Remove server check - run on all instances for better detection
             if (!_isMonitoring)
                 return;
