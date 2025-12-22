@@ -1,4 +1,5 @@
 ﻿using Codebase;
+using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -7,24 +8,23 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
     /// <summary>
     /// Tracks player positions and enforces role-based tethers during faceoffs
     /// </summary>
-    public class FaceOffPlayerUnfreezer : MonoBehaviour {
+    internal class FaceOffPlayerUnfreezer : MonoBehaviour {
         private class PlayerTether {
-            public PlayerBodyV2 PlayerBody;
-            public Vector3 SpawnPosition;
-            public PlayerRole Role;
-            public float MaxForwardDistance;
-            public float MaxBackwardDistance;
-            public float MaxLeftDistance;
-            public float MaxRightDistance;
+            internal PlayerBodyV2 PlayerBody { get; set; }
+            internal Vector3 SpawnPosition { get; set; }
+            internal PlayerRole Role { get; set; }
+            internal float MaxForwardDistance { get; set; }
+            internal float MaxBackwardDistance { get; set; }
+            internal float MaxLeftDistance { get; set; }
+            internal float MaxRightDistance { get; set; }
         }
 
-        private List<PlayerTether> _playerTethers = new List<PlayerTether>();
+        private readonly LockList<PlayerTether> _playerTethers = new LockList<PlayerTether>();
         private bool _isFaceOffActive = false;
         private Vector3 _currentFaceoffDot = Vector3.zero;
         private float _freezeStartTime = -1f;
 
-        // Static list of players serving penalties (shared with FaceOffPuckValidator)
-        public static HashSet<Player> PenalizedPlayers { get; set; } = new HashSet<Player>();
+        internal static HashSet<Player> PenalizedPlayers { get; } = new HashSet<Player>();
 
         private void Awake() {
             EventManager.Instance.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
@@ -60,8 +60,9 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
         }
 
-        public void RegisterPlayer(PlayerBodyV2 playerBody) {
-            if (playerBody == null || playerBody.Player == null) return;
+        internal void RegisterPlayer(PlayerBodyV2 playerBody) {
+            if (playerBody == null || !playerBody.Player)
+                return;
 
             // Delay registration to allow Ruleset mod to position players first
             StartCoroutine(RegisterPlayerDelayed(playerBody));
@@ -169,13 +170,14 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         }
 
         private void FreezeAllPlayersBeforeDrop() {
-            foreach (var tether in _playerTethers) {
-                if (tether.PlayerBody != null && tether.PlayerBody.Rigidbody != null) {
-                    // Freeze all movement
-                    tether.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
-                    tether.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
-                    tether.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
-                }
+            foreach (PlayerTether tether in _playerTethers) {
+                if (tether.PlayerBody == null || tether.PlayerBody.Rigidbody == null)
+                    continue;
+
+                // Freeze all movement
+                tether.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
+                tether.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
+                tether.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
             }
         }
 
@@ -242,15 +244,13 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
 
             // Check left movement
-            float leftDelta = spawnPos.x - currentPos.x; // Positive = moved left
-            if (leftDelta > tether.MaxLeftDistance) {
+            if (spawnPos.x - currentPos.x > tether.MaxLeftDistance) {
                 clampedPos.x = spawnPos.x - tether.MaxLeftDistance;
                 wasClamped = true;
             }
 
             // Check right movement
-            float rightDelta = currentPos.x - spawnPos.x; // Positive = moved right
-            if (rightDelta > tether.MaxRightDistance) {
+            if (currentPos.x - spawnPos.x > tether.MaxRightDistance) {
                 clampedPos.x = spawnPos.x + tether.MaxRightDistance;
                 wasClamped = true;
             }
@@ -282,7 +282,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             new Vector3(-7f, 0, -7f),   // Red zone - left
         };
 
-        private readonly List<FaceOffBoundary> _boundaries = new List<FaceOffBoundary>();
+        private readonly LockList<FaceOffBoundary> _boundaries = new LockList<FaceOffBoundary>();
         private GameObject _centerIceBoundary;
 
         private void Start() {
@@ -363,11 +363,9 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
         private const float PUSH_BACK_FORCE = 250f;
         private const float VELOCITY_DAMPENING = 0.7f;
-        private readonly Dictionary<Rigidbody, Vector3> _playerStartingSides = new Dictionary<Rigidbody, Vector3>();
+        private readonly LockDictionary<Rigidbody, Vector3> _playerStartingSides = new LockDictionary<Rigidbody, Vector3>();
 
         private void OnTriggerEnter(Collider other) {
-            if (!NetworkManager.Singleton || !NetworkManager.Singleton.IsServer) return;
-
             // Store which side the player started on
             PlayerBodyV2 playerBody = other.GetComponentInParent<PlayerBodyV2>();
             if (playerBody != null && playerBody.Rigidbody != null) {
@@ -379,8 +377,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         }
 
         private void OnTriggerStay(Collider other) {
-            if (!NetworkManager.Singleton || !NetworkManager.Singleton.IsServer) return;
-
             // Check if it's a player body
             PlayerBodyV2 playerBody = other.GetComponentInParent<PlayerBodyV2>();
             if (playerBody != null) {
@@ -389,10 +385,12 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
 
             // Check if it's a stick
-            Stick stick = other.GetComponentInParent<Stick>();
-            if (stick != null && BoundaryType == BoundaryType.FaceOffCircle) {
-                HandleStickBoundary(stick, other);
-                return;
+            if (BoundaryType == BoundaryType.FaceOffCircle) {
+                Stick stick = other.GetComponentInParent<Stick>();
+                if (stick != null) {
+                    HandleStickBoundary(stick, other);
+                    return;
+                }
             }
         }
 

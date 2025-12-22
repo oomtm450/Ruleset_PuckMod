@@ -2298,20 +2298,22 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.Instance.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     EventManager.Instance.AddEventListener("Event_OnPlayerBodySpawned", Event_OnPlayerBodySpawned);
 
-                    // Create boundary manager
-                    GameObject boundaryManagerObj = new GameObject("FaceOffBoundaryManager");
-                    _boundaryManager = boundaryManagerObj.AddComponent<FaceOffBoundaryManager>();
-                    UnityEngine.Object.DontDestroyOnLoad(boundaryManagerObj);
+                    if (ServerConfig.Faceoff.EnableViolations) {
+                        // Create boundary manager
+                        GameObject boundaryManagerObj = new GameObject("FaceOffBoundaryManager");
+                        _boundaryManager = boundaryManagerObj.AddComponent<FaceOffBoundaryManager>();
+                        UnityEngine.Object.DontDestroyOnLoad(boundaryManagerObj);
 
-                    // Create player unfreezer/tether system
-                    GameObject playerUnfreezerObj = new GameObject("FaceOffPlayerUnfreezer");
-                    _playerUnfreezer = playerUnfreezerObj.AddComponent<FaceOffPlayerUnfreezer>();
-                    UnityEngine.Object.DontDestroyOnLoad(playerUnfreezerObj);
+                        // Create player unfreezer/tether system
+                        GameObject playerUnfreezerObj = new GameObject("FaceOffPlayerUnfreezer");
+                        _playerUnfreezer = playerUnfreezerObj.AddComponent<FaceOffPlayerUnfreezer>();
+                        UnityEngine.Object.DontDestroyOnLoad(playerUnfreezerObj);
 
-                    // Create puck validator
-                    GameObject puckValidatorObj = new GameObject("FaceOffPuckValidator");
-                    _puckValidator = puckValidatorObj.AddComponent<FaceOffPuckValidator>();
-                    UnityEngine.Object.DontDestroyOnLoad(puckValidatorObj);
+                        // Create puck validator
+                        GameObject puckValidatorObj = new GameObject("FaceOffPuckValidator");
+                        _puckValidator = puckValidatorObj.AddComponent<FaceOffPuckValidator>();
+                        UnityEngine.Object.DontDestroyOnLoad(puckValidatorObj);
+                    }
                 }
                 else {
                     //EventManager.Instance.AddEventListener("Event_Client_OnClientStarted", Event_Client_OnClientStarted);
