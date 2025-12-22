@@ -36,8 +36,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
     /// </summary>
     internal class FaceOffPuckValidator : MonoBehaviour {
         private class PlayerViolation {
-            internal Player Player;
-            internal int ViolationCount;
+            internal int ViolationCount { get; set; }
         }
 
         private bool _isFaceOffActive = false;
@@ -139,7 +138,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             // Track violation
             if (!_playerViolations.ContainsKey(clientId)) {
                 _playerViolations[clientId] = new PlayerViolation {
-                    Player = violatingPlayer,
                     ViolationCount = 0,
                 };
             }
