@@ -573,10 +573,8 @@ namespace oomtm450PuckMod_Ruleset {
                             SendChat(Rule.Icing, otherTeam, true);
 
                             int remainingPlayTime = GameManager.Instance.GameState.Value.Time;
-                            if (_lastStoppageReason == Rule.Icing && _lastIcing[stick.Player.Team.Value] > _lastIcing[otherTeam] && _lastIcing[otherTeam] - remainingPlayTime < ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime) {
-                                Logging.Log($"Adding extra stamina penalty. (Period time : {remainingPlayTime}. {_lastIcing[otherTeam] - remainingPlayTime} < {ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime})", ServerConfig); // TODO
+                            if (_lastStoppageReason == Rule.Icing && _lastIcing[stick.Player.Team.Value] > _lastIcing[otherTeam] && _lastIcing[otherTeam] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
                                 _icingStaminaDrainPenaltyAmount[otherTeam] += 1;
-                            }
                             else
                                 _icingStaminaDrainPenaltyAmount[otherTeam] = 0;
 
@@ -1295,10 +1293,8 @@ namespace oomtm450PuckMod_Ruleset {
                                 SendChat(Rule.Icing, closestPlayerToEndBoardOtherTeam, true);
 
                                 int remainingPlayTime = GameManager.Instance.GameState.Value.Time;
-                                if (_lastStoppageReason == Rule.Icing && _lastIcing[closestPlayerToEndBoard.Team.Value] > _lastIcing[closestPlayerToEndBoardOtherTeam] && _lastIcing[closestPlayerToEndBoardOtherTeam] - remainingPlayTime < ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime) {
-                                    Logging.Log($"Adding extra stamina penalty. (Period time : {remainingPlayTime}. {_lastIcing[closestPlayerToEndBoardOtherTeam] - remainingPlayTime} < {ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime})", ServerConfig); // TODO
+                                if (_lastStoppageReason == Rule.Icing && _lastIcing[closestPlayerToEndBoard.Team.Value] > _lastIcing[closestPlayerToEndBoardOtherTeam] && _lastIcing[closestPlayerToEndBoardOtherTeam] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
                                     _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] += 1;
-                                }
                                 else
                                     _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] = 0;
 
