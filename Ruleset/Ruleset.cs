@@ -1658,9 +1658,12 @@ namespace oomtm450PuckMod_Ruleset {
             _noHighStickFrames.Clear();
         }
 
-        private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3750, int millisecondsPauseMax = 6000) {
+        private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3750, int millisecondsPauseMax = 6000, bool clearViolations = true) {
             if (Paused)
                 return;
+
+            if (clearViolations)
+                _puckValidator?.ClearViolations();
 
             ResetIcings();
             ResetHighSticks();
@@ -1907,7 +1910,7 @@ namespace oomtm450PuckMod_Ruleset {
                     case Codebase.Constants.INSTANT_FACEOFF:
                         NextFaceoffSpot = (FaceoffSpot)ushort.Parse(value);
                         _lastStoppageReason = Rule.None;
-                        DoFaceoff("", "", 0, 0);
+                        DoFaceoff("", "", 0, 0, false);
                         break;
                 }
             }
