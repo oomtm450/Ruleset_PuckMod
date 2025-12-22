@@ -53,11 +53,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         }
 
         private void DetectFaceoffLocation() {
-            var pucks = FindObjectsByType<Puck>(FindObjectsSortMode.None);
-            if (pucks.Length > 0) {
-                _currentFaceoffDot = pucks[0].transform.position;
-                Logging.Log($"Detected faceoff location at {_currentFaceoffDot}", Ruleset.ServerConfig);
-            }
+            Puck puck = PuckManager.Instance.GetPuck();
+            if (!puck)
+                return;
+
+            _currentFaceoffDot = puck.transform.position;
         }
 
         internal void RegisterPlayer(PlayerBodyV2 playerBody) {

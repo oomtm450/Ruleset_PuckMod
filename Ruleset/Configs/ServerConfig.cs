@@ -336,9 +336,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float StaminaDrainDivisionAmountPenaltyDelta { get; set; } = 0.5f;
 
         /// <summary>
-        /// Int, time between 2 icings to apply additional stamina drain penalties.
+        /// Int, time in period seconds between 2 icings to apply additional stamina drain penalties.
         /// </summary>
-        public int StaminaDrainDivisionAmountPenaltyTime { get; set; } = 25000;
+        public int StaminaDrainDivisionAmountPenaltyTime { get; set; } = 15;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.

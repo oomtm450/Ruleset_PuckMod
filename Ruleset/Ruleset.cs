@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.27.0DEV7";
+        private static readonly string MOD_VERSION = "0.27.0DEV8";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -296,9 +296,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static Rule _lastStoppageReason = Rule.None;
 
-        private static readonly LockDictionary<PlayerTeam, DateTime> _lastIcing = new LockDictionary<PlayerTeam, DateTime> {
-            { PlayerTeam.Blue, DateTime.MinValue },
-            { PlayerTeam.Red, DateTime.MinValue },
+        private static readonly LockDictionary<PlayerTeam, int> _lastIcing = new LockDictionary<PlayerTeam, int> {
+            { PlayerTeam.Blue, int.MinValue },
+            { PlayerTeam.Red, int.MinValue },
         };
 
         private static readonly LockDictionary<PlayerTeam, int> _icingStaminaDrainPenaltyAmount = new LockDictionary<PlayerTeam, int> {
@@ -567,13 +567,13 @@ namespace oomtm450PuckMod_Ruleset {
                             NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
                             SendChat(Rule.Icing, otherTeam, true);
 
-                            if (_lastStoppageReason == Rule.Icing && (DateTime.UtcNow - _lastIcing[otherTeam]).TotalMilliseconds < ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
+                            if (_lastStoppageReason == Rule.Icing && _lastIcing[otherTeam] - SystemFunc.GetPrivateField<int>(typeof(GameManager), GameManager.Instance, "remainingPlayTime") < ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
                                 _icingStaminaDrainPenaltyAmount[otherTeam] += 1;
                             else
                                 _icingStaminaDrainPenaltyAmount[otherTeam] = 0;
 
                             _lastStoppageReason = Rule.Icing;
-                            _lastIcing[otherTeam] = DateTime.UtcNow;
+                            _lastIcing[otherTeam] = SystemFunc.GetPrivateField<int>(typeof(GameManager), GameManager.Instance, "remainingPlayTime");
                             DoFaceoff();
                         }
                         else {
@@ -807,7 +807,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _lastStoppageReason = Rule.None;
 
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastIcing.Keys))
-                            _lastIcing[key] = DateTime.MinValue;
+                            _lastIcing[key] = int.MinValue;
 
                         foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
                             _icingStaminaDrainPenaltyAmount[key] = 0;
@@ -820,7 +820,7 @@ namespace oomtm450PuckMod_Ruleset {
                             _lastStoppageReason = Rule.None;
 
                             foreach (PlayerTeam key in new List<PlayerTeam>(_lastIcing.Keys))
-                                _lastIcing[key] = DateTime.MinValue;
+                                _lastIcing[key] = int.MinValue;
 
                             foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
                                 _icingStaminaDrainPenaltyAmount[key] = 0;
@@ -1275,13 +1275,13 @@ namespace oomtm450PuckMod_Ruleset {
                             else if (IsIcing(closestPlayerToEndBoardOtherTeam)) {
                                 SendChat(Rule.Icing, closestPlayerToEndBoardOtherTeam, true);
 
-                                if (_lastStoppageReason == Rule.Icing && (DateTime.UtcNow - _lastIcing[closestPlayerToEndBoardOtherTeam]).TotalMilliseconds < ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
+                                if (_lastStoppageReason == Rule.Icing && _lastIcing[closestPlayerToEndBoardOtherTeam] - SystemFunc.GetPrivateField<int>(typeof(GameManager), GameManager.Instance, "remainingPlayTime") < ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
                                     _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] += 1;
                                 else
                                     _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] = 0;
 
                                 _lastStoppageReason = Rule.Icing;
-                                _lastIcing[closestPlayerToEndBoardOtherTeam] = DateTime.UtcNow;
+                                _lastIcing[closestPlayerToEndBoardOtherTeam] = SystemFunc.GetPrivateField<int>(typeof(GameManager), GameManager.Instance, "remainingPlayTime");
                                 DoFaceoff();
                             }
                         }
@@ -1857,9 +1857,11 @@ namespace oomtm450PuckMod_Ruleset {
             if (_lastStoppageReason != Rule.Icing || !ServerConfig.Icing.StaminaDrain)
                 return;
 
-            PlayerTeam icingTeam = PlayerTeam.Blue;
-            if ((_lastIcing[PlayerTeam.Red] - _lastIcing[PlayerTeam.Blue]).TotalMilliseconds > 0) // Red team has the last icing.
+            PlayerTeam icingTeam;
+            if (_lastIcing[PlayerTeam.Red] - _lastIcing[PlayerTeam.Blue] < 0) // Red team has the last icing.
                 icingTeam = PlayerTeam.Red;
+            else
+                icingTeam = PlayerTeam.Blue;
 
             float staminaDrainDivisionAmount = ServerConfig.Icing.StaminaDrainDivisionAmount;
             for (int i = 0; i < _icingStaminaDrainPenaltyAmount[icingTeam]; i++)
