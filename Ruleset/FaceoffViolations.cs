@@ -71,7 +71,8 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             // Wait for Ruleset mod to finish positioning players
             yield return new WaitForSeconds(0.1f);
 
-            if (playerBody == null || playerBody.Player == null) yield break;
+            if (playerBody == null || playerBody.Player == null)
+                yield break;
 
             // Remove if already registered
             _playerTethers.RemoveAll(t => t.PlayerBody == playerBody);
@@ -225,8 +226,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             bool wasClamped = false;
 
             // Determine team direction (Blue team faces negative Z, Red faces positive Z)
-            PlayerTeam team = tether.PlayerBody.Player.Team.Value;
-            float forwardDirection = (team == PlayerTeam.Blue) ? -1f : 1f;
+            float forwardDirection = (tether.PlayerBody.Player.Team.Value == PlayerTeam.Blue) ? -1f : 1f;
 
             // Check forward movement (toward opponent goal)
             float forwardDelta = (currentPos.z - spawnPos.z) * forwardDirection;
