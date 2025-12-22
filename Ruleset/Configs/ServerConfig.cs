@@ -179,8 +179,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                         },
                         Penalty = new PenaltyConfig {
                         },
-                        Faceoff = new FaceoffConfig { // TODO
-
+                        Faceoff = new FaceoffConfig {
+                            EnableViolations = config.Faceoff.EnableViolations,
+                            FreezePlayersBeforeDrop = config.Faceoff.FreezePlayersBeforeDrop,
+                            ReAdd1SecondAfterFaceoff = config.Faceoff.ReAdd1SecondAfterFaceoff,
+                            UseCustomFaceoff = config.Faceoff.UseCustomFaceoff,
+                            UseDefaultPuckDropHeight = config.Faceoff.UseDefaultPuckDropHeight,
                         },
                     };
 
