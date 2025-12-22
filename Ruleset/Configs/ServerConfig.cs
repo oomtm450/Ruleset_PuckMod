@@ -72,12 +72,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; set; } = 300;
+        public int MinPossessionMilliseconds { get; set; } = 200;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; set; } = 700;
+        public int MaxPossessionMilliseconds { get; set; } = 1200;
         #endregion
 
         #region Methods/Functions
@@ -587,7 +587,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, number of seconds to freeze players before faceoff ends.
         /// </summary>
-        public float FreezeBeforeDropTime { get; set; } = 2.999f;
+        public float FreezeBeforeDropTime { get; set; } = 3f;
 
         // Center position settings
         public float CenterMaxForward { get; set; } = 0;       // Centers can't move forward at all

@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.0DEV5";
+        private static readonly string MOD_VERSION = "0.7.0DEV6";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -209,11 +209,6 @@ namespace oomtm450PuckMod_Stats {
         /// LockDictionary of string and Stopwatch, dictionary of all players current puck touch time.
         /// </summary>
         private static readonly LockDictionary<string, Stopwatch> _playersCurrentPuckTouch = new LockDictionary<string, Stopwatch>();
-
-        /// <summary>
-        /// LockDictionary of string and Stopwatch, dictionary of all players last puck touch time.
-        /// </summary>
-        private static readonly LockDictionary<string, Stopwatch> _playersLastTimePuckPossession = new LockDictionary<string, Stopwatch>();
 
         /// <summary>
         /// LockDictionary of string and Stopwatch, dictionary of all players last puck OnCollisionStay or OnCollisionExit time.
@@ -675,6 +670,16 @@ namespace oomtm450PuckMod_Stats {
                         _puckZCoordinateDifference = (puck.Rigidbody.transform.position.z - _puckLastCoordinate.z) / 240 * ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate;
                         _puckLastCoordinate = new Vector3(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.y, puck.Rigidbody.transform.position.z);
                     }
+
+                    string playerWithPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch);
+
+                    if (!string.IsNullOrEmpty(playerWithPossessionSteamId)) {
+                        _lastPossession = new Possession {
+                            SteamId = playerWithPossessionSteamId,
+                            Team = PlayerManager.Instance.GetPlayerBySteamId(playerWithPossessionSteamId).Team.Value,
+                            Date = DateTime.UtcNow,
+                        };
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Postfix().\n{ex}", ServerConfig);
@@ -925,23 +930,12 @@ namespace oomtm450PuckMod_Stats {
 
                     // Takeaways/turnovers logic.
                     if (!PlayerFunc.IsGoalie(player)) {
-                        string currentPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds,
-                        ServerConfig.MaxTippedMilliseconds, _playersLastTimePuckPossession, _playersCurrentPuckTouch);
+                        string currentPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch);
                         if (!string.IsNullOrEmpty(currentPossessionSteamId)) {
-                            if (currentPossessionSteamId == playerSteamId) {
-                                if (!_playersLastTimePuckPossession.TryGetValue(playerSteamId, out Stopwatch watch)) {
-                                    watch = new Stopwatch();
-                                    watch.Start();
-                                    _playersLastTimePuckPossession.Add(playerSteamId, watch);
-                                }
-
-                                watch.Restart();
-                            }
-
                             Player possessionPlayer = PlayerManager.Instance.GetPlayerBySteamId(currentPossessionSteamId);
 
                             if (PlayerFunc.IsPlayerPlaying(possessionPlayer)) {
-                                if (_lastPossession.Team != PlayerTeam.None && player.Team.Value != _lastPossession.Team &&
+                                if (_lastPossession.Team != PlayerTeam.None && _lastPossession.Team != possessionPlayer.Team.Value &&
                                     (DateTime.UtcNow - _lastPossession.Date).TotalMilliseconds < ServerConfig.TurnoverThresholdMilliseconds) {
                                     ProcessTakeaways(currentPossessionSteamId);
                                     ProcessTurnovers(_lastPossession.SteamId);
@@ -1139,11 +1133,6 @@ namespace oomtm450PuckMod_Stats {
                         // Reset block counted states.
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastBlockWasCounted.Keys))
                             _lastBlockWasCounted[key] = true;
-
-                        // Reset possession times.
-                        foreach (Stopwatch watch in _playersLastTimePuckPossession.Values)
-                            watch.Stop();
-                        _playersLastTimePuckPossession.Clear();
 
                         // Reset puck collision stay or exit times.
                         foreach (Stopwatch watch in _lastTimeOnCollisionStayOrExitWasCalled.Values)
@@ -1593,7 +1582,6 @@ namespace oomtm450PuckMod_Stats {
 
                 _playerIsDown.Remove(clientSteamId);
                 _playersCurrentPuckTouch.Remove(clientSteamId);
-                _playersLastTimePuckPossession.Remove(clientSteamId);
                 _lastTimeOnCollisionStayOrExitWasCalled.Remove(clientSteamId);
 
                 _playersInfo.Remove(clientId);

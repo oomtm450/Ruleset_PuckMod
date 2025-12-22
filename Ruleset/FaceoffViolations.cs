@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
         private readonly LockList<PlayerTether> _playerTethers = new LockList<PlayerTether>();
         private bool _isFaceOffActive = false;
-        private float _freezeStartTime = -1f;
+        private float _freezeStartTime = float.MinValue;
 
         internal static HashSet<Player> PenalizedPlayers { get; } = new HashSet<Player>();
 
@@ -37,12 +37,17 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             if (_isFaceOffActive) {
                 // Start countdown to freeze players before puck drop
-                if (Ruleset.ServerConfig.Faceoff.FreezePlayersBeforeDrop)
+                if (Ruleset.ServerConfig.Faceoff.FreezePlayersBeforeDrop) {
                     _freezeStartTime = Time.time;
+
+                    GamePhase oldGamePhase = (GamePhase)message["oldGamePhase"];
+                    if (oldGamePhase == GamePhase.Replay || oldGamePhase == GamePhase.PeriodOver)
+                        _freezeStartTime -= 1f;
+                }
             }
             else {
                 _playerTethers.Clear();
-                _freezeStartTime = -1f;
+                _freezeStartTime = float.MinValue;
             }
         }
 
@@ -169,16 +174,15 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             if (!NetworkManager.Singleton || !NetworkManager.Singleton.IsServer)
                 return;
 
-            if (!_isFaceOffActive)
+            if (!_isFaceOffActive || !Ruleset.Logic)
                 return;
 
             // Continuously freeze players during faceoff if enabled (game will unfreeze when transitioning to Playing)
             if (_freezeStartTime > 0) {
                 float timeInFaceoff = Time.time - _freezeStartTime;
                 // Start freezing after specified time before drop
-                if (timeInFaceoff >= Ruleset.ServerConfig.Faceoff.FreezeBeforeDropTime) {
+                if (timeInFaceoff >= Ruleset.ServerConfig.Faceoff.FreezeBeforeDropTime)
                     FreezeAllPlayersBeforeDrop();
-                }
             }
 
             // Enforce tethers and keep players unfrozen (except penalized ones)
