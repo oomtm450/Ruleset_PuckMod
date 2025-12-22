@@ -311,8 +311,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             _boundaries.Add(boundary);
 
             _centerIceBoundary.SetActive(false);
-
-            Logging.Log("Created center ice boundary at position (0, 1, 0) with size (1, 5, 40)", Ruleset.ServerConfig); // TODO
         }
 
         private void CreateFaceOffCircleBoundaries() {
@@ -368,12 +366,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         private void OnTriggerEnter(Collider other) {
             // Store which side the player started on
             PlayerBodyV2 playerBody = other.GetComponentInParent<PlayerBodyV2>();
-            if (playerBody != null && playerBody.Rigidbody != null) {
-                if (!_playerStartingSides.ContainsKey(playerBody.Rigidbody)) {
-                    _playerStartingSides[playerBody.Rigidbody] = playerBody.transform.position;
-                    Logging.Log($"Player {playerBody.Player.Username.Value} registered on side: X={playerBody.transform.position.x}", Ruleset.ServerConfig); // TODO
-                }
-            }
+            if (playerBody == null || playerBody.Rigidbody == null)
+                return;
+
+            if (!_playerStartingSides.ContainsKey(playerBody.Rigidbody))
+                _playerStartingSides[playerBody.Rigidbody] = playerBody.transform.position;
         }
 
         private void OnTriggerStay(Collider other) {
