@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.0DEV2";
+        private static readonly string MOD_VERSION = "0.7.0DEV3";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -925,8 +925,8 @@ namespace oomtm450PuckMod_Stats {
 
                     // Takeaways/turnovers logic.
                     if (!PlayerFunc.IsGoalie(player)) {
-                        string currentPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds,
-                        ServerConfig.MaxTippedMilliseconds, _playersLastTimePuckPossession, _playersCurrentPuckTouch);
+                        string currentPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MaxPossessionMilliseconds, ServerConfig.MaxTippedMilliseconds,
+                            _playersLastTimePuckPossession, _playersCurrentPuckTouch);
                         if (!string.IsNullOrEmpty(currentPossessionSteamId)) {
                             if (currentPossessionSteamId == playerSteamId) {
                                 if (!_playersLastTimePuckPossession.TryGetValue(playerSteamId, out Stopwatch watch)) {

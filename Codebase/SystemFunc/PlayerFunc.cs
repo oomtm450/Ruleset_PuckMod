@@ -111,11 +111,11 @@ namespace Codebase {
         /// </summary>
         /// <param name="checkForChallenge">Bool, false if we only check logic without challenging puck possession from other players to determine possession.</param>
         /// <returns>String, player steam Id with the possession or an empty string if no one has the puck (or it is challenged).</returns>
-        public static string GetPlayerSteamIdInPossession(int minPossessionMilliseconds, int maxPossessionMilliseconds, int maxTippedMilliseconds,
+        public static string GetPlayerSteamIdInPossession(int maxPossessionMilliseconds, int maxTippedMilliseconds,
             LockDictionary<string, Stopwatch> playersLastTimePuckPossession, LockDictionary<string, Stopwatch> playersCurrentPuckTouch, bool checkForChallenge = true) {
             Dictionary<string, Stopwatch> dict;
             dict = playersLastTimePuckPossession
-                .Where(x => x.Value.ElapsedMilliseconds < minPossessionMilliseconds &&
+                .Where(x =>
                     playersCurrentPuckTouch.Keys.Any(y => y == x.Key) &&
                     playersCurrentPuckTouch[x.Key].ElapsedMilliseconds > maxTippedMilliseconds)
                 .ToDictionary(x => x.Key, x => x.Value);
