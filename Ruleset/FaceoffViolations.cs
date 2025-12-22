@@ -93,7 +93,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             };
 
             _playerTethers.Add(tether);
-            Logging.Log($"Tethered {playerBody.Player.Username.Value} ({positionName}) at {spawnPos} - Forward:{tether.MaxForwardDistance}, Backward:{tether.MaxBackwardDistance}, Left:{tether.MaxLeftDistance}, Right:{tether.MaxRightDistance}", Ruleset.ServerConfig); // TODO
         }
 
         private float GetMaxForwardDistance(string positionName) {
@@ -177,19 +176,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                     tether.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
                 }
             }
-        }
-
-        public void ReloadConfig() {
-            // Force re-registration of all players with new config values
-            List<PlayerTether> currentTethers = new List<PlayerTether>(_playerTethers);
-            _playerTethers.Clear();
-
-            foreach (var tether in currentTethers) {
-                if (tether.PlayerBody != null)
-                    RegisterPlayer(tether.PlayerBody);
-            }
-
-            Logging.Log("Reloaded tether config for all players", Ruleset.ServerConfig); // TODO
         }
 
         private void FixedUpdate() {
@@ -288,35 +274,16 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
     /// Manages boundary restrictions during faceoffs
     /// </summary>
     public class FaceOffBoundaryManager : MonoBehaviour {
+        private Vector3[] FACEOFF_POSITIONS { get; } = new Vector3[] {
+            new Vector3(0, 0, 0),      // Center ice
+            new Vector3(7f, 0, 7f),    // Blue zone - right
+            new Vector3(-7f, 0, 7f),   // Blue zone - left
+            new Vector3(7f, 0, -7f),   // Red zone - right
+            new Vector3(-7f, 0, -7f),   // Red zone - left
+        };
+
         private readonly List<FaceOffBoundary> _boundaries = new List<FaceOffBoundary>();
         private GameObject _centerIceBoundary;
-
-        private void Awake() {
-            EventManager.Instance.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
-        }
-
-        private void OnDestroy() {
-            EventManager.Instance?.RemoveEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
-        }
-
-        private void OnGamePhaseChanged(Dictionary<string, object> message) {
-            GamePhase newGamePhase = (GamePhase)message["newGamePhase"];
-
-            if (newGamePhase == GamePhase.FaceOff) {
-                // Detect if faceoff is at center ice
-                Puck puck = PuckManager.Instance.GetPuck();
-
-                if (!puck)
-                    return;
-
-                bool isCenterIce = Mathf.Abs(puck.transform.position.z) < 2f; // Within 2m of center
-
-                if (_centerIceBoundary != null) {
-                    _centerIceBoundary.SetActive(isCenterIce);
-                    Logging.Log($"Center ice boundary {(isCenterIce ? "enabled" : "disabled")} for faceoff at {puck.transform.position}", Ruleset.ServerConfig); // TODO
-                }
-            }
-        }
 
         private void Start() {
             CreateBoundaries();
@@ -350,15 +317,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
         private void CreateFaceOffCircleBoundaries() {
             // Create boundaries at typical faceoff dot locations
-            Vector3[] faceoffPositions = new Vector3[] {
-                new Vector3(0, 0, 0),      // Center ice
-                new Vector3(7f, 0, 7f),    // Blue zone - right
-                new Vector3(-7f, 0, 7f),   // Blue zone - left
-                new Vector3(7f, 0, -7f),   // Red zone - right
-                new Vector3(-7f, 0, -7f),   // Red zone - left
-            };
-
-            foreach (Vector3 position in faceoffPositions) {
+            foreach (Vector3 position in FACEOFF_POSITIONS) {
                 GameObject boundaryObj = new GameObject($"FaceOffCircleBoundary_{position}");
                 boundaryObj.transform.parent = transform;
                 boundaryObj.transform.position = position;
@@ -438,35 +397,36 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         }
 
         private void HandlePlayerBoundary(PlayerBodyV2 playerBody, Collider collider) {
-            if (BoundaryType == BoundaryType.CenterIce && playerBody.Rigidbody != null) {
-                Vector3 currentPos = playerBody.transform.position;
+            if (playerBody.Rigidbody == null || BoundaryType != BoundaryType.CenterIce)
+                return;
 
-                // Determine which side they should stay on
-                float startingSide;
-                if (_playerStartingSides.ContainsKey(playerBody.Rigidbody))
-                    startingSide = _playerStartingSides[playerBody.Rigidbody].x;
-                else {
-                    startingSide = currentPos.x;
-                    _playerStartingSides[playerBody.Rigidbody] = currentPos;
-                }
+            Vector3 currentPos = playerBody.transform.position;
 
-                // Strong push back to their side
-                Vector3 pushDirection;
+            // Determine which side they should stay on
+            float startingSide;
+            if (_playerStartingSides.ContainsKey(playerBody.Rigidbody))
+                startingSide = _playerStartingSides[playerBody.Rigidbody].x;
+            else {
+                startingSide = currentPos.x;
+                _playerStartingSides[playerBody.Rigidbody] = currentPos;
+            }
 
-                if (startingSide > 0) // Started on positive X side
-                    pushDirection = Vector3.right;
-                else // Started on negative X side
-                    pushDirection = Vector3.left;
+            // Strong push back to their side
+            Vector3 pushDirection;
 
-                // Apply strong force
-                playerBody.Rigidbody.AddForce(pushDirection * PUSH_BACK_FORCE, ForceMode.Force);
+            if (startingSide > 0) // Started on positive X side
+                pushDirection = Vector3.right;
+            else // Started on negative X side
+                pushDirection = Vector3.left;
 
-                // Also dampen velocity crossing center
-                Vector3 velocity = playerBody.Rigidbody.linearVelocity;
-                if ((startingSide > 0 && velocity.x < 0) || (startingSide < 0 && velocity.x > 0)) {
-                    velocity.x *= VELOCITY_DAMPENING;
-                    playerBody.Rigidbody.linearVelocity = velocity;
-                }
+            // Apply strong force
+            playerBody.Rigidbody.AddForce(pushDirection * PUSH_BACK_FORCE, ForceMode.Force);
+
+            // Also dampen velocity crossing center
+            Vector3 velocity = playerBody.Rigidbody.linearVelocity;
+            if ((startingSide > 0 && velocity.x < 0) || (startingSide < 0 && velocity.x > 0)) {
+                velocity.x *= VELOCITY_DAMPENING;
+                playerBody.Rigidbody.linearVelocity = velocity;
             }
         }
 
@@ -486,19 +446,9 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             stick.Rigidbody.AddForce(pushDirection * PUSH_BACK_FORCE * 2f, ForceMode.Force);
         }
 
-        private void OnTriggerExit(Collider other) {
-            // Don't remove from dictionary - we want to remember their starting side throughout the faceoff
-        }
-
         private void OnDisable() {
             // Clear when boundaries deactivate
             _playerStartingSides.Clear();
-        }
-
-        private void OnDrawGizmos() {
-            // Visualize boundaries in editor
-            Gizmos.color = BoundaryType == BoundaryType.CenterIce ? Color.red : Color.yellow;
-            Gizmos.DrawWireCube(transform.position, GetComponent<Collider>()?.bounds.size ?? Vector3.one);
         }
     }
 }
