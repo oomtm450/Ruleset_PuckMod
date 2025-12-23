@@ -1,5 +1,4 @@
 ﻿using Codebase;
-using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -116,7 +115,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 case "G": // Goalie
                     return Ruleset.ServerConfig.Faceoff.GoalieMaxBackward;
                 default:
-                    return 2.0f;
+                    return 2f;
             }
         }
 
@@ -135,7 +134,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 case "RD": // Right defense can't move much left (toward center)
                     return Ruleset.ServerConfig.Faceoff.DefenseMaxToward;
                 default:
-                    return 2.0f;
+                    return 2f;
             }
         }
 
@@ -154,7 +153,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 case "RD": // Right defense can move right more (away from center toward boards)
                     return Ruleset.ServerConfig.Faceoff.DefenseMaxAway;
                 default:
-                    return 2.0f;
+                    return 2f;
             }
         }
 
