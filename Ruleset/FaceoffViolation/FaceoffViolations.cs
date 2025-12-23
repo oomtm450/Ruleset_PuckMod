@@ -70,12 +70,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             // Get player role and position AFTER ruleset has positioned them
             string positionName = playerBody.Player.PlayerPosition?.Name ?? "Unknown";
-            Vector3 spawnPos = playerBody.transform.position;
 
             // Create tether with role-specific restrictions
             PlayerTether tether = new PlayerTether {
                 PlayerBody = playerBody,
-                SpawnPosition = spawnPos,
+                SpawnPosition = playerBody.transform.position,
                 MaxForwardDistance = GetMaxForwardDistance(positionName),
                 MaxBackwardDistance = GetMaxBackwardDistance(positionName),
                 MaxLeftDistance = GetMaxLeftDistance(positionName),
