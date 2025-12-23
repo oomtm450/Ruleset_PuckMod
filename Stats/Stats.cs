@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.0DEV6";
+        private static readonly string MOD_VERSION = "0.7.0DEV7";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -671,14 +671,26 @@ namespace oomtm450PuckMod_Stats {
                         _puckLastCoordinate = new Vector3(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.y, puck.Rigidbody.transform.position.z);
                     }
 
-                    string playerWithPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch);
+                    // Takeaways/turnovers logic.
+                    string currentPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch);
+                    if (!string.IsNullOrEmpty(currentPossessionSteamId)) {
+                        Player possessionPlayer = PlayerManager.Instance.GetPlayerBySteamId(currentPossessionSteamId);
 
-                    if (!string.IsNullOrEmpty(playerWithPossessionSteamId)) {
-                        _lastPossession = new Possession {
-                            SteamId = playerWithPossessionSteamId,
-                            Team = PlayerManager.Instance.GetPlayerBySteamId(playerWithPossessionSteamId).Team.Value,
-                            Date = DateTime.UtcNow,
-                        };
+                        if (PlayerFunc.IsPlayerPlaying(possessionPlayer)) {
+                            if (_lastPossession.Team != PlayerTeam.None && _lastPossession.Team != possessionPlayer.Team.Value &&
+                                (DateTime.UtcNow - _lastPossession.Date).TotalMilliseconds < ServerConfig.TurnoverThresholdMilliseconds) {
+                                ProcessTakeaways(currentPossessionSteamId);
+                                ProcessTurnovers(_lastPossession.SteamId);
+                            }
+
+                            _lastPossession = new Possession {
+                                SteamId = currentPossessionSteamId,
+                                Team = possessionPlayer.Team.Value,
+                                Date = DateTime.UtcNow,
+                            };
+                        }
+                        else
+                            _lastPossession = new Possession();
                     }
                 }
                 catch (Exception ex) {
@@ -770,28 +782,33 @@ namespace oomtm450PuckMod_Stats {
 
                     string currentPlayerSteamId = player.SteamId.Value.ToString();
 
-                    // Start tipped timer.
-                    if (!_playersCurrentPuckTouch.TryGetValue(currentPlayerSteamId, out Stopwatch watch)) {
-                        watch = new Stopwatch();
-                        watch.Start();
-                        _playersCurrentPuckTouch.Add(currentPlayerSteamId, watch);
-                    }
 
-                    string lastPlayerOnPuckTipIncludedSteamId = _lastPlayerOnPuckTipIncludedSteamId[_lastTeamOnPuckTipIncluded].SteamId;
+                    if (!PlayerFunc.IsGoalie(player)) {
+                        // Start tipped timer.
+                        if (!_playersCurrentPuckTouch.TryGetValue(currentPlayerSteamId, out Stopwatch watch)) {
+                            watch = new Stopwatch();
+                            watch.Start();
+                            _playersCurrentPuckTouch.Add(currentPlayerSteamId, watch);
+                        }
 
-                    if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionExitWatch)) {
-                        lastTimeCollisionExitWatch = new Stopwatch();
-                        lastTimeCollisionExitWatch.Start();
-                        _lastTimeOnCollisionStayOrExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionExitWatch);
-                    }
-                    else if (lastTimeCollisionExitWatch.ElapsedMilliseconds > ServerConfig.MaxPossessionMilliseconds || (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId) && lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId)) {
-                        watch.Restart();
+                        string lastPlayerOnPuckTipIncludedSteamId = _lastPlayerOnPuckTipIncludedSteamId[_lastTeamOnPuckTipIncluded].SteamId;
 
-                        if (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId) && lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId) {
-                            if (_playersCurrentPuckTouch.TryGetValue(lastPlayerOnPuckTipIncludedSteamId, out Stopwatch lastPlayerWatch))
-                                lastPlayerWatch.Reset();
+                        if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionExitWatch)) {
+                            lastTimeCollisionExitWatch = new Stopwatch();
+                            lastTimeCollisionExitWatch.Start();
+                            _lastTimeOnCollisionStayOrExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionExitWatch);
+                        }
+                        else if (lastTimeCollisionExitWatch.ElapsedMilliseconds > ServerConfig.MaxPossessionMilliseconds || (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId) && lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId)) {
+                            watch.Restart();
+
+                            if (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId) && lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId) {
+                                if (_playersCurrentPuckTouch.TryGetValue(lastPlayerOnPuckTipIncludedSteamId, out Stopwatch lastPlayerWatch))
+                                    lastPlayerWatch.Reset();
+                            }
                         }
                     }
+                    else
+                        _lastPossession = new Possession();
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(player.Team.Value);
 
@@ -927,32 +944,6 @@ namespace oomtm450PuckMod_Stats {
                         //_lastTeamOnPuck = player.Team.Value;
                         _lastPlayerOnPuckSteamId[player.Team.Value] = (playerSteamId, DateTime.UtcNow);
                     }
-
-                    // Takeaways/turnovers logic.
-                    if (!PlayerFunc.IsGoalie(player)) {
-                        string currentPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch);
-                        if (!string.IsNullOrEmpty(currentPossessionSteamId)) {
-                            Player possessionPlayer = PlayerManager.Instance.GetPlayerBySteamId(currentPossessionSteamId);
-
-                            if (PlayerFunc.IsPlayerPlaying(possessionPlayer)) {
-                                if (_lastPossession.Team != PlayerTeam.None && _lastPossession.Team != possessionPlayer.Team.Value &&
-                                    (DateTime.UtcNow - _lastPossession.Date).TotalMilliseconds < ServerConfig.TurnoverThresholdMilliseconds) {
-                                    ProcessTakeaways(currentPossessionSteamId);
-                                    ProcessTurnovers(_lastPossession.SteamId);
-                                }
-
-                                _lastPossession = new Possession {
-                                    SteamId = currentPossessionSteamId,
-                                    Team = possessionPlayer.Team.Value,
-                                    Date = DateTime.UtcNow,
-                                };
-                            }
-                            else
-                                _lastPossession = new Possession();
-                        }
-                    }
-                    else
-                        _lastPossession = new Possession();
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Puck_OnCollisionStay_Patch Postfix().\n{ex}", ServerConfig);

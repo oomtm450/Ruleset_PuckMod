@@ -72,12 +72,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; set; } = 200;
+        public int MinPossessionMilliseconds { get; set; } = 450;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; set; } = 1200;
+        public int MaxPossessionMilliseconds { get; set; } = 1000;
         #endregion
 
         #region Methods/Functions
@@ -160,6 +160,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 if (config.UseDefaultNumericValues) {
                     ServerConfig defaultConfig = new ServerConfig {
                         LogInfo = config.LogInfo,
+                        UseDefaultNumericValues = config.UseDefaultNumericValues,
                         GInt = new GIntConfig {
                             BlueTeam = config.GInt.BlueTeam,
                             RedTeam = config.GInt.RedTeam,
