@@ -46,8 +46,8 @@ namespace oomtm450PuckMod_Stats {
             "eventName",
             Codebase.Constants.NEXT_FACEOFF,
             Codebase.Constants.PLUSMINUS,
-            //Codebase.Constants.TAKEAWAY, // TODO : Remove debug logs.
-            //Codebase.Constants.TURNOVER, // TODO : Remove debug logs.
+            Codebase.Constants.TAKEAWAY,
+            Codebase.Constants.TURNOVER,
             Codebase.Constants.BLOCK,
             Codebase.Constants.HIT,
             Codebase.Constants.PASS,
@@ -1245,10 +1245,8 @@ namespace oomtm450PuckMod_Stats {
                             }
 
                             Dictionary<string, string> playersUsername = new Dictionary<string, string>();
-                            foreach ((string steamId, string username) in _playersInfo.Values) {
-                                Logging.Log($"steamId {steamId} username {username}", ServerConfig, true); // TODO : Remove debug logs.
+                            foreach ((string steamId, string username) in _playersInfo.Values)
                                 playersUsername.Add(steamId, username);
-                            }
 
                             Dictionary<string, (string, int)> sogDict = new Dictionary<string, (string, int)>();
                             foreach (var kvp in _sog)
