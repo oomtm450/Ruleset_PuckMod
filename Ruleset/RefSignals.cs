@@ -76,7 +76,7 @@ namespace oomtm450PuckMod_Ruleset {
                 string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), IMAGES_FOLDER_PATH);
 
                 if (!Directory.Exists(fullPath)) {
-                    Logging.LogError($"Images not found at: {fullPath}", Ruleset._clientConfig);
+                    Logging.LogError($"Images not found at: {fullPath}", Ruleset.ClientConfig);
                     return;
                 }
 
@@ -90,7 +90,7 @@ namespace oomtm450PuckMod_Ruleset {
                 StartCoroutine(GetSprites(fullPath, team));
             }
             catch (Exception ex) {
-                Logging.LogError($"Error loading Images.\n{ex}", Ruleset._clientConfig);
+                Logging.LogError($"Error loading Images.\n{ex}", Ruleset.ClientConfig);
             }
         }
 
@@ -120,7 +120,7 @@ namespace oomtm450PuckMod_Ruleset {
                         image.enabled = false;
 
                         RectTransform rectTransform = image.GetComponent<RectTransform>();
-                        rectTransform.sizeDelta = new Vector2(300, 300) * Ruleset._clientConfig.TwoDRefsScale;
+                        rectTransform.sizeDelta = new Vector2(300, 300) * Ruleset.ClientConfig.TwoDRefsScale;
                         rectTransform.pivot = new Vector2(0.5f, 0.5f);
 
                         if (team == PlayerTeam.Red) {

@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.0DEV";
+        private static readonly string MOD_VERSION = "0.7.0";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -45,6 +45,13 @@ namespace oomtm450PuckMod_Stats {
         private static readonly ReadOnlyCollection<string> DATA_NAMES_TO_IGNORE = new ReadOnlyCollection<string>(new List<string> {
             "eventName",
             Codebase.Constants.NEXT_FACEOFF,
+            Codebase.Constants.PLUSMINUS,
+            Codebase.Constants.TAKEAWAY,
+            Codebase.Constants.TURNOVER,
+            Codebase.Constants.BLOCK,
+            Codebase.Constants.HIT,
+            Codebase.Constants.PASS,
+            Codebase.Constants.SOG,
         });
 
         /// <summary>
@@ -118,6 +125,16 @@ namespace oomtm450PuckMod_Stats {
         private const string RESET_PASS = Constants.MOD_NAME + "RESETPASS";*/
 
         /// <summary>
+        /// Const string, data name for batching the +/-.
+        /// </summary>
+        private const string BATCH_PLUSMINUS = Constants.MOD_NAME + "BATCHPLUSMINUS";
+
+        /*/// <summary>
+        /// Const string, data name for resetting the +/-.
+        /// </summary>
+        private const string RESET_PLUSMINUS = Constants.MOD_NAME + "RESETPLUSMINUS";*/
+
+        /// <summary>
         /// Const string, data name for resetting all stats.
         /// </summary>
         private const string RESET_ALL = Constants.MOD_NAME + "RESETALL";
@@ -150,9 +167,9 @@ namespace oomtm450PuckMod_Stats {
         private static float _puckZCoordinateDifference = 0;
 
         /// <summary>
-        /// LockDictionary of ulong and string, dictionary of all players clientId and steamId.
+        /// LockDictionary of ulong and string, dictionary of all players clientId, steamId and username.
         /// </summary>
-        private static readonly LockDictionary<ulong, string> _players_ClientId_SteamId = new LockDictionary<ulong, string>();
+        private static readonly LockDictionary<ulong, (string SteamId, string Username)> _playersInfo = new LockDictionary<ulong, (string, string)>();
 
         /// <summary>
         /// LockDictionary of ulong and DateTime, last time a mod out of date message was sent to a client (ulong clientId).
@@ -195,11 +212,6 @@ namespace oomtm450PuckMod_Stats {
         private static readonly LockDictionary<string, Stopwatch> _playersCurrentPuckTouch = new LockDictionary<string, Stopwatch>();
 
         /// <summary>
-        /// LockDictionary of string and Stopwatch, dictionary of all players last puck touch time.
-        /// </summary>
-        private static readonly LockDictionary<string, Stopwatch> _playersLastTimePuckPossession = new LockDictionary<string, Stopwatch>();
-
-        /// <summary>
         /// LockDictionary of string and Stopwatch, dictionary of all players last puck OnCollisionStay or OnCollisionExit time.
         /// </summary>
         private static readonly LockDictionary<string, Stopwatch> _lastTimeOnCollisionStayOrExitWasCalled = new LockDictionary<string, Stopwatch>();
@@ -210,7 +222,7 @@ namespace oomtm450PuckMod_Stats {
 
         private static PlayerTeam _lastTeamOnPuckTipIncluded = PlayerTeam.Blue;
 
-        private static PlayerTeam _lastTeamOnPuck = PlayerTeam.Blue;
+        //private static PlayerTeam _lastTeamOnPuck = PlayerTeam.Blue;
 
         private static PuckRaycast _puckRaycast;
 
@@ -269,6 +281,8 @@ namespace oomtm450PuckMod_Stats {
             { 2, "" },
             { 3, "" },
         };
+
+        private static readonly LockDictionary<string, int> _plusMinus = new LockDictionary<string, int>();
 
         // Client-side.
         /// <summary>
@@ -384,6 +398,23 @@ namespace oomtm450PuckMod_Stats {
                     // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer())
                         return;
+
+                    foreach (Player player in PlayerManager.Instance.GetPlayers()) {
+                        if (!PlayerFunc.IsPlayerPlaying(player) || PlayerFunc.IsGoalie(player))
+                            continue;
+
+                        string playerSteamId = player.SteamId.Value.ToString();
+                        if (!_plusMinus.TryGetValue(playerSteamId, out int _))
+                            _plusMinus.Add(playerSteamId, 0);
+
+                        if (player.Team.Value == team)
+                            _plusMinus[playerSteamId] += 1;
+                        else
+                            _plusMinus[playerSteamId] -= 1;
+
+                        NetworkCommunication.SendDataToAll(Codebase.Constants.PLUSMINUS + playerSteamId, _plusMinus[playerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                        LogPlusMinus(playerSteamId, _plusMinus[playerSteamId]);
+                    }
 
                     if (team == PlayerTeam.Blue) {
                         _blueGoals.Add(goalPlayer.SteamId.Value.ToString());
@@ -504,6 +535,14 @@ namespace oomtm450PuckMod_Stats {
                             _passes.Remove(key);
                     }
 
+                    // Reset +/-.
+                    foreach (string key in new List<string>(_plusMinus.Keys)) {
+                        if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
+                            _plusMinus[key] = 0;
+                        else
+                            _plusMinus.Remove(key);
+                    }
+
                     // Reset goal and assists trackers.
                     _blueGoals.Clear();
                     _blueAssists.Clear();
@@ -518,7 +557,7 @@ namespace oomtm450PuckMod_Stats {
                     _sentOutOfDateMessage.Clear();
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_ResetGameState_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_ResetGameState_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -632,6 +671,28 @@ namespace oomtm450PuckMod_Stats {
                         _puckZCoordinateDifference = (puck.Rigidbody.transform.position.z - _puckLastCoordinate.z) / 240 * ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate;
                         _puckLastCoordinate = new Vector3(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.y, puck.Rigidbody.transform.position.z);
                     }
+
+                    // Takeaways/turnovers logic.
+                    string currentPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch);
+                    if (!string.IsNullOrEmpty(currentPossessionSteamId)) {
+                        Player possessionPlayer = PlayerManager.Instance.GetPlayerBySteamId(currentPossessionSteamId);
+
+                        if (PlayerFunc.IsPlayerPlaying(possessionPlayer)) {
+                            if (_lastPossession.Team != PlayerTeam.None && _lastPossession.Team != possessionPlayer.Team.Value &&
+                                (DateTime.UtcNow - _lastPossession.Date).TotalMilliseconds < ServerConfig.TurnoverThresholdMilliseconds) {
+                                ProcessTakeaways(currentPossessionSteamId);
+                                ProcessTurnovers(_lastPossession.SteamId);
+                            }
+
+                            _lastPossession = new Possession {
+                                SteamId = currentPossessionSteamId,
+                                Team = possessionPlayer.Team.Value,
+                                Date = DateTime.UtcNow,
+                            };
+                        }
+                        else
+                            _lastPossession = new Possession();
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Postfix().\n{ex}", ServerConfig);
@@ -722,28 +783,33 @@ namespace oomtm450PuckMod_Stats {
 
                     string currentPlayerSteamId = player.SteamId.Value.ToString();
 
-                    // Start tipped timer.
-                    if (!_playersCurrentPuckTouch.TryGetValue(currentPlayerSteamId, out Stopwatch watch)) {
-                        watch = new Stopwatch();
-                        watch.Start();
-                        _playersCurrentPuckTouch.Add(currentPlayerSteamId, watch);
-                    }
 
-                    string lastPlayerOnPuckTipIncludedSteamId = _lastPlayerOnPuckTipIncludedSteamId[_lastTeamOnPuckTipIncluded].SteamId;
+                    if (!PlayerFunc.IsGoalie(player)) {
+                        // Start tipped timer.
+                        if (!_playersCurrentPuckTouch.TryGetValue(currentPlayerSteamId, out Stopwatch watch)) {
+                            watch = new Stopwatch();
+                            watch.Start();
+                            _playersCurrentPuckTouch.Add(currentPlayerSteamId, watch);
+                        }
 
-                    if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionExitWatch)) {
-                        lastTimeCollisionExitWatch = new Stopwatch();
-                        lastTimeCollisionExitWatch.Start();
-                        _lastTimeOnCollisionStayOrExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionExitWatch);
-                    }
-                    else if (lastTimeCollisionExitWatch.ElapsedMilliseconds > ServerConfig.MaxPossessionMilliseconds || (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId) && lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId)) {
-                        watch.Restart();
+                        string lastPlayerOnPuckTipIncludedSteamId = _lastPlayerOnPuckTipIncludedSteamId[_lastTeamOnPuckTipIncluded].SteamId;
 
-                        if (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId) && lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId) {
-                            if (_playersCurrentPuckTouch.TryGetValue(lastPlayerOnPuckTipIncludedSteamId, out Stopwatch lastPlayerWatch))
-                                lastPlayerWatch.Reset();
+                        if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionExitWatch)) {
+                            lastTimeCollisionExitWatch = new Stopwatch();
+                            lastTimeCollisionExitWatch.Start();
+                            _lastTimeOnCollisionStayOrExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionExitWatch);
+                        }
+                        else if (lastTimeCollisionExitWatch.ElapsedMilliseconds > ServerConfig.MaxPossessionMilliseconds || (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId) && lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId)) {
+                            watch.Restart();
+
+                            if (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId) && lastPlayerOnPuckTipIncludedSteamId != currentPlayerSteamId) {
+                                if (_playersCurrentPuckTouch.TryGetValue(lastPlayerOnPuckTipIncludedSteamId, out Stopwatch lastPlayerWatch))
+                                    lastPlayerWatch.Reset();
+                            }
                         }
                     }
+                    else
+                        _lastPossession = new Possession();
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(player.Team.Value);
 
@@ -876,38 +942,9 @@ namespace oomtm450PuckMod_Stats {
                     _lastTeamOnPuckTipIncluded = player.Team.Value;
 
                     if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled)) {
-                        _lastTeamOnPuck = player.Team.Value;
+                        //_lastTeamOnPuck = player.Team.Value;
                         _lastPlayerOnPuckSteamId[player.Team.Value] = (playerSteamId, DateTime.UtcNow);
                     }
-
-                    if (!_playersLastTimePuckPossession.TryGetValue(playerSteamId, out Stopwatch watch)) {
-                        watch = new Stopwatch();
-                        watch.Start();
-                        _playersLastTimePuckPossession.Add(playerSteamId, watch);
-                    }
-
-                    watch.Restart();
-
-                    // Takeaways/turnovers logic.
-                    if (!PlayerFunc.IsGoalie(player)) {
-                        string currentPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds,
-                        ServerConfig.MaxTippedMilliseconds, _playersLastTimePuckPossession, _playersCurrentPuckTouch, true);
-                        if (!string.IsNullOrEmpty(currentPossessionSteamId)) {
-                            if (_lastPossession.Team != PlayerTeam.None && player.Team.Value != _lastPossession.Team &&
-                                currentPossessionSteamId != _lastPossession.SteamId && (DateTime.UtcNow - _lastPossession.Date).TotalMilliseconds < 500) {
-                                ProcessTakeaways(currentPossessionSteamId);
-                                ProcessTurnovers(_lastPossession.SteamId);
-                            }
-
-                            _lastPossession = new Possession {
-                                SteamId = currentPossessionSteamId,
-                                Team = player.Team.Value,
-                                Date = DateTime.UtcNow,
-                            };
-                        }
-                    }
-                    else
-                        _lastPossession = new Possession();
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in Puck_OnCollisionStay_Patch Postfix().\n{ex}", ServerConfig);
@@ -950,7 +987,7 @@ namespace oomtm450PuckMod_Stats {
                     _lastTeamOnPuckTipIncluded = stick.Player.Team.Value;
 
                     if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled)) {
-                        _lastTeamOnPuck = stick.Player.Team.Value;
+                        //_lastTeamOnPuck = stick.Player.Team.Value;
                         _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = (playerSteamId, DateTime.UtcNow);
                     }
                 }
@@ -1089,11 +1126,6 @@ namespace oomtm450PuckMod_Stats {
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastBlockWasCounted.Keys))
                             _lastBlockWasCounted[key] = true;
 
-                        // Reset possession times.
-                        foreach (Stopwatch watch in _playersLastTimePuckPossession.Values)
-                            watch.Stop();
-                        _playersLastTimePuckPossession.Clear();
-
                         // Reset puck collision stay or exit times.
                         foreach (Stopwatch watch in _lastTimeOnCollisionStayOrExitWasCalled.Values)
                             watch.Stop();
@@ -1178,6 +1210,9 @@ namespace oomtm450PuckMod_Stats {
                                 if (_turnovers.TryGetValue(steamId, out int turnovers))
                                     starPoints[steamId] -= ((double)turnovers) * 0.2d;
 
+                                if (_plusMinus.TryGetValue(steamId, out int plusMinus))
+                                    starPoints[steamId] += ((double)plusMinus) * 5d;
+
                                 starPoints[steamId] *= teamModifier;
                             }
 
@@ -1210,22 +1245,83 @@ namespace oomtm450PuckMod_Stats {
                                 }
                             }
 
+                            Dictionary<string, string> playersUsername = new Dictionary<string, string>();
+                            foreach ((string steamId, string username) in _playersInfo.Values)
+                                playersUsername.Add(steamId, username);
+
+                            Dictionary<string, (string, int)> sogDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _sog)
+                                sogDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, (string, int)> passesDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _passes)
+                                passesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, (string, int)> blocksDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _blocks)
+                                blocksDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, (string, int)> hitsDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _hits)
+                                hitsDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, (string, int)> takeawaysDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _takeaways)
+                                takeawaysDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, (string, int)> turnoversDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _turnovers)
+                                turnoversDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, (string, (int, int))> savePercDict = new Dictionary<string, (string, (int, int))>();
+                            foreach (var kvp in _savePerc)
+                                savePercDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            Dictionary<string, (string, int)> stickSavesDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _stickSaves)
+                                stickSavesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                            List<string> blueGoalsDict = new List<string>();
+                            foreach (var goalSteamId in _blueGoals)
+                                blueGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
+
+                            List<string> redGoalsDict = new List<string>();
+                            foreach (var goalSteamId in _redGoals)
+                                redGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
+
+                            List<string> blueAssistsDict = new List<string>();
+                            foreach (var assistSteamId in _blueAssists)
+                                blueAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
+
+                            List<string> redAssistsDict = new List<string>();
+                            foreach (var assistSteamId in _redAssists)
+                                redAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
+
+                            Dictionary<int, (string, string)> starsDict = new Dictionary<int, (string, string)>();
+                            foreach (var kvp in _stars)
+                                starsDict.Add(kvp.Key, (kvp.Value, playersUsername.TryGetValue(kvp.Value, out string username) == true ? username : ""));
+
+                            Dictionary<string, (string, int)> plusMinusDict = new Dictionary<string, (string, int)>();
+                            foreach (var kvp in _plusMinus)
+                                plusMinusDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
                             // Log JSON for game stats.
                             Dictionary<string, object> jsonDict = new Dictionary<string, object> {
-                                { "sog", _sog },
-                                { "passes", _passes },
-                                { "blocks", _blocks },
-                                { "hits", _hits },
-                                { "takeaways", _takeaways },
-                                { "turnovers", _turnovers },
-                                { "saveperc", _savePerc },
-                                { "sticksaves", _stickSaves },
-                                { "bluegoals", _blueGoals },
-                                { "redgoals", _redGoals },
-                                { "blueassists", _blueAssists },
-                                { "redassists", _redAssists },
-                                { "gwg", gwgSteamId },
-                                { "stars", _stars },
+                                { "sog", sogDict },
+                                { "passes", passesDict },
+                                { "blocks", blocksDict },
+                                { "hits", hitsDict },
+                                { "takeaways", takeawaysDict },
+                                { "turnovers", turnoversDict },
+                                { "saveperc", savePercDict },
+                                { "sticksaves", stickSavesDict },
+                                { "bluegoals", blueGoalsDict },
+                                { "redgoals", redGoalsDict },
+                                { "blueassists", blueAssistsDict },
+                                { "redassists", redAssistsDict },
+                                { "gwg", gwgSteamId + "," + (playersUsername.TryGetValue(gwgSteamId, out string gwgUsername) == true ? gwgUsername : "") },
+                                { "stars", starsDict },
+                                { "plusminus", plusMinusDict },
                             };
 
                             string jsonContent = JsonConvert.SerializeObject(jsonDict, Formatting.Indented);
@@ -1436,11 +1532,11 @@ namespace oomtm450PuckMod_Stats {
                 ulong clientId = (ulong)message["clientId"];
                 string clientSteamId = PlayerManager.Instance.GetPlayerByClientId(clientId).SteamId.Value.ToString();
                 try {
-                    _players_ClientId_SteamId.Add(clientId, "");
+                    _playersInfo.Add(clientId, ("", ""));
                 }
                 catch {
-                    _players_ClientId_SteamId.Remove(clientId);
-                    _players_ClientId_SteamId.Add(clientId, "");
+                    _playersInfo.Remove(clientId);
+                    _playersInfo.Add(clientId, ("", ""));
                 }
 
                 CheckForRulesetMod();
@@ -1465,10 +1561,10 @@ namespace oomtm450PuckMod_Stats {
                 ulong clientId = (ulong)message["clientId"];
                 string clientSteamId;
                 try {
-                    clientSteamId = _players_ClientId_SteamId[clientId];
+                    clientSteamId = _playersInfo[clientId].SteamId;
                 }
                 catch {
-                    Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(_players_ClientId_SteamId)}.", ServerConfig);
+                    Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(_playersInfo)}.", ServerConfig);
                     return;
                 }
 
@@ -1476,10 +1572,9 @@ namespace oomtm450PuckMod_Stats {
 
                 _playerIsDown.Remove(clientSteamId);
                 _playersCurrentPuckTouch.Remove(clientSteamId);
-                _playersLastTimePuckPossession.Remove(clientSteamId);
                 _lastTimeOnCollisionStayOrExitWasCalled.Remove(clientSteamId);
 
-                _players_ClientId_SteamId.Remove(clientId);
+                _playersInfo.Remove(clientId);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(Event_OnClientDisconnected)}.\n{ex}", ServerConfig);
@@ -1515,6 +1610,7 @@ namespace oomtm450PuckMod_Stats {
                 _blueAssists.Clear();
                 _redGoals.Clear();
                 _redAssists.Clear();
+                _plusMinus.Clear();
 
                 ScoreboardModifications(false);
             }
@@ -1525,16 +1621,18 @@ namespace oomtm450PuckMod_Stats {
 
         public static void Event_OnPlayerRoleChanged(Dictionary<string, object> message) {
             // Use the event to link client Ids to Steam Ids.
-            Dictionary<ulong, string> players_ClientId_SteamId_ToChange = new Dictionary<ulong, string>();
-            foreach (var kvp in _players_ClientId_SteamId) {
-                if (string.IsNullOrEmpty(kvp.Value))
-                    players_ClientId_SteamId_ToChange.Add(kvp.Key, PlayerManager.Instance.GetPlayerByClientId(kvp.Key).SteamId.Value.ToString());
+            Dictionary<ulong, (string SteamId, string Username)> playersInfo_ToChange = new Dictionary<ulong, (string, string)>();
+            foreach (var kvp in _playersInfo) {
+                if (string.IsNullOrEmpty(kvp.Value.SteamId)) {
+                    Player _player = PlayerManager.Instance.GetPlayerByClientId(kvp.Key);
+                    playersInfo_ToChange.Add(kvp.Key, (_player.SteamId.Value.ToString(), _player.Username.Value.ToString()));
+                }
             }
 
-            foreach (var kvp in players_ClientId_SteamId_ToChange) {
-                if (!string.IsNullOrEmpty(kvp.Value)) {
-                    _players_ClientId_SteamId[kvp.Key] = kvp.Value;
-                    Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value}.", ServerConfig);
+            foreach (var kvp in playersInfo_ToChange) {
+                if (!string.IsNullOrEmpty(kvp.Value.SteamId)) {
+                    _playersInfo[kvp.Key] = kvp.Value;
+                    Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value.SteamId} ({kvp.Value.Username}).", ServerConfig);
                 }
             }
 
@@ -1651,7 +1749,7 @@ namespace oomtm450PuckMod_Stats {
                         _askForKick = true;
                         break;
 
-                    case Constants.MOD_NAME + "_kick": // SERVER-SIDE : Kick the client that asked to be kicked.
+                    case Constants.MOD_NAME + "_kick": // SERVER-SIDE : Warn the client that the mod is out of date.
                         if (dataStr != "1")
                             break;
 
@@ -1726,6 +1824,7 @@ namespace oomtm450PuckMod_Stats {
                         Client_ResetTakeaways();
                         Client_ResetTurnovers();
                         Client_ResetStickSaves();
+                        Client_ResetPlusMinus();
                         break;
 
                     case BATCH_SOG:
@@ -1872,7 +1971,7 @@ namespace oomtm450PuckMod_Stats {
                     if (ve is TemplateContainer && ve.childCount == 1) {
                         VisualElement templateContainer = ve.Children().First();
 
-                        Label sogHeader = new Label("SOG/s%") {
+                        Label sogHeader = new Label("S/SV%") {
                             name = SOG_HEADER_LABEL_NAME,
                         };
                         templateContainer.Add(sogHeader);
@@ -2113,6 +2212,15 @@ namespace oomtm450PuckMod_Stats {
             Logging.Log($"playerSteamId:{playerSteamId},star:{starIndex}", ServerConfig);
         }
 
+        /// <summary>
+        /// Method that logs the +/- of a player.
+        /// </summary>
+        /// <param name="playerSteamId">String, steam Id of the player.</param>
+        /// <param name="plusminus">Int, +/-.</param>
+        private static void LogPlusMinus(string playerSteamId, int plusminus) {
+            Logging.Log($"playerSteamId:{playerSteamId},plusminus:{plusminus}", ServerConfig);
+        }
+
         private static string GetGoalieSavePerc(int saves, int shots) {
             if (shots == 0)
                 return "0.000";
@@ -2190,6 +2298,11 @@ namespace oomtm450PuckMod_Stats {
         private static void Client_ResetStickSaves() {
             foreach (string key in new List<string>(_stickSaves.Keys))
                 _stickSaves[key] = 0;
+        }
+
+        private static void Client_ResetPlusMinus() {
+            foreach (string key in new List<string>(_plusMinus.Keys))
+                _plusMinus[key] = 0;
         }
         #endregion
 
