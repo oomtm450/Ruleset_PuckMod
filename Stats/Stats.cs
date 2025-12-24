@@ -50,6 +50,8 @@ namespace oomtm450PuckMod_Stats {
             Codebase.Constants.TURNOVER,
             Codebase.Constants.BLOCK,
             Codebase.Constants.HIT,
+            Codebase.Constants.PASS,
+            Codebase.Constants.SOG,
         });
 
         /// <summary>
