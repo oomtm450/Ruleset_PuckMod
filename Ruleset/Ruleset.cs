@@ -898,7 +898,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_SetPhase_Patch Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_SetPhase_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -925,7 +925,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_SetPhase_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_SetPhase_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -1894,7 +1894,7 @@ namespace oomtm450PuckMod_Ruleset {
                 staminaDrainDivisionAmount *= ServerConfig.Icing.StaminaDrainDivisionAmount - ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyDelta;
 
             foreach (Player player in PlayerManager.Instance.GetPlayersByTeam(icingTeam)) {
-                if (!player)
+                if (!Codebase.PlayerFunc.IsPlayerPlaying(player))
                     continue;
 
                 if (Codebase.PlayerFunc.IsGoalie(player) && !ServerConfig.Icing.StaminaDrainGoalie)
