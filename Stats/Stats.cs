@@ -386,7 +386,7 @@ namespace oomtm450PuckMod_Stats {
                     SendSavePercDuringGoal(team, saveWasCounted);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_GoalScored_Patch Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_GoalScored_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -416,23 +416,26 @@ namespace oomtm450PuckMod_Stats {
                         LogPlusMinus(playerSteamId, _plusMinus[playerSteamId]);
                     }
 
+                    LockList<string> goalsList, assistsList;
+
                     if (team == PlayerTeam.Blue) {
-                        _blueGoals.Add(goalPlayer.SteamId.Value.ToString());
-                        if (assistPlayer != null)
-                            _blueAssists.Add(assistPlayer.SteamId.Value.ToString());
-                        if (secondAssistPlayer != null)
-                            _blueAssists.Add(secondAssistPlayer.SteamId.Value.ToString());
+                        goalsList = _blueGoals;
+                        assistsList = _blueAssists;
                     }
                     else {
-                        _redGoals.Add(goalPlayer.SteamId.Value.ToString());
-                        if (assistPlayer != null)
-                            _redAssists.Add(assistPlayer.SteamId.Value.ToString());
-                        if (secondAssistPlayer != null)
-                            _redAssists.Add(secondAssistPlayer.SteamId.Value.ToString());
+                        goalsList = _redGoals;
+                        assistsList = _redAssists;
                     }
+
+                    if (goalPlayer != null)
+                        goalsList.Add(goalPlayer.SteamId.Value.ToString());
+                    if (assistPlayer != null)
+                        assistsList.Add(assistPlayer.SteamId.Value.ToString());
+                    if (secondAssistPlayer != null)
+                        assistsList.Add(secondAssistPlayer.SteamId.Value.ToString());
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_GoalScored_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_GoalScored_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
