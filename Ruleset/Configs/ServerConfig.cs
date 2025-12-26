@@ -333,7 +333,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, amount to divide the stamina by for the team causing the icing if StaminaDrain is on.
         /// </summary>
-        public float StaminaDrainDivisionAmount { get; set; } = 2f;
+        public float StaminaDrainDivisionAmount { get; set; } = 2.5f;
 
         /// <summary>
         /// Float, amount to remove from StaminaDrainDivisionAmount when applying additional stamina drain penalties.
