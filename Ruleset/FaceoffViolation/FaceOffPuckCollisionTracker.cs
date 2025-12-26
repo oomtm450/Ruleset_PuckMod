@@ -144,7 +144,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             PlayerViolation violation = _playerViolations[clientId];
             violation.ViolationCount++;
 
-            Logging.Log($"VIOLATION! Player {violatingPlayer.Username.Value} #{violatingPlayer.Number.Value} touched puck before ice contact. Count: {violation.ViolationCount}", Ruleset.ServerConfig);
+            Logging.Log($"VIOLATION! #{violatingPlayer.Number.Value} {violatingPlayer.Username.Value} touched puck before ice contact. Count: {violation.ViolationCount}", Ruleset.ServerConfig);
 
             // Always restart the faceoff first.
             RestartFaceoff();
@@ -153,7 +153,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             if (violation.ViolationCount >= Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty) {
                 // Send penalty chat message.
                 Ruleset.SystemChatMessages.Add(
-                    $"PENALTY: {violatingPlayer.Username.Value} has {Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty} faceoff violations! Will be frozen after spawn."
+                    $"PENALTY: #{violatingPlayer.Number.Value} {violatingPlayer.Username.Value} has {Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty} faceoff violations! Will be frozen after spawn."
                 );
 
                 // Freeze player after they respawn at faceoff. (with delay)
@@ -163,7 +163,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             else {
                 // Just a violation - send chat message.
                 Ruleset.SystemChatMessages.Add(
-                    $"Faceoff Violation: {violatingPlayer.Username.Value} touched puck before ice! Restarting... ({violation.ViolationCount}/{Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty})"
+                    $"Faceoff Violation: #{violatingPlayer.Number.Value} {violatingPlayer.Username.Value} touched puck before ice! Restarting... ({violation.ViolationCount}/{Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty})"
                 );
             }
         }
