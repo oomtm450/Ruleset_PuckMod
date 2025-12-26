@@ -260,20 +260,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
     /// Manages boundary restrictions during faceoffs
     /// </summary>
     public class FaceOffBoundaryManager : MonoBehaviour {
-        private List<FaceoffSpot> FACEOFF_POSITIONS { get; } = new List<FaceoffSpot> {
-            FaceoffSpot.Center,
-            FaceoffSpot.BlueteamBLLeft,
-            FaceoffSpot.BlueteamBLRight,
-            FaceoffSpot.BlueteamDZoneLeft,
-            FaceoffSpot.BlueteamDZoneRight,
-            FaceoffSpot.RedteamBLLeft,
-            FaceoffSpot.RedteamBLRight,
-            FaceoffSpot.RedteamDZoneLeft,
-            FaceoffSpot.RedteamDZoneRight,
-        };
-
         private readonly LockList<FaceOffBoundary> _boundaries = new LockList<FaceOffBoundary>();
-        private GameObject _centerIceBoundary;
 
         private void Start() {
             CreateBoundaries();
@@ -288,24 +275,34 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         }
 
         private void CreateCenterIceBoundary() {
-            _centerIceBoundary = new GameObject("CenterIceBoundary");
-            _centerIceBoundary.transform.parent = transform;
-            _centerIceBoundary.transform.position = new Vector3(0, 1f, 0); // Center of rink, 1m up
+            GameObject centerIceBoundary = new GameObject("CenterIceBoundary");
+            centerIceBoundary.transform.parent = transform;
+            centerIceBoundary.transform.position = new Vector3(0, 1f, 0); // Center of rink, 1m up
 
-            BoxCollider collider = _centerIceBoundary.AddComponent<BoxCollider>();
+            BoxCollider collider = centerIceBoundary.AddComponent<BoxCollider>();
             collider.isTrigger = true;
             collider.size = new Vector3(1f, 5f, 40f); // Wall across center ice
 
-            FaceOffBoundary boundary = _centerIceBoundary.AddComponent<FaceOffBoundary>();
+            FaceOffBoundary boundary = centerIceBoundary.AddComponent<FaceOffBoundary>();
             boundary.BoundaryType = BoundaryType.CenterIce;
             _boundaries.Add(boundary);
 
-            _centerIceBoundary.SetActive(false);
+            centerIceBoundary.SetActive(false);
         }
 
         private void CreateFaceOffCircleBoundaries() {
             // Create boundaries at typical faceoff dot locations
-            foreach (FaceoffSpot spot in FACEOFF_POSITIONS) {
+            foreach (FaceoffSpot spot in new List<FaceoffSpot> {
+                FaceoffSpot.Center,
+                FaceoffSpot.BlueteamBLLeft,
+                FaceoffSpot.BlueteamBLRight,
+                FaceoffSpot.BlueteamDZoneLeft,
+                FaceoffSpot.BlueteamDZoneRight,
+                FaceoffSpot.RedteamBLLeft,
+                FaceoffSpot.RedteamBLRight,
+                FaceoffSpot.RedteamDZoneLeft,
+                FaceoffSpot.RedteamDZoneRight,
+            }) {
                 Vector3 position = Faceoff.GetFaceoffDot(spot);
                 position.y = 0;
                 GameObject boundaryObj = new GameObject($"FaceOffCircleBoundary_{spot}");
