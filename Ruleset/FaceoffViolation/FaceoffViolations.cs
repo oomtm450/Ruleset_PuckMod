@@ -334,7 +334,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             foreach (FaceOffBoundary boundary in _boundaries)
                 boundary?.gameObject.SetActive(false);
         }
-    }*/
+    }
 
     public enum BoundaryType {
         CenterIce,
@@ -439,5 +439,5 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             // Clear when boundaries deactivate
             _playerStartingSides.Clear();
         }
-    }
+    }*/
 }
