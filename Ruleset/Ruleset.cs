@@ -301,9 +301,9 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, 0 },
         };
 
-        private static FaceOffBoundaryManager _boundaryManager;
-        private static FaceOffPlayerUnfreezer _playerUnfreezer;
-        private static FaceOffPuckValidator _puckValidator;
+        //private static FaceOffBoundaryManager _boundaryManager = null;
+        private static FaceOffPlayerUnfreezer _playerUnfreezer = null;
+        private static FaceOffPuckValidator _puckValidator = null;
 
         // Client-side.
         private static RefSignals _refSignalsBlueTeam = null;
@@ -830,8 +830,8 @@ namespace oomtm450PuckMod_Ruleset {
                             foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
                                 _icingStaminaDrainPenaltyAmount[key] = 0;
                         }
-                        else if (phase == GamePhase.FaceOff)
-                            _boundaryManager?.ActivateBoundaries();
+                        /*else if (phase == GamePhase.FaceOff)
+                            _boundaryManager?.ActivateBoundaries();*/
 
                         // Reset players zone.
                         _playersZone.Clear();
@@ -883,7 +883,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (time == -1 && ServerConfig.Faceoff.ReAdd1SecondAfterFaceoff)
                             time = SystemFunc.GetPrivateField<int>(typeof(GameManager), GameManager.Instance, "remainingPlayTime") + 1;
 
-                        _boundaryManager?.DeactivateBoundaries();
+                        //_boundaryManager?.DeactivateBoundaries();
                     }
 
                     if (!ChangedPhase)
@@ -2330,9 +2330,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (ServerConfig.Faceoff.EnableViolations) {
                         // Create boundary manager
-                        GameObject boundaryManagerObj = new GameObject("FaceOffBoundaryManager");
+                        /*GameObject boundaryManagerObj = new GameObject("FaceOffBoundaryManager");
                         _boundaryManager = boundaryManagerObj.AddComponent<FaceOffBoundaryManager>();
-                        UnityEngine.Object.DontDestroyOnLoad(boundaryManagerObj);
+                        UnityEngine.Object.DontDestroyOnLoad(boundaryManagerObj);*/
 
                         // Create player unfreezer/tether system
                         GameObject playerUnfreezerObj = new GameObject("FaceOffPlayerUnfreezer");
@@ -2419,10 +2419,10 @@ namespace oomtm450PuckMod_Ruleset {
                     _refSignalsRedTeam = null;
                 }
 
-                if (_boundaryManager != null) {
+                /*if (_boundaryManager != null) {
                     UnityEngine.Object.Destroy(_boundaryManager.gameObject);
                     _boundaryManager = null;
-                }
+                }*/
 
                 if (_playerUnfreezer != null) {
                     UnityEngine.Object.Destroy(_playerUnfreezer.gameObject);

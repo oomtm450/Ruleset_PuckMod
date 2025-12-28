@@ -256,7 +256,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         }
     }
 
-    /// <summary>
+    /*/// <summary>
     /// Manages boundary restrictions during faceoffs
     /// </summary>
     public class FaceOffBoundaryManager : MonoBehaviour {
@@ -334,7 +334,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             foreach (FaceOffBoundary boundary in _boundaries)
                 boundary?.gameObject.SetActive(false);
         }
-    }
+    }*/
 
     public enum BoundaryType {
         CenterIce,
