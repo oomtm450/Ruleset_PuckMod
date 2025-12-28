@@ -599,14 +599,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         // Winger settings
         public float WingerMaxForward { get; set; } = 1f;     // Wingers can move forward a bit
         public float WingerMaxBackward { get; set; } = 2f;    // Backward wall
-        public float WingerMaxToward { get; set; } = 0;      // Limited movement toward center (inward wall)
-        public float WingerMaxAway { get; set; } = 5f;       // More movement away from center (outward wall toward boards)
+        public float WingerMaxToward { get; set; } = 0f;      // Limited movement toward center (inward wall)
+        public float WingerMaxAway { get; set; } = 2.5f;       // More movement away from center (outward wall toward boards)
 
         // Defense settings
         public float DefenseMaxForward { get; set; } = 0;      // Defense can't move forward at all
-        public float DefenseMaxBackward { get; set; } = 0f;   // Backward wall
-        public float DefenseMaxToward { get; set; } = 5f;     // Movement toward center
-        public float DefenseMaxAway { get; set; } = 5f;      // Movement away from center (toward boards)
+        public float DefenseMaxBackward { get; set; } = 0;   // Backward wall
+        public float DefenseMaxToward { get; set; } = 2.5f;     // Movement toward center
+        public float DefenseMaxAway { get; set; } = 2.5f;      // Movement away from center (toward boards)
 
         // Goalie settings
         public float GoalieMaxForward { get; set; } = 2f;     // Minimal forward movement

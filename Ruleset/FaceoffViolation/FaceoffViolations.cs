@@ -50,15 +50,15 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
         }
 
-        internal void RegisterPlayer(PlayerBodyV2 playerBody) {
+        internal void RegisterPlayer(PlayerBodyV2 playerBody, FaceoffSpot currentFaceoffSpot) {
             if (playerBody == null || !playerBody.Player)
                 return;
 
             // Delay registration to allow Ruleset mod to position players first
-            StartCoroutine(RegisterPlayerDelayed(playerBody));
+            StartCoroutine(RegisterPlayerDelayed(playerBody, currentFaceoffSpot));
         }
 
-        private System.Collections.IEnumerator RegisterPlayerDelayed(PlayerBodyV2 playerBody) {
+        private System.Collections.IEnumerator RegisterPlayerDelayed(PlayerBodyV2 playerBody, FaceoffSpot currentFaceoffSpot) {
             // Wait for Ruleset mod to finish positioning players
             yield return new WaitForSeconds(0.1f);
 
@@ -70,21 +70,29 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             // Get player role and position AFTER ruleset has positioned them
             string positionName = playerBody.Player.PlayerPosition?.Name ?? "Unknown";
+            PlayerTeam team = playerBody.Player.Team.Value;
 
             // Create tether with role-specific restrictions
             PlayerTether tether = new PlayerTether {
                 PlayerBody = playerBody,
                 SpawnPosition = playerBody.transform.position,
-                MaxForwardDistance = GetMaxForwardDistance(positionName),
-                MaxBackwardDistance = GetMaxBackwardDistance(positionName),
-                MaxLeftDistance = GetMaxLeftDistance(positionName),
-                MaxRightDistance = GetMaxRightDistance(positionName),
+                MaxForwardDistance = GetMaxForwardDistance(positionName, playerBody.Player.Team.Value, currentFaceoffSpot),
+                MaxBackwardDistance = GetMaxBackwardDistance(positionName, playerBody.Player.Team.Value, currentFaceoffSpot),
+                MaxLeftDistance = GetMaxLeftDistance(positionName, playerBody.Player.Team.Value, currentFaceoffSpot),
+                MaxRightDistance = GetMaxRightDistance(positionName, playerBody.Player.Team.Value, currentFaceoffSpot),
             };
+
+            if (positionName != "G" && currentFaceoffSpot == FaceoffSpot.Center) {
+                tether.MaxForwardDistance *= 2;
+                tether.MaxBackwardDistance *= 2;
+                tether.MaxLeftDistance *= 2;
+                tether.MaxRightDistance *= 2;
+            }
 
             _playerTethers.Add(tether);
         }
 
-        private float GetMaxForwardDistance(string positionName) {
+        private float GetMaxForwardDistance(string positionName, PlayerTeam team, FaceoffSpot currentFaceoffSpot) {
             switch (positionName) {
                 case "C": // Center - NO forward movement at all
                     return Ruleset.ServerConfig.Faceoff.CenterMaxForward;
@@ -92,16 +100,23 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 case "RW": // Right Wing
                     return Ruleset.ServerConfig.Faceoff.WingerMaxForward;
                 case "LD": // Left Defense
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneRight && team == PlayerTeam.Red))
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxForward;
+                    else
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxForward;
                 case "RD": // Right Defense
-                    return Ruleset.ServerConfig.Faceoff.DefenseMaxForward;
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && team == PlayerTeam.Red))
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxForward;
+                    else
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxForward;
                 case "G": // Goalie
                     return Ruleset.ServerConfig.Faceoff.GoalieMaxForward;
                 default:
                     return 0f;
-            }
+                }
         }
 
-        private float GetMaxBackwardDistance(string positionName) {
+        private float GetMaxBackwardDistance(string positionName, PlayerTeam team, FaceoffSpot currentFaceoffSpot) {
             switch (positionName) {
                 case "C": // Center
                     return Ruleset.ServerConfig.Faceoff.CenterMaxBackward;
@@ -109,8 +124,15 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 case "RW": // Right Wing
                     return Ruleset.ServerConfig.Faceoff.WingerMaxBackward;
                 case "LD": // Left Defense
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneRight && team == PlayerTeam.Red))
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxBackward;
+                    else
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxBackward;
                 case "RD": // Right Defense
-                    return Ruleset.ServerConfig.Faceoff.DefenseMaxBackward;
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && team == PlayerTeam.Red))
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxBackward;
+                    else
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxBackward;
                 case "G": // Goalie
                     return Ruleset.ServerConfig.Faceoff.GoalieMaxBackward;
                 default:
@@ -118,7 +140,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
         }
 
-        private float GetMaxLeftDistance(string positionName) {
+        private float GetMaxLeftDistance(string positionName, PlayerTeam team, FaceoffSpot currentFaceoffSpot) {
             switch (positionName) {
                 case "C": // Center - limited side movement
                     return Ruleset.ServerConfig.Faceoff.CenterMaxLeft;
@@ -128,16 +150,22 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                     return Ruleset.ServerConfig.Faceoff.WingerMaxAway;
                 case "RW": // Right winger can't move much left (toward center)
                     return Ruleset.ServerConfig.Faceoff.WingerMaxToward;
-                case "LD": // Left defense can move left more (away from center toward boards)
-                    return Ruleset.ServerConfig.Faceoff.DefenseMaxAway;
-                case "RD": // Right defense can't move much left (toward center)
-                    return Ruleset.ServerConfig.Faceoff.DefenseMaxToward;
+                case "LD": // Left Defense
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneRight && team == PlayerTeam.Red))
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxAway;
+                    else
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxAway;
+                case "RD": // Right Defense
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && team == PlayerTeam.Red))
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxToward;
+                    else
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxToward;
                 default:
                     return 2f;
             }
         }
 
-        private float GetMaxRightDistance(string positionName) {
+        private float GetMaxRightDistance(string positionName, PlayerTeam team, FaceoffSpot currentFaceoffSpot) {
             switch (positionName) {
                 case "C": // Center - limited side movement
                     return Ruleset.ServerConfig.Faceoff.CenterMaxRight;
@@ -147,10 +175,16 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                     return Ruleset.ServerConfig.Faceoff.WingerMaxToward;
                 case "RW": // Right winger can move right more (away from center toward boards)
                     return Ruleset.ServerConfig.Faceoff.WingerMaxAway;
-                case "LD": // Left defense can't move much right (toward center)
-                    return Ruleset.ServerConfig.Faceoff.DefenseMaxToward;
-                case "RD": // Right defense can move right more (away from center toward boards)
-                    return Ruleset.ServerConfig.Faceoff.DefenseMaxAway;
+                case "LD": // Left Defense
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneRight && team == PlayerTeam.Red))
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxToward;
+                    else
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxToward;
+                case "RD": // Right Defense
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && team == PlayerTeam.Red))
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxAway;
+                    else
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxAway;
                 default:
                     return 2f;
             }
@@ -184,30 +218,24 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
 
             // Enforce tethers and keep players unfrozen (except penalized ones)
-            for (int i = _playerTethers.Count - 1; i >= 0; i--) {
-                PlayerTether tether = _playerTethers[i];
-
-                if (tether.PlayerBody == null || tether.PlayerBody.Rigidbody == null) {
-                    _playerTethers.RemoveAt(i);
+            foreach (PlayerTether tether in _playerTethers) {
+                if (tether.PlayerBody == null || tether.PlayerBody.Rigidbody == null)
                     continue;
-                }
 
                 // Skip players who are serving a penalty
-                if (PenalizedPlayers.Contains(tether.PlayerBody.Player)) {
+                if (PenalizedPlayers.Contains(tether.PlayerBody.Player))
                     continue;
-                }
 
                 // Unfreeze if frozen
-                if (tether.PlayerBody.Rigidbody.constraints == RigidbodyConstraints.FreezeAll) {
+                if (tether.PlayerBody.Rigidbody.constraints == RigidbodyConstraints.FreezeAll)
                     tether.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.None;
-                }
 
                 // Enforce position tether
                 EnforceTether(tether);
             }
         }
 
-        private void EnforceTether(PlayerTether tether) {
+        private static void EnforceTether(PlayerTether tether) {
             Vector3 currentPos = tether.PlayerBody.transform.position;
             Vector3 spawnPos = tether.SpawnPosition;
             Vector3 clampedPos = currentPos;
@@ -228,6 +256,9 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 clampedPos.z = spawnPos.z + (-tether.MaxBackwardDistance * forwardDirection);
                 wasClamped = true;
             }
+
+            if (tether.PlayerBody.Player.Team.Value == PlayerTeam.Blue)
+                (tether.MaxRightDistance, tether.MaxLeftDistance) = (tether.MaxLeftDistance, tether.MaxRightDistance);
 
             // Check left movement
             if (spawnPos.x - currentPos.x > tether.MaxLeftDistance) {

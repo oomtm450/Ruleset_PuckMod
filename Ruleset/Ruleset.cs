@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.27.1DEV";
+        private static readonly string MOD_VERSION = "0.27.1DEV1";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -2103,7 +2103,7 @@ namespace oomtm450PuckMod_Ruleset {
                 // Prevent the default freeze behavior during faceoffs.
                 if (GameManager.Instance.GameState.Value.Phase == GamePhase.FaceOff) {
                     PlayerBodyV2 playerBody = (PlayerBodyV2)message["playerBody"];
-                    _playerUnfreezer?.RegisterPlayer(playerBody);
+                    _playerUnfreezer?.RegisterPlayer(playerBody, NextFaceoffSpot);
                 }
             }
             catch (Exception ex) {
