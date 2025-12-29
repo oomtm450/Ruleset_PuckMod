@@ -456,7 +456,7 @@ namespace oomtm450PuckMod_Stats {
                     _hasUpdatedUIScoreboard.Remove(player.SteamId.Value.ToString());
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in UIScoreboard_RemovePlayer_Patch Postfix().\n{ex}", _clientConfig);
+                    Logging.LogError($"Error in {nameof(UIScoreboard_RemovePlayer_Patch)} Postfix().\n{ex}", _clientConfig);
                 }
             }
         }
