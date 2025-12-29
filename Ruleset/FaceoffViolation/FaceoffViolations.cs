@@ -72,6 +72,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             string positionName = playerBody.Player.PlayerPosition?.Name ?? "Unknown";
             PlayerTeam team = playerBody.Player.Team.Value;
 
+            if (positionName == "LD" && (team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft || team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedteamDZoneRight))
+                positionName = "RW";
+            else if (positionName == "RD" && (team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueteamDZoneRight || team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedteamDZoneLeft))
+                positionName = "LW";
+
             // Create tether with role-specific restrictions
             PlayerTether tether = new PlayerTether {
                 PlayerBody = playerBody,
@@ -241,7 +246,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             Vector3 clampedPos = currentPos;
             bool wasClamped = false;
 
-            // Determine team direction (Blue team faces negative Z, Red faces positive Z)
             float forwardDirection = (tether.PlayerBody.Player.Team.Value == PlayerTeam.Blue) ? -1f : 1f;
 
             // Check forward movement (toward opponent goal)
@@ -257,19 +261,34 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 wasClamped = true;
             }
 
-            if (tether.PlayerBody.Player.Team.Value == PlayerTeam.Blue)
-                (tether.MaxRightDistance, tether.MaxLeftDistance) = (tether.MaxLeftDistance, tether.MaxRightDistance);
-
-            // Check left movement
-            if (spawnPos.x - currentPos.x > tether.MaxLeftDistance) {
-                clampedPos.x = spawnPos.x - tether.MaxLeftDistance;
-                wasClamped = true;
+            float xMovement = spawnPos.x - currentPos.x;
+            if (tether.PlayerBody.Player.Team.Value == PlayerTeam.Blue) {
+                if (xMovement > 0) { // Check right movement
+                    if (Mathf.Abs(xMovement) > tether.MaxRightDistance) {
+                        clampedPos.x = spawnPos.x + tether.MaxRightDistance;
+                        wasClamped = true;
+                    }
+                }
+                else { // Check left movement
+                    if (Mathf.Abs(xMovement) > tether.MaxLeftDistance) {
+                        clampedPos.x = spawnPos.x - tether.MaxLeftDistance;
+                        wasClamped = true;
+                    }
+                }
             }
-
-            // Check right movement
-            if (currentPos.x - spawnPos.x > tether.MaxRightDistance) {
-                clampedPos.x = spawnPos.x + tether.MaxRightDistance;
-                wasClamped = true;
+            else {
+                if (xMovement > 0) { // Check left movement
+                    if (Mathf.Abs(xMovement) > tether.MaxLeftDistance) {
+                        clampedPos.x = spawnPos.x - tether.MaxLeftDistance;
+                        wasClamped = true;
+                    }
+                }
+                else { // Check right movement
+                    if (Mathf.Abs(xMovement) > tether.MaxRightDistance) {
+                        clampedPos.x = spawnPos.x + tether.MaxRightDistance;
+                        wasClamped = true;
+                    }
+                }
             }
 
             if (wasClamped) {
