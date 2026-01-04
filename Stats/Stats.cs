@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.0";
+        private static readonly string MOD_VERSION = "0.7.1";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -37,6 +37,7 @@ namespace oomtm450PuckMod_Stats {
             "0.4.1",
             "0.5.0",
             "0.6.0",
+            "0.7.0",
         });
 
         /// <summary>
@@ -52,6 +53,7 @@ namespace oomtm450PuckMod_Stats {
             Codebase.Constants.HIT,
             Codebase.Constants.PASS,
             Codebase.Constants.SOG,
+            Codebase.Constants.SAVEPERC,
         });
 
         /// <summary>
@@ -386,7 +388,7 @@ namespace oomtm450PuckMod_Stats {
                     SendSavePercDuringGoal(team, saveWasCounted);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_GoalScored_Patch Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_GoalScored_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -416,23 +418,26 @@ namespace oomtm450PuckMod_Stats {
                         LogPlusMinus(playerSteamId, _plusMinus[playerSteamId]);
                     }
 
+                    LockList<string> goalsList, assistsList;
+
                     if (team == PlayerTeam.Blue) {
-                        _blueGoals.Add(goalPlayer.SteamId.Value.ToString());
-                        if (assistPlayer != null)
-                            _blueAssists.Add(assistPlayer.SteamId.Value.ToString());
-                        if (secondAssistPlayer != null)
-                            _blueAssists.Add(secondAssistPlayer.SteamId.Value.ToString());
+                        goalsList = _blueGoals;
+                        assistsList = _blueAssists;
                     }
                     else {
-                        _redGoals.Add(goalPlayer.SteamId.Value.ToString());
-                        if (assistPlayer != null)
-                            _redAssists.Add(assistPlayer.SteamId.Value.ToString());
-                        if (secondAssistPlayer != null)
-                            _redAssists.Add(secondAssistPlayer.SteamId.Value.ToString());
+                        goalsList = _redGoals;
+                        assistsList = _redAssists;
                     }
+
+                    if (goalPlayer != null)
+                        goalsList.Add(goalPlayer.SteamId.Value.ToString());
+                    if (assistPlayer != null)
+                        assistsList.Add(assistPlayer.SteamId.Value.ToString());
+                    if (secondAssistPlayer != null)
+                        assistsList.Add(secondAssistPlayer.SteamId.Value.ToString());
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_GoalScored_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_GoalScored_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -453,7 +458,7 @@ namespace oomtm450PuckMod_Stats {
                     _hasUpdatedUIScoreboard.Remove(player.SteamId.Value.ToString());
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in UIScoreboard_RemovePlayer_Patch Postfix().\n{ex}", _clientConfig);
+                    Logging.LogError($"Error in {nameof(UIScoreboard_RemovePlayer_Patch)} Postfix().\n{ex}", _clientConfig);
                 }
             }
         }
@@ -1378,6 +1383,11 @@ namespace oomtm450PuckMod_Stats {
                     return true;
 
                 Logging.Log($"Enabling...", ServerConfig, true);
+
+                if (Application.version != Codebase.Constants.CURRENT_APPLICATION_VERSION) {
+                    Logging.Log($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION}. Mod will not be enabled.", ServerConfig);
+                    return false;
+                }
 
                 _harmony.PatchAll();
 

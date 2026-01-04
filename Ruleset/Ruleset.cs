@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.27.0";
+        private static readonly string MOD_VERSION = "0.27.1";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -59,6 +59,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.26.2",
             "0.26.3",
             "0.26.4",
+            "0.27.0",
         });
 
         /// <summary>
@@ -301,9 +302,9 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, 0 },
         };
 
-        private static FaceOffBoundaryManager _boundaryManager;
-        private static FaceOffPlayerUnfreezer _playerUnfreezer;
-        private static FaceOffPuckValidator _puckValidator;
+        //private static FaceOffBoundaryManager _boundaryManager = null;
+        private static FaceOffPlayerUnfreezer _playerUnfreezer = null;
+        private static FaceOffPuckValidator _puckValidator = null;
 
         // Client-side.
         private static RefSignals _refSignalsBlueTeam = null;
@@ -830,8 +831,8 @@ namespace oomtm450PuckMod_Ruleset {
                             foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
                                 _icingStaminaDrainPenaltyAmount[key] = 0;
                         }
-                        else if (phase == GamePhase.FaceOff)
-                            _boundaryManager?.ActivateBoundaries();
+                        /*else if (phase == GamePhase.FaceOff)
+                            _boundaryManager?.ActivateBoundaries();*/
 
                         // Reset players zone.
                         _playersZone.Clear();
@@ -883,7 +884,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (time == -1 && ServerConfig.Faceoff.ReAdd1SecondAfterFaceoff)
                             time = SystemFunc.GetPrivateField<int>(typeof(GameManager), GameManager.Instance, "remainingPlayTime") + 1;
 
-                        _boundaryManager?.DeactivateBoundaries();
+                        //_boundaryManager?.DeactivateBoundaries();
                     }
 
                     if (!ChangedPhase)
@@ -898,7 +899,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_SetPhase_Patch Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_SetPhase_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -925,7 +926,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_SetPhase_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_SetPhase_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -1894,7 +1895,7 @@ namespace oomtm450PuckMod_Ruleset {
                 staminaDrainDivisionAmount *= ServerConfig.Icing.StaminaDrainDivisionAmount - ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyDelta;
 
             foreach (Player player in PlayerManager.Instance.GetPlayersByTeam(icingTeam)) {
-                if (!player)
+                if (!Codebase.PlayerFunc.IsPlayerPlaying(player))
                     continue;
 
                 if (Codebase.PlayerFunc.IsGoalie(player) && !ServerConfig.Icing.StaminaDrainGoalie)
@@ -2103,7 +2104,7 @@ namespace oomtm450PuckMod_Ruleset {
                 // Prevent the default freeze behavior during faceoffs.
                 if (GameManager.Instance.GameState.Value.Phase == GamePhase.FaceOff) {
                     PlayerBodyV2 playerBody = (PlayerBodyV2)message["playerBody"];
-                    _playerUnfreezer?.RegisterPlayer(playerBody);
+                    _playerUnfreezer?.RegisterPlayer(playerBody, NextFaceoffSpot);
                 }
             }
             catch (Exception ex) {
@@ -2295,6 +2296,11 @@ namespace oomtm450PuckMod_Ruleset {
 
                 Logging.Log($"Enabling...", ServerConfig, true);
 
+                if (Application.version != Codebase.Constants.CURRENT_APPLICATION_VERSION) {
+                    Logging.Log($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION}. Mod will not be enabled.", ServerConfig);
+                    return false;
+                }
+
                 _harmony.PatchAll();
 
                 Logging.Log($"Enabled.", ServerConfig, true);
@@ -2330,9 +2336,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (ServerConfig.Faceoff.EnableViolations) {
                         // Create boundary manager
-                        GameObject boundaryManagerObj = new GameObject("FaceOffBoundaryManager");
+                        /*GameObject boundaryManagerObj = new GameObject("FaceOffBoundaryManager");
                         _boundaryManager = boundaryManagerObj.AddComponent<FaceOffBoundaryManager>();
-                        UnityEngine.Object.DontDestroyOnLoad(boundaryManagerObj);
+                        UnityEngine.Object.DontDestroyOnLoad(boundaryManagerObj);*/
 
                         // Create player unfreezer/tether system
                         GameObject playerUnfreezerObj = new GameObject("FaceOffPlayerUnfreezer");
@@ -2419,10 +2425,10 @@ namespace oomtm450PuckMod_Ruleset {
                     _refSignalsRedTeam = null;
                 }
 
-                if (_boundaryManager != null) {
+                /*if (_boundaryManager != null) {
                     UnityEngine.Object.Destroy(_boundaryManager.gameObject);
                     _boundaryManager = null;
-                }
+                }*/
 
                 if (_playerUnfreezer != null) {
                     UnityEngine.Object.Destroy(_playerUnfreezer.gameObject);
