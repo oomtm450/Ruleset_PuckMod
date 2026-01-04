@@ -52,6 +52,7 @@ namespace oomtm450PuckMod_Stats {
             Codebase.Constants.HIT,
             Codebase.Constants.PASS,
             Codebase.Constants.SOG,
+            Codebase.Constants.SAVEPERC,
         });
 
         /// <summary>
