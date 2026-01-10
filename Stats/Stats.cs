@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.1";
+        private static readonly string MOD_VERSION = "0.8.0DEV";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -38,6 +38,7 @@ namespace oomtm450PuckMod_Stats {
             "0.5.0",
             "0.6.0",
             "0.7.0",
+            "0.7.1",
         });
 
         /// <summary>
