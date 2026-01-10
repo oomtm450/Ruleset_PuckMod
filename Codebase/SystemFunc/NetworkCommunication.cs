@@ -1,6 +1,7 @@
 ﻿using Codebase.Configs;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Unity.Collections;
 using Unity.Netcode;
@@ -63,7 +64,7 @@ namespace Codebase {
 
                 writer.Dispose();
 
-                if (!DataNamesToIgnore.Contains(dataName))
+                if (!DataNamesToIgnore.Any(x => dataName.StartsWith(x)))
                     Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to {clientId} with listener {listener}.", config);
             }
             catch (Exception ex) {
@@ -94,7 +95,7 @@ namespace Codebase {
 
                 writer.Dispose();
 
-                if (!DataNamesToIgnore.Contains(dataName))
+                if (!DataNamesToIgnore.Any(x => dataName.StartsWith(x)))
                     Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to all clients with listener {listener}.", config);
             }
             catch (Exception ex) {
@@ -123,7 +124,7 @@ namespace Codebase {
 
                 dataName = dataName.Trim();
 
-                if (!DataNamesToIgnore.Contains(dataName))
+                if (!DataNamesToIgnore.Any(x => dataName.StartsWith(x)))
                     Logging.Log($"Received data {dataName} ({length} bytes - {totalLength} total bytes) from {(clientId == 0 ? "server" : clientId.ToString())}. Content : {dataStr}", config);
 
                 return (dataName, dataStr);
