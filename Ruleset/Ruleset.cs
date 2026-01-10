@@ -1063,11 +1063,11 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null)
                     return true;
 
-                if (SystemChatMessages.Count != 0) { // TODO : This don't work, pls fix.
+                if (SystemChatMessages.Count != 0) {
                     List<string> systemChatMessages = new List<string>(SystemChatMessages);
                     SystemChatMessages.Clear();
 
-                    foreach (string message in SystemChatMessages)
+                    foreach (string message in systemChatMessages)
                         UIChat.Instance.Server_SendSystemChatMessage(message);
                 }
 
