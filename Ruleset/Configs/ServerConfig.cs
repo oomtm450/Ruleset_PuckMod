@@ -297,12 +297,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
         public Dictionary<Zone, float> MaxPossibleTime { get; set; } = new Dictionary<Zone, float> {
-            { Zone.BlueTeam_BehindGoalLine, 9500f },
-            { Zone.RedTeam_BehindGoalLine, 9500f },
-            { Zone.BlueTeam_Zone, 7750f },
-            { Zone.RedTeam_Zone, 7750f },
-            { Zone.BlueTeam_Center, 5500f },
-            { Zone.RedTeam_Center, 5500f },
+            { Zone.BlueTeam_BehindGoalLine, 9750f },
+            { Zone.RedTeam_BehindGoalLine, 9750f },
+            { Zone.BlueTeam_Zone, 8000f },
+            { Zone.RedTeam_Zone, 8000f },
+            { Zone.BlueTeam_Center, 5750f },
+            { Zone.RedTeam_Center, 5750f },
         };
 
         /// <summary>
@@ -313,7 +313,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, delta used to calculate the dynamic icing possible times.
         /// </summary>
-        public float Delta { get; set; } = 21.5f;
+        public float Delta { get; set; } = 21.75f;
 
         /// <summary>
         /// Float, max height before deferred icing does not check for possibility that the other team touches the puck before icing.
@@ -343,7 +343,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, time in period seconds between 2 icings to apply additional stamina drain penalties.
         /// </summary>
-        public int StaminaDrainDivisionAmountPenaltyTime { get; set; } = 20;
+        public int StaminaDrainDivisionAmountPenaltyTime { get; set; } = 21;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -428,14 +428,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float MaxHeight { get; set; } = Codebase.Constants.CROSSBAR_HEIGHT;
 
         /// <summary>
-        /// Int, number of milliseconds after a high stick to not be considered.
+        /// Int, number of milliseconds after a high stick to call high stick if no one touches the puck.
         /// </summary>
         public int MaxMilliseconds { get; set; } = 8000;
 
         /// <summary>
         /// Float, delta used to calculate the high stick maximum frames before activation.
         /// </summary>
-        public float Delta { get; set; } = 18f;
+        public float Delta { get; set; } = 17f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
