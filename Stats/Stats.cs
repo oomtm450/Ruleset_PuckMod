@@ -1225,8 +1225,10 @@ namespace oomtm450PuckMod_Stats {
 
                             starPoints = starPoints.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
 
-                            if (starPoints.Count > 0)
+                            if (starPoints.Count != 0) {
+                                UIChat.Instance.Server_SendSystemChatMessage("STARS OF THE MATCH");
                                 _stars[1] = starPoints.ElementAt(0).Key;
+                            }
                             else
                                 _stars[1] = "";
 
@@ -1240,7 +1242,6 @@ namespace oomtm450PuckMod_Stats {
                             else
                                 _stars[3] = "";
 
-                            UIChat.Instance.Server_SendSystemChatMessage("STARS OF THE MATCH");
                             foreach (KeyValuePair<int, string> star in _stars.OrderByDescending(x => x.Key)) {
                                 if (string.IsNullOrEmpty(star.Value))
                                     continue;
