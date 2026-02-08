@@ -60,6 +60,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.26.3",
             "0.26.4",
             "0.27.0",
+            "0.27.1",
         });
 
         /// <summary>
