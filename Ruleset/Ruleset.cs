@@ -832,8 +832,6 @@ namespace oomtm450PuckMod_Ruleset {
                             foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
                                 _icingStaminaDrainPenaltyAmount[key] = 0;
                         }
-                        /*else if (phase == GamePhase.FaceOff)
-                            _boundaryManager?.ActivateBoundaries();*/
 
                         // Reset players zone.
                         _playersZone.Clear();
@@ -884,8 +882,6 @@ namespace oomtm450PuckMod_Ruleset {
                     else if (phase == GamePhase.Playing) {
                         if (time == -1 && ServerConfig.Faceoff.ReAdd1SecondAfterFaceoff)
                             time = SystemFunc.GetPrivateField<int>(typeof(GameManager), GameManager.Instance, "remainingPlayTime") + 1;
-
-                        //_boundaryManager?.DeactivateBoundaries();
                     }
 
                     if (!ChangedPhase)
