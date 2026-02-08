@@ -88,16 +88,6 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool _harmonyPatched = false;
 
         /// <summary>
-        /// ServerConfig, config set and sent by the server.
-        /// </summary>
-        internal static ServerConfig ServerConfig { get; set; } = new ServerConfig();
-
-        /// <summary>
-        /// ClientConfig, config set by the client.
-        /// </summary>
-        internal static ClientConfig ClientConfig { get; set; } = new ClientConfig();
-
-        /// <summary>
         /// LockList of PlayerIcing, positions of the players on the ice for icing logic.
         /// </summary>
         private static readonly LockList<PlayerIcing> _dictPlayersPositionsForIcing = new LockList<PlayerIcing>();
@@ -266,29 +256,6 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static FaceoffSpot _nextFaceoffSpot = FaceoffSpot.Center;
 
-        /// <summary>
-        /// FaceoffSpot, property of _nextFaceoffSpot.
-        /// </summary>
-        internal static FaceoffSpot NextFaceoffSpot {
-            get {
-                return _nextFaceoffSpot;
-            }
-            set {
-                if (_nextFaceoffSpot != value) {
-                    _nextFaceoffSpot = value;
-
-                    try {
-                        EventManager.Instance.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object> { { Codebase.Constants.NEXT_FACEOFF, _nextFaceoffSpot.ToString() } });
-                        if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.NEXT_FACEOFF))
-                            Logging.Log($"Sent data \"{Codebase.Constants.NEXT_FACEOFF}\" to {Codebase.Constants.RULESET_MOD_NAME}.", ServerConfig);
-                    }
-                    catch (Exception ex) {
-                        Logging.LogError($"Error in {nameof(NextFaceoffSpot)} setter.\n{ex}", ServerConfig);
-                    }
-                }
-            }
-        }
-
         private static float _puckScale = 1f;
 
         private static Rule _lastStoppageReason = Rule.None;
@@ -303,8 +270,8 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, 0 },
         };
 
-        //private static FaceOffBoundaryManager _boundaryManager = null;
         private static FaceOffPlayerUnfreezer _playerUnfreezer = null;
+
         private static FaceOffPuckValidator _puckValidator = null;
 
         // Client-side.
@@ -341,6 +308,39 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Properties
+        /// <summary>
+        /// ServerConfig, config set and sent by the server.
+        /// </summary>
+        internal static ServerConfig ServerConfig { get; set; } = new ServerConfig();
+
+        /// <summary>
+        /// ClientConfig, config set by the client.
+        /// </summary>
+        internal static ClientConfig ClientConfig { get; set; } = new ClientConfig();
+
+        /// <summary>
+        /// FaceoffSpot, property of _nextFaceoffSpot.
+        /// </summary>
+        internal static FaceoffSpot NextFaceoffSpot {
+            get {
+                return _nextFaceoffSpot;
+            }
+            set {
+                if (_nextFaceoffSpot != value) {
+                    _nextFaceoffSpot = value;
+
+                    try {
+                        EventManager.Instance.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object> { { Codebase.Constants.NEXT_FACEOFF, _nextFaceoffSpot.ToString() } });
+                        if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.NEXT_FACEOFF))
+                            Logging.Log($"Sent data \"{Codebase.Constants.NEXT_FACEOFF}\" to {Codebase.Constants.RULESET_MOD_NAME}.", ServerConfig);
+                    }
+                    catch (Exception ex) {
+                        Logging.LogError($"Error in {nameof(NextFaceoffSpot)} setter.\n{ex}", ServerConfig);
+                    }
+                }
+            }
+        }
+
         private static bool Paused {
             get { return _paused; }
             set {
