@@ -1112,7 +1112,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return true;
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 1.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 1.\n{ex}", ServerConfig);
                 }
 
                 Zone offsidePuckZone = Zone.None;
@@ -1122,7 +1122,7 @@ namespace oomtm450PuckMod_Ruleset {
                     offsidePuckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, oldZone, PuckRadius, true);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 2.\n{ex}", ServerConfig);
                 }
 
                 Dictionary<PlayerTeam, bool> isTeamOffside = new Dictionary<PlayerTeam, bool> {
@@ -1304,7 +1304,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 3.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 3.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1313,7 +1313,7 @@ namespace oomtm450PuckMod_Ruleset {
                     ServerManager_Update_IcingLogic(PlayerTeam.Red, puck, icingHasToBeWarned, _dictPlayersPositionsForIcing.Any(x => x.IsBehindBlueTeamHashmarks));
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 4.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 4.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1335,7 +1335,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 5.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 5.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1343,7 +1343,7 @@ namespace oomtm450PuckMod_Ruleset {
                     _isPuckBehindHashmarks[PlayerTeam.Red] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Red, puck.Rigidbody.transform.position, PuckRadius);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 6.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 6.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1351,7 +1351,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _noHighStickFrames[playerSteamId] += 1;
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 7.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 7.\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1378,7 +1378,7 @@ namespace oomtm450PuckMod_Ruleset {
                     NextFaceoffSpot = FaceoffSpot.Center;
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManagerController_Event_Server_OnPuckEnterTeamGoal_Patch Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManagerController_Event_Server_OnPuckEnterTeamGoal_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1393,7 +1393,7 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPrefix]
             public static bool Prefix(PlayerTeam team, ref Player lastPlayer, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
                 try {
-                    // If this is not the server, do not use the patch.
+                    // If this is not the server or logic is paused, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || !Logic)
                         return true;
 
@@ -1464,7 +1464,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_GoalScored_Patch Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_GoalScored_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1501,7 +1501,7 @@ namespace oomtm450PuckMod_Ruleset {
                     PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(NextFaceoffSpot), NextFaceoffSpot);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in Player_Server_RespawnCharacter_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(Player_Server_RespawnCharacter_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -1539,7 +1539,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in UIScoreboard_UpdateServer_Patch Postfix().\n{ex}", ClientConfig);
+                    Logging.LogError($"Error in {nameof(UIScoreboard_UpdatePlayer_Patch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
         }
