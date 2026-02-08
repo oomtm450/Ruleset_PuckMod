@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.27.1";
+        private static readonly string MOD_VERSION = "0.28.0DEV";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -1118,9 +1118,11 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 1.\n{ex}", ServerConfig);
                 }
 
+                Zone offsidePuckZone = Zone.None;
                 try {
                     oldZone = _puckZone;
-                    _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PuckRadius);
+                    _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, oldZone, PuckRadius);
+                    offsidePuckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, oldZone, PuckRadius, true);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}", ServerConfig);
@@ -1166,21 +1168,21 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             oldPlayerZone = result.Zone;
 
-                        Zone playerZone = ZoneFunc.GetZone(player.PlayerBody.transform.position, oldPlayerZone, Codebase.Constants.PLAYER_RADIUS);
-                        _playersZone[playerSteamId] = (player.Team.Value, playerZone);
+                        _playersZone[playerSteamId] = (player.Team.Value, ZoneFunc.GetZone(player.PlayerBody.transform.position, oldPlayerZone, Codebase.Constants.PLAYER_RADIUS));
+                        Zone playerZoneForOffside = ZoneFunc.GetZone(player.PlayerBody.transform.position, oldPlayerZone, Codebase.Constants.PLAYER_RADIUS, true);
 
                         PlayerTeam otherTeam = TeamFunc.GetOtherTeam(player.Team.Value);
                         List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
 
                         // Is offside.
                         bool isPlayerTeamOffside = isTeamOffside[player.Team.Value];
-                        if ((playerWithPossessionSteamId != playerSteamId || isPlayerTeamOffside) && (playerZone == otherTeamZones[0] || playerZone == otherTeamZones[1])) {
-                            if ((_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1]) || isPlayerTeamOffside)
+                        if ((playerWithPossessionSteamId != playerSteamId || isPlayerTeamOffside) && (playerZoneForOffside == otherTeamZones[0] || playerZoneForOffside == otherTeamZones[1])) {
+                            if ((offsidePuckZone != otherTeamZones[0] && offsidePuckZone != otherTeamZones[1]) || isPlayerTeamOffside)
                                 _isOffside[playerSteamId] = (player.Team.Value, true);
                         }
 
                         // Is not offside.
-                        if (playerZone != otherTeamZones[0] && playerZone != otherTeamZones[1])
+                        if (playerZoneForOffside != otherTeamZones[0] && playerZoneForOffside != otherTeamZones[1])
                             _isOffside[playerSteamId] = (player.Team.Value, false);
 
                         // Deferred icing logic.
