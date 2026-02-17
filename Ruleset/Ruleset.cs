@@ -1115,11 +1115,9 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 1.\n{ex}", ServerConfig);
                 }
 
-                Zone offsidePuckZone = Zone.None;
                 try {
                     oldZone = _puckZone;
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, oldZone, PuckRadius);
-                    offsidePuckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, oldZone, PuckRadius, true);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 2.\n{ex}", ServerConfig);
@@ -1174,7 +1172,7 @@ namespace oomtm450PuckMod_Ruleset {
                         // Is offside.
                         bool isPlayerTeamOffside = isTeamOffside[player.Team.Value];
                         if ((playerWithPossessionSteamId != playerSteamId || isPlayerTeamOffside) && (playerZoneForOffside == otherTeamZones[0] || playerZoneForOffside == otherTeamZones[1])) {
-                            if ((offsidePuckZone != otherTeamZones[0] && offsidePuckZone != otherTeamZones[1]) || isPlayerTeamOffside)
+                            if ((_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1]) || isPlayerTeamOffside)
                                 _isOffside[playerSteamId] = (player.Team.Value, true);
                         }
 
