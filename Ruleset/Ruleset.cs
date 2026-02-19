@@ -2315,7 +2315,7 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             if (_refSignalsBlueTeam.Errors.Count != 0) {
-                Logging.LogError("There was an error when initializing _refSignalsBlueTeam.", ClientConfig);
+                Logging.LogError($"There was an error when initializing {nameof(_refSignalsBlueTeam)}.", ClientConfig);
                 foreach (string error in _refSignalsBlueTeam.Errors)
                     Logging.LogError(error, ClientConfig);
             }
@@ -2334,7 +2334,7 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             if (_refSignalsRedTeam.Errors.Count != 0) {
-                Logging.LogError("There was an error when initializing _refSignalsRedTeam.", ClientConfig);
+                Logging.LogError($"There was an error when initializing {nameof(_refSignalsRedTeam)}.", ClientConfig);
                 foreach (string error in _refSignalsRedTeam.Errors)
                     Logging.LogError(error, ClientConfig);
             }
