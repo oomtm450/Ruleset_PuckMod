@@ -83,8 +83,9 @@ namespace Codebase {
         /// <param name="position">Vector3, position with the unknown zone.</param>
         /// <param name="oldZone">Zone, last zone of the position.</param>
         /// <param name="radius">Float, radius (half diameter) of the position's physic object for additional precision.</param>
+        /// <param name="excludeLines">Bool, true if the lines has to be considered as part of a zone outside of a team zone. (Center ice or behind goal lines)</param>
         /// <returns>Zone, zone of the position.</returns>
-        internal static Zone GetZone(Vector3 position, Zone oldZone, float radius) {
+        internal static Zone GetZone(Vector3 position, Zone oldZone, float radius, bool excludeLines = false) {
             float zMax = position.z + radius;
             float zMin = position.z - radius;
             
@@ -93,8 +94,12 @@ namespace Codebase {
                 return Zone.RedTeam_BehindGoalLine;
             }
             if (zMin < ICE_Z_POSITIONS[IceElement.RedTeam_GoalLine].End) {
-                if (oldZone == Zone.RedTeam_BehindGoalLine)
-                    return Zone.RedTeam_BehindGoalLine;
+                if (oldZone == Zone.RedTeam_BehindGoalLine) {
+                    if (excludeLines)
+                        return Zone.RedTeam_Zone;
+                    else
+                        return Zone.RedTeam_BehindGoalLine;
+                }
                 else
                     return Zone.RedTeam_Zone;
             }
@@ -103,8 +108,12 @@ namespace Codebase {
                 return Zone.RedTeam_Zone;
             }
             if (zMin < ICE_Z_POSITIONS[IceElement.RedTeam_BlueLine].End) {
-                if (oldZone == Zone.RedTeam_Zone)
-                    return Zone.RedTeam_Zone;
+                if (oldZone == Zone.RedTeam_Zone) {
+                    if (excludeLines)
+                        return Zone.RedTeam_Center;
+                    else
+                        return Zone.RedTeam_Zone;
+                }
                 else
                     return Zone.RedTeam_Center;
             }
@@ -127,8 +136,12 @@ namespace Codebase {
             if (zMin < ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End) {
                 if (oldZone == Zone.BlueTeam_Center)
                     return Zone.BlueTeam_Center;
-                else
-                    return Zone.BlueTeam_Zone;
+                else {
+                    if (excludeLines)
+                        return Zone.BlueTeam_Center;
+                    else
+                        return Zone.BlueTeam_Zone;
+                }
             }
 
             if (zMax < ICE_Z_POSITIONS[IceElement.BlueTeam_GoalLine].Start) {
@@ -137,8 +150,12 @@ namespace Codebase {
             if (zMin < ICE_Z_POSITIONS[IceElement.BlueTeam_GoalLine].End) {
                 if (oldZone == Zone.BlueTeam_Zone)
                     return Zone.BlueTeam_Zone;
-                else
-                    return Zone.BlueTeam_BehindGoalLine;
+                else {
+                    if (excludeLines)
+                        return Zone.BlueTeam_Zone;
+                    else
+                        return Zone.BlueTeam_BehindGoalLine;
+                }
             }
 
             return Zone.BlueTeam_BehindGoalLine;

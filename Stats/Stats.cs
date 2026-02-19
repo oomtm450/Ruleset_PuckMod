@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.1";
+        private static readonly string MOD_VERSION = "0.7.2";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -38,6 +38,7 @@ namespace oomtm450PuckMod_Stats {
             "0.5.0",
             "0.6.0",
             "0.7.0",
+            "0.7.1",
         });
 
         /// <summary>
@@ -1157,6 +1158,7 @@ namespace oomtm450PuckMod_Stats {
                                 LogGWG(gwgSteamId);
                             }
                             catch (IndexOutOfRangeException) { } // Shootout goal or something, so no GWG.
+                            catch (ArgumentOutOfRangeException) { }
 
                             Dictionary<string, double> starPoints = new Dictionary<string, double>();
                             foreach (Player player in PlayerManager.Instance.GetPlayers()) {
@@ -1166,12 +1168,12 @@ namespace oomtm450PuckMod_Stats {
                                 string steamId = player.SteamId.Value.ToString();
                                 starPoints.Add(steamId, 0);
 
-                                double gwgModifier = gwgSteamId == player.SteamId.Value.ToString() ? 0.5d : 0;
+                                double gwgModifier = gwgSteamId == steamId ? 0.5d : 0;
                                 double teamModifier = winningTeam == player.Team.Value ? 1.1d : 1d;
 
                                 if (PlayerFunc.IsGoalie(player)) {
                                     if (_savePerc.TryGetValue(steamId, out var saveValues))
-                                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots) - 0.750d) * ((double)saveValues.Saves) * 18.5d;
+                                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots) - 0.600d) * ((double)saveValues.Saves) * 18.6d;
 
                                     if (_sog.TryGetValue(steamId, out int shots))
                                         starPoints[steamId] += ((double)shots) * 1d;
@@ -1180,7 +1182,7 @@ namespace oomtm450PuckMod_Stats {
                                         starPoints[steamId] += ((double)passes) * 2d;
 
                                     const double GOALIE_GOAL_MODIFIER = 175d;
-                                    const double GOALIE_ASSIST_MODIFIER = 30d;
+                                    const double GOALIE_ASSIST_MODIFIER = 35d;
 
                                     starPoints[steamId] += GOALIE_GOAL_MODIFIER * gwgModifier;
                                     starPoints[steamId] += ((double)player.Goals.Value) * GOALIE_GOAL_MODIFIER;
@@ -1223,31 +1225,33 @@ namespace oomtm450PuckMod_Stats {
 
                             starPoints = starPoints.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
 
-                            if (starPoints.Count >= 1)
+                            if (starPoints.Count != 0) {
+                                UIChat.Instance.Server_SendSystemChatMessage("STARS OF THE MATCH");
                                 _stars[1] = starPoints.ElementAt(0).Key;
+                            }
                             else
                                 _stars[1] = "";
 
-                            if (starPoints.Count >= 2)
+                            if (starPoints.Count > 1)
                                 _stars[2] = starPoints.ElementAt(1).Key;
                             else
                                 _stars[2] = "";
 
-                            if (starPoints.Count >= 3)
+                            if (starPoints.Count > 2)
                                 _stars[3] = starPoints.ElementAt(2).Key;
                             else
                                 _stars[3] = "";
 
-                            UIChat.Instance.Server_SendSystemChatMessage("STARS OF THE MATCH");
                             foreach (KeyValuePair<int, string> star in _stars.OrderByDescending(x => x.Key)) {
-                                if (!string.IsNullOrEmpty(star.Value)) {
-                                    Player player = PlayerManager.Instance.GetPlayerBySteamId(star.Value);
-                                    if (player != null && player)
-                                        UIChat.Instance.Server_SendSystemChatMessage($"The {(star.Key == 1 ? "first" : (star.Key == 2 ? "second" : "third"))} star is... #{player.Number.Value} {player.Username.Value} !");
+                                if (string.IsNullOrEmpty(star.Value))
+                                    continue;
 
-                                    NetworkCommunication.SendDataToAll(STAR, $"{star.Value};{star.Key}", Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                                    LogStar(star.Value, star.Key);
-                                }
+                                Player player = PlayerManager.Instance.GetPlayerBySteamId(star.Value);
+                                if (player != null && player)
+                                    UIChat.Instance.Server_SendSystemChatMessage($"The {(star.Key == 1 ? "first" : (star.Key == 2 ? "second" : "third"))} star is... #{player.Number.Value} {player.Username.Value} !");
+
+                                NetworkCommunication.SendDataToAll(STAR, $"{star.Value};{star.Key}", Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                                LogStar(star.Value, star.Key);
                             }
 
                             Dictionary<string, string> playersUsername = new Dictionary<string, string>();
@@ -1349,7 +1353,7 @@ namespace oomtm450PuckMod_Stats {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_SetPhase_Patch Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_SetPhase_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;

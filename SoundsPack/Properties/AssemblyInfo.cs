@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("oomtm450PuckMod_SoundsPack")]
-[assembly: AssemblyCopyright("Copyright © Mathieu Cody 2025")]
+[assembly: AssemblyCopyright("Copyright © Mathieu Cody 2026")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

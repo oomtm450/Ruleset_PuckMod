@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.27.1";
+        private static readonly string MOD_VERSION = "0.28.0";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -60,6 +60,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.26.3",
             "0.26.4",
             "0.27.0",
+            "0.27.1",
         });
 
         /// <summary>
@@ -85,16 +86,6 @@ namespace oomtm450PuckMod_Ruleset {
         /// Bool, true if the mod has been patched in.
         /// </summary>
         private static bool _harmonyPatched = false;
-
-        /// <summary>
-        /// ServerConfig, config set and sent by the server.
-        /// </summary>
-        internal static ServerConfig ServerConfig { get; set; } = new ServerConfig();
-
-        /// <summary>
-        /// ClientConfig, config set by the client.
-        /// </summary>
-        internal static ClientConfig ClientConfig { get; set; } = new ClientConfig();
 
         /// <summary>
         /// LockList of PlayerIcing, positions of the players on the ice for icing logic.
@@ -265,29 +256,6 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static FaceoffSpot _nextFaceoffSpot = FaceoffSpot.Center;
 
-        /// <summary>
-        /// FaceoffSpot, property of _nextFaceoffSpot.
-        /// </summary>
-        internal static FaceoffSpot NextFaceoffSpot {
-            get {
-                return _nextFaceoffSpot;
-            }
-            set {
-                if (_nextFaceoffSpot != value) {
-                    _nextFaceoffSpot = value;
-
-                    try {
-                        EventManager.Instance.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object> { { Codebase.Constants.NEXT_FACEOFF, _nextFaceoffSpot.ToString() } });
-                        if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.NEXT_FACEOFF))
-                            Logging.Log($"Sent data \"{Codebase.Constants.NEXT_FACEOFF}\" to {Codebase.Constants.RULESET_MOD_NAME}.", ServerConfig);
-                    }
-                    catch (Exception ex) {
-                        Logging.LogError($"Error in {nameof(NextFaceoffSpot)} setter.\n{ex}", ServerConfig);
-                    }
-                }
-            }
-        }
-
         private static float _puckScale = 1f;
 
         private static Rule _lastStoppageReason = Rule.None;
@@ -302,8 +270,8 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, 0 },
         };
 
-        //private static FaceOffBoundaryManager _boundaryManager = null;
         private static FaceOffPlayerUnfreezer _playerUnfreezer = null;
+
         private static FaceOffPuckValidator _puckValidator = null;
 
         // Client-side.
@@ -340,6 +308,39 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Properties
+        /// <summary>
+        /// ServerConfig, config set and sent by the server.
+        /// </summary>
+        internal static ServerConfig ServerConfig { get; set; } = new ServerConfig();
+
+        /// <summary>
+        /// ClientConfig, config set by the client.
+        /// </summary>
+        internal static ClientConfig ClientConfig { get; set; } = new ClientConfig();
+
+        /// <summary>
+        /// FaceoffSpot, property of _nextFaceoffSpot.
+        /// </summary>
+        internal static FaceoffSpot NextFaceoffSpot {
+            get {
+                return _nextFaceoffSpot;
+            }
+            set {
+                if (_nextFaceoffSpot != value) {
+                    _nextFaceoffSpot = value;
+
+                    try {
+                        EventManager.Instance.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object> { { Codebase.Constants.NEXT_FACEOFF, _nextFaceoffSpot.ToString() } });
+                        if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.NEXT_FACEOFF))
+                            Logging.Log($"Sent data \"{Codebase.Constants.NEXT_FACEOFF}\" to {Codebase.Constants.RULESET_MOD_NAME}.", ServerConfig);
+                    }
+                    catch (Exception ex) {
+                        Logging.LogError($"Error in {nameof(NextFaceoffSpot)} setter.\n{ex}", ServerConfig);
+                    }
+                }
+            }
+        }
+
         private static bool Paused {
             get { return _paused; }
             set {
@@ -831,8 +832,6 @@ namespace oomtm450PuckMod_Ruleset {
                             foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
                                 _icingStaminaDrainPenaltyAmount[key] = 0;
                         }
-                        /*else if (phase == GamePhase.FaceOff)
-                            _boundaryManager?.ActivateBoundaries();*/
 
                         // Reset players zone.
                         _playersZone.Clear();
@@ -883,8 +882,6 @@ namespace oomtm450PuckMod_Ruleset {
                     else if (phase == GamePhase.Playing) {
                         if (time == -1 && ServerConfig.Faceoff.ReAdd1SecondAfterFaceoff)
                             time = SystemFunc.GetPrivateField<int>(typeof(GameManager), GameManager.Instance, "remainingPlayTime") + 1;
-
-                        //_boundaryManager?.DeactivateBoundaries();
                     }
 
                     if (!ChangedPhase)
@@ -1063,11 +1060,11 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null)
                     return true;
 
-                if (SystemChatMessages.Count != 0) { // TODO : This don't work, pls fix.
+                if (SystemChatMessages.Count != 0) {
                     List<string> systemChatMessages = new List<string>(SystemChatMessages);
                     SystemChatMessages.Clear();
 
-                    foreach (string message in SystemChatMessages)
+                    foreach (string message in systemChatMessages)
                         UIChat.Instance.Server_SendSystemChatMessage(message);
                 }
 
@@ -1115,15 +1112,15 @@ namespace oomtm450PuckMod_Ruleset {
                         return true;
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 1.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 1.\n{ex}", ServerConfig);
                 }
 
                 try {
                     oldZone = _puckZone;
-                    _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, _puckZone, PuckRadius);
+                    _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, oldZone, PuckRadius);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 2.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 2.\n{ex}", ServerConfig);
                 }
 
                 Dictionary<PlayerTeam, bool> isTeamOffside = new Dictionary<PlayerTeam, bool> {
@@ -1166,21 +1163,21 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             oldPlayerZone = result.Zone;
 
-                        Zone playerZone = ZoneFunc.GetZone(player.PlayerBody.transform.position, oldPlayerZone, Codebase.Constants.PLAYER_RADIUS);
-                        _playersZone[playerSteamId] = (player.Team.Value, playerZone);
+                        _playersZone[playerSteamId] = (player.Team.Value, ZoneFunc.GetZone(player.PlayerBody.transform.position, oldPlayerZone, Codebase.Constants.PLAYER_RADIUS));
+                        Zone playerZoneForOffside = ZoneFunc.GetZone(player.PlayerBody.transform.position, oldPlayerZone, Codebase.Constants.PLAYER_RADIUS, true);
 
                         PlayerTeam otherTeam = TeamFunc.GetOtherTeam(player.Team.Value);
                         List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
 
                         // Is offside.
                         bool isPlayerTeamOffside = isTeamOffside[player.Team.Value];
-                        if ((playerWithPossessionSteamId != playerSteamId || isPlayerTeamOffside) && (playerZone == otherTeamZones[0] || playerZone == otherTeamZones[1])) {
+                        if ((playerWithPossessionSteamId != playerSteamId || isPlayerTeamOffside) && (playerZoneForOffside == otherTeamZones[0] || playerZoneForOffside == otherTeamZones[1])) {
                             if ((_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1]) || isPlayerTeamOffside)
                                 _isOffside[playerSteamId] = (player.Team.Value, true);
                         }
 
                         // Is not offside.
-                        if (playerZone != otherTeamZones[0] && playerZone != otherTeamZones[1])
+                        if (playerZoneForOffside != otherTeamZones[0] && playerZoneForOffside != otherTeamZones[1])
                             _isOffside[playerSteamId] = (player.Team.Value, false);
 
                         // Deferred icing logic.
@@ -1305,7 +1302,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 3.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 3.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1314,7 +1311,7 @@ namespace oomtm450PuckMod_Ruleset {
                     ServerManager_Update_IcingLogic(PlayerTeam.Red, puck, icingHasToBeWarned, _dictPlayersPositionsForIcing.Any(x => x.IsBehindBlueTeamHashmarks));
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 4.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 4.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1336,7 +1333,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 5.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 5.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1344,7 +1341,7 @@ namespace oomtm450PuckMod_Ruleset {
                     _isPuckBehindHashmarks[PlayerTeam.Red] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Red, puck.Rigidbody.transform.position, PuckRadius);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 6.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 6.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1352,7 +1349,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _noHighStickFrames[playerSteamId] += 1;
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Prefix() 7.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 7.\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1379,7 +1376,7 @@ namespace oomtm450PuckMod_Ruleset {
                     NextFaceoffSpot = FaceoffSpot.Center;
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManagerController_Event_Server_OnPuckEnterTeamGoal_Patch Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManagerController_Event_Server_OnPuckEnterTeamGoal_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1394,7 +1391,7 @@ namespace oomtm450PuckMod_Ruleset {
             [HarmonyPrefix]
             public static bool Prefix(PlayerTeam team, ref Player lastPlayer, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
                 try {
-                    // If this is not the server, do not use the patch.
+                    // If this is not the server or logic is paused, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || !Logic)
                         return true;
 
@@ -1465,7 +1462,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in GameManager_Server_GoalScored_Patch Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_GoalScored_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1502,7 +1499,7 @@ namespace oomtm450PuckMod_Ruleset {
                     PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(NextFaceoffSpot), NextFaceoffSpot);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in Player_Server_RespawnCharacter_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(Player_Server_RespawnCharacter_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -1540,7 +1537,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in UIScoreboard_UpdateServer_Patch Postfix().\n{ex}", ClientConfig);
+                    Logging.LogError($"Error in {nameof(UIScoreboard_UpdatePlayer_Patch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
         }
