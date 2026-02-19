@@ -3,6 +3,7 @@ using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.FaceoffViolation;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -563,10 +564,10 @@ namespace oomtm450PuckMod_Ruleset {
                     // Offside logic.
                     List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == otherTeamZones[0] || _puckZone == otherTeamZones[1])) {
-                        NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, puckLastStateBeforeCallOffside);
-                        SendChat(Rule.Offside, stick.Player.Team.Value, true);
-                        _lastStoppageReason = Rule.Offside;
-                        DoFaceoff();
+                        var temp = _puckLastStateBeforeCall[Rule.Offside];
+                        _puckLastStateBeforeCall[Rule.Offside] = puckLastStateBeforeCallOffside;
+                        CallOffside(stick.Player.Team.Value);
+                        _puckLastStateBeforeCall[Rule.Offside] = temp;
                     }
 
                     // Icing logic.
@@ -1021,10 +1022,14 @@ namespace oomtm450PuckMod_Ruleset {
                                 }
                             }
                         }
+                        else if (message.StartsWith(@"/offblue"))
+                            NetworkCommunication.SendData(RefSignals.OFFSIDE_LINESMAN, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/offred"))
+                            NetworkCommunication.SendData(RefSignals.OFFSIDE_LINESMAN, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in UIChat_Client_SendClientChatMessage_Patch Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(UIChat_Client_SendClientChatMessage_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1085,16 +1090,8 @@ namespace oomtm450PuckMod_Ruleset {
                     foreach (PlayerTeam callHighStickTeam in new List<PlayerTeam>(_callHighStickNextFrame.Keys)) {
                         if (!_callHighStickNextFrame[callHighStickTeam])
                             continue;
-                        /*_callOffHighStickNextFrame[callOffHighStickTeam] = false;
-                        NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, callOffHighStickTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                        SendChat(Rule.HighStick, callOffHighStickTeam, true, true);*/
 
-                        NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(callHighStickTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
-                        SendChat(Rule.HighStick, callHighStickTeam, true);
-                        ResetHighSticks();
-
-                        _lastStoppageReason = Rule.HighStick;
-                        DoFaceoff(RefSignals.GetSignalConstant(true, callHighStickTeam), RefSignals.HIGHSTICK_REF);
+                        CallHighStick(callHighStickTeam);
                         break;
                     }
 
@@ -1405,24 +1402,12 @@ namespace oomtm450PuckMod_Ruleset {
                         isHighStick = IsHighStick(team);
 
                         if (isOffside || isHighStick || isGoalieInt) {
-                            if (isOffside) {
-                                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.Offside]);
-                                SendChat(Rule.Offside, team, true, false);
-                                _lastStoppageReason = Rule.Offside;
-                                DoFaceoff();
-                            }
-                            else if (isHighStick) {
-                                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.HighStick]);
-                                SendChat(Rule.HighStick, team, true, false);
-                                _lastStoppageReason = Rule.HighStick;
-                                DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.HIGHSTICK_REF);
-                            }
-                            else if (isGoalieInt) {
-                                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
-                                SendChat(Rule.GoalieInt, team, true, false);
-                                _lastStoppageReason = Rule.GoalieInt;
-                                DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
-                            }
+                            if (isOffside)
+                                CallOffside(team);
+                            else if (isHighStick)
+                                CallHighStick(team);
+                            else if (isGoalieInt)
+                                CallGoalieInt(team);
                             return false;
                         }
 
@@ -1445,10 +1430,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     if (isGoalieInt) {
-                        NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
-                        SendChat(Rule.GoalieInt, team, true, false);
-                        _lastStoppageReason = Rule.GoalieInt;
-                        DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
+                        CallGoalieInt(team);
                         return false;
                     }
 
@@ -1607,6 +1589,18 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Methods/Functions
+        private static bool IsAdmin(ulong clientId) {
+            Player player = PlayerManager.Instance.GetPlayerByClientId(clientId);
+            if (player == null || !player)
+                return false;
+
+            return IsAdmin(player.SteamId.Value.ToString());
+        }
+
+        private static bool IsAdmin(string steamId) {
+            return ServerManager.Instance.AdminSteamIds.Contains(steamId);
+        }
+
         private static void SendChat(Rule rule, PlayerTeam team, bool called, bool off = false) {
             string ruleStr = rule.GetDescription("ToString");
             if (string.IsNullOrEmpty(ruleStr))
@@ -2219,11 +2213,47 @@ namespace oomtm450PuckMod_Ruleset {
                         NetworkCommunication.SendData(SoundsSystem.LOAD_EXTRA_SOUNDS, Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "sounds"),
                             clientId, Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT, ServerConfig);
                         break;
+
+                    case RefSignals.OFFSIDE_LINESMAN: // SERVER-SIDE : Call an offside.
+                        if (!IsAdmin(clientId) || is)
+                            break;
+
+                        Puck puck = PuckManager.Instance.GetPuck();
+                        if (puck == null || !puck)
+                            break;
+
+                        if (!int.TryParse(dataStr, out int teamInt))
+                            break;
+
+                        CallOffside((PlayerTeam)teamInt);
+                        break;
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in ReceiveData.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(ReceiveData)}.\n{ex}", ServerConfig);
             }
+        }
+
+        private static void CallOffside(PlayerTeam team) {
+            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.Offside]);
+            SendChat(Rule.Offside, team, true);
+            _lastStoppageReason = Rule.Offside;
+            DoFaceoff();
+        }
+
+        private static void CallHighStick(PlayerTeam team) {
+            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.HighStick]);
+            SendChat(Rule.HighStick, team, true, false);
+            ResetHighSticks();
+            _lastStoppageReason = Rule.HighStick;
+            DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.HIGHSTICK_REF);
+        }
+
+        private static void CallGoalieInt(PlayerTeam team) {
+            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
+            SendChat(Rule.GoalieInt, team, true, false);
+            _lastStoppageReason = Rule.GoalieInt;
+            DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
         }
 
         private static void StopBlueRefSignals(string dataStr) {
