@@ -570,20 +570,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Icing logic.
                     if (IsIcing(otherTeam)) {
-                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player)) {
-                            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
-                            SendChat(Rule.Icing, otherTeam, true);
-
-                            int remainingPlayTime = GameManager.Instance.GameState.Value.Time;
-                            if (_lastStoppageReason == Rule.Icing && _lastIcing[stick.Player.Team.Value] > _lastIcing[otherTeam] && _lastIcing[otherTeam] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
-                                _icingStaminaDrainPenaltyAmount[otherTeam] += 1;
-                            else
-                                _icingStaminaDrainPenaltyAmount[otherTeam] = 0;
-
-                            _lastStoppageReason = Rule.Icing;
-                            _lastIcing[otherTeam] = remainingPlayTime;
-                            DoFaceoff();
-                        }
+                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
+                            CallIcing(otherTeam);
                         else {
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, otherTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send stop icing signal for client-side UI.
                             SendChat(Rule.Icing, otherTeam, true, true);
@@ -1024,6 +1012,18 @@ namespace oomtm450PuckMod_Ruleset {
                             NetworkCommunication.SendData(RefSignals.OFFSIDE_LINESMAN, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         else if (message.StartsWith(@"/offred"))
                             NetworkCommunication.SendData(RefSignals.OFFSIDE_LINESMAN, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/icblue"))
+                            NetworkCommunication.SendData(RefSignals.ICING_LINESMAN, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/icred"))
+                            NetworkCommunication.SendData(RefSignals.ICING_LINESMAN, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/hsblue"))
+                            NetworkCommunication.SendData(RefSignals.HIGHSTICK_LINESMAN, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/hsred"))
+                            NetworkCommunication.SendData(RefSignals.HIGHSTICK_LINESMAN, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/gintblue"))
+                            NetworkCommunication.SendData("gs" + RefSignals.INTERFERENCE_REF, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/gintred"))
+                            NetworkCommunication.SendData("gs" + RefSignals.INTERFERENCE_REF, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                     }
                 }
                 catch (Exception ex) {
@@ -2213,17 +2213,43 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RefSignals.OFFSIDE_LINESMAN: // SERVER-SIDE : Call an offside.
-                        if (!IsAdmin(clientId) || is)
+                        if (!IsAdmin(clientId) || Paused)
                             break;
 
-                        Puck puck = PuckManager.Instance.GetPuck();
-                        if (puck == null || !puck)
+                        if (!int.TryParse(dataStr, out int offsideTeamInt))
                             break;
 
-                        if (!int.TryParse(dataStr, out int teamInt))
+                        CallOffside((PlayerTeam)offsideTeamInt);
+                        break;
+
+                    case RefSignals.HIGHSTICK_LINESMAN: // SERVER-SIDE : Call a high stick stoppage.
+                        if (!IsAdmin(clientId) || Paused)
                             break;
 
-                        CallOffside((PlayerTeam)teamInt);
+                        if (!int.TryParse(dataStr, out int highStickTeamInt))
+                            break;
+
+                        CallHighStick((PlayerTeam)highStickTeamInt);
+                        break;
+
+                    case RefSignals.ICING_LINESMAN: // SERVER-SIDE : Call an icing.
+                        if (!IsAdmin(clientId) || Paused)
+                            break;
+
+                        if (!int.TryParse(dataStr, out int icingTeamInt))
+                            break;
+
+                        CallIcing((PlayerTeam)icingTeamInt);
+                        break;
+
+                    case "gs" + RefSignals.INTERFERENCE_REF: // SERVER-SIDE : Call a goalie interference stoppage.
+                        if (!IsAdmin(clientId) || Paused)
+                            break;
+
+                        if (!int.TryParse(dataStr, out int gIntStoppageTeamInt))
+                            break;
+
+                        CallGoalieInt((PlayerTeam)gIntStoppageTeamInt);
                         break;
                 }
             }
@@ -2252,6 +2278,21 @@ namespace oomtm450PuckMod_Ruleset {
             SendChat(Rule.GoalieInt, team, true, false);
             _lastStoppageReason = Rule.GoalieInt;
             DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
+        }
+
+        private static void CallIcing(PlayerTeam team) {
+            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, true, _puckLastStateBeforeCall[Rule.Icing]);
+            SendChat(Rule.Icing, team, true);
+
+            int remainingPlayTime = GameManager.Instance.GameState.Value.Time;
+            if (_lastStoppageReason == Rule.Icing && _lastIcing[TeamFunc.GetOtherTeam(team)] > _lastIcing[team] && _lastIcing[team] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
+                _icingStaminaDrainPenaltyAmount[team] += 1;
+            else
+                _icingStaminaDrainPenaltyAmount[team] = 0;
+
+            _lastStoppageReason = Rule.Icing;
+            _lastIcing[team] = remainingPlayTime;
+            DoFaceoff();
         }
 
         private static void StopBlueRefSignals(string dataStr) {
