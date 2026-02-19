@@ -472,7 +472,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // High stick logic.
                     Puck puck = PuckManager.Instance.GetPuck();
                     if (puck) {
-                        if (puck.IsGrounded) {
+                        if (puck.) {
                             if (IsHighStick(stick.Player.Team.Value)) {
                                 NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
 
@@ -494,7 +494,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in Puck_OnCollisionEnter_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(Puck_OnCollisionEnter_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
