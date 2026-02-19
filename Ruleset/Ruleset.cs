@@ -470,19 +470,17 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // High stick logic.
-                    Puck puck = PuckManager.Instance.GetPuck();
-                    if (puck) {
-                        if (puck.) {
-                            if (IsHighStick(stick.Player.Team.Value)) {
-                                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                    if (IsHighStick(stick.Player.Team.Value)) {
+                        Puck puck = PuckManager.Instance.GetPuck();
+                        if (puck && puck.Rigidbody.transform.position.y < PuckRadius) {
+                            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
 
-                                _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
-                                highStickTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                            _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
+                            highStickTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
-                                SendChat(Rule.HighStick, stick.Player.Team.Value, true);
-                                _lastStoppageReason = Rule.HighStick;
-                                DoFaceoff(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_REF);
-                            }
+                            SendChat(Rule.HighStick, stick.Player.Team.Value, true);
+                            _lastStoppageReason = Rule.HighStick;
+                            DoFaceoff(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_REF);
                         }
                     }
 
