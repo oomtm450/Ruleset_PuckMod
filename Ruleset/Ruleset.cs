@@ -1598,12 +1598,12 @@ namespace oomtm450PuckMod_Ruleset {
             return ServerManager.Instance.AdminSteamIds.Contains(steamId);
         }
 
-        private static void SendChat(Rule rule, PlayerTeam team, bool called, bool off = false) {
+        private static void SendChat(Rule rule, PlayerTeam team, bool called, bool off = false, Player referee = null) {
             string ruleStr = rule.GetDescription("ToString");
             if (string.IsNullOrEmpty(ruleStr))
                 return;
 
-            UIChat.Instance.Server_SendSystemChatMessage($"{ruleStr} {team.ToString().ToUpperInvariant()} TEAM" + (called ? (" CALLED" + (off ? " OFF" : "")) : ""));
+            UIChat.Instance.Server_SendSystemChatMessage($"{ruleStr} {team.ToString().ToUpperInvariant()} TEAM" + (called ? (" CALLED" + (off ? " OFF" : "")) : "") + referee != null ? $" BY #{referee.Number.Value} {referee.Username.Value}" : "");
         }
 
         private static void WarnOffside(bool active, PlayerTeam team) {
@@ -2212,43 +2212,59 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RefSignals.OFFSIDE_LINESMAN: // SERVER-SIDE : Call an offside.
-                        if (!IsAdmin(clientId) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                        Player offsideReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (offsideReferee == null || !offsideReferee)
+                            break;
+
+                        if (!IsAdmin(offsideReferee.SteamId.Value.ToString()) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
                             break;
 
                         if (!int.TryParse(dataStr, out int offsideTeamInt))
                             break;
 
-                        CallOffside((PlayerTeam)offsideTeamInt);
+                        CallOffside((PlayerTeam)offsideTeamInt, offsideReferee);
                         break;
 
                     case RefSignals.HIGHSTICK_LINESMAN: // SERVER-SIDE : Call a high stick stoppage.
-                        if (!IsAdmin(clientId) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                        Player highStickReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (highStickReferee == null || !highStickReferee)
+                            break;
+
+                        if (!IsAdmin(highStickReferee.SteamId.Value.ToString()) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
                             break;
 
                         if (!int.TryParse(dataStr, out int highStickTeamInt))
                             break;
 
-                        CallHighStick((PlayerTeam)highStickTeamInt);
+                        CallHighStick((PlayerTeam)highStickTeamInt, highStickReferee);
                         break;
 
                     case RefSignals.ICING_LINESMAN: // SERVER-SIDE : Call an icing.
-                        if (!IsAdmin(clientId) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                        Player icingReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (icingReferee == null || !icingReferee)
+                            break;
+
+                        if (!IsAdmin(icingReferee.SteamId.Value.ToString()) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
                             break;
 
                         if (!int.TryParse(dataStr, out int icingTeamInt))
                             break;
 
-                        CallIcing((PlayerTeam)icingTeamInt);
+                        CallIcing((PlayerTeam)icingTeamInt, icingReferee);
                         break;
 
                     case "gs" + RefSignals.INTERFERENCE_REF: // SERVER-SIDE : Call a goalie interference stoppage.
-                        if (!IsAdmin(clientId) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                        Player gintReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (gintReferee == null || !gintReferee)
+                            break;
+
+                        if (!IsAdmin(gintReferee.SteamId.Value.ToString()) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
                             break;
 
                         if (!int.TryParse(dataStr, out int gIntStoppageTeamInt))
                             break;
 
-                        CallGoalieInt((PlayerTeam)gIntStoppageTeamInt);
+                        CallGoalieInt((PlayerTeam)gIntStoppageTeamInt, gintReferee);
                         break;
                 }
             }
@@ -2257,31 +2273,31 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void CallOffside(PlayerTeam team) {
+        private static void CallOffside(PlayerTeam team, Player referee = null) {
             NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.Offside]);
-            SendChat(Rule.Offside, team, true);
+            SendChat(Rule.Offside, team, true, false, referee);
             _lastStoppageReason = Rule.Offside;
             DoFaceoff();
         }
 
-        private static void CallHighStick(PlayerTeam team) {
+        private static void CallHighStick(PlayerTeam team, Player referee = null) {
             NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.HighStick]);
-            SendChat(Rule.HighStick, team, true, false);
+            SendChat(Rule.HighStick, team, true, false, referee);
             ResetHighSticks();
             _lastStoppageReason = Rule.HighStick;
             DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.HIGHSTICK_REF);
         }
 
-        private static void CallGoalieInt(PlayerTeam team) {
+        private static void CallGoalieInt(PlayerTeam team, Player referee = null) {
             NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
-            SendChat(Rule.GoalieInt, team, true, false);
+            SendChat(Rule.GoalieInt, team, true, false, referee);
             _lastStoppageReason = Rule.GoalieInt;
             DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
         }
 
-        private static void CallIcing(PlayerTeam team) {
+        private static void CallIcing(PlayerTeam team, Player referee = null) {
             NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, true, _puckLastStateBeforeCall[Rule.Icing]);
-            SendChat(Rule.Icing, team, true);
+            SendChat(Rule.Icing, team, true, false, referee);
 
             int remainingPlayTime = GameManager.Instance.GameState.Value.Time;
             if (_lastStoppageReason == Rule.Icing && _lastIcing[TeamFunc.GetOtherTeam(team)] > _lastIcing[team] && _lastIcing[team] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
