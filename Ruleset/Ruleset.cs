@@ -2212,7 +2212,7 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RefSignals.OFFSIDE_LINESMAN: // SERVER-SIDE : Call an offside.
-                        if (!IsAdmin(clientId) || Paused)
+                        if (!IsAdmin(clientId) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
                             break;
 
                         if (!int.TryParse(dataStr, out int offsideTeamInt))
@@ -2222,7 +2222,7 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RefSignals.HIGHSTICK_LINESMAN: // SERVER-SIDE : Call a high stick stoppage.
-                        if (!IsAdmin(clientId) || Paused)
+                        if (!IsAdmin(clientId) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
                             break;
 
                         if (!int.TryParse(dataStr, out int highStickTeamInt))
@@ -2232,7 +2232,7 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RefSignals.ICING_LINESMAN: // SERVER-SIDE : Call an icing.
-                        if (!IsAdmin(clientId) || Paused)
+                        if (!IsAdmin(clientId) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
                             break;
 
                         if (!int.TryParse(dataStr, out int icingTeamInt))
@@ -2242,7 +2242,7 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case "gs" + RefSignals.INTERFERENCE_REF: // SERVER-SIDE : Call a goalie interference stoppage.
-                        if (!IsAdmin(clientId) || Paused)
+                        if (!IsAdmin(clientId) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
                             break;
 
                         if (!int.TryParse(dataStr, out int gIntStoppageTeamInt))
