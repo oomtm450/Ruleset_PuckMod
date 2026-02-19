@@ -1603,7 +1603,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (string.IsNullOrEmpty(ruleStr))
                 return;
 
-            UIChat.Instance.Server_SendSystemChatMessage($"{ruleStr} {team.ToString().ToUpperInvariant()} TEAM" + (called ? (" CALLED" + (off ? " OFF" : "")) : "") + referee != null ? $" BY #{referee.Number.Value} {referee.Username.Value}" : "");
+            UIChat.Instance.Server_SendSystemChatMessage($"{ruleStr} {team.ToString().ToUpperInvariant()} TEAM" + (called ? (" CALLED" + (off ? " OFF" : "")) : "") + (referee != null ? $" BY #{referee.Number.Value} {referee.Username.Value}" : ""));
         }
 
         private static void WarnOffside(bool active, PlayerTeam team) {
