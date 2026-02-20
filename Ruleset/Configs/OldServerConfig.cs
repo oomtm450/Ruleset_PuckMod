@@ -51,12 +51,17 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; } = 300; // TODO : Change after release.
+        public int MinPossessionMilliseconds { get; } = 450;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; } = 700;  // TODO : Change after release.
+        public int MaxPossessionMilliseconds { get; } = 1000;
+
+        /// <summary>
+        /// Bool, authorize ref mode to be voted or activated by an admin.
+        /// </summary>
+        public bool RefMode { get; } = true;
         #endregion
 
         #region Methods/Functions

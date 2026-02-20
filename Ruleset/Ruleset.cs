@@ -310,9 +310,14 @@ namespace oomtm450PuckMod_Ruleset {
 
         #region Properties
         /// <summary>
-        /// ServerConfig, config set and sent by the server.
+        /// ServerConfig, config set by the server.
         /// </summary>
         internal static ServerConfig ServerConfig { get; set; } = new ServerConfig();
+
+        /// <summary>
+        /// ServerConfig, backup of the server config.
+        /// </summary>
+        internal static ServerConfig ServerConfigBackup { get; set; } = new ServerConfig();
 
         /// <summary>
         /// ClientConfig, config set by the client.
@@ -1023,6 +1028,14 @@ namespace oomtm450PuckMod_Ruleset {
                             NetworkCommunication.SendData("gs" + RefSignals.INTERFERENCE_REF, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         else if (message.StartsWith(@"/gintred"))
                             NetworkCommunication.SendData("gs" + RefSignals.INTERFERENCE_REF, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/rule")) {
+                            message = message.Replace(@"/rule", "").Replace("true", "1").Replace("false", "0").Trim();
+                            NetworkCommunication.SendData("rule", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/refmode")) {
+                            message = message.Replace(@"/refmode", "").Replace("true", "1").Replace("false", "0").Trim();
+                            NetworkCommunication.SendData("refmode", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
                     }
                 }
                 catch (Exception ex) {
@@ -1969,6 +1982,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 ServerConfig = new ServerConfig();
+                ServerConfigBackup = new ServerConfig();
 
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
@@ -2267,7 +2281,28 @@ namespace oomtm450PuckMod_Ruleset {
                         CallGoalieInt((PlayerTeam)gIntStoppageTeamInt, gintReferee);
                         break;
 
-                    case "rulechange": // SERVER-SIDE : Change rule.
+                    case "refmode": // SERVER-SIDE : Remove rules to make the server reffable.
+                        if (!ServerConfig.RefMode || !IsAdmin(clientId))
+                            return;
+
+                        if (dataStr == "1") {
+                            ServerConfigBackup = new ServerConfig(ServerConfig);
+
+                            ServerConfig.Offside.BlueTeam = false;
+                            ServerConfig.Offside.RedTeam = false;
+
+                            ServerConfig.Icing.BlueTeam = false;
+                            ServerConfig.Icing.RedTeam = false;
+
+                            ServerConfig.HighStick.BlueTeam = false;
+                            ServerConfig.HighStick.RedTeam = false;
+                        }
+                        else if (dataStr == "0")
+                            ServerConfig = new ServerConfig(ServerConfigBackup);
+
+                        break;
+
+                    case "rule": // SERVER-SIDE : Change rule.
                         if (!IsAdmin(clientId))
                             return;
 
@@ -2275,64 +2310,64 @@ namespace oomtm450PuckMod_Ruleset {
                             string[] splittedDataStrOff = dataStr.Replace("offside", "").Trim().Split(' ');
 
                             bool offToggle;
-                            if (splittedDataStrOff[1] == "true")
+                            if (splittedDataStrOff[1] == "1")
                                 offToggle = true;
-                            else if (splittedDataStrOff[1] == "false")
+                            else if (splittedDataStrOff[1] == "0")
                                 offToggle = false;
                             else
                                 break;
 
-                            if (splittedDataStrOff[0] == "blue")
+                            if (splittedDataStrOff[0] == "b")
                                 ServerConfig.Offside.BlueTeam = offToggle;
-                            else if (splittedDataStrOff[0] == "red")
+                            else if (splittedDataStrOff[0] == "r")
                                 ServerConfig.Offside.RedTeam = offToggle;
                         }
                         else if (dataStr.Contains("icing")) {
                             string[] splittedDataStrOff = dataStr.Replace("icing", "").Trim().Split(' ');
 
                             bool offToggle;
-                            if (splittedDataStrOff[1] == "true")
+                            if (splittedDataStrOff[1] == "1")
                                 offToggle = true;
-                            else if (splittedDataStrOff[1] == "false")
+                            else if (splittedDataStrOff[1] == "0")
                                 offToggle = false;
                             else
                                 break;
 
-                            if (splittedDataStrOff[0] == "blue")
+                            if (splittedDataStrOff[0] == "b")
                                 ServerConfig.Icing.BlueTeam = offToggle;
-                            else if (splittedDataStrOff[0] == "red")
+                            else if (splittedDataStrOff[0] == "r")
                                 ServerConfig.Icing.RedTeam = offToggle;
                         }
                         else if (dataStr.Contains("highstick")) {
                             string[] splittedDataStrOff = dataStr.Replace("highstick", "").Trim().Split(' ');
 
                             bool offToggle;
-                            if (splittedDataStrOff[1] == "true")
+                            if (splittedDataStrOff[1] == "1")
                                 offToggle = true;
-                            else if (splittedDataStrOff[1] == "false")
+                            else if (splittedDataStrOff[1] == "0")
                                 offToggle = false;
                             else
                                 break;
 
-                            if (splittedDataStrOff[0] == "blue")
+                            if (splittedDataStrOff[0] == "b")
                                 ServerConfig.HighStick.BlueTeam = offToggle;
-                            else if (splittedDataStrOff[0] == "red")
+                            else if (splittedDataStrOff[0] == "r")
                                 ServerConfig.HighStick.RedTeam = offToggle;
                         }
                         else if (dataStr.Contains("gint")) {
                             string[] splittedDataStrOff = dataStr.Replace("gint", "").Trim().Split(' ');
 
                             bool offToggle;
-                            if (splittedDataStrOff[1] == "true")
+                            if (splittedDataStrOff[1] == "1")
                                 offToggle = true;
-                            else if (splittedDataStrOff[1] == "false")
+                            else if (splittedDataStrOff[1] == "0")
                                 offToggle = false;
                             else
                                 break;
 
-                            if (splittedDataStrOff[0] == "blue")
+                            if (splittedDataStrOff[0] == "b")
                                 ServerConfig.GInt.BlueTeam = offToggle;
-                            else if (splittedDataStrOff[0] == "red")
+                            else if (splittedDataStrOff[0] == "r")
                                 ServerConfig.GInt.RedTeam = offToggle;
                         }
                         break;
@@ -2468,6 +2503,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     Logging.Log("Setting server sided config.", ServerConfig, true);
                     ServerConfig = ServerConfig.ReadConfig();
+                    ServerConfigBackup = new ServerConfig(ServerConfig);
                 }
                 else {
                     Logging.Log("Setting client sided config.", ServerConfig, true);
