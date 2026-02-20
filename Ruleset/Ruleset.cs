@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.0DEV2";
+        private static readonly string MOD_VERSION = "1.0.0DEV4";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -1573,7 +1573,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (ServerFunc.IsDedicatedServer() || !_serverHasResponded)
                         return true;
 
-                    if ((message.StartsWith("HIGH STICK") || message.StartsWith("OFFSIDE") || message.StartsWith("ICING")) && !message.EndsWith("CALLED"))
+                    if ((message.StartsWith("HIGH STICK") || message.StartsWith("OFFSIDE") || message.StartsWith("ICING")) && (message.Contains("CALLED OFF") || !message.Contains("CALLED")))
                         return false;
                 }
                 catch (Exception ex) {
