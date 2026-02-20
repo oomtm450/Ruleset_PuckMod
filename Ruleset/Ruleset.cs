@@ -1064,7 +1064,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in UIChat_Client_SendClientChatMessage_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(UIChat_Client_SendClientChatMessage_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
