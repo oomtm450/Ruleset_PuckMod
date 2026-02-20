@@ -275,6 +275,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static FaceOffPuckValidator _puckValidator = null;
 
+        private static readonly List<string> _currentRefsSteamId = new List<string>();
+
         // Client-side.
         private static RefSignals _refSignalsBlueTeam = null;
 
@@ -2226,11 +2228,16 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RefSignals.OFFSIDE_LINESMAN: // SERVER-SIDE : Call an offside.
+                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                            break;
+
                         Player offsideReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
                         if (offsideReferee == null || !offsideReferee)
                             break;
 
-                        if (!IsAdmin(offsideReferee.SteamId.Value.ToString()) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                        string offsideRefereeSteamId = offsideReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(offsideRefereeSteamId) && !_currentRefsSteamId.Contains(offsideRefereeSteamId))
                             break;
 
                         if (!int.TryParse(dataStr, out int offsideTeamInt))
@@ -2240,11 +2247,16 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RefSignals.HIGHSTICK_LINESMAN: // SERVER-SIDE : Call a high stick stoppage.
+                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                            break;
+
                         Player highStickReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
                         if (highStickReferee == null || !highStickReferee)
                             break;
 
-                        if (!IsAdmin(highStickReferee.SteamId.Value.ToString()) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                        string highStickRefereeSteamId = highStickReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(highStickRefereeSteamId) && !_currentRefsSteamId.Contains(highStickRefereeSteamId))
                             break;
 
                         if (!int.TryParse(dataStr, out int highStickTeamInt))
@@ -2254,11 +2266,16 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RefSignals.ICING_LINESMAN: // SERVER-SIDE : Call an icing.
+                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                            break;
+
                         Player icingReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
                         if (icingReferee == null || !icingReferee)
                             break;
 
-                        if (!IsAdmin(icingReferee.SteamId.Value.ToString()) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                        string icingRefereeSteamId = icingReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(icingRefereeSteamId) && !_currentRefsSteamId.Contains(icingRefereeSteamId))
                             break;
 
                         if (!int.TryParse(dataStr, out int icingTeamInt))
@@ -2268,11 +2285,16 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case "gs" + RefSignals.INTERFERENCE_REF: // SERVER-SIDE : Call a goalie interference stoppage.
+                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                            break;
+
                         Player gintReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
                         if (gintReferee == null || !gintReferee)
                             break;
 
-                        if (!IsAdmin(gintReferee.SteamId.Value.ToString()) || Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                        string gintRefereeSteamId = gintReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(gintRefereeSteamId) && !_currentRefsSteamId.Contains(gintRefereeSteamId))
                             break;
 
                         if (!int.TryParse(dataStr, out int gIntStoppageTeamInt))
