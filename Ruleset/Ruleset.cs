@@ -2266,6 +2266,76 @@ namespace oomtm450PuckMod_Ruleset {
 
                         CallGoalieInt((PlayerTeam)gIntStoppageTeamInt, gintReferee);
                         break;
+
+                    case "rulechange": // SERVER-SIDE : Change rule.
+                        if (!IsAdmin(clientId))
+                            return;
+
+                        if (dataStr.Contains("offside")) {
+                            string[] splittedDataStrOff = dataStr.Replace("offside", "").Trim().Split(' ');
+
+                            bool offToggle;
+                            if (splittedDataStrOff[1] == "true")
+                                offToggle = true;
+                            else if (splittedDataStrOff[1] == "false")
+                                offToggle = false;
+                            else
+                                break;
+
+                            if (splittedDataStrOff[0] == "blue")
+                                ServerConfig.Offside.BlueTeam = offToggle;
+                            else if (splittedDataStrOff[0] == "red")
+                                ServerConfig.Offside.RedTeam = offToggle;
+                        }
+                        else if (dataStr.Contains("icing")) {
+                            string[] splittedDataStrOff = dataStr.Replace("icing", "").Trim().Split(' ');
+
+                            bool offToggle;
+                            if (splittedDataStrOff[1] == "true")
+                                offToggle = true;
+                            else if (splittedDataStrOff[1] == "false")
+                                offToggle = false;
+                            else
+                                break;
+
+                            if (splittedDataStrOff[0] == "blue")
+                                ServerConfig.Icing.BlueTeam = offToggle;
+                            else if (splittedDataStrOff[0] == "red")
+                                ServerConfig.Icing.RedTeam = offToggle;
+                        }
+                        else if (dataStr.Contains("highstick")) {
+                            string[] splittedDataStrOff = dataStr.Replace("highstick", "").Trim().Split(' ');
+
+                            bool offToggle;
+                            if (splittedDataStrOff[1] == "true")
+                                offToggle = true;
+                            else if (splittedDataStrOff[1] == "false")
+                                offToggle = false;
+                            else
+                                break;
+
+                            if (splittedDataStrOff[0] == "blue")
+                                ServerConfig.HighStick.BlueTeam = offToggle;
+                            else if (splittedDataStrOff[0] == "red")
+                                ServerConfig.HighStick.RedTeam = offToggle;
+                        }
+                        else if (dataStr.Contains("gint")) {
+                            string[] splittedDataStrOff = dataStr.Replace("gint", "").Trim().Split(' ');
+
+                            bool offToggle;
+                            if (splittedDataStrOff[1] == "true")
+                                offToggle = true;
+                            else if (splittedDataStrOff[1] == "false")
+                                offToggle = false;
+                            else
+                                break;
+
+                            if (splittedDataStrOff[0] == "blue")
+                                ServerConfig.GInt.BlueTeam = offToggle;
+                            else if (splittedDataStrOff[0] == "red")
+                                ServerConfig.GInt.RedTeam = offToggle;
+                        }
+                        break;
                 }
             }
             catch (Exception ex) {
