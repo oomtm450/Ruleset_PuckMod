@@ -275,7 +275,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static FaceOffPuckValidator _puckValidator = null;
 
-        private static readonly List<string> _currentRefsSteamId = new List<string>();
+        private static readonly LockList<string> _currentRefsSteamId = new LockList<string>();
 
         // Client-side.
         private static RefSignals _refSignalsBlueTeam = null;
@@ -825,6 +825,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                             foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
                                 _icingStaminaDrainPenaltyAmount[key] = 0;
+
+                            _currentRefsSteamId.Clear();
                         }
 
                         // Reset players zone.
