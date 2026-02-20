@@ -2144,6 +2144,9 @@ namespace oomtm450PuckMod_Ruleset {
                     (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, ServerConfig);
                 }
 
+                if (string.IsNullOrEmpty(dataStr))
+                    return;
+
                 switch (dataName) {
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
                         _serverHasResponded = true;
