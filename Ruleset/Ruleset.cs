@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.0DEV4";
+        private static readonly string MOD_VERSION = "1.0.0DEV5";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -1039,6 +1039,14 @@ namespace oomtm450PuckMod_Ruleset {
                         else if (message.StartsWith(@"/refmode")) {
                             message = message.Replace(@"/refmode", "").Replace("true", "1").Replace("false", "0").Trim();
                             NetworkCommunication.SendData("refmode", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/addrefsteamid")) {
+                            message = message.Replace(@"/addrefsteamid", "").Trim();
+                            NetworkCommunication.SendData("addrefsteamid", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/removerefsteamid")) {
+                            message = message.Replace(@"/removerefsteamid", "").Trim();
+                            NetworkCommunication.SendData("removerefsteamid", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                     }
                 }
@@ -2324,6 +2332,20 @@ namespace oomtm450PuckMod_Ruleset {
                         else if (dataStr == "0")
                             ServerConfig = new ServerConfig(ServerConfigBackup);
 
+                        break;
+
+                    case "addrefsteamid": // SERVER-SIDE : Add a ref.
+                        if (!ServerConfig.RefMode || !IsAdmin(clientId))
+                            return;
+
+                        _currentRefsSteamId.Add(dataStr);
+                        break;
+
+                    case "removerefsteamid": // SERVER-SIDE : Remove a ref.
+                        if (!ServerConfig.RefMode || !IsAdmin(clientId))
+                            return;
+
+                        _currentRefsSteamId.Remove(dataStr);
                         break;
 
                     case "rule": // SERVER-SIDE : Change rule.
