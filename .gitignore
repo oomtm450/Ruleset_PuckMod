@@ -16,3 +16,4 @@
 /SoundsPack/bin/Release
 /SoundsPack/obj/Release
 /Codebase/Codebase.projitems
+*.user
