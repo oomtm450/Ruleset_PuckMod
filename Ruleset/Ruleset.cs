@@ -89,6 +89,11 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool _harmonyPatched = false;
 
         /// <summary>
+        /// Bool, true if glass barriers have been lowered.
+        /// </summary>
+        private static bool _barriersLowered = false;
+
+        /// <summary>
         /// LockList of PlayerIcing, positions of the players on the ice for icing logic.
         /// </summary>
         private static readonly LockList<PlayerIcing> _dictPlayersPositionsForIcing = new LockList<PlayerIcing>();
@@ -301,8 +306,6 @@ namespace oomtm450PuckMod_Ruleset {
         /// Int, number of time client asked the server for startup data.
         /// </summary>
         private static int _askServerForStartupDataCount = 0;
-
-        // Barrier collider, position 0 -19 0 is realistic.
         #endregion
 
         #region Properties
@@ -2200,6 +2203,33 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             try {
+                if (!_barriersLowered && ServerConfig.Penalty.DelayOfGame) {
+                    for (int i = 0; i < LevelManager.Instance.gameObject.transform.childCount; i++) {
+                        Transform levelManagerChild = LevelManager.Instance.gameObject.transform.GetChild(i);
+                        if (levelManagerChild.gameObject.name != "Rink")
+                            continue;
+
+                        for (int j = 0; j < levelManagerChild.childCount; j++) {
+                            // Barrier Collider, position 0 -19.05 0
+                            // Front Collider, Back Collider, Left Collider, Right Collider, 0 4.9 0
+                            Transform rinkChild = levelManagerChild.GetChild(j);
+                            if (rinkChild.gameObject.name == "Front Collider" || rinkChild.gameObject.name == "Back Collider" ||
+                                rinkChild.gameObject.name == "Left Collider" || rinkChild.gameObject.name == "Right Collider") {
+                                rinkChild.position = new Vector3(rinkChild.position.x, 4.9f, rinkChild.position.z);
+                                continue;
+                            }
+
+                            if (rinkChild.gameObject.name == "Barrier Collider") {
+                                rinkChild.position = new Vector3(rinkChild.position.x, -19.05f, rinkChild.position.z);
+                                continue;
+                            }
+                        }
+
+                        _barriersLowered = true;
+                        break;
+                    }
+                }
+
                 if (NetworkManager.Singleton != null && NetworkManager.Singleton.CustomMessagingManager != null && !_hasRegisteredWithNamedMessageHandler) {
                     Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT_TO_SERVER}.", ServerConfig);
                     NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER, ReceiveData);
