@@ -18,6 +18,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f);
 
+        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(25f, 0f, 44f);
+
         internal static LockDictionary<string, LockList<Penalty>> PenalizedPlayers { get; } = new LockDictionary<string, LockList<Penalty>>();
 
         internal static int PenalizedPlayersCountBlueTeam { get; set; } = 0;

@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.0DEV12";
+        private static readonly string MOD_VERSION = "1.0.0DEV13";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -1265,6 +1265,22 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 2.\n{ex}", ServerConfig);
                 }
 
+                // Delay of game penalty logic.
+                try {
+                    if (ServerConfig.Penalty.DelayOfGame && !string.IsNullOrEmpty(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]) &&
+                        (Math.Abs(puck.Rigidbody.transform.position.x) > PenaltyModule.DELAY_OF_GAME_POSITION.x ||
+                         puck.Rigidbody.transform.position.y < PenaltyModule.DELAY_OF_GAME_POSITION.y ||
+                         Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z)) {
+                        Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]);
+                        if (penalizedDelayOfGamePlayer != null && penalizedDelayOfGamePlayer)
+                            PenaltyModule.GivePenalty(PenaltyType.DelayOfGame, penalizedDelayOfGamePlayer);
+                        CallPenalty(_lastPlayerOnPuckTeam);
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 3.\n{ex}", ServerConfig);
+                }
+
                 Dictionary<PlayerTeam, bool> isTeamOffside = new Dictionary<PlayerTeam, bool> {
                     { PlayerTeam.Blue, IsOffside(PlayerTeam.Blue) },
                     { PlayerTeam.Red, IsOffside(PlayerTeam.Red) },
@@ -1444,7 +1460,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 3.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 4.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1453,7 +1469,7 @@ namespace oomtm450PuckMod_Ruleset {
                     ServerManager_Update_IcingLogic(PlayerTeam.Red, puck, icingHasToBeWarned, _dictPlayersPositionsForIcing.Any(x => x.IsBehindBlueTeamHashmarks));
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 4.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 5.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1475,7 +1491,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 5.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 6.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1483,7 +1499,7 @@ namespace oomtm450PuckMod_Ruleset {
                     _isPuckBehindHashmarks[PlayerTeam.Red] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Red, puck.Rigidbody.transform.position, PuckRadius);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 6.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 7.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1491,7 +1507,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _noHighStickFrames[playerSteamId] += 1;
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 7.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 8.\n{ex}", ServerConfig);
                 }
 
                 return true;
