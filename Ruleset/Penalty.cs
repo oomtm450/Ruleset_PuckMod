@@ -1,5 +1,6 @@
 ﻿using Codebase;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -18,7 +19,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f);
 
-        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(25f, 0f, 44f);
+        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(24.5f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 1f);
+
+        internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 44f;
 
         internal static LockDictionary<string, LockList<Penalty>> PenalizedPlayers { get; } = new LockDictionary<string, LockList<Penalty>>();
 
@@ -49,6 +52,42 @@ namespace oomtm450PuckMod_Ruleset {
             if (penalizedPlayer.Team.Value == PlayerTeam.Red && PenalizedPlayersCountRedTeam == MAX_PENALIZED_PLAYERS)
                 return;
 
+            List<Player> teamPlayers = PlayerManager.Instance.GetPlayersByTeam(penalizedPlayer.Team.Value).Where(x => !Codebase.PlayerFunc.IsGoalie(x)).ToList();
+
+            if (teamPlayers.Count < 2)
+                return;
+
+            if (teamPlayers.Count(x => !PenalizedPlayers.TryGetValue(x.SteamId.Value.ToString(), out LockList<Penalty> penalties) || penalties.Count == 0) < 2) {
+                bool unpenalizeOnePlayer = false;
+                if (penalizedPlayer.Team.Value == PlayerTeam.Blue) {
+                    if (PenalizedPlayersCountBlueTeam != 0)
+                        unpenalizeOnePlayer = true;
+                }
+                else if (penalizedPlayer.Team.Value == PlayerTeam.Red) {
+                    if (PenalizedPlayersCountRedTeam != 0)
+                        unpenalizeOnePlayer = true;
+                }
+
+                if (!unpenalizeOnePlayer)
+                    return;
+
+                KeyValuePair<string, LockList<Penalty>> _penalties = PenalizedPlayers.FirstOrDefault(x => x.Value.Count == 1 && x.Value.First().Team == penalizedPlayer.Team.Value);
+                if (_penalties.Equals(default(KeyValuePair<string, LockList<Penalty>>)))
+                    return;
+
+                Player _playerToUnpenalize = teamPlayers.FirstOrDefault(x => x.SteamId.Value.ToString() == _penalties.Key);
+                if (_playerToUnpenalize.Equals(default(Player)))
+                    return;
+
+                UnpenalizePlayer(_playerToUnpenalize);
+            }
+
+            // If goalie has a penalty, take another player.
+            if (Codebase.PlayerFunc.IsGoalie(penalizedPlayer))
+                penalizedPlayer = teamPlayers.First();
+
+            // TODO : If player is center, change the positions.
+
             string penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
             if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> penaltyList)) {
                 penaltyList = new LockList<Penalty>();
@@ -69,7 +108,7 @@ namespace oomtm450PuckMod_Ruleset {
                     PenalizedPlayersCountRedTeam++;
             }
 
-            Penalty newPenalty = new Penalty(penalizedPlayerSteamId, penaltyType);
+            Penalty newPenalty = new Penalty(penalizedPlayerSteamId, penalizedPlayer.Team.Value, penaltyType);
             penaltyList.Add(newPenalty);
             Ruleset.SystemChatMessages.Add($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyType}");
             Logging.Log($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyType}", Ruleset.ServerConfig);
@@ -155,6 +194,18 @@ namespace oomtm450PuckMod_Ruleset {
             Ruleset.SystemChatMessages.Add($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED");
             Logging.Log($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED", Ruleset.ServerConfig);
         }
+
+        internal static void RemoveOnePenalty(PlayerTeam penalizedPlayerTeam) {
+            if (penalizedPlayerTeam == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == 0)
+                return;
+
+            if (penalizedPlayerTeam == PlayerTeam.Red && PenalizedPlayersCountRedTeam == 0)
+                return;
+
+            Penalty penaltyToRemove = PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayerTeam).OrderBy(x => x.Timer.MillisecondsLeft).First();
+            penaltyToRemove.Timer.Pause();
+            penaltyToRemove.Timer.TimerCallback(null);
+        }
     }
 
     internal class Penalty {
@@ -168,8 +219,11 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal DateTime PenaltyDateTime { get; set; }
 
-        internal Penalty(string steamId, PenaltyType penaltyType) {
+        internal PlayerTeam Team { get; set; }
+
+        internal Penalty(string steamId, PlayerTeam team, PenaltyType penaltyType) {
             SteamId = steamId;
+            Team = team;
             PenaltyType = penaltyType;
             CurrentPenalty = false;
             SetTimer();

@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.0DEV13";
+        private static readonly string MOD_VERSION = "1.0.0DEV15";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -858,6 +858,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (phase == GamePhase.PeriodOver || phase == GamePhase.BlueScore || phase == GamePhase.RedScore) {
                         PenaltyModule.PausePenalties();
+                        PenaltyModule.TeleportPlayers();
 
                         NextFaceoffSpot = FaceoffSpot.Center;
                         _lastStoppageReason = Rule.None;
@@ -869,6 +870,13 @@ namespace oomtm450PuckMod_Ruleset {
                             _icingStaminaDrainPenaltyAmount[key] = 0;
 
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+
+                        if (PenaltyModule.PenalizedPlayersCountBlueTeam != PenaltyModule.PenalizedPlayersCountRedTeam) {
+                            if (phase == GamePhase.BlueScore)
+                                PenaltyModule.RemoveOnePenalty(PlayerTeam.Red);
+                            else if (phase == GamePhase.RedScore)
+                                PenaltyModule.RemoveOnePenalty(PlayerTeam.Blue);
+                        }
                     }
                     else if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver) {
                         if (phase == GamePhase.GameOver || phase == GamePhase.Warmup)
@@ -1266,16 +1274,20 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 2.\n{ex}", ServerConfig);
                 }
 
-                // Delay of game penalty logic.
+                // Delay of game penalty logic or offside.
                 try {
                     if (ServerConfig.Penalty.DelayOfGame && !string.IsNullOrEmpty(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]) &&
                         (Math.Abs(puck.Rigidbody.transform.position.x) > PenaltyModule.DELAY_OF_GAME_POSITION.x ||
-                         puck.Rigidbody.transform.position.y < PenaltyModule.DELAY_OF_GAME_POSITION.y ||
-                         Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z)) {
-                        Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]);
-                        if (penalizedDelayOfGamePlayer != null && penalizedDelayOfGamePlayer)
-                            PenaltyModule.GivePenalty(PenaltyType.DelayOfGame, penalizedDelayOfGamePlayer);
-                        CallPenalty(_lastPlayerOnPuckTeam);
+                         puck.Rigidbody.transform.position.y < PenaltyModule.DELAY_OF_GAME_POSITION.y) ||
+                         (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION_END_Z) {
+                        if (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z)
+                            CallOffside(_lastPlayerOnPuckTeam);
+                        else {
+                            Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]);
+                            if (penalizedDelayOfGamePlayer != null && penalizedDelayOfGamePlayer)
+                                PenaltyModule.GivePenalty(PenaltyType.DelayOfGame, penalizedDelayOfGamePlayer);
+                            CallPenalty(_lastPlayerOnPuckTeam);
+                        }
                     }
                 }
                 catch (Exception ex) {

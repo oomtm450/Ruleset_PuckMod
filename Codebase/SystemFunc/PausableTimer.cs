@@ -11,6 +11,8 @@ namespace Codebase {
         private readonly long _intervalMilliseconds;
         private bool _isRunning = false;
 
+        public long MillisecondsLeft => _intervalMilliseconds - _stopwatch.ElapsedMilliseconds;
+
         public PausableTimer(Action callback, long intervalMilliseconds) {
             _callback = callback ?? throw new ArgumentNullException(nameof(callback));
             _intervalMilliseconds = intervalMilliseconds;
@@ -43,7 +45,7 @@ namespace Codebase {
             Pause(); // Pause also sets isRunning to false
         }
 
-        private void TimerCallback(object state) {
+        public void TimerCallback(object state) {
             // This is where your custom logic goes.
             // It's called when the interval elapses.
             _callbackCalled = true;
