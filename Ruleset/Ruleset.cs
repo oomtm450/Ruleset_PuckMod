@@ -884,8 +884,6 @@ namespace oomtm450PuckMod_Ruleset {
                             watch.Stop();
                         _lastTimeOnCollisionStayOrExitWasCalled.Clear();
 
-                        "2026-02-21 06:08:33 [oomtm450_ruleset] Error in PlayerBodyV2_OnCollisionEnter_Patch Postfix().\r\nSystem.NullReferenceException: Object reference not set to an instance of an object\r\n  at oomtm450PuckMod_Ruleset.Ruleset+PlayerBodyV2_OnCollisionEnter_Patch.Postfix (UnityEngine.Collision collision) [0x000d6] in <66eb8875d1c54a9689d2d9cc878b9e80>:0 \r\n"
-
                         // Reset tipped times.
                         foreach (Stopwatch watch in _playersCurrentPuckTouch.Values)
                             watch.Stop();
