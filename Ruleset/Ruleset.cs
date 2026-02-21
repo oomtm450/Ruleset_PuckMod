@@ -994,8 +994,54 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         position = new Vector3(dot.x, ServerConfig.Faceoff.PuckDropHeight, dot.z);
                 }
-                catch (Exception ex)  {
+                catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(PuckManager_Server_SpawnPuck_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_Claim event from PlayerPosition.
+        /// </summary>
+        [HarmonyPatch(typeof(PlayerPosition), nameof(PlayerPosition.Server_Claim))]
+        public class PlayerPosition_Server_Claim_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(Player player) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if (PenaltyModule.PenalizedPlayers.TryGetValue(player.SteamId.Value.ToString(), out LockList<Penalty> penalties) && penalties.Count != 0)
+                        return false;
+                }
+                catch (Exception ex)  {
+                    Logging.LogError($"Error in {nameof(PlayerPosition_Server_Claim_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_Unclaim event from PlayerPosition.
+        /// </summary>
+        [HarmonyPatch(typeof(PlayerPosition), nameof(PlayerPosition.Server_Unclaim))]
+        public class PlayerPosition_Server_Unclaim_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(PlayerPosition __instance) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if (PenaltyModule.PenalizedPlayers.TryGetValue(__instance.ClaimedBy.SteamId.Value.ToString(), out LockList<Penalty> penalties) && penalties.Count != 0)
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(PlayerPosition_Server_Claim_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1585,6 +1631,30 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
         }
+
+        /*/// <summary>
+        /// Class that patches the OnPositionSelectActionPerformed event from UIManagerInputs.
+        /// </summary>
+        [HarmonyPatch(typeof(UIManagerInputs), "OnPositionSelectActionPerformed")]
+        public class UIManagerInputs_OnPositionSelectActionPerformed_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(UIManagerInputs __instance) {
+                try {
+                    // If this is not the client, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    string playerSteamId = __instance.SteamId.Value.ToString();
+                    if (PenaltyModule.PenalizedPlayers.TryGetValue(playerSteamId, out LockList<Penalty> penalties) && penalties.Count != 0)
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(UIManagerInputs_OnPositionSelectActionPerformed_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }*/
 
         /// <summary>
         /// Class that patches the UpdatePlayer event from UIScoreboard.
