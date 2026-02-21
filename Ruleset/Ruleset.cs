@@ -1279,7 +1279,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (ServerConfig.Penalty.DelayOfGame && !string.IsNullOrEmpty(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]) &&
                         (Math.Abs(puck.Rigidbody.transform.position.x) > PenaltyModule.DELAY_OF_GAME_POSITION.x ||
                          puck.Rigidbody.transform.position.y < PenaltyModule.DELAY_OF_GAME_POSITION.y) ||
-                         (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION_END_Z) {
+                         (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION_END_Z)) {
                         if (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z)
                             CallOffside(_lastPlayerOnPuckTeam);
                         else {
