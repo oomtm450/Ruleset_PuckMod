@@ -244,10 +244,38 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     /// Class containing the config for penalties.
     /// </summary>
     public class PenaltyConfig : ISubConfig {
+        #region Properties
+        /// <summary>
+        /// Bool, true if player interference is enabled.
+        /// </summary>
+        public bool Interference { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a player interference penalty in milliseconds.
+        /// </summary>
+        public int InterferenceTime { get; set; } = 45000;
         /// <summary>
         /// Int, interference can be called after this number of milliseconds after touching the puck.
         /// </summary>
         public int InterferenceMillisecondsThreshold { get; set; } = 2000;
+
+        /// <summary>
+        /// Bool, true if goalie interference is enabled.
+        /// </summary>
+        public bool GoalieInterference { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a goalie interference penalty in milliseconds.
+        /// </summary>
+        public int GoalieInterferenceTime { get; set; } = 45000;
+
+        /// <summary>
+        /// Bool, true if delay of game is enabled and the invisible wall has to be lowered.
+        /// </summary>
+        public bool DelayOfGame { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a delay of game penalty in milliseconds.
+        /// </summary>
+        public int DelayOfGameTime { get; set; } = 45000;
+        #endregion
 
         #region Constructors
         /// <summary>
@@ -260,7 +288,15 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <param name="penaltyConfig">PenaltyConfig, config to copy.</param>
         public PenaltyConfig(PenaltyConfig penaltyConfig) {
+            Interference = penaltyConfig.Interference;
+            InterferenceTime = penaltyConfig.InterferenceTime;
             InterferenceMillisecondsThreshold = penaltyConfig.InterferenceMillisecondsThreshold;
+
+            GoalieInterference = penaltyConfig.GoalieInterference;
+            GoalieInterferenceTime = penaltyConfig.GoalieInterferenceTime;
+
+            DelayOfGame = penaltyConfig.DelayOfGame;
+            DelayOfGameTime = penaltyConfig.DelayOfGameTime;
         }
         #endregion
 
@@ -275,8 +311,26 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             OldPenaltyConfig _oldConfig = oldConfig as OldPenaltyConfig;
             PenaltyConfig newConfig = new PenaltyConfig();
 
+            if (Interference == _oldConfig.Interference)
+                Interference = newConfig.Interference;
+
+            if (InterferenceTime == _oldConfig.InterferenceTime)
+                InterferenceTime = newConfig.InterferenceTime;
+
             if (InterferenceMillisecondsThreshold == _oldConfig.InterferenceMillisecondsThreshold)
                 InterferenceMillisecondsThreshold = newConfig.InterferenceMillisecondsThreshold;
+
+            if (GoalieInterference == _oldConfig.GoalieInterference)
+                GoalieInterference = newConfig.GoalieInterference;
+
+            if (GoalieInterferenceTime == _oldConfig.GoalieInterferenceTime)
+                GoalieInterferenceTime = newConfig.GoalieInterferenceTime;
+
+            if (DelayOfGame == _oldConfig.DelayOfGame)
+                DelayOfGame = newConfig.DelayOfGame;
+
+            if (DelayOfGameTime == _oldConfig.DelayOfGameTime)
+                DelayOfGameTime = newConfig.DelayOfGameTime;
         }
     }
 
@@ -606,11 +660,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public int PushNoGoalMilliseconds { get; set; } = 3750;
 
         /// <summary>
-        /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
-        /// </summary>
-        public int HitNoGoalMilliseconds { get; set; } = 11000; // TODO : Remove when penalty is added.
-
-        /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
         public float CollisionForceThreshold { get; set; } = 0.97f;
@@ -635,7 +684,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             RedTeam = gIntConfig.RedTeam;
 
             PushNoGoalMilliseconds = gIntConfig.PushNoGoalMilliseconds;
-            HitNoGoalMilliseconds = gIntConfig.HitNoGoalMilliseconds;
             CollisionForceThreshold = gIntConfig.CollisionForceThreshold;
             GoalieRadius = gIntConfig.GoalieRadius;
         }
@@ -660,9 +708,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (PushNoGoalMilliseconds == _oldConfig.PushNoGoalMilliseconds)
                 PushNoGoalMilliseconds = newConfig.PushNoGoalMilliseconds;
-
-            if (HitNoGoalMilliseconds == _oldConfig.HitNoGoalMilliseconds)
-                HitNoGoalMilliseconds = newConfig.HitNoGoalMilliseconds;
 
             if (CollisionForceThreshold == _oldConfig.CollisionForceThreshold)
                 CollisionForceThreshold = newConfig.CollisionForceThreshold;

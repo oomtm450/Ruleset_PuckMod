@@ -81,9 +81,24 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     /// </summary>
     public class OldPenaltyConfig : ISubConfig {
         /// <summary>
+        /// Bool, true if player interference is enabled.
+        /// </summary>
+        public bool Interference { get; } = true;
+
+        /// <summary>
         /// Int, interference can be called after this number of milliseconds after touching the puck.
         /// </summary>
         public int InterferenceMillisecondsThreshold { get; } = 2000;
+
+        /// <summary>
+        /// Bool, true if goalie interference is enabled.
+        /// </summary>
+        public bool GoalieInterference { get; } = true;
+
+        /// <summary>
+        /// Bool, true if delay of game is enabled and the invisible wall has to be lowered.
+        /// </summary>
+        public bool DelayOfGame { get; } = true;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -271,22 +286,17 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after a push on the goalie to be considered no goal.
         /// </summary>
-        public int PushNoGoalMilliseconds { get; } = 3500; // TODO : Change after release.
-
-        /// <summary>
-        /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
-        /// </summary>
-        public int HitNoGoalMilliseconds { get; } = 11000;
+        public int PushNoGoalMilliseconds { get; } = 3750;
 
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
-        public float CollisionForceThreshold { get; } = 0.971f; // TODO : Change after release.
+        public float CollisionForceThreshold { get; } = 0.97f;
 
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
-        public float GoalieRadius { get; } = 0.8f; // TODO : Change after release.
+        public float GoalieRadius { get; } = 0.805f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
