@@ -955,10 +955,10 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     if (phase == GamePhase.FaceOff) {
-                        PenaltyModule.TeleportPlayers();
-
-                        if (NextFaceoffSpot == FaceoffSpot.Center || !ServerConfig.Faceoff.UseCustomFaceoff)
+                        if (NextFaceoffSpot == FaceoffSpot.Center || !ServerConfig.Faceoff.UseCustomFaceoff) {
+                            PenaltyModule.TeleportPlayers();
                             return;
+                        }
 
                         Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
 
@@ -966,6 +966,7 @@ namespace oomtm450PuckMod_Ruleset {
                         foreach (Player player in players)
                             PlayerFunc.TeleportOnFaceoff(player, dot, NextFaceoffSpot);
 
+                        PenaltyModule.TeleportPlayers();
                         return;
                     }
                     else if (phase == GamePhase.Playing) {
