@@ -231,9 +231,9 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static readonly LockDictionary<string, DateTime> _dives = new LockDictionary<string, DateTime>();
 
-        private static float _lastForceOnGoalie = 0;
+        private static float _lastForceOnPlayer = 0;
 
-        private static string _lastForceOnGoaliePlayerSteamId = "";
+        private static string _lastForceOnPlayerPlayerSteamId = "";
 
         /// <summary>
         /// Bool, true if there's a pause in play.
@@ -706,14 +706,14 @@ namespace oomtm450PuckMod_Ruleset {
 
                     float force = Utils.GetCollisionForce(collision);
 
-                    if (_lastForceOnGoalie != force) {
-                        _lastForceOnGoalie = force;
-                        _lastForceOnGoaliePlayerSteamId = playerBody.Player.SteamId.Value.ToString();
+                    if (_lastForceOnPlayer != force) {
+                        _lastForceOnPlayer = force;
+                        _lastForceOnPlayerPlayerSteamId = playerBody.Player.SteamId.Value.ToString();
                         return;
                     }
 
-                    Player lastPlayerHit = PlayerManager.Instance.GetPlayerBySteamId(_lastForceOnGoaliePlayerSteamId);
-                    // If the goalie has been hit by the same team, return;
+                    Player lastPlayerHit = PlayerManager.Instance.GetPlayerBySteamId(_lastForceOnPlayerPlayerSteamId);
+                    // If the player has been hit by the same team, return;
                     if (playerBody.Player.Team.Value == lastPlayerHit.Team.Value)
                         return;
 
@@ -721,14 +721,46 @@ namespace oomtm450PuckMod_Ruleset {
                     if (Codebase.PlayerFunc.IsGoalie(playerBody.Player)) {
                         goalie = playerBody.Player;
                         hitter = lastPlayerHit;
+
+                        _lastForceOnPlayerPlayerSteamId = "";
                     }
                     else if (Codebase.PlayerFunc.IsGoalie(lastPlayerHit)) {
                         goalie = lastPlayerHit;
                         hitter = playerBody.Player;
+
+                        _lastForceOnPlayerPlayerSteamId = "";
                     }
                     else {
-                        _lastForceOnGoaliePlayerSteamId = "";
-                        _lastForceOnGoalie = 0;
+                        bool playerHit = false, otherPlayerHit = false;
+
+                        bool hasPlayerDived;
+                        if (_dives.TryGetValue(lastPlayerHit.SteamId.Value.ToString(), out DateTime lastPlayerHitDateTime) && lastPlayerHitDateTime > DateTime.UtcNow)
+                            hasPlayerDived = true;
+                        else
+                            hasPlayerDived = false;
+
+                        bool hasOtherPlayerDived;
+                        if (_dives.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > DateTime.UtcNow)
+                            hasOtherPlayerDived = true;
+                        else
+                            hasOtherPlayerDived = false;
+
+                        if ((lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped) && !hasPlayerDived) {
+                            playerHit = true;
+                        }
+
+                        if ((playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped) && !hasOtherPlayerDived) {
+                            otherPlayerHit = true;
+                        }
+
+                        if (playerHit && otherPlayerHit)
+                            return;
+
+                        if (playerHit)
+                            PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player);
+                        else if (otherPlayerHit)
+                            PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit);
+
                         return;
                     }
 
@@ -848,7 +880,7 @@ namespace oomtm450PuckMod_Ruleset {
                         ResetHighSticks();
                         ResetIcings();
                         _dictPlayersPositionsForIcing.Clear();
-                        ResetGoalieInt();
+                        ResetInt();
 
                         _puckZone = ZoneFunc.GetZone(NextFaceoffSpot);
                         _puckZoneLastTouched = _puckZone;
@@ -1705,12 +1737,12 @@ namespace oomtm450PuckMod_Ruleset {
             _callHighStickNextFrame[team] = true;
         }
 
-        private static void ResetGoalieInt() {
+        private static void ResetInt() {
             foreach (PlayerTeam key in new List<PlayerTeam>(_goalieIntTimer.Keys))
                 _goalieIntTimer[key] = null;
 
-            _lastForceOnGoalie = 0;
-            _lastForceOnGoaliePlayerSteamId = "";
+            _lastForceOnPlayer = 0;
+            _lastForceOnPlayerPlayerSteamId = "";
         }
 
         private static void ResetOffsides() {
