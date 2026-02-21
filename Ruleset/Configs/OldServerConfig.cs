@@ -84,7 +84,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if player interference is enabled.
         /// </summary>
         public bool Interference { get; } = true;
-
+        /// <summary>
+        /// Int, time in the box for a player interference penalty in milliseconds.
+        /// </summary>
+        public int InterferenceTime { get; } = 45000;
         /// <summary>
         /// Int, interference can be called after this number of milliseconds after touching the puck.
         /// </summary>
@@ -94,11 +97,19 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if goalie interference is enabled.
         /// </summary>
         public bool GoalieInterference { get; } = true;
+        /// <summary>
+        /// Int, time in the box for a goalie interference penalty in milliseconds.
+        /// </summary>
+        public int GoalieInterferenceTime { get; } = 45000;
 
         /// <summary>
         /// Bool, true if delay of game is enabled and the invisible wall has to be lowered.
         /// </summary>
         public bool DelayOfGame { get; } = true;
+        /// <summary>
+        /// Int, time in the box for a delay of game penalty in milliseconds.
+        /// </summary>
+        public int DelayOfGameTime { get; } = 45000;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.

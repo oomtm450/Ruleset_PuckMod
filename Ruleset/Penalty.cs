@@ -1,12 +1,27 @@
 ﻿using Codebase;
 using System.Linq;
+using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
     internal static class PenaltyModule {
         private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2;
         private const int MAX_PENALIZED_PLAYERS = 2;
 
+        private static readonly Vector3 BLUE_PENALTY_BOX_POSITION = new Vector3(25f, 1.5f, 3f);
+
+        private static readonly Vector3 RED_PENALTY_BOX_POSITION = new Vector3(25f, 1.5f, -3f);
+
+        private static readonly Vector3 INFRONT_BLUE_PENALTY_BOX_POSITION = new Vector3(22f, 0.05f, 3f);
+
+        private static readonly Vector3 INFRONT_RED_PENALTY_BOX_POSITION = new Vector3(22f, 0.05f, -3f);
+
+        private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f);
+
         internal static LockDictionary<string, LockList<Penalty>> PenalizedPlayers { get; } = new LockDictionary<string, LockList<Penalty>>();
+
+        internal static int PenalizedPlayersCountBlueTeam { get; set; } = 0;
+
+        internal static int PenalizedPlayersCountRedTeam { get; set; } = 0;
 
         internal static LockDictionary<PlayerTeam, bool> PenaltyToBeCalled { get; } = new LockDictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, false },
@@ -18,6 +33,19 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void GivePenalty(PenaltyType penaltyType, Player penalizedPlayer) {
+            if (!Ruleset.ServerConfig.Penalty.Interference && penaltyType == PenaltyType.Interference)
+                return;
+            if (!Ruleset.ServerConfig.Penalty.GoalieInterference && penaltyType == PenaltyType.GoalieInterference)
+                return;
+            if (!Ruleset.ServerConfig.Penalty.DelayOfGame && penaltyType == PenaltyType.DelayOfGame)
+                return;
+
+            if (penalizedPlayer.Team.Value == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == MAX_PENALIZED_PLAYERS)
+                return;
+
+            if (penalizedPlayer.Team.Value == PlayerTeam.Red && PenalizedPlayersCountRedTeam == MAX_PENALIZED_PLAYERS)
+                return;
+
             string penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
             if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> penaltyList)) {
                 penaltyList = new LockList<Penalty>();
@@ -28,6 +56,12 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             PenaltyToBeCalled[penalizedPlayer.Team.Value] = true;
+            if (penaltyList.Count == 0) {
+                if (penalizedPlayer.Team.Value == PlayerTeam.Blue)
+                    PenalizedPlayersCountBlueTeam++;
+                else
+                    PenalizedPlayersCountRedTeam++;
+            }
 
             Penalty newPenalty = new Penalty(penalizedPlayerSteamId, penaltyType);
             penaltyList.Add(newPenalty);
@@ -44,9 +78,39 @@ namespace oomtm450PuckMod_Ruleset {
                     Penalty firstPenalty = penalties.First();
                     firstPenalty.CurrentPenalty = true;
 
-                    // TODO : Teleport player and freeze.
+                    Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(firstPenalty.SteamId);
+                    if (penalizedPlayer == null || !penalizedPlayer)
+                        return;
+
+                    TeleportPlayer(penalizedPlayer);
                 }
             }
+        }
+
+        internal static void TeleportPlayers() {
+            foreach (LockList<Penalty> penalties in PenalizedPlayers.Values) {
+                // Player to the box and start first penalty.
+                if (penalties.Any(x => x.CurrentPenalty)) {
+                    TeleportPlayer(penalties.First().SteamId);
+                }
+            }
+        }
+
+        internal static void TeleportPlayer(string playerSteamId) {
+            Player player = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
+            if (player == null || !player)
+                return;
+
+            TeleportPlayer(player);
+        }
+
+        internal static void TeleportPlayer(Player player) {
+            if (player.Team.Value == PlayerTeam.Blue)
+                player.PlayerBody.Server_Teleport(BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+            else
+                player.PlayerBody.Server_Teleport(RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+
+            player.PlayerBody.Server_Freeze();
         }
 
         internal static void PausePenalties() {
@@ -68,7 +132,20 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void UnpenalizePlayer(string penalizedPlayerSteamId) {
+            Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(penalizedPlayerSteamId);
+            if (penalizedPlayer == null || !penalizedPlayer)
+                return;
 
+            penalizedPlayer.PlayerBody.Server_Unfreeze();
+
+            if (penalizedPlayer.Team.Value == PlayerTeam.Blue) {
+                PenalizedPlayersCountBlueTeam--;
+                penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+            }
+            else {
+                PenalizedPlayersCountRedTeam--;
+                penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+            }
         }
     }
 
@@ -114,17 +191,13 @@ namespace oomtm450PuckMod_Ruleset {
 
             PenaltyModule.PenalizedPlayers[SteamId].Remove(penaltyToRemove);
 
-            Penalty penaltyToStart = null;
-            
-            foreach (Penalty penalty in PenaltyModule.PenalizedPlayers[SteamId]) {
-                if (penalty.Timer.TimerEnded())
-                    penaltyToRemove = penalty;
-            }
-
-            if (penaltyToStart == null)
+            // Unpenalize player if no more penalties or start the next one.
+            if (PenaltyModule.PenalizedPlayers[SteamId].Count == 0)
                 PenaltyModule.UnpenalizePlayer(SteamId);
             else {
-                penaltyToStart.
+                Penalty firstPenalty = PenaltyModule.PenalizedPlayers[SteamId].First();
+                firstPenalty.CurrentPenalty = true;
+                firstPenalty.Timer.Start();
             }
         }
     }

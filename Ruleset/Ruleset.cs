@@ -717,11 +717,15 @@ namespace oomtm450PuckMod_Ruleset {
                     if (playerBody.Player.Team.Value == lastPlayerHit.Team.Value)
                         return;
 
-                    Player goalie;
-                    if (Codebase.PlayerFunc.IsGoalie(playerBody.Player))
+                    Player goalie, hitter;
+                    if (Codebase.PlayerFunc.IsGoalie(playerBody.Player)) {
                         goalie = playerBody.Player;
-                    else if (Codebase.PlayerFunc.IsGoalie(lastPlayerHit))
+                        hitter = lastPlayerHit;
+                    }
+                    else if (Codebase.PlayerFunc.IsGoalie(lastPlayerHit)) {
                         goalie = lastPlayerHit;
+                        hitter = playerBody.Player;
+                    }
                     else {
                         _lastForceOnGoaliePlayerSteamId = "";
                         _lastForceOnGoalie = 0;
@@ -755,9 +759,8 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         hasGoalieDived = false;
 
-                    if ((goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived) {
-                        // TODO : Goalie int penalty.
-                    }
+                    if ((goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived)
+                        PenaltyModule.GivePenalty(PenaltyType.GoalieInterference, hitter);
                     else if (force > ServerConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease) {
                         _ = _goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch);
 
@@ -904,6 +907,7 @@ namespace oomtm450PuckMod_Ruleset {
                         foreach (Player player in players)
                             PlayerFunc.TeleportOnFaceoff(player, dot, NextFaceoffSpot);
 
+                        PenaltyModule.TeleportPlayers();
                         return;
                     }
                 }
@@ -1512,7 +1516,11 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     // Reteleport player on faceoff to the correct faceoff.
-                    PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(NextFaceoffSpot), NextFaceoffSpot);
+                    string playerSteamId = player.SteamId.Value.ToString();
+                    if (!PenaltyModule.PenalizedPlayers.TryGetValue(playerSteamId, out LockList<Penalty> penalties) || penalties.Count == 0)
+                        PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(NextFaceoffSpot), NextFaceoffSpot);
+                    else
+                        PenaltyModule.TeleportPlayer(player);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(Player_Server_RespawnCharacter_Patch)} Postfix().\n{ex}", ServerConfig);
