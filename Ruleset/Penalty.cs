@@ -21,7 +21,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(24.5f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 1f);
 
-        internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 44f;
+        internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 45f;
 
         internal static LockDictionary<string, LockList<Penalty>> PenalizedPlayers { get; } = new LockDictionary<string, LockList<Penalty>>();
 
