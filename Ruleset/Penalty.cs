@@ -110,14 +110,14 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void TeleportPlayer(Player player) {
+            player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
+            player.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
             player.PlayerBody.Server_Freeze();
 
             if (player.Team.Value == PlayerTeam.Blue)
                 player.PlayerBody.Server_Teleport(BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
             else
                 player.PlayerBody.Server_Teleport(RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
-
-            player.PlayerBody.Server_Freeze();
         }
 
         internal static void PausePenalties() {

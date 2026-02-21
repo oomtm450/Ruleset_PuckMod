@@ -24,7 +24,7 @@ namespace Codebase {
 
             _stopwatch.Start();
             // Start the internal timer with the specified interval
-            _timer.Change(_intervalMilliseconds, Timeout.Infinite);
+            _timer.Change(_intervalMilliseconds - _stopwatch.ElapsedMilliseconds, Timeout.Infinite);
             _isRunning = true;
         }
 
