@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.0DEV5";
+        private static readonly string MOD_VERSION = "1.0.0DEV9";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -559,6 +559,17 @@ namespace oomtm450PuckMod_Ruleset {
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = playerSteamId;
                     _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, DateTime.UtcNow));
 
+                    if (PenaltyModule.PenaltyToBeCalled.Any(x => x.Value)) {
+                        Player possessionPlayer = PlayerManager.Instance.GetPlayerBySteamId(Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch));
+
+                        if (possessionPlayer != null && possessionPlayer) {
+                            if (PenaltyModule.PenaltyToBeCalled[possessionPlayer.Team.Value]) {
+                                CallPenalty(possessionPlayer.Team.Value);
+                                return;
+                            }
+                        }
+                    }
+
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(stick.Player.Team.Value);
                     // Offside logic.
                     List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
@@ -896,6 +907,8 @@ namespace oomtm450PuckMod_Ruleset {
                         _playersOnPuckTipIncludedDateTime.Clear();
 
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+
+                        PenaltyModule.StartPenalties();
                     }
                     else if (phase == GamePhase.Playing) {
                         PenaltyModule.UnpausePenalties();
@@ -2523,6 +2536,13 @@ namespace oomtm450PuckMod_Ruleset {
             DoFaceoff();
         }
 
+        private static void CallPenalty(PlayerTeam team, Player referee = null) {
+            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.Offside]);
+            SendChat(Rule.Penalty, team, true, false, referee);
+            _lastStoppageReason = Rule.Penalty;
+            DoFaceoff();
+        }
+
         private static void StopBlueRefSignals(string dataStr) {
             if (_refSignalsBlueTeam == null)
                 return;
@@ -2847,8 +2867,10 @@ namespace oomtm450PuckMod_Ruleset {
         Icing,
         [Description("HIGH STICK"), Category("ToString")]
         HighStick,
-        [Description("GOALIE INT"), Category("ToString")]
+        [Description("GOALIE INTERFERENCE"), Category("ToString")]
         GoalieInt,
+        [Description("PENALTY"), Category("ToString")]
+        Penalty,
     }
 
     internal class PlayerIcing {

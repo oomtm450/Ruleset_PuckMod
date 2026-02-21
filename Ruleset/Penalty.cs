@@ -1,4 +1,5 @@
 ﻿using Codebase;
+using System;
 using System.Linq;
 using UnityEngine;
 
@@ -55,6 +56,9 @@ namespace oomtm450PuckMod_Ruleset {
             if (penaltyList.Count == MAX_SAME_PLAYER_PENALTY_COUNT)
                 return;
 
+            if (penaltyList.Any(x => (x.PenaltyDateTime - DateTime.UtcNow).TotalMilliseconds < 4000))
+                return;
+
             PenaltyToBeCalled[penalizedPlayer.Team.Value] = true;
             if (penaltyList.Count == 0) {
                 if (penalizedPlayer.Team.Value == PlayerTeam.Blue)
@@ -66,6 +70,7 @@ namespace oomtm450PuckMod_Ruleset {
             Penalty newPenalty = new Penalty(penalizedPlayerSteamId, penaltyType);
             penaltyList.Add(newPenalty);
             Ruleset.SystemChatMessages.Add($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyType}");
+            Logging.Log($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyType}", Ruleset.ServerConfig);
         }
 
         internal static void StartPenalties() {
@@ -74,7 +79,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             foreach (LockList<Penalty> penalties in PenalizedPlayers.Values) {
                 // Player to the box and start first penalty.
-                if (penalties.All(x => !x.CurrentPenalty)) {
+                if (penalties.Count != 0 && penalties.All(x => !x.CurrentPenalty)) {
                     Penalty firstPenalty = penalties.First();
                     firstPenalty.CurrentPenalty = true;
 
@@ -105,6 +110,8 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void TeleportPlayer(Player player) {
+            player.PlayerBody.Server_Freeze();
+
             if (player.Team.Value == PlayerTeam.Blue)
                 player.PlayerBody.Server_Teleport(BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
             else
@@ -131,13 +138,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        internal static void UnpenalizePlayer(string penalizedPlayerSteamId) {
-            Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(penalizedPlayerSteamId);
-            if (penalizedPlayer == null || !penalizedPlayer)
-                return;
-
-            penalizedPlayer.PlayerBody.Server_Unfreeze();
-
+        internal static void UnpenalizePlayer(Player penalizedPlayer) {
             if (penalizedPlayer.Team.Value == PlayerTeam.Blue) {
                 PenalizedPlayersCountBlueTeam--;
                 penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
@@ -146,6 +147,11 @@ namespace oomtm450PuckMod_Ruleset {
                 PenalizedPlayersCountRedTeam--;
                 penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
             }
+
+            penalizedPlayer.PlayerBody.Server_Unfreeze();
+
+            Ruleset.SystemChatMessages.Add($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED");
+            Logging.Log($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED", Ruleset.ServerConfig);
         }
     }
 
@@ -158,11 +164,14 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal bool CurrentPenalty { get; set; }
 
+        internal DateTime PenaltyDateTime { get; set; }
+
         internal Penalty(string steamId, PenaltyType penaltyType) {
             SteamId = steamId;
             PenaltyType = penaltyType;
             CurrentPenalty = false;
             SetTimer();
+            PenaltyDateTime = DateTime.UtcNow;
         }
 
         internal void SetTimer() {
@@ -191,9 +200,20 @@ namespace oomtm450PuckMod_Ruleset {
 
             PenaltyModule.PenalizedPlayers[SteamId].Remove(penaltyToRemove);
 
+            Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(SteamId);
+            if (penalizedPlayer == null || !penalizedPlayer) {
+                Penalty firstPenalty = PenaltyModule.PenalizedPlayers[SteamId].First();
+                firstPenalty.CurrentPenalty = true;
+                firstPenalty.Timer.Start();
+                return;
+            }
+
+            Ruleset.SystemChatMessages.Add($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} OVER");
+            Logging.Log($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} OVER", Ruleset.ServerConfig);
+
             // Unpenalize player if no more penalties or start the next one.
             if (PenaltyModule.PenalizedPlayers[SteamId].Count == 0)
-                PenaltyModule.UnpenalizePlayer(SteamId);
+                PenaltyModule.UnpenalizePlayer(penalizedPlayer);
             else {
                 Penalty firstPenalty = PenaltyModule.PenalizedPlayers[SteamId].First();
                 firstPenalty.CurrentPenalty = true;
