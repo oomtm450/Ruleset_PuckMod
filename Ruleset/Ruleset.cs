@@ -2,6 +2,7 @@
 using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.FaceoffViolation;
+using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -745,13 +746,15 @@ namespace oomtm450PuckMod_Ruleset {
                         bool playerHit = false, otherPlayerHit = false;
 
                         bool hasPlayerDived;
-                        if (_dives.TryGetValue(lastPlayerHit.SteamId.Value.ToString(), out DateTime lastPlayerHitDateTime) && lastPlayerHitDateTime > DateTime.UtcNow)
+                        string lastPlayerHitSteamId = lastPlayerHit.SteamId.Value.ToString();
+                        if (_dives.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitDateTime) && lastPlayerHitDateTime > DateTime.UtcNow)
                             hasPlayerDived = true;
                         else
                             hasPlayerDived = false;
 
                         bool hasOtherPlayerDived;
-                        if (_dives.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > DateTime.UtcNow)
+                        string currentPlayerSteamId = playerBody.Player.SteamId.Value.ToString();
+                        if (_dives.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > DateTime.UtcNow)
                             hasOtherPlayerDived = true;
                         else
                             hasOtherPlayerDived = false;
@@ -767,10 +770,14 @@ namespace oomtm450PuckMod_Ruleset {
                         if (playerHit && otherPlayerHit)
                             return;
 
-                        if (playerHit)
-                            PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player);
-                        else if (otherPlayerHit)
-                            PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit);
+                        if (playerHit) {
+                            if ((_playersOnPuckTipIncludedDateTime[lastPlayerHitSteamId].LastTouchDateTime - DateTime.UtcNow).TotalMilliseconds > 2000)
+                                PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player);
+                        }
+                        else if (otherPlayerHit) {
+                            if ((_playersOnPuckTipIncludedDateTime[currentPlayerSteamId].LastTouchDateTime - DateTime.UtcNow).TotalMilliseconds > 2000)
+                                PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit);
+                        }
 
                         return;
                     }
