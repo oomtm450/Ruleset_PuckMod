@@ -805,13 +805,13 @@ namespace oomtm450PuckMod_Ruleset {
                             return;
 
                         if (playerHit) {
-                            if (lastPlayerHit.PlayerBody.transform.position.y > 0.048f) { // If the other person jumped.
+                            if (lastPlayerHit.PlayerBody.transform.position.y > 0.046f) { // If the other person jumped.
                                 if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var LastTouchDateTimePlayerHit) || (now - LastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
                                     PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
                             }
                         }
                         else if (otherPlayerHit) {
-                            if (playerBody.Player.PlayerBody.transform.position.y > 0.048f) { // If the other person jumped.
+                            if (playerBody.Player.PlayerBody.transform.position.y > 0.046f) { // If the other person jumped.
                                 if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var LastTouchDateTimeOtherPlayerHit) || (now - LastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
                                     PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
                             }
