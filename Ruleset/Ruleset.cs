@@ -277,6 +277,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly LockList<string> _currentRefsSteamId = new LockList<string>();
 
+        private static readonly LockList<string> _permaRefsSteamId = new LockList<string>();
+
         // Client-side.
         private static RefSignals _refSignalsBlueTeam = null;
 
@@ -1179,6 +1181,10 @@ namespace oomtm450PuckMod_Ruleset {
                             message = message.Replace(@"/removerefsteamid", "").Trim();
                             NetworkCommunication.SendData("removerefsteamid", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
+                        else if (message.StartsWith(@"/addpermrefsteamid")) {
+                            message = message.Replace(@"/addpermrefsteamid", "").Trim();
+                            NetworkCommunication.SendData("addpermrefsteamid", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
                     }
                 }
                 catch (Exception ex) {
@@ -1800,8 +1806,11 @@ namespace oomtm450PuckMod_Ruleset {
             foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
                 _icingStaminaDrainPenaltyAmount[key] = 0;
 
-            if (resetRefSteamIds)
+            if (resetRefSteamIds) {
                 _currentRefsSteamId.Clear();
+                foreach (string permaRefSteamId in _permaRefsSteamId)
+                    _currentRefsSteamId.Add(permaRefSteamId);
+            }
 
             PenaltyModule.ResetPenalties();
         }
@@ -2566,7 +2575,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         break;
 
-                    case "addrefsteamid": // SERVER-SIDE : Add a ref.
+                    case "addrefsteamid": // SERVER-SIDE : Add a ref for a game.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
@@ -2575,7 +2584,21 @@ namespace oomtm450PuckMod_Ruleset {
                         Player addedRefSteamIdPlayer = PlayerManager.Instance.GetPlayerBySteamId(dataStr);
                         if (addedRefSteamIdPlayer != null && addedRefSteamIdPlayer) {
                             SystemChatMessages.Add($"#{addedRefSteamIdPlayer.Number.Value} {addedRefSteamIdPlayer.Username.Value} is now a referee for a game.");
-                            Logging.Log($"Added #{addedRefSteamIdPlayer.Number.Value} {addedRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee for a game.", Ruleset.ServerConfig);
+                            Logging.Log($"Added #{addedRefSteamIdPlayer.Number.Value} {addedRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee for a game.", ServerConfig);
+                        }
+                        break;
+
+                    case "addpermarefsteamid": // SERVER-SIDE : Add a perma ref.
+                        if (!ServerConfig.RefMode || !IsAdmin(clientId))
+                            return;
+
+                        _currentRefsSteamId.Add(dataStr);
+                        _permaRefsSteamId.Add(dataStr);
+
+                        Player addedPermaRefSteamIdPlayer = PlayerManager.Instance.GetPlayerBySteamId(dataStr);
+                        if (addedPermaRefSteamIdPlayer != null && addedPermaRefSteamIdPlayer) {
+                            SystemChatMessages.Add($"#{addedPermaRefSteamIdPlayer.Number.Value} {addedPermaRefSteamIdPlayer.Username.Value} is now a referee until server restart.");
+                            Logging.Log($"Added #{addedPermaRefSteamIdPlayer.Number.Value} {addedPermaRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee until server restart.", ServerConfig);
                         }
                         break;
 
@@ -2588,7 +2611,7 @@ namespace oomtm450PuckMod_Ruleset {
                         Player removedRefSteamIdPlayer = PlayerManager.Instance.GetPlayerBySteamId(dataStr);
                         if (removedRefSteamIdPlayer != null && removedRefSteamIdPlayer) {
                             SystemChatMessages.Add($"#{removedRefSteamIdPlayer.Number.Value} {removedRefSteamIdPlayer.Username.Value} is not a referee anymore.");
-                            Logging.Log($"Removed #{removedRefSteamIdPlayer.Number.Value} {removedRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee.", Ruleset.ServerConfig);
+                            Logging.Log($"Removed #{removedRefSteamIdPlayer.Number.Value} {removedRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee.", ServerConfig);
                         }
                         break;
 
