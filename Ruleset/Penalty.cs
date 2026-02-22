@@ -157,8 +157,10 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void TeleportPlayer(Player player) {
-            player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
-            player.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
+            if (player.IsCharacterFullySpawned) {
+                player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
+                player.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
+            }
             player.PlayerBody.Server_Freeze();
 
             if (player.Team.Value == PlayerTeam.Blue)
