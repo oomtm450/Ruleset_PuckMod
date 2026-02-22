@@ -805,15 +805,15 @@ namespace oomtm450PuckMod_Ruleset {
                             return;
 
                         if (playerHit) {
-                            if (lastPlayerHit.PlayerBody.transform.position.y > 0.05f) { // If the other person jumped.
+                            if (lastPlayerHit.PlayerBody.transform.position.y > 0.048f) { // If the other person jumped.
                                 if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var LastTouchDateTimePlayerHit) || (now - LastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
-                                    PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player);
+                                    PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
                             }
                         }
                         else if (otherPlayerHit) {
-                            if (playerBody.Player.PlayerBody.transform.position.y > 0.05f) { // If the other person jumped.
+                            if (playerBody.Player.PlayerBody.transform.position.y > 0.048f) { // If the other person jumped.
                                 if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var LastTouchDateTimeOtherPlayerHit) || (now - LastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
-                                    PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit);
+                                    PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
                             }
                         }
 
@@ -848,7 +848,7 @@ namespace oomtm450PuckMod_Ruleset {
                         hasGoalieDived = false;
 
                     if ((goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived)
-                        PenaltyModule.GivePenalty(PenaltyType.GoalieInterference, hitter);
+                        PenaltyModule.GivePenalty(PenaltyType.GoalieInterference, hitter, goalie.SteamId.Value.ToString());
                     else if (force > ServerConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease) {
                         _ = _goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch);
 

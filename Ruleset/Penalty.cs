@@ -19,7 +19,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f);
 
-        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(24f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 9f);
+        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(24f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 10f);
 
         internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 46.5f;
 
@@ -40,7 +40,7 @@ namespace oomtm450PuckMod_Ruleset {
             PenalizedPlayersCountRedTeam = 0;
         }
 
-        internal static void GivePenalty(PenaltyType penaltyType, Player penalizedPlayer) {
+        internal static void GivePenalty(PenaltyType penaltyType, Player penalizedPlayer, string receivingPlayerSteamId = "") {
             if (!Ruleset.ServerConfig.Penalty.Interference && penaltyType == PenaltyType.Interference)
                 return;
             if (!Ruleset.ServerConfig.Penalty.GoalieInterference && penaltyType == PenaltyType.GoalieInterference)
@@ -57,6 +57,19 @@ namespace oomtm450PuckMod_Ruleset {
             List<Player> teamPlayers = PlayerManager.Instance.GetPlayersByTeam(penalizedPlayer.Team.Value).Where(x => !Codebase.PlayerFunc.IsGoalie(x)).ToList();
 
             if (teamPlayers.Count < 2)
+                return;
+
+            string penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
+            if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> penaltyList)) {
+                penaltyList = new LockList<Penalty>();
+                PenalizedPlayers.Add(penalizedPlayerSteamId, penaltyList);
+            }
+
+            if (penaltyList.Count == MAX_SAME_PLAYER_PENALTY_COUNT)
+                return;
+
+            DateTime now = DateTime.UtcNow;
+            if (PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayer.Team.Value && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000))
                 return;
 
             if (teamPlayers.Count(x => !PenalizedPlayers.TryGetValue(x.SteamId.Value.ToString(), out LockList<Penalty> penalties) || penalties.Count == 0) < 2) {
@@ -90,18 +103,6 @@ namespace oomtm450PuckMod_Ruleset {
 
             // TODO : If player is center, change the positions.
 
-            string penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
-            if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> penaltyList)) {
-                penaltyList = new LockList<Penalty>();
-                PenalizedPlayers.Add(penalizedPlayerSteamId, penaltyList);
-            }
-
-            if (penaltyList.Count == MAX_SAME_PLAYER_PENALTY_COUNT)
-                return;
-
-            if (penaltyList.Any(x => (x.PenaltyDateTime - DateTime.UtcNow).TotalMilliseconds < 4000))
-                return;
-
             PenaltyToBeCalled[penalizedPlayer.Team.Value] = true;
             if (penaltyList.Count == 0) {
                 if (penalizedPlayer.Team.Value == PlayerTeam.Blue)
@@ -110,7 +111,7 @@ namespace oomtm450PuckMod_Ruleset {
                     PenalizedPlayersCountRedTeam++;
             }
 
-            Penalty newPenalty = new Penalty(penalizedPlayerSteamId, penalizedPlayer.Team.Value, penaltyType);
+            Penalty newPenalty = new Penalty(penalizedPlayerSteamId, penalizedPlayer.Team.Value, penaltyType, receivingPlayerSteamId);
             penaltyList.Add(newPenalty);
             Ruleset.SystemChatMessages.Add($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyType}");
             Logging.Log($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyType}", Ruleset.ServerConfig);
@@ -229,11 +230,14 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal PlayerTeam Team { get; set; }
 
-        internal Penalty(string steamId, PlayerTeam team, PenaltyType penaltyType) {
+        internal string ReceivingPlayerSteamId { get; set; }
+
+        internal Penalty(string steamId, PlayerTeam team, PenaltyType penaltyType, string receivingPlayerSteamId) {
             SteamId = steamId;
             Team = team;
             PenaltyType = penaltyType;
             CurrentPenalty = false;
+            ReceivingPlayerSteamId = receivingPlayerSteamId;
 
             SetTimer();
 
