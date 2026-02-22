@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -231,6 +230,13 @@ namespace oomtm450PuckMod_Ruleset {
         /// LockDictionary of string and (PlayerTeam and DateTime), dictionary of all DateTime of every player last puck touch.
         /// </summary>
         private static readonly LockDictionary<string, (PlayerTeam Team, DateTime LastTouchDateTime)> _playersOnPuckTipIncludedDateTime = new LockDictionary<string, (PlayerTeam, DateTime)>();
+
+        /// <summary>
+        /// LockDictionary of string and (PlayerTeam and DateTime), dictionary of all DateTime of every player last puck touch, without tip.
+        /// </summary>
+        private static readonly LockDictionary<string, (PlayerTeam Team, DateTime LastTouchDateTime)> _playersOnPuckDateTime = new LockDictionary<string, (PlayerTeam, DateTime)>();
+
+        private static DateTime _puckDeflectedDateTimeSinceLastTouch = DateTime.MinValue;
 
         /// <summary>
         /// LockDictionary of string and DateTime, steamId of a player that dived and when he's supposed to get up.
@@ -516,6 +522,8 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing || !Logic)
                         return;
 
+                    DateTime now = DateTime.UtcNow;
+
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
                         PlayerBodyV2 playerBody = SystemFunc.GetPlayerBodyV2(collision.gameObject);
@@ -526,7 +534,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                         _lastPlayerOnPuckTeamTipIncluded = playerBody.Player.Team.Value;
                         _lastPlayerOnPuckTipIncludedSteamId[playerBody.Player.Team.Value] = playerBodySteamId;
-                        _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerBodySteamId, (playerBody.Player.Team.Value, DateTime.UtcNow));
+
+                        _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerBodySteamId, (playerBody.Player.Team.Value, now));
+                        _puckDeflectedDateTimeSinceLastTouch = now;
 
                         return;
                     }
@@ -555,15 +565,20 @@ namespace oomtm450PuckMod_Ruleset {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                         if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
                             ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
+
                         _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = playerSteamId;
+                        _playersOnPuckDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, now));
 
                         if (puck)
-                            _puckLastStateBeforeCall[Rule.GoalieInt] = _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
+                            _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
                     }
+
+                    if (puck)
+                        _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.GoalieInt] = (puck.Rigidbody.transform.position, _puckZone);
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = playerSteamId;
-                    _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, DateTime.UtcNow));
+                    _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, now));
 
                     //if (PenaltyModule.PenaltyToBeCalled.Any(x => x.Value)) {
                         //string possessionPlayer = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch);
@@ -622,6 +637,9 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing || !Logic)
                         return;
 
+                    DateTime now = DateTime.UtcNow;
+                    _puckDeflectedDateTimeSinceLastTouch = now;
+
                     //if (!__instance.IsTouchingStick)
                         //return;
 
@@ -647,15 +665,20 @@ namespace oomtm450PuckMod_Ruleset {
                         _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                         if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
                             ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
+
                         _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
+                        _playersOnPuckDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team.Value, now));
 
                         if (puck)
-                            _puckLastStateBeforeCall[Rule.GoalieInt] = _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
+                            _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
                     }
+
+                    if (puck)
+                        _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.GoalieInt] = (puck.Rigidbody.transform.position, _puckZone);
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
-                    _playersOnPuckTipIncludedDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team.Value, DateTime.UtcNow));
+                    _playersOnPuckTipIncludedDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team.Value, now));
 
                     // Icing logic.
                     bool icingPossible = false;
@@ -934,6 +957,9 @@ namespace oomtm450PuckMod_Ruleset {
                             _lastPlayerOnPuckTipIncludedSteamId[key] = "";
 
                         _playersOnPuckTipIncludedDateTime.Clear();
+                        _playersOnPuckDateTime.Clear();
+
+                        _puckDeflectedDateTimeSinceLastTouch = DateTime.MinValue;
 
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
@@ -1293,8 +1319,8 @@ namespace oomtm450PuckMod_Ruleset {
                         (Math.Abs(puck.Rigidbody.transform.position.x) > PenaltyModule.DELAY_OF_GAME_POSITION.x ||
                          puck.Rigidbody.transform.position.y < PenaltyModule.DELAY_OF_GAME_POSITION.y) ||
                          (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION_END_Z)) {
-                        if (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z)
-                            CallOffside(_lastPlayerOnPuckTeam);
+                        if (_puckDeflectedDateTimeSinceLastTouch > _playersOnPuckDateTime[_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]].LastTouchDateTime || Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z)
+                            CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
                         else {
                             Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]);
                             if (penalizedDelayOfGamePlayer != null && penalizedDelayOfGamePlayer)
@@ -2741,6 +2767,13 @@ namespace oomtm450PuckMod_Ruleset {
             DoFaceoff();
         }
 
+        private static void CallDelayOfGameStoppage(PlayerTeam team, Player referee = null) {
+            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.DelayOfGame]);
+            SendChat(Rule.DelayOfGame, team, true, false, referee);
+            _lastStoppageReason = Rule.Offside;
+            DoFaceoff();
+        }
+
         internal static void CallPenalty(PlayerTeam team, Player referee = null) {
             if (team == PlayerTeam.Blue) {
                 if (_puckLastStateBeforeCall[Rule.Offside].Position.x > 0)
@@ -3088,6 +3121,8 @@ namespace oomtm450PuckMod_Ruleset {
         HighStick,
         [Description("GOALIE INTERFERENCE"), Category("ToString")]
         GoalieInt,
+        [Description("OUT OF BOUNDS"), Category("ToString")]
+        DelayOfGame,
         [Description("PENALTY"), Category("ToString")]
         Penalty,
     }
