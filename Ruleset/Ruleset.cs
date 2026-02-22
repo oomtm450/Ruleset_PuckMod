@@ -781,40 +781,42 @@ namespace oomtm450PuckMod_Ruleset {
 
                         string lastPlayerHitSteamId = lastPlayerHit.SteamId.Value.ToString();
 
-                        if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped) {
-                            bool hasPlayerDived;
-                            if (_dives.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitDateTime) && lastPlayerHitDateTime > now)
-                                hasPlayerDived = true;
-                            else
-                                hasPlayerDived = false;
+                        bool hasPlayerDived;
+                        if (_dives.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitDateTime) && lastPlayerHitDateTime > now)
+                            hasPlayerDived = true;
+                        else
+                            hasPlayerDived = false;
 
+                        if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped)
                             playerHit = !hasPlayerDived;
-                        }
 
-                        if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped) {
-                            bool hasOtherPlayerDived;
-                            if (_dives.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > now)
-                                hasOtherPlayerDived = true;
-                            else
-                                hasOtherPlayerDived = false;
+                        bool hasOtherPlayerDived;
+                        if (_dives.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > now)
+                            hasOtherPlayerDived = true;
+                        else
+                            hasOtherPlayerDived = false;
 
+                        if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped)
                             otherPlayerHit = !hasOtherPlayerDived;
-                        }
 
-                        if (playerHit && otherPlayerHit)
+                        if (!hasPlayerDived && !hasOtherPlayerDived && playerHit && otherPlayerHit && playerBody.Player.PlayerBody.transform.position.y < 0.046f && lastPlayerHit.PlayerBody.transform.position.y < 0.046f)
                             return;
 
                         if (playerHit) {
-                            if (lastPlayerHit.PlayerBody.transform.position.y > 0.046f) { // If the other person jumped.
+                            if (lastPlayerHit.PlayerBody.transform.position.y > 0.045f) { // If the other person jumped.
                                 if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var LastTouchDateTimePlayerHit) || (now - LastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
                                     PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
                             }
+                            else if (hasOtherPlayerDived)
+                                PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
                         }
                         else if (otherPlayerHit) {
-                            if (playerBody.Player.PlayerBody.transform.position.y > 0.046f) { // If the other person jumped.
+                            if (playerBody.Player.PlayerBody.transform.position.y > 0.045f) { // If the other person jumped.
                                 if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var LastTouchDateTimeOtherPlayerHit) || (now - LastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
                                     PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
                             }
+                            else if (hasPlayerDived)
+                                PenaltyModule.GivePenalty(PenaltyType.Tripping, lastPlayerHit, currentPlayerSteamId);
                         }
 
                         return;

@@ -19,7 +19,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f);
 
-        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(24f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 12f);
+        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(24f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 13f);
 
         internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 46.5f;
 
@@ -41,7 +41,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void GivePenalty(PenaltyType penaltyType, Player penalizedPlayer, string receivingPlayerSteamId = "") {
-            if (!Ruleset.ServerConfig.Penalty.Interference && penaltyType == PenaltyType.Interference)
+            if (!Ruleset.ServerConfig.Penalty.Interference && (penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.Tripping))
                 return;
             if (!Ruleset.ServerConfig.Penalty.GoalieInterference && penaltyType == PenaltyType.GoalieInterference)
                 return;
@@ -247,6 +247,7 @@ namespace oomtm450PuckMod_Ruleset {
         internal void SetTimer() {
             switch (PenaltyType) {
                 case PenaltyType.Interference:
+                case PenaltyType.Tripping:
                     Timer = new PausableTimer(PenaltyTimer_Elapsed, Ruleset.ServerConfig.Penalty.InterferenceTime);
                     break;
 
@@ -296,5 +297,6 @@ namespace oomtm450PuckMod_Ruleset {
         Interference,
         GoalieInterference,
         DelayOfGame,
+        Tripping,
     }
 }
