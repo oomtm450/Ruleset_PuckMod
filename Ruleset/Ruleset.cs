@@ -980,7 +980,7 @@ namespace oomtm450PuckMod_Ruleset {
                         PenaltyModule.TeleportPlayers();
                         return;
                     }
-                    else if (phase == GamePhase.Playing) {
+                    else if (phase == GamePhase.Playing || phase == GamePhase.BlueScore || phase == GamePhase.RedScore || phase == GamePhase.PeriodOver) {
                         PenaltyModule.TeleportPlayers();
                     }
                 }
