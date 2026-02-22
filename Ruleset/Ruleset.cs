@@ -2547,9 +2547,16 @@ namespace oomtm450PuckMod_Ruleset {
 
                             ServerConfig.HighStick.BlueTeam = false;
                             ServerConfig.HighStick.RedTeam = false;
+
+                            SystemChatMessages.Add("Ref mode has been enabled.");
+                            Logging.Log($"Ref mode has been enabled.", Ruleset.ServerConfig);
                         }
-                        else if (dataStr == "0")
+                        else if (dataStr == "0") {
                             ServerConfig = new ServerConfig(ServerConfigBackup);
+
+                            SystemChatMessages.Add("Ref mode has been disabled.");
+                            Logging.Log($"Ref mode has been disabled.", Ruleset.ServerConfig);
+                        }
 
                         break;
 
@@ -2558,6 +2565,12 @@ namespace oomtm450PuckMod_Ruleset {
                             return;
 
                         _currentRefsSteamId.Add(dataStr);
+
+                        Player addedRefSteamIdPlayer = PlayerManager.Instance.GetPlayerBySteamId(dataStr);
+                        if (addedRefSteamIdPlayer != null && addedRefSteamIdPlayer) {
+                            SystemChatMessages.Add($"#{addedRefSteamIdPlayer.Number.Value} {addedRefSteamIdPlayer.Username.Value} is now a referee for a game.");
+                            Logging.Log($"Added #{addedRefSteamIdPlayer.Number.Value} {addedRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee for a game.", Ruleset.ServerConfig);
+                        }
                         break;
 
                     case "removerefsteamid": // SERVER-SIDE : Remove a ref.
@@ -2565,6 +2578,12 @@ namespace oomtm450PuckMod_Ruleset {
                             return;
 
                         _currentRefsSteamId.Remove(dataStr);
+
+                        Player removedRefSteamIdPlayer = PlayerManager.Instance.GetPlayerBySteamId(dataStr);
+                        if (removedRefSteamIdPlayer != null && removedRefSteamIdPlayer) {
+                            SystemChatMessages.Add($"#{removedRefSteamIdPlayer.Number.Value} {removedRefSteamIdPlayer.Username.Value} is not a referee anymore.");
+                            Logging.Log($"Removed #{removedRefSteamIdPlayer.Number.Value} {removedRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee.", Ruleset.ServerConfig);
+                        }
                         break;
 
                     case "rule": // SERVER-SIDE : Change rule.
