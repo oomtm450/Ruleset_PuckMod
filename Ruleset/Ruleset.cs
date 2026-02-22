@@ -2731,15 +2731,15 @@ namespace oomtm450PuckMod_Ruleset {
         private static void CallPenalty(PlayerTeam team, Player referee = null) {
             if (team == PlayerTeam.Blue) {
                 if (_puckLastStateBeforeCall[Rule.HighStick].Position.x > 0)
-                    NextFaceoffSpot = FaceoffSpot.RedteamDZoneLeft;
+                    NextFaceoffSpot = FaceoffSpot.BlueteamDZoneLeft;
                 else
-                    NextFaceoffSpot = FaceoffSpot.RedteamDZoneRight;
+                    NextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight;
             }
             else {
                 if (_puckLastStateBeforeCall[Rule.HighStick].Position.x > 0)
-                    NextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight;
+                    NextFaceoffSpot = FaceoffSpot.RedteamDZoneRight;
                 else
-                    NextFaceoffSpot = FaceoffSpot.BlueteamDZoneLeft;
+                    NextFaceoffSpot = FaceoffSpot.RedteamDZoneLeft;
             }
 
             SendChat(Rule.Penalty, team, true, false, referee);
