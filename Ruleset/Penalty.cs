@@ -36,6 +36,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static void ResetPenalties() {
             PenalizedPlayers.Clear();
+            PenalizedPlayersCountBlueTeam = 0;
+            PenalizedPlayersCountRedTeam = 0;
         }
 
         internal static void GivePenalty(PenaltyType penaltyType, Player penalizedPlayer) {
