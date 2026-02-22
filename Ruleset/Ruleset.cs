@@ -2735,7 +2735,7 @@ namespace oomtm450PuckMod_Ruleset {
             DoFaceoff();
         }
 
-        internal static void CallPenalty(PlayerTeam team = PlayerTeam.None, Player referee = null) {
+        internal static void CallPenalty(PlayerTeam team, Player referee = null) {
             if (team == PlayerTeam.Blue) {
                 if (_puckLastStateBeforeCall[Rule.Offside].Position.x > 0)
                     NextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight;

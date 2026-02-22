@@ -115,7 +115,7 @@ namespace oomtm450PuckMod_Ruleset {
             Ruleset.SystemChatMessages.Add($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyType}");
             Logging.Log($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyType}", Ruleset.ServerConfig);
 
-            if (PenaltyToBeCalled.All(x => x.Value))
+            if (PenaltyToBeCalled.Values.All(x => x))
                 Ruleset.CallPenalty(PlayerTeam.None);
         }
 
