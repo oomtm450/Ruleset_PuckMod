@@ -1072,7 +1072,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
-                    ResetGame();
+                    ResetGame(false);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(GameManager_Server_StartGame_Patch)} Prefix().\n{ex}", ServerConfig);
@@ -1790,7 +1790,7 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Methods/Functions
-        private static void ResetGame() {
+        private static void ResetGame(bool resetRefSteamIds = true) {
             NextFaceoffSpot = FaceoffSpot.Center;
             _lastStoppageReason = Rule.None;
 
@@ -1800,7 +1800,8 @@ namespace oomtm450PuckMod_Ruleset {
             foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
                 _icingStaminaDrainPenaltyAmount[key] = 0;
 
-            _currentRefsSteamId.Clear();
+            if (resetRefSteamIds)
+                _currentRefsSteamId.Clear();
 
             PenaltyModule.ResetPenalties();
         }
