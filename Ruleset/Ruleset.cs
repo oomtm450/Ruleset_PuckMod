@@ -756,35 +756,42 @@ namespace oomtm450PuckMod_Ruleset {
 
                         DateTime now = DateTime.UtcNow;
 
-                        bool hasPlayerDived;
                         string lastPlayerHitSteamId = lastPlayerHit.SteamId.Value.ToString();
-                        if (_dives.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitDateTime) && lastPlayerHitDateTime > now)
-                            hasPlayerDived = true;
-                        else
-                            hasPlayerDived = false;
 
-                        bool hasOtherPlayerDived;
-                        if (_dives.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > now)
-                            hasOtherPlayerDived = true;
-                        else
-                            hasOtherPlayerDived = false;
+                        if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped) {
+                            bool hasPlayerDived;
+                            if (_dives.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitDateTime) && lastPlayerHitDateTime > now)
+                                hasPlayerDived = true;
+                            else
+                                hasPlayerDived = false;
 
-                        if ((lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped) && !hasPlayerDived)
-                            playerHit = true;
+                            playerHit = !hasPlayerDived;
+                        }
 
-                        if ((playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped) && !hasOtherPlayerDived)
-                            otherPlayerHit = true;
+                        if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped) {
+                            bool hasOtherPlayerDived;
+                            if (_dives.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > now)
+                                hasOtherPlayerDived = true;
+                            else
+                                hasOtherPlayerDived = false;
+
+                            otherPlayerHit = !hasOtherPlayerDived;
+                        }
 
                         if (playerHit && otherPlayerHit)
                             return;
 
                         if (playerHit) {
-                            if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var LastTouchDateTimePlayerHit) || (now - LastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
-                                PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player);
+                            if (lastPlayerHit.PlayerBody.transform.position.y > 0.05f) { // If the other person jumped.
+                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var LastTouchDateTimePlayerHit) || (now - LastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
+                                    PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player);
+                            }
                         }
                         else if (otherPlayerHit) {
-                            if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var LastTouchDateTimeOtherPlayerHit) || (now - LastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
-                                PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit);
+                            if (playerBody.Player.PlayerBody.transform.position.y > 0.05f) { // If the other person jumped.
+                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var LastTouchDateTimeOtherPlayerHit) || (now - LastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
+                                    PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit);
+                            }
                         }
 
                         return;
