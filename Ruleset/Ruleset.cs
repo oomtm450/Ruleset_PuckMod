@@ -787,7 +787,7 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             hasPlayerDived = false;
 
-                        if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped)
+                        if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping)
                             playerHit = !hasPlayerDived;
 
                         bool hasOtherPlayerDived;
@@ -796,7 +796,7 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             hasOtherPlayerDived = false;
 
-                        if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped)
+                        if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping)
                             otherPlayerHit = !hasOtherPlayerDived;
 
                         if (!hasPlayerDived && !hasOtherPlayerDived && playerHit && otherPlayerHit && playerBody.Player.PlayerBody.transform.position.y < 0.046f && lastPlayerHit.PlayerBody.transform.position.y < 0.046f)
