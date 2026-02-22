@@ -10,7 +10,7 @@ namespace oomtm450PuckMod_Ruleset {
         private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2;
         private const int MAX_PENALIZED_PLAYERS = 2;
 
-        private static readonly Vector3 BLUE_PENALTY_BOX_POSITION = new Vector3(26f, 1.2f, 3f);
+        private static readonly Vector3 BLUE_PENALTY_BOX_POSITION = new Vector3(26f, 1f, 3f);
 
         private static readonly Vector3 RED_PENALTY_BOX_POSITION = new Vector3(BLUE_PENALTY_BOX_POSITION.x, BLUE_PENALTY_BOX_POSITION.y, BLUE_PENALTY_BOX_POSITION.z * -1);
 
