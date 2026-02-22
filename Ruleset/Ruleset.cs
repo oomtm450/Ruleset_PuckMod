@@ -1319,7 +1319,7 @@ namespace oomtm450PuckMod_Ruleset {
                         (Math.Abs(puck.Rigidbody.transform.position.x) > PenaltyModule.DELAY_OF_GAME_POSITION.x ||
                          puck.Rigidbody.transform.position.y < PenaltyModule.DELAY_OF_GAME_POSITION.y) ||
                          (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION_END_Z)) {
-                        if (_puckDeflectedDateTimeSinceLastTouch > _playersOnPuckDateTime[_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]].LastTouchDateTime || Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z)
+                        if ((_playersOnPuckDateTime.TryGetValue(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam], out var lastTouchDateTime) && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime) || Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z)
                             CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
                         else {
                             Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]);
