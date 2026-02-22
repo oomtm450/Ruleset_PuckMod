@@ -868,7 +868,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (phase == GamePhase.PeriodOver || phase == GamePhase.BlueScore || phase == GamePhase.RedScore) {
                         PenaltyModule.PausePenalties();
-                        PenaltyModule.TeleportPlayers();
 
                         NextFaceoffSpot = FaceoffSpot.Center;
                         _lastStoppageReason = Rule.None;
