@@ -2588,7 +2588,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
-                    case "addpermarefsteamid": // SERVER-SIDE : Add a perma ref.
+                    case "addpermrefsteamid": // SERVER-SIDE : Add a permanent ref (until server restarts).
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 

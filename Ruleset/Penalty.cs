@@ -9,7 +9,7 @@ namespace oomtm450PuckMod_Ruleset {
         private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2;
         private const int MAX_PENALIZED_PLAYERS = 2;
 
-        private static readonly Vector3 BLUE_PENALTY_BOX_POSITION = new Vector3(26f, 1.3f, 3f);
+        private static readonly Vector3 BLUE_PENALTY_BOX_POSITION = new Vector3(26f, 1.2f, 3f);
 
         private static readonly Vector3 RED_PENALTY_BOX_POSITION = new Vector3(BLUE_PENALTY_BOX_POSITION.x, BLUE_PENALTY_BOX_POSITION.y, BLUE_PENALTY_BOX_POSITION.z * -1);
 
@@ -19,7 +19,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f);
 
-        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(24f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 5f);
+        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(24f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 6f);
 
         internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 46.5f;
 
