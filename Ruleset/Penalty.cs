@@ -229,7 +229,9 @@ namespace oomtm450PuckMod_Ruleset {
             Team = team;
             PenaltyType = penaltyType;
             CurrentPenalty = false;
+
             SetTimer();
+
             PenaltyDateTime = DateTime.UtcNow;
         }
 
