@@ -9,9 +9,9 @@ namespace oomtm450PuckMod_Ruleset {
         private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2;
         private const int MAX_PENALIZED_PLAYERS = 2;
 
-        private static readonly Vector3 BLUE_PENALTY_BOX_POSITION = new Vector3(26f, 1.4f, 3f);
+        private static readonly Vector3 BLUE_PENALTY_BOX_POSITION = new Vector3(26f, 1.3f, 3f);
 
-        private static readonly Vector3 RED_PENALTY_BOX_POSITION = new Vector3(26f, 1.4f, -3f);
+        private static readonly Vector3 RED_PENALTY_BOX_POSITION = new Vector3(BLUE_PENALTY_BOX_POSITION.x, BLUE_PENALTY_BOX_POSITION.y, BLUE_PENALTY_BOX_POSITION.z * -1);
 
         private static readonly Vector3 INFRONT_BLUE_PENALTY_BOX_POSITION = new Vector3(22f, 0.05f, 3f);
 
@@ -19,9 +19,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f);
 
-        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(24f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 3f);
+        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(24f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 5f);
 
-        internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 45f;
+        internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 46.5f;
 
         internal static LockDictionary<string, LockList<Penalty>> PenalizedPlayers { get; } = new LockDictionary<string, LockList<Penalty>>();
 
@@ -202,7 +202,10 @@ namespace oomtm450PuckMod_Ruleset {
             if (penalizedPlayerTeam == PlayerTeam.Red && PenalizedPlayersCountRedTeam == 0)
                 return;
 
-            Penalty penaltyToRemove = PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayerTeam).OrderBy(x => x.Timer.MillisecondsLeft).First();
+            Penalty penaltyToRemove = PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayerTeam).OrderBy(x => x.Timer.MillisecondsLeft).FirstOrDefault();
+            if (penaltyToRemove == null || penaltyToRemove.Equals(default(Penalty)))
+                return;
+
             penaltyToRemove.Timer.Pause();
             penaltyToRemove.Timer.TimerCallback(null);
         }
