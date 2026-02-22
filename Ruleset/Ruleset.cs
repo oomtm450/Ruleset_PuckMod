@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -1832,7 +1833,13 @@ namespace oomtm450PuckMod_Ruleset {
             if (string.IsNullOrEmpty(ruleStr))
                 return;
 
-            UIChat.Instance.Server_SendSystemChatMessage($"{ruleStr} {team.ToString().ToUpperInvariant()} TEAM" + (called ? (" CALLED" + (off ? " OFF" : "")) : "") + (referee != null ? $" BY #{referee.Number.Value} {referee.Username.Value}" : ""));
+            string teamPart;
+            if (team == PlayerTeam.None)
+                teamPart = "";
+            else
+                teamPart = $" {team.ToString().ToUpperInvariant()} TEAM";
+
+            UIChat.Instance.Server_SendSystemChatMessage($"{ruleStr}{teamPart}" + (called ? (" CALLED" + (off ? " OFF" : "")) : "") + (referee != null ? $" BY #{referee.Number.Value} {referee.Username.Value}" : ""));
         }
 
         private static void WarnOffside(bool active, PlayerTeam team) {
@@ -2728,19 +2735,21 @@ namespace oomtm450PuckMod_Ruleset {
             DoFaceoff();
         }
 
-        private static void CallPenalty(PlayerTeam team, Player referee = null) {
+        internal static void CallPenalty(PlayerTeam team = PlayerTeam.None, Player referee = null) {
             if (team == PlayerTeam.Blue) {
                 if (_puckLastStateBeforeCall[Rule.HighStick].Position.x > 0)
                     NextFaceoffSpot = FaceoffSpot.BlueteamDZoneLeft;
                 else
                     NextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight;
             }
-            else {
+            else if (team == PlayerTeam.Red) {
                 if (_puckLastStateBeforeCall[Rule.HighStick].Position.x > 0)
                     NextFaceoffSpot = FaceoffSpot.RedteamDZoneRight;
                 else
                     NextFaceoffSpot = FaceoffSpot.RedteamDZoneLeft;
             }
+            else
+                NextFaceoffSpot = FaceoffSpot.Center;
 
             SendChat(Rule.Penalty, team, true, false, referee);
             _lastStoppageReason = Rule.Penalty;

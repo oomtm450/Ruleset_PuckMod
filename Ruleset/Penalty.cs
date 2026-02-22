@@ -1,5 +1,6 @@
 ﻿using Codebase;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -114,6 +115,9 @@ namespace oomtm450PuckMod_Ruleset {
             penaltyList.Add(newPenalty);
             Ruleset.SystemChatMessages.Add($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyType}");
             Logging.Log($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyType}", Ruleset.ServerConfig);
+
+            if (PenaltyToBeCalled.All(x => x.Value))
+                Ruleset.CallPenalty(PlayerTeam.None);
         }
 
         internal static void StartPenalties() {
