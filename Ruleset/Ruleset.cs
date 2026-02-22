@@ -2089,7 +2089,7 @@ namespace oomtm450PuckMod_Ruleset {
                     buffer.Remove(collision);
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in ResetAssists.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(ResetGoalAndAssistAttribution)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -2166,7 +2166,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnRulesetTrigger.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_OnRulesetTrigger)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -2188,7 +2188,7 @@ namespace oomtm450PuckMod_Ruleset {
                 LoadAssets();
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnSceneLoaded.\n{ex}", ClientConfig);
+                Logging.LogError($"Error in {nameof(Event_OnSceneLoaded)}.\n{ex}", ClientConfig);
             }
         }
 
@@ -2224,7 +2224,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_Client_OnClientStopped.\n{ex}", ClientConfig);
+                Logging.LogError($"Error in {nameof(Event_Client_OnClientStopped)}.\n{ex}", ClientConfig);
             }
         }
         
@@ -2298,7 +2298,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnClientConnected.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_OnClientConnected)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -2738,9 +2738,9 @@ namespace oomtm450PuckMod_Ruleset {
         internal static void CallPenalty(PlayerTeam team = PlayerTeam.None, Player referee = null) {
             if (team == PlayerTeam.Blue) {
                 if (_puckLastStateBeforeCall[Rule.HighStick].Position.x > 0)
-                    NextFaceoffSpot = FaceoffSpot.BlueteamDZoneLeft;
-                else
                     NextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight;
+                else
+                    NextFaceoffSpot = FaceoffSpot.BlueteamDZoneLeft;
             }
             else if (team == PlayerTeam.Red) {
                 if (_puckLastStateBeforeCall[Rule.HighStick].Position.x > 0)
