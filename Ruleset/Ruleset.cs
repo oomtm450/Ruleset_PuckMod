@@ -2737,13 +2737,13 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static void CallPenalty(PlayerTeam team = PlayerTeam.None, Player referee = null) {
             if (team == PlayerTeam.Blue) {
-                if (_puckLastStateBeforeCall[Rule.HighStick].Position.x > 0)
+                if (_puckLastStateBeforeCall[Rule.Offside].Position.x > 0)
                     NextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight;
                 else
                     NextFaceoffSpot = FaceoffSpot.BlueteamDZoneLeft;
             }
             else if (team == PlayerTeam.Red) {
-                if (_puckLastStateBeforeCall[Rule.HighStick].Position.x > 0)
+                if (_puckLastStateBeforeCall[Rule.Offside].Position.x > 0)
                     NextFaceoffSpot = FaceoffSpot.RedteamDZoneRight;
                 else
                     NextFaceoffSpot = FaceoffSpot.RedteamDZoneLeft;
