@@ -2701,7 +2701,19 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void CallPenalty(PlayerTeam team, Player referee = null) {
-            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.Offside]);
+            if (team == PlayerTeam.Blue) {
+                if (_puckLastStateBeforeCall[Rule.HighStick].Position.x > 0)
+                    NextFaceoffSpot = FaceoffSpot.RedteamDZoneLeft;
+                else
+                    NextFaceoffSpot = FaceoffSpot.RedteamDZoneRight;
+            }
+            else {
+                if (_puckLastStateBeforeCall[Rule.HighStick].Position.x > 0)
+                    NextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight;
+                else
+                    NextFaceoffSpot = FaceoffSpot.BlueteamDZoneLeft;
+            }
+
             SendChat(Rule.Penalty, team, true, false, referee);
             _lastStoppageReason = Rule.Penalty;
             DoFaceoff();
