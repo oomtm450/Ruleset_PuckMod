@@ -1975,6 +1975,11 @@ namespace oomtm450PuckMod_Ruleset {
             if (!IsIcingEnabled(team))
                 return false;
 
+            if (team == PlayerTeam.Blue && PenaltyModule.PenalizedPlayersCountBlueTeam > PenaltyModule.PenalizedPlayersCountRedTeam)
+                return false;
+            if (team == PlayerTeam.Red && PenaltyModule.PenalizedPlayersCountRedTeam > PenaltyModule.PenalizedPlayersCountBlueTeam)
+                return false;
+
             return _isIcingActive[team];
         }
 
