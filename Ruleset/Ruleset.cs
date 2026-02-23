@@ -799,9 +799,6 @@ namespace oomtm450PuckMod_Ruleset {
                         if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping)
                             hasOtherPlayerBeenHit = !hasOtherPlayerDived;
 
-                        if (!hasLastPlayerDived && !hasOtherPlayerDived && hasLastPlayerBeenHit && hasOtherPlayerBeenHit)
-                            return;
-
                         if (hasLastPlayerBeenHit) {
                             if (playerBody.Player.PlayerBody.transform.position.y > 0.044f) { // If the other person jumped. // TODO : Config.
                                 if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var LastTouchDateTimePlayerHit) || (now - LastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
