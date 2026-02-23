@@ -123,7 +123,11 @@ namespace oomtm450PuckMod_Ruleset {
 
                 if (faceoffSpot == FaceoffSpot.Center && playerPosition != CENTER_POSITION) {
                     xOffset *= 2;
-                    zOffset *= 2;
+
+                    if (playerPosition != LEFT_DEFENDER_POSITION && playerPosition != RIGHT_DEFENDER_POSITION)
+                        zOffset *= 2;
+                    else
+                        zOffset *= 0.8f;
                 }
 
                 player.PlayerBody.Server_Teleport(new Vector3(faceoffDot.x + xOffset, faceoffDot.y, faceoffDot.z + zOffset), quaternion);

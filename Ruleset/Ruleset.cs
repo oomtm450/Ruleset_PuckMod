@@ -775,20 +775,20 @@ namespace oomtm450PuckMod_Ruleset {
                         hitter = playerBody.Player;
                     }
                     else {
-                        bool playerHit = false, otherPlayerHit = false;
+                        bool hasLastPlayerBeenHit = false, hasOtherPlayerBeenHit = false;
 
                         DateTime now = DateTime.UtcNow;
 
                         string lastPlayerHitSteamId = lastPlayerHit.SteamId.Value.ToString();
 
-                        bool hasPlayerDived;
+                        bool hasLastPlayerDived;
                         if (_dives.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitDateTime) && lastPlayerHitDateTime > now)
-                            hasPlayerDived = true;
+                            hasLastPlayerDived = true;
                         else
-                            hasPlayerDived = false;
+                            hasLastPlayerDived = false;
 
                         if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping)
-                            playerHit = !hasPlayerDived;
+                            hasLastPlayerBeenHit = !hasLastPlayerDived;
 
                         bool hasOtherPlayerDived;
                         if (_dives.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > now)
@@ -797,12 +797,12 @@ namespace oomtm450PuckMod_Ruleset {
                             hasOtherPlayerDived = false;
 
                         if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping)
-                            otherPlayerHit = !hasOtherPlayerDived;
+                            hasOtherPlayerBeenHit = !hasOtherPlayerDived;
 
-                        if (!hasPlayerDived && !hasOtherPlayerDived && playerHit && otherPlayerHit && playerBody.Player.PlayerBody.transform.position.y < 0.044f && lastPlayerHit.PlayerBody.transform.position.y < 0.044f) // TODO : Config.
+                        if (!hasLastPlayerDived && !hasOtherPlayerDived && hasLastPlayerBeenHit && hasOtherPlayerBeenHit)
                             return;
 
-                        if (playerHit) {
+                        if (hasLastPlayerBeenHit) {
                             if (playerBody.Player.PlayerBody.transform.position.y > 0.044f) { // If the other person jumped. // TODO : Config.
                                 if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var LastTouchDateTimePlayerHit) || (now - LastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
                                     PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
@@ -810,12 +810,12 @@ namespace oomtm450PuckMod_Ruleset {
                             else if (hasOtherPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
                         }
-                        else if (otherPlayerHit) {
+                        else if (hasOtherPlayerBeenHit) {
                             if (lastPlayerHit.PlayerBody.transform.position.y > 0.044f) { // If the other person jumped. // TODO : Config.
                                 if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var LastTouchDateTimeOtherPlayerHit) || (now - LastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
                                     PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
                             }
-                            else if (hasPlayerDived)
+                            else if (hasLastPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, lastPlayerHit, currentPlayerSteamId);
                         }
 
