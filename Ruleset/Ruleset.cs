@@ -807,7 +807,8 @@ namespace oomtm450PuckMod_Ruleset {
                             else if (hasOtherPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
                         }
-                        else if (hasOtherPlayerBeenHit) {
+
+                        if (hasOtherPlayerBeenHit) {
                             if (lastPlayerHit.PlayerBody.transform.position.y > 0.044f) { // If the other person jumped. // TODO : Config.
                                 if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var LastTouchDateTimeOtherPlayerHit) || (now - LastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
                                     PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
