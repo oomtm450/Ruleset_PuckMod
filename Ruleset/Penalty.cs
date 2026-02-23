@@ -242,8 +242,40 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         // TODO : Create function that will fake a player's position to a more priority one (Left wing then right wing, if those positions are not filled)
-        /*internal static string FakePlayerPositionForFaceoffByAvailability() {
+        /*internal static string FakePlayerPositionForFaceoffByAvailability(string position, PlayerTeam team, FaceoffSpot faceoffSpot) {
+            if (team == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == 0)
+                return position;
 
+            if (team == PlayerTeam.Red && PenalizedPlayersCountRedTeam == 0)
+                return position;
+
+            switch (position) {
+                case Codebase.PlayerFunc.RIGHT_WINGER_POSITION:
+                    if (left_wing_no_exists)
+                        return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
+                    break;
+
+                case Codebase.PlayerFunc.LEFT_DEFENDER_POSITION:
+                    if (left_wing_no_exists && right_wing_no_exists)
+                        return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
+
+                    if (right_wing_no_exists)
+                        return Codebase.PlayerFunc.RIGHT_WINGER_POSITION;
+                    break;
+
+                case Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION:
+                    if (left_wing_no_exists && right_wing_no_exists && left_defense_no_exists)
+                        return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
+
+                    if (right_wing_no_exists && left_defense_no_exists)
+                        return Codebase.PlayerFunc.RIGHT_WINGER_POSITION;
+
+                    if (left_defense_no_exists)
+                        return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
+                    break;
+            }
+
+            return position;
         }*/
 
         internal static string GetPlayerPositionForFaceoff(string position, PlayerTeam team, FaceoffSpot faceoffSpot) {
@@ -255,8 +287,6 @@ namespace oomtm450PuckMod_Ruleset {
                         else {
                             if (PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
                                 return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
-                            else
-                                return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
                         }
                     }
                     else {
@@ -265,10 +295,9 @@ namespace oomtm450PuckMod_Ruleset {
                         else {
                             if (PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
                                 return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
-                            else
-                                return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
                         }
                     }
+                    break;
 
                 case Codebase.PlayerFunc.RIGHT_WINGER_POSITION:
                     if (team == PlayerTeam.Blue) {
@@ -279,8 +308,6 @@ namespace oomtm450PuckMod_Ruleset {
                                 return Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION;
                             else if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
                                 return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
-                            else
-                                return Codebase.PlayerFunc.RIGHT_WINGER_POSITION;
                         }
                     }
                     else {
@@ -291,14 +318,12 @@ namespace oomtm450PuckMod_Ruleset {
                                 return Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION;
                             else if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
                                 return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
-                            else
-                                return Codebase.PlayerFunc.RIGHT_WINGER_POSITION;
                         }
                     }
-
-                default:
-                    return position;
+                    break;
             }
+
+            return position;
         }
         #endregion
     }

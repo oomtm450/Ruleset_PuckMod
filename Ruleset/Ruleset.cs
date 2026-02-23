@@ -486,7 +486,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsHighStick(stick.Player.Team.Value)) {
                         Puck puck = PuckManager.Instance.GetPuck();
                         if (puck && puck.Rigidbody.transform.position.y < PuckRadius) {
-                            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, Rule.HighStick, _puckLastStateBeforeCall[Rule.HighStick]);
 
                             _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
                             highStickTimer.Change(Timeout.Infinite, Timeout.Infinite);
@@ -1417,7 +1417,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                                 if (IsIcing(otherTeam) && AreBothNegativeOrPositive(player.PlayerBody.transform.position.x, puck.Rigidbody.transform.position.x)) {
                                     considerForIcing = true;
-                                    NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
+                                    NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, Rule.Icing, _puckLastStateBeforeCall[Rule.Icing]);
                                 }
                             }
 
@@ -2738,14 +2738,14 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void CallOffside(PlayerTeam team, Player referee = null) {
-            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.Offside]);
+            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Offside, _puckLastStateBeforeCall[Rule.Offside]);
             SendChat(Rule.Offside, team, true, false, referee);
             _lastStoppageReason = Rule.Offside;
             DoFaceoff();
         }
 
         private static void CallHighStick(PlayerTeam team, Player referee = null) {
-            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.HighStick]);
+            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.HighStick, _puckLastStateBeforeCall[Rule.HighStick]);
             SendChat(Rule.HighStick, team, true, false, referee);
             ResetHighSticks();
             _lastStoppageReason = Rule.HighStick;
@@ -2753,14 +2753,14 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void CallGoalieInt(PlayerTeam team, Player referee = null) {
-            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
+            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.GoalieInt, _puckLastStateBeforeCall[Rule.GoalieInt]);
             SendChat(Rule.GoalieInt, team, true, false, referee);
             _lastStoppageReason = Rule.GoalieInt;
             DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
         }
 
         private static void CallIcing(PlayerTeam team, Player referee = null) {
-            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, true, _puckLastStateBeforeCall[Rule.Icing]);
+            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Icing, _puckLastStateBeforeCall[Rule.Icing]);
             SendChat(Rule.Icing, team, true, false, referee);
 
             int remainingPlayTime = GameManager.Instance.GameState.Value.Time;
@@ -2775,7 +2775,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void CallDelayOfGameStoppage(PlayerTeam team, Player referee = null) {
-            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.DelayOfGame]);
+            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.DelayOfGame, _puckLastStateBeforeCall[Rule.DelayOfGame]);
             SendChat(Rule.DelayOfGame, team, true, false, referee);
             _lastStoppageReason = Rule.Offside;
             DoFaceoff();
