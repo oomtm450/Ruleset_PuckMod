@@ -799,11 +799,11 @@ namespace oomtm450PuckMod_Ruleset {
                         if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping)
                             otherPlayerHit = !hasOtherPlayerDived;
 
-                        if (!hasPlayerDived && !hasOtherPlayerDived && playerHit && otherPlayerHit && playerBody.Player.PlayerBody.transform.position.y < 0.046f && lastPlayerHit.PlayerBody.transform.position.y < 0.046f)
+                        if (!hasPlayerDived && !hasOtherPlayerDived && playerHit && otherPlayerHit && playerBody.Player.PlayerBody.transform.position.y < 0.044f && lastPlayerHit.PlayerBody.transform.position.y < 0.044f) // TODO : Config.
                             return;
 
                         if (playerHit) {
-                            if (lastPlayerHit.PlayerBody.transform.position.y > 0.045f) { // If the other person jumped.
+                            if (playerBody.Player.PlayerBody.transform.position.y > 0.044f) { // If the other person jumped. // TODO : Config.
                                 if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var LastTouchDateTimePlayerHit) || (now - LastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
                                     PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
                             }
@@ -811,7 +811,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
                         }
                         else if (otherPlayerHit) {
-                            if (playerBody.Player.PlayerBody.transform.position.y > 0.045f) { // If the other person jumped.
+                            if (lastPlayerHit.PlayerBody.transform.position.y > 0.044f) { // If the other person jumped. // TODO : Config.
                                 if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var LastTouchDateTimeOtherPlayerHit) || (now - LastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
                                     PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
                             }
