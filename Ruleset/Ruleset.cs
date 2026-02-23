@@ -1009,7 +1009,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         List<Player> players = PlayerManager.Instance.GetPlayers();
                         foreach (Player player in players) {
-                            if (PenaltyModule.PositionIsPenalized[player.Team.Value][player.PlayerPosition.Name])
+                            if (!Codebase.PlayerFunc.IsPlayerPlaying(player) || player.Team.Value == PlayerTeam.Spectator || player.Team.Value == PlayerTeam.None || PenaltyModule.PositionIsPenalized[player.Team.Value][player.PlayerPosition.Name])
                                 continue;
 
                             PlayerFunc.TeleportOnFaceoff(player, dot, NextFaceoffSpot, PenaltyModule.GetPlayerPositionForFaceoff(player.PlayerPosition.Name, player.Team.Value, NextFaceoffSpot));

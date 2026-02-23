@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <param name="faceoffSpot">FaceoffSpot, location of the faceoff.</param>
         /// <param name="playerPosition">String, player's position.</param>
         public static void TeleportOnFaceoff(Player player, Vector3 faceoffDot, FaceoffSpot faceoffSpot, string playerPosition = "") {
-            if (!IsPlayerPlaying(player) || faceoffSpot == FaceoffSpot.Center)
+            if (!IsPlayerPlaying(player))
                 return;
 
             if (string.IsNullOrEmpty(playerPosition))
