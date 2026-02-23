@@ -25,6 +25,7 @@ namespace oomtm450PuckMod_Ruleset {
         internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 46.5f;
 
         private static readonly Dictionary<string, bool> POSITION_IS_PENALIZED_DEFAULT = new Dictionary<string, bool> {
+            { Codebase.PlayerFunc.GOALIE_POSITION, false },
             { Codebase.PlayerFunc.CENTER_POSITION, false },
             { Codebase.PlayerFunc.LEFT_WINGER_POSITION, false },
             { Codebase.PlayerFunc.RIGHT_WINGER_POSITION, false },

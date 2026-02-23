@@ -765,6 +765,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                     _lastForceOnPlayerPlayerSteamId = "";
 
+                    DateTime now = DateTime.UtcNow;
+
                     Player goalie, hitter;
                     if (Codebase.PlayerFunc.IsGoalie(playerBody.Player)) {
                         goalie = playerBody.Player;
@@ -776,8 +778,6 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                     else {
                         bool hasLastPlayerBeenHit = false, hasOtherPlayerBeenHit = false;
-
-                        DateTime now = DateTime.UtcNow;
 
                         string lastPlayerHitSteamId = lastPlayerHit.SteamId.Value.ToString();
 
@@ -842,13 +842,23 @@ namespace oomtm450PuckMod_Ruleset {
                     PlayerTeam goalieOtherTeam = TeamFunc.GetOtherTeam(goalie.Team.Value);
 
                     bool hasGoalieDived;
-                    if (_dives.TryGetValue(goalie.SteamId.Value.ToString(), out DateTime dateTime) && dateTime > DateTime.UtcNow)
+                    if (_dives.TryGetValue(goalie.SteamId.Value.ToString(), out DateTime dateTime) && dateTime > now)
                         hasGoalieDived = true;
                     else
                         hasGoalieDived = false;
 
-                    if ((goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived)
-                        PenaltyModule.GivePenalty(PenaltyType.GoalieInterference, hitter, goalie.SteamId.Value.ToString());
+                    if ((goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived) {
+                        bool hasHitterDived;
+                        if (_dives.TryGetValue(hitter.SteamId.Value.ToString(), out DateTime hitterDiveDateTime) && hitterDiveDateTime > now)
+                            hasHitterDived = true;
+                        else
+                            hasHitterDived = false;
+
+                        if (hasHitterDived)
+                            PenaltyModule.GivePenalty(PenaltyType.Tripping, hitter, goalie.SteamId.Value.ToString());
+                        else
+                            PenaltyModule.GivePenalty(PenaltyType.GoalieInterference, hitter, goalie.SteamId.Value.ToString());
+                    }
                     else if (force > ServerConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease) {
                         _ = _goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch);
 
@@ -2188,7 +2198,14 @@ namespace oomtm450PuckMod_Ruleset {
                         if (extraMessageKvp.Key != "duration")
                             break;
 
-                        DateTime getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(int.Parse((string)extraMessageKvp.Value));
+                        int divingValue = int.Parse((string)extraMessageKvp.Value);
+
+                        DateTime getUpTime;
+                        if (divingValue == int.MinValue)
+                            getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(2000);
+                        else
+                            getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(divingValue);
+
                         if (!_dives.TryGetValue(value, out DateTime _))
                             _dives.Add(value, getUpTime);
                         else
