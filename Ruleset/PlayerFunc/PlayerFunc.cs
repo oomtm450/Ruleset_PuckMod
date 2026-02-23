@@ -125,7 +125,7 @@ namespace oomtm450PuckMod_Ruleset {
                     xOffset *= 2;
 
                     if (playerPosition != LEFT_DEFENDER_POSITION && playerPosition != RIGHT_DEFENDER_POSITION)
-                        zOffset *= 1.95f;
+                        zOffset *= 1.9f;
                     else
                         zOffset *= 0.8f;
                 }
