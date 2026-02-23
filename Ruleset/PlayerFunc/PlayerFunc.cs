@@ -18,13 +18,17 @@ namespace oomtm450PuckMod_Ruleset {
         /// <param name="player">Player, player to teleport.</param>
         /// <param name="faceoffDot">Vector3, position of the faceoff dot.</param>
         /// <param name="faceoffSpot">FaceoffSpot, location of the faceoff.</param>
-        public static void TeleportOnFaceoff(Player player, Vector3 faceoffDot, FaceoffSpot faceoffSpot) {
+        /// <param name="playerPosition">String, player's position.</param>
+        public static void TeleportOnFaceoff(Player player, Vector3 faceoffDot, FaceoffSpot faceoffSpot, string playerPosition = "") {
             if (!IsPlayerPlaying(player) || faceoffSpot == FaceoffSpot.Center)
                 return;
 
+            if (string.IsNullOrEmpty(playerPosition))
+                playerPosition = player.PlayerPosition.Name;
+
             float xOffset = 0, zOffset = 0;
             Quaternion quaternion = player.PlayerBody.Rigidbody.rotation;
-            switch (player.PlayerPosition.Name) {
+            switch (playerPosition) {
                 case CENTER_POSITION:
                     zOffset = 1.5f;
                     break;
@@ -111,11 +115,17 @@ namespace oomtm450PuckMod_Ruleset {
                     break;
             }
 
-            if (player.PlayerPosition.Name != GOALIE_POSITION) {
+            if (playerPosition != GOALIE_POSITION) {
                 if (player.Team.Value == PlayerTeam.Red) {
                     xOffset *= -1;
                     zOffset *= -1;
                 }
+
+                if (faceoffSpot == FaceoffSpot.Center && playerPosition != CENTER_POSITION) {
+                    xOffset *= 2;
+                    zOffset *= 2;
+                }
+
                 player.PlayerBody.Server_Teleport(new Vector3(faceoffDot.x + xOffset, faceoffDot.y, faceoffDot.z + zOffset), quaternion);
             }
         }

@@ -72,8 +72,8 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             _playerTethers.RemoveAll(t => t.PlayerBody == playerBody);
 
             // Get player role and position AFTER ruleset has positioned them
-            string positionName = playerBody.Player.PlayerPosition?.Name ?? "Unknown";
             PlayerTeam team = playerBody.Player.Team.Value;
+            string positionName = PenaltyModule.GetPlayerPositionForFaceoff(playerBody.Player.PlayerPosition.Name, team, currentFaceoffSpot);
 
             if (positionName == "LD" && (team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft || team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedteamDZoneRight))
                 positionName = "RW";

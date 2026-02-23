@@ -1000,7 +1000,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     if (phase == GamePhase.FaceOff) {
-                        if (NextFaceoffSpot == FaceoffSpot.Center || !ServerConfig.Faceoff.UseCustomFaceoff) {
+                        if (!ServerConfig.Faceoff.UseCustomFaceoff) {
                             PenaltyModule.TeleportPlayers();
                             return;
                         }
@@ -1008,8 +1008,12 @@ namespace oomtm450PuckMod_Ruleset {
                         Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
 
                         List<Player> players = PlayerManager.Instance.GetPlayers();
-                        foreach (Player player in players)
-                            PlayerFunc.TeleportOnFaceoff(player, dot, NextFaceoffSpot);
+                        foreach (Player player in players) {
+                            if (PenaltyModule.PositionIsPenalized[player.Team.Value][player.PlayerPosition.Name])
+                                continue;
+
+                            PlayerFunc.TeleportOnFaceoff(player, dot, NextFaceoffSpot, PenaltyModule.GetPlayerPositionForFaceoff(player.PlayerPosition.Name, player.Team.Value, NextFaceoffSpot));
+                        }
 
                         PenaltyModule.TeleportPlayers();
                         return;
@@ -1680,7 +1684,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     // If this game is not started or faceoff is on the default dot (center), do not use the patch.
-                    if (GameManager.Instance.Phase != GamePhase.FaceOff || NextFaceoffSpot == FaceoffSpot.Center || !ServerConfig.Faceoff.UseCustomFaceoff)
+                    if (GameManager.Instance.Phase != GamePhase.FaceOff || !ServerConfig.Faceoff.UseCustomFaceoff)
                         return;
 
                     Player player = PlayerManager.Instance.GetPlayers()
@@ -1696,7 +1700,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // Reteleport player on faceoff to the correct faceoff.
                     string playerSteamId = player.SteamId.Value.ToString();
                     if (!PenaltyModule.PenalizedPlayers.TryGetValue(playerSteamId, out LockList<Penalty> penalties) || penalties.Count == 0)
-                        PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(NextFaceoffSpot), NextFaceoffSpot);
+                        PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(NextFaceoffSpot), NextFaceoffSpot, PenaltyModule.GetPlayerPositionForFaceoff(player.PlayerPosition.Name, player.Team.Value, NextFaceoffSpot));
                     else
                         PenaltyModule.TeleportPlayer(player);
                 }
