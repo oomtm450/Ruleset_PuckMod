@@ -799,6 +799,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping)
                             hasOtherPlayerBeenHit = !hasOtherPlayerDived;
 
+                        // TODO : Fix tripping.
                         if (hasLastPlayerBeenHit) {
                             if (hasOtherPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
@@ -2203,13 +2204,12 @@ namespace oomtm450PuckMod_Ruleset {
                         DateTime getUpTime;
                         if (divingValue == int.MinValue)
                             getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(2000);
+                        else if (divingValue == int.MaxValue)
+                            getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(60000);
                         else
                             getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(divingValue);
 
-                        if (!_dives.TryGetValue(value, out DateTime _))
-                            _dives.Add(value, getUpTime);
-                        else
-                            _dives[value] = getUpTime;
+                        _dives.AddOrUpdate(value, getUpTime);
 
                         break;
 
