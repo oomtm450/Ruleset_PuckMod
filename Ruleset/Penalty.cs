@@ -113,7 +113,7 @@ namespace oomtm450PuckMod_Ruleset {
                     return;
 
                 PositionIsPenalized[_playerToUnpenalize.Team.Value][_playerToUnpenalize.PlayerPosition.Name] = false;
-                UnpenalizePlayer(_playerToUnpenalize);
+                UnpenalizePlayer(_playerToUnpenalize, _playerToUnpenalize.Team.Value, _playerToUnpenalize.PlayerPosition.Name);
             }
 
             // If goalie has a penalty, take another player.
@@ -401,7 +401,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             // Unpenalize player if no more penalties or start the next one.
             if (PenaltyModule.PenalizedPlayers[SteamId].Count == 0)
-                PenaltyModule.UnpenalizePlayer(penalizedPlayer, penalizedPlayerTeam);
+                PenaltyModule.UnpenalizePlayer(penalizedPlayer, penaltyToRemove.Team, penaltyToRemove.Position);
             else {
                 Penalty firstPenalty = PenaltyModule.PenalizedPlayers[SteamId].First();
                 firstPenalty.CurrentPenalty = true;
