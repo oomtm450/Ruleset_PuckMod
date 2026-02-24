@@ -787,7 +787,7 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             hasLastPlayerDived = false;
 
-                        if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping)
+                        if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping || lastPlayerHit.PlayerBody.IsSideways)
                             hasLastPlayerBeenHit = !hasLastPlayerDived;
 
                         bool hasOtherPlayerDived;
@@ -796,7 +796,7 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             hasOtherPlayerDived = false;
 
-                        if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping)
+                        if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping || playerBody.Player.PlayerBody.IsSideways)
                             hasOtherPlayerBeenHit = !hasOtherPlayerDived;
 
                         // TODO : Fix tripping.

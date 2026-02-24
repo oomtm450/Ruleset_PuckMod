@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
                 playerPosition = player.PlayerPosition.Name;
 
             float xOffset = 0, zOffset = 0;
-            Quaternion quaternion = player.PlayerBody.Rigidbody.rotation;
+            Quaternion quaternion = player.PlayerBody.Rigidbody.rotation; // TODO : Fix rotation when replacing another spot. (Get rotation from PlayerPosition and not from the player)
             switch (playerPosition) {
                 case CENTER_POSITION:
                     zOffset = 1.5f;
