@@ -19,15 +19,17 @@ namespace oomtm450PuckMod_Ruleset {
         /// <param name="faceoffDot">Vector3, position of the faceoff dot.</param>
         /// <param name="faceoffSpot">FaceoffSpot, location of the faceoff.</param>
         /// <param name="playerPosition">String, player's position.</param>
-        public static void TeleportOnFaceoff(Player player, Vector3 faceoffDot, FaceoffSpot faceoffSpot, string playerPosition = "") {
+        public static void TeleportOnFaceoff(Player player, Vector3 faceoffDot, FaceoffSpot faceoffSpot, string playerPosition = "", Quaternion rotation = default) {
             if (!IsPlayerPlaying(player))
                 return;
 
             if (string.IsNullOrEmpty(playerPosition))
                 playerPosition = player.PlayerPosition.Name;
 
+            if (rotation.Equals(default))
+                rotation = player.PlayerBody.Rigidbody.rotation;
+
             float xOffset = 0, zOffset = 0;
-            Quaternion quaternion = player.PlayerBody.Rigidbody.rotation; // TODO : Fix rotation when replacing another spot. (Get rotation from PlayerPosition and not from the player)
             switch (playerPosition) {
                 case CENTER_POSITION:
                     zOffset = 1.5f;
@@ -55,9 +57,9 @@ namespace oomtm450PuckMod_Ruleset {
                         zOffset = 1.5f;
                         xOffset = -9f;
                         if (player.Team.Value == PlayerTeam.Red)
-                            quaternion = Quaternion.Euler(0, -90, 0);
+                            rotation = Quaternion.Euler(0, -90, 0);
                         else
-                            quaternion = Quaternion.Euler(0, 90, 0);
+                            rotation = Quaternion.Euler(0, 90, 0);
                     }
                     else
                         xOffset = 4.5f;
@@ -71,9 +73,9 @@ namespace oomtm450PuckMod_Ruleset {
                         zOffset = 1.5f;
                         xOffset = 9f;
                         if (player.Team.Value == PlayerTeam.Red)
-                            quaternion = Quaternion.Euler(0, 90, 0);
+                            rotation = Quaternion.Euler(0, 90, 0);
                         else
-                            quaternion = Quaternion.Euler(0, -90, 0);
+                            rotation = Quaternion.Euler(0, -90, 0);
                     }
                     else
                         xOffset = -4.5f;
@@ -88,10 +90,10 @@ namespace oomtm450PuckMod_Ruleset {
                         zOffset *= -1f;
                         if (faceoffSpot == FaceoffSpot.RedteamDZoneLeft) {
                             xOffset *= -1f;
-                            quaternion = Quaternion.Euler(0, -1 * quaternionY, 0);
+                            rotation = Quaternion.Euler(0, -1 * quaternionY, 0);
                         }
                         else if (faceoffSpot == FaceoffSpot.RedteamDZoneRight) {
-                            quaternion = Quaternion.Euler(0, quaternionY, 0);
+                            rotation = Quaternion.Euler(0, quaternionY, 0);
                         }
                         else {
                             zOffset = 0;
@@ -101,17 +103,17 @@ namespace oomtm450PuckMod_Ruleset {
                     else {
                         if (faceoffSpot == FaceoffSpot.BlueteamDZoneLeft) {
                             xOffset *= -1f;
-                            quaternion = Quaternion.Euler(0, quaternionY - 180, 0);
+                            rotation = Quaternion.Euler(0, quaternionY - 180, 0);
                         }
                         else if (faceoffSpot == FaceoffSpot.BlueteamDZoneRight)
-                            quaternion = Quaternion.Euler(0, 180 - quaternionY, 0);
+                            rotation = Quaternion.Euler(0, 180 - quaternionY, 0);
                         else {
                             zOffset = 0;
                             xOffset = 0;
                         }
                     }
 
-                    player.PlayerBody.Server_Teleport(new Vector3(player.PlayerBody.transform.position.x + xOffset, player.PlayerBody.transform.position.y, player.PlayerBody.transform.position.z + zOffset), quaternion);
+                    player.PlayerBody.Server_Teleport(new Vector3(player.PlayerBody.transform.position.x + xOffset, player.PlayerBody.transform.position.y, player.PlayerBody.transform.position.z + zOffset), rotation);
                     break;
             }
 
@@ -130,7 +132,7 @@ namespace oomtm450PuckMod_Ruleset {
                         zOffset *= 0.8f;
                 }
 
-                player.PlayerBody.Server_Teleport(new Vector3(faceoffDot.x + xOffset, faceoffDot.y, faceoffDot.z + zOffset), quaternion);
+                player.PlayerBody.Server_Teleport(new Vector3(faceoffDot.x + xOffset, faceoffDot.y, faceoffDot.z + zOffset), rotation);
             }
         }
         #endregion

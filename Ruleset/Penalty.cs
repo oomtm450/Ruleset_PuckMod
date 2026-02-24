@@ -104,8 +104,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!unpenalizeOnePlayer)
                     return;
 
-                // TODO : Order by smallest time left for penalty.
-                KeyValuePair<string, LockList<Penalty>> _penalties = PenalizedPlayers.FirstOrDefault(x => x.Value.Count == 1 && x.Value.First().Team == penalizedPlayer.Team.Value);
+                KeyValuePair<string, LockList<Penalty>> _penalties = PenalizedPlayers.Where(x => x.Value.Count == 1 && x.Value.First().Team == penalizedPlayer.Team.Value).OrderBy(x => x.Value.Min(y => y.Timer.MillisecondsLeft)).FirstOrDefault();
                 if (_penalties.Equals(default(KeyValuePair<string, LockList<Penalty>>)))
                     return;
 
@@ -246,8 +245,7 @@ namespace oomtm450PuckMod_Ruleset {
             penaltyToRemove.Timer.TimerCallback(null);
         }
 
-        // TODO : Create function that will fake a player's position to a more priority one (Left wing then right wing, if those positions are not filled)
-        /*internal static string FakePlayerPositionForFaceoffByAvailability(string position, PlayerTeam team, FaceoffSpot faceoffSpot) {
+        internal static string FakePlayerPositionForFaceoffByAvailability(string position, PlayerTeam team, List<string> claimedPositions) {
             if (team == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == 0)
                 return position;
 
@@ -256,34 +254,36 @@ namespace oomtm450PuckMod_Ruleset {
 
             switch (position) {
                 case Codebase.PlayerFunc.RIGHT_WINGER_POSITION:
-                    if (left_wing_no_exists)
+                    if (!claimedPositions.Contains(Codebase.PlayerFunc.LEFT_WINGER_POSITION))
                         return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
                     break;
 
                 case Codebase.PlayerFunc.LEFT_DEFENDER_POSITION:
-                    if (left_wing_no_exists && right_wing_no_exists)
+                    if (!claimedPositions.Contains(Codebase.PlayerFunc.LEFT_WINGER_POSITION) && !claimedPositions.Contains(Codebase.PlayerFunc.RIGHT_WINGER_POSITION))
                         return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
 
-                    if (right_wing_no_exists)
+                    if (!claimedPositions.Contains(Codebase.PlayerFunc.RIGHT_WINGER_POSITION))
                         return Codebase.PlayerFunc.RIGHT_WINGER_POSITION;
                     break;
 
                 case Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION:
-                    if (left_wing_no_exists && right_wing_no_exists && left_defense_no_exists)
+                    if (!claimedPositions.Contains(Codebase.PlayerFunc.LEFT_WINGER_POSITION) && !claimedPositions.Contains(Codebase.PlayerFunc.RIGHT_WINGER_POSITION) && !claimedPositions.Contains(Codebase.PlayerFunc.LEFT_DEFENDER_POSITION))
                         return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
 
-                    if (right_wing_no_exists && left_defense_no_exists)
+                    if (!claimedPositions.Contains(Codebase.PlayerFunc.RIGHT_WINGER_POSITION) && !claimedPositions.Contains(Codebase.PlayerFunc.LEFT_DEFENDER_POSITION))
                         return Codebase.PlayerFunc.RIGHT_WINGER_POSITION;
 
-                    if (left_defense_no_exists)
+                    if (!claimedPositions.Contains(Codebase.PlayerFunc.LEFT_DEFENDER_POSITION))
                         return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
                     break;
             }
 
             return position;
-        }*/
+        }
 
-        internal static string GetPlayerPositionForFaceoff(string position, PlayerTeam team, FaceoffSpot faceoffSpot) {
+        internal static string GetPlayerPositionForFaceoff(string position, PlayerTeam team, FaceoffSpot faceoffSpot, List<string> claimedPositions) {
+            position = FakePlayerPositionForFaceoffByAvailability(position, team, claimedPositions);
+
             switch (position) {
                 case Codebase.PlayerFunc.LEFT_WINGER_POSITION:
                     if (team == PlayerTeam.Blue) {

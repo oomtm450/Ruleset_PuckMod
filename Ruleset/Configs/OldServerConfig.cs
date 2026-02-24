@@ -110,6 +110,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, time in the box for a delay of game penalty in milliseconds.
         /// </summary>
         public int DelayOfGameTime { get; } = 45000;
+        /// <summary>
+        /// Float, delta of the puck Z direction to use with the delay of game.
+        /// </summary>
+        public float DelayOfGameZDelta { get; } = 0.0125f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -219,7 +223,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, amount to divide the stamina by for the team causing the icing if StaminaDrain is on.
         /// </summary>
-        public float StaminaDrainDivisionAmount { get; } = 2f; // TODO : Change after release.
+        public float StaminaDrainDivisionAmount { get; } = 2.5f;
 
         /// <summary>
         /// Float, amount to remove from StaminaDrainDivisionAmount when applying additional stamina drain penalties.
@@ -229,7 +233,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, time between 2 icings to apply additional stamina drain penalties.
         /// </summary>
-        public int StaminaDrainDivisionAmountPenaltyTime { get; } = 16; // TODO : Change after release.
+        public int StaminaDrainDivisionAmountPenaltyTime { get; } = 21;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.

@@ -75,6 +75,8 @@ namespace oomtm450PuckMod_Ruleset {
             RefSignals.STOP_SIGNAL_RED,
             RefSignals.STOP_SIGNAL,
         });
+
+        private static Dictionary<PlayerTeam, Dictionary<string, Quaternion>> POSITION_ROTATION_ON_FACEOFF = null;
         #endregion
 
         #region Fields
@@ -285,6 +287,10 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly LockList<string> _currentRefsSteamId = new LockList<string>();
 
         private static readonly LockList<string> _permaRefsSteamId = new LockList<string>();
+
+        private static Vector3 _puckLastCoordinate = Vector3.zero;
+
+        private static float _puckZCoordinateDifference = 0;
 
         // Client-side.
         private static RefSignals _refSignalsBlueTeam = null;
@@ -799,7 +805,6 @@ namespace oomtm450PuckMod_Ruleset {
                         if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping || playerBody.Player.PlayerBody.IsSideways)
                             hasOtherPlayerBeenHit = !hasOtherPlayerDived;
 
-                        // TODO : Fix tripping.
                         if (hasLastPlayerBeenHit) {
                             if (hasOtherPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
@@ -925,6 +930,10 @@ namespace oomtm450PuckMod_Ruleset {
                         if (phase == GamePhase.GameOver || phase == GamePhase.Warmup)
                             ResetGame();
 
+                        // Reset puck coordinates.
+                        _puckLastCoordinate = Vector3.zero;
+                        _puckZCoordinateDifference = 0;
+
                         // Reset players zone.
                         _playersZone.Clear();
 
@@ -1016,12 +1025,26 @@ namespace oomtm450PuckMod_Ruleset {
 
                         Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
 
+                        List<string> claimedPositionsBlue = GetClaimedPositions(PlayerTeam.Blue);
+                        List<string> claimedPositionsRed = GetClaimedPositions(PlayerTeam.Red);
+
                         List<Player> players = PlayerManager.Instance.GetPlayers();
                         foreach (Player player in players) {
                             if (!Codebase.PlayerFunc.IsPlayerPlaying(player) || player.Team.Value == PlayerTeam.Spectator || player.Team.Value == PlayerTeam.None || PenaltyModule.PositionIsPenalized[player.Team.Value][player.PlayerPosition.Name])
                                 continue;
 
-                            PlayerFunc.TeleportOnFaceoff(player, dot, NextFaceoffSpot, PenaltyModule.GetPlayerPositionForFaceoff(player.PlayerPosition.Name, player.Team.Value, NextFaceoffSpot));
+                            List<string> claimedPositions;
+                            if (player.Team.Value == PlayerTeam.Blue)
+                                claimedPositions = claimedPositionsBlue;
+                            else
+                                claimedPositions = claimedPositionsRed;
+
+                            string newFaceoffPosition = PenaltyModule.GetPlayerPositionForFaceoff(player.PlayerPosition.Name, player.Team.Value, NextFaceoffSpot, claimedPositions);
+                            PlayerFunc.TeleportOnFaceoff(
+                                player, dot, NextFaceoffSpot,
+                                newFaceoffPosition,
+                                POSITION_ROTATION_ON_FACEOFF[player.Team.Value][newFaceoffPosition]
+                            );
                         }
 
                         PenaltyModule.TeleportPlayers();
@@ -1315,6 +1338,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (players.Count == 0 || puck == null || !puck || Paused)
                         return true;
+
+                    _puckZCoordinateDifference = (puck.Rigidbody.transform.position.z - _puckLastCoordinate.z) / 240 * ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate;
+                    _puckLastCoordinate = new Vector3(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.y, puck.Rigidbody.transform.position.z);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 1.\n{ex}", ServerConfig);
@@ -1335,7 +1361,7 @@ namespace oomtm450PuckMod_Ruleset {
                          puck.Rigidbody.transform.position.y < PenaltyModule.DELAY_OF_GAME_POSITION.y) ||
                          (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION_END_Z)) {
                         bool playerTouched = _playersOnPuckDateTime.TryGetValue(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam], out var lastTouchDateTime);
-                        if (!playerTouched || (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime) || Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z)
+                        if (!playerTouched || (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime) || (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z && (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckZCoordinateDifference > ServerConfig.Penalty.DelayOfGameZDelta) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckZCoordinateDifference < -ServerConfig.Penalty.DelayOfGameZDelta)))
                             CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
                         else {
                             Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]);
@@ -1708,8 +1734,13 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Reteleport player on faceoff to the correct faceoff.
                     string playerSteamId = player.SteamId.Value.ToString();
-                    if (!PenaltyModule.PenalizedPlayers.TryGetValue(playerSteamId, out LockList<Penalty> penalties) || penalties.Count == 0)
-                        PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(NextFaceoffSpot), NextFaceoffSpot, PenaltyModule.GetPlayerPositionForFaceoff(player.PlayerPosition.Name, player.Team.Value, NextFaceoffSpot));
+                    if (!PenaltyModule.PenalizedPlayers.TryGetValue(playerSteamId, out LockList<Penalty> penalties) || penalties.Count == 0) {
+                        string newFaceoffPosition = PenaltyModule.GetPlayerPositionForFaceoff(player.PlayerPosition.Name, player.Team.Value, NextFaceoffSpot, GetClaimedPositions(player.Team.Value));
+                        PlayerFunc.TeleportOnFaceoff(
+                            player, Faceoff.GetFaceoffDot(NextFaceoffSpot), NextFaceoffSpot,
+                            newFaceoffPosition,
+                            POSITION_ROTATION_ON_FACEOFF[player.Team.Value][newFaceoffPosition]);
+                    }
                     else
                         PenaltyModule.TeleportPlayer(player);
                 }
@@ -2203,9 +2234,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                         DateTime getUpTime;
                         if (divingValue == int.MinValue)
-                            getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(2000);
+                            getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(2750d);
                         else if (divingValue == int.MaxValue)
-                            getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(60000);
+                            getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(60000d);
                         else
                             getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(divingValue);
 
@@ -2333,6 +2364,24 @@ namespace oomtm450PuckMod_Ruleset {
                         _barriersLowered = true;
                         break;
                     }
+                }
+
+                if (POSITION_ROTATION_ON_FACEOFF == null) {
+                    List<PlayerPosition> playerBluePositions = SystemFunc.GetPrivateField<List<PlayerPosition>>(typeof(LevelManager), LevelManager.Instance, "playerBluePositions");
+                    List<PlayerPosition> playerRedPositions = SystemFunc.GetPrivateField<List<PlayerPosition>>(typeof(LevelManager), LevelManager.Instance, "playerRedPositions");
+
+                    Dictionary<string, Quaternion> blueRotationsOnFaceoff = new Dictionary<string, Quaternion>();
+                    foreach (PlayerPosition position in playerBluePositions)
+                        blueRotationsOnFaceoff.Add(position.Name, new Quaternion(position.transform.rotation.x, position.transform.rotation.y, position.transform.rotation.z, position.transform.rotation.w));
+
+                    Dictionary<string, Quaternion> redRotationsOnFaceoff = new Dictionary<string, Quaternion>();
+                    foreach (PlayerPosition position in playerRedPositions)
+                        redRotationsOnFaceoff.Add(position.Name, new Quaternion(position.transform.rotation.x, position.transform.rotation.y, position.transform.rotation.z, position.transform.rotation.w));
+
+                    POSITION_ROTATION_ON_FACEOFF = new Dictionary<PlayerTeam, Dictionary<string, Quaternion>> {
+                        { PlayerTeam.Blue, blueRotationsOnFaceoff },
+                        { PlayerTeam.Red, redRotationsOnFaceoff },
+                    };
                 }
 
                 if (NetworkManager.Singleton != null && NetworkManager.Singleton.CustomMessagingManager != null && !_hasRegisteredWithNamedMessageHandler) {
@@ -3057,6 +3106,22 @@ namespace oomtm450PuckMod_Ruleset {
             catch (Exception ex) {
                 Logging.LogError(ex.ToString(), ServerConfig);
             }
+        }
+
+        internal static List<string> GetClaimedPositions(PlayerTeam team) {
+            List<PlayerPosition> positions;
+            if (team == PlayerTeam.Blue)
+                positions = PlayerPositionManager.Instance.BluePositions;
+            else
+                positions = PlayerPositionManager.Instance.RedPositions;
+
+            List<string> claimedPositions = new List<string>();
+            foreach (PlayerPosition playerPosition in positions) {
+                if (playerPosition.IsClaimed)
+                    claimedPositions.Add(playerPosition.Name);
+            }
+
+            return claimedPositions;
         }
 
         /// <summary>

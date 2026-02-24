@@ -218,6 +218,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                             RedTeam = config.HighStick.RedTeam,
                         },
                         Penalty = new PenaltyConfig {
+                            Interference = config.Penalty.Interference,
+                            GoalieInterference = config.Penalty.GoalieInterference,
+                            DelayOfGame = config.Penalty.DelayOfGame,
                         },
                         Faceoff = new FaceoffConfig {
                             EnableViolations = config.Faceoff.EnableViolations,
@@ -275,6 +278,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, time in the box for a delay of game penalty in milliseconds.
         /// </summary>
         public int DelayOfGameTime { get; set; } = 45000;
+        /// <summary>
+        /// Float, delta of the puck Z direction to use with the delay of game.
+        /// </summary>
+        public float DelayOfGameZDelta { get; set; } = 0.0125f;
         #endregion
 
         #region Constructors
@@ -297,6 +304,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             DelayOfGame = penaltyConfig.DelayOfGame;
             DelayOfGameTime = penaltyConfig.DelayOfGameTime;
+            DelayOfGameZDelta = penaltyConfig.DelayOfGameZDelta;
         }
         #endregion
 
@@ -331,6 +339,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (DelayOfGameTime == _oldConfig.DelayOfGameTime)
                 DelayOfGameTime = newConfig.DelayOfGameTime;
+
+            if (DelayOfGameZDelta == _oldConfig.DelayOfGameZDelta)
+                DelayOfGameZDelta = newConfig.DelayOfGameZDelta;
         }
     }
 
