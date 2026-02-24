@@ -70,12 +70,6 @@ namespace oomtm450PuckMod_Ruleset {
             if (!Ruleset.ServerConfig.Penalty.DelayOfGame && penaltyType == PenaltyType.DelayOfGame)
                 return;
 
-            if (penalizedPlayer.Team.Value == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == MAX_PENALIZED_PLAYERS)
-                return;
-
-            if (penalizedPlayer.Team.Value == PlayerTeam.Red && PenalizedPlayersCountRedTeam == MAX_PENALIZED_PLAYERS)
-                return;
-
             List<Player> teamPlayers = PlayerManager.Instance.GetPlayersByTeam(penalizedPlayer.Team.Value).Where(x => !Codebase.PlayerFunc.IsGoalie(x)).ToList();
 
             if (teamPlayers.Count < 2)
@@ -94,7 +88,9 @@ namespace oomtm450PuckMod_Ruleset {
             if (PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayer.Team.Value && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000))
                 return;
 
-            if (teamPlayers.Count(x => !PenalizedPlayers.TryGetValue(x.SteamId.Value.ToString(), out LockList<Penalty> penalties) || penalties.Count == 0) < 2) {
+            if ((penalizedPlayer.Team.Value == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == MAX_PENALIZED_PLAYERS) ||
+                (penalizedPlayer.Team.Value == PlayerTeam.Red && PenalizedPlayersCountRedTeam == MAX_PENALIZED_PLAYERS) ||
+                (teamPlayers.Count(x => !PenalizedPlayers.TryGetValue(x.SteamId.Value.ToString(), out LockList<Penalty> penalties) || penalties.Count == 0) < 2)) {
                 bool unpenalizeOnePlayer = false;
                 if (penalizedPlayer.Team.Value == PlayerTeam.Blue) {
                     if (PenalizedPlayersCountBlueTeam != 0)
@@ -108,6 +104,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!unpenalizeOnePlayer)
                     return;
 
+                // TODO : Order by smallest time left for penalty.
                 KeyValuePair<string, LockList<Penalty>> _penalties = PenalizedPlayers.FirstOrDefault(x => x.Value.Count == 1 && x.Value.First().Team == penalizedPlayer.Team.Value);
                 if (_penalties.Equals(default(KeyValuePair<string, LockList<Penalty>>)))
                     return;
@@ -124,6 +121,11 @@ namespace oomtm450PuckMod_Ruleset {
             if (Codebase.PlayerFunc.IsGoalie(penalizedPlayer)) {
                 penalizedPlayer = teamPlayers.First();
                 penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
+                if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> _penaltyList)) {
+                    _penaltyList = new LockList<Penalty>();
+                    PenalizedPlayers.Add(penalizedPlayerSteamId, _penaltyList);
+                }
+                penaltyList = _penaltyList;
             }
 
             PositionIsPenalized[penalizedPlayer.Team.Value][penalizedPlayer.PlayerPosition.Name] = true;
