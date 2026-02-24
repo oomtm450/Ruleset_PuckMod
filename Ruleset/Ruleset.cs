@@ -292,6 +292,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static float _puckZCoordinateDifference = 0;
 
+        private static LockDictionary<string, bool> _playersHasBlockedFromChangingTeams = new LockDictionary<string, bool>();
+
         // Client-side.
         private static RefSignals _refSignalsBlueTeam = null;
 
@@ -1134,6 +1136,39 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /// <summary>
+        /// Class that patches the OnPlayerTeamChanged event from Player.
+        /// </summary>
+        [HarmonyPatch(typeof(Player), "OnPlayerTeamChanged")]
+        public class Player_OnPlayerTeamChanged_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(Player __instance, PlayerTeam oldTeam, PlayerTeam newTeam) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    string playerSteamId = __instance.SteamId.Value.ToString();
+
+                    if (_playersHasBlockedFromChangingTeams.TryGetValue(playerSteamId, out bool hasBeenBlocked) && hasBeenBlocked) {
+                        _playersHasBlockedFromChangingTeams[playerSteamId] = false;
+                        return false;
+                    }
+
+                    if (PenaltyModule.PenalizedPlayers.TryGetValue(playerSteamId, out LockList<Penalty> penalties) && penalties.Count != 0) {
+                        _playersHasBlockedFromChangingTeams.AddOrUpdate(playerSteamId, true);
+                        __instance.Team.Value = oldTeam;
+                        return false;
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(Player_OnPlayerTeamChanged_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
         /// Class that patches the Server_StartGame event from GameManager.
         /// </summary>
         [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_StartGame))]
@@ -1893,6 +1928,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             PenaltyModule.ResetPenalties();
+            _playersHasBlockedFromChangingTeams.Clear();
         }
 
         private static bool IsAdmin(ulong clientId) {
