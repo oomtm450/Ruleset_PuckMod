@@ -223,7 +223,7 @@ namespace oomtm450PuckMod_Ruleset {
                 penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
             }
 
-            PenaltyModule.PositionIsPenalized[penalizedPlayer.Team.Value][penalizedPlayer.PlayerPosition.Name] = false;
+            PositionIsPenalized[penalizedPlayer.Team.Value][penalizedPlayer.PlayerPosition.Name] = false;
 
             penalizedPlayer.PlayerBody.Server_Unfreeze();
 
