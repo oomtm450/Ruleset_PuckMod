@@ -1135,8 +1135,6 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        // TODO : Ref arm up when icing but its pk
-
         /// <summary>
         /// Class that patches the OnPlayerTeamChanged event from Player.
         /// </summary>
@@ -2117,10 +2115,16 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static bool IsIcingEnabled(PlayerTeam team) {
-            if (team == PlayerTeam.Blue)
+            if (team == PlayerTeam.Blue) {
+                if (PenaltyModule.PenalizedPlayersCountBlueTeam > PenaltyModule.PenalizedPlayersCountRedTeam)
+                    return false;
                 return ServerConfig.Icing.BlueTeam;
-            else
+            }
+            else {
+                if (PenaltyModule.PenalizedPlayersCountRedTeam > PenaltyModule.PenalizedPlayersCountBlueTeam)
+                    return false;
                 return ServerConfig.Icing.RedTeam;
+            }
         }
 
         private static bool IsIcingPossible(Puck puck, PlayerTeam team, bool checkPossibleTime = true) {
