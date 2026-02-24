@@ -287,63 +287,41 @@ namespace oomtm450PuckMod_Ruleset {
             switch (position) {
                 case Codebase.PlayerFunc.LEFT_WINGER_POSITION:
                     if (team == PlayerTeam.Blue) {
-                        if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION]) {
-                            if (faceoffSpot == FaceoffSpot.BlueteamBLLeft || faceoffSpot == FaceoffSpot.RedteamBLLeft || faceoffSpot == FaceoffSpot.BlueteamDZoneLeft || faceoffSpot == FaceoffSpot.RedteamDZoneLeft || faceoffSpot == FaceoffSpot.Center)
-                                return Codebase.PlayerFunc.CENTER_POSITION;
-                            else
-                                return Codebase.PlayerFunc.RIGHT_WINGER_POSITION;
-                        }
-                        else {
-                            if (PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
-                                return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
-                        }
+                        if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION])
+                            return Codebase.PlayerFunc.CENTER_POSITION;
+                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
+                            return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
                     }
                     else {
-                        if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION]) {
-                            if (faceoffSpot == FaceoffSpot.BlueteamBLRight || faceoffSpot == FaceoffSpot.RedteamBLRight || faceoffSpot == FaceoffSpot.BlueteamDZoneRight || faceoffSpot == FaceoffSpot.RedteamDZoneRight)
-                                return Codebase.PlayerFunc.CENTER_POSITION;
-                            else
-                                return Codebase.PlayerFunc.RIGHT_WINGER_POSITION;
-                        }
-                        else {
-                            if (PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
-                                return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
-                        }
+                        if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION])
+                            return Codebase.PlayerFunc.CENTER_POSITION;
+                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
+                            return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
                     }
                     break;
 
                 case Codebase.PlayerFunc.RIGHT_WINGER_POSITION:
                     if (team == PlayerTeam.Blue) {
-                        if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_WINGER_POSITION] && (faceoffSpot == FaceoffSpot.BlueteamBLLeft || faceoffSpot == FaceoffSpot.RedteamBLLeft || faceoffSpot == FaceoffSpot.BlueteamDZoneLeft || faceoffSpot == FaceoffSpot.RedteamDZoneLeft || faceoffSpot == FaceoffSpot.Center))
+                        if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_WINGER_POSITION])
                             return Codebase.PlayerFunc.CENTER_POSITION;
                         else if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && (faceoffSpot == FaceoffSpot.BlueteamBLLeft || faceoffSpot == FaceoffSpot.RedteamBLLeft || faceoffSpot == FaceoffSpot.BlueteamDZoneLeft || faceoffSpot == FaceoffSpot.RedteamDZoneLeft || faceoffSpot == FaceoffSpot.Center)) {
                             return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
                         }
-                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && (faceoffSpot == FaceoffSpot.BlueteamBLRight || faceoffSpot == FaceoffSpot.RedteamBLRight || faceoffSpot == FaceoffSpot.BlueteamDZoneRight || faceoffSpot == FaceoffSpot.RedteamDZoneRight)) {
-                            return Codebase.PlayerFunc.CENTER_POSITION;
-                        }
-                        else {
-                            if (PositionIsPenalized[team][Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION])
-                                return Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION;
-                            else if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
-                                return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
-                        }
+                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION])
+                            return Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION;
+                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
+                            return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
                     }
                     else {
-                        if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_WINGER_POSITION] && (faceoffSpot == FaceoffSpot.BlueteamBLRight || faceoffSpot == FaceoffSpot.RedteamBLRight || faceoffSpot == FaceoffSpot.BlueteamDZoneRight || faceoffSpot == FaceoffSpot.RedteamDZoneRight || faceoffSpot == FaceoffSpot.Center))
+                        if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_WINGER_POSITION])
                             return Codebase.PlayerFunc.CENTER_POSITION;
                         else if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && (faceoffSpot == FaceoffSpot.BlueteamBLRight || faceoffSpot == FaceoffSpot.RedteamBLRight || faceoffSpot == FaceoffSpot.BlueteamDZoneRight || faceoffSpot == FaceoffSpot.RedteamDZoneRight || faceoffSpot == FaceoffSpot.Center)) {
                             return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
                         }
-                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && (faceoffSpot == FaceoffSpot.BlueteamBLLeft || faceoffSpot == FaceoffSpot.RedteamBLLeft || faceoffSpot == FaceoffSpot.BlueteamDZoneLeft || faceoffSpot == FaceoffSpot.RedteamDZoneLeft)) {
-                            return Codebase.PlayerFunc.CENTER_POSITION;
-                        }
-                        else {
-                            if (PositionIsPenalized[team][Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION])
-                                return Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION;
-                            else if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
-                                return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
-                        }
+                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION])
+                            return Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION;
+                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
+                            return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
                     }
                     break;
             }
