@@ -175,7 +175,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static void TeleportPlayer(string playerSteamId) {
             Player player = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-            if (player == null || !player)
+            if (player == null || !player || !player.IsCharacterFullySpawned)
                 return;
 
             TeleportPlayer(player);
@@ -212,22 +212,28 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        internal static void UnpenalizePlayer(Player penalizedPlayer) {
-            if (penalizedPlayer.Team.Value == PlayerTeam.Blue) {
+        internal static void UnpenalizePlayer(Player penalizedPlayer, PlayerTeam penalizedPlayerTeam, string penalizedPlayerPosition) {
+            if (penalizedPlayerTeam == PlayerTeam.Blue) {
                 PenalizedPlayersCountBlueTeam--;
-                penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+                if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
+                    penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+                    penalizedPlayer.PlayerBody.Server_Unfreeze();
+                }
             }
             else {
                 PenalizedPlayersCountRedTeam--;
-                penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+                if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
+                    penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+                    penalizedPlayer.PlayerBody.Server_Unfreeze();
+                }
             }
 
-            PositionIsPenalized[penalizedPlayer.Team.Value][penalizedPlayer.PlayerPosition.Name] = false;
+            PositionIsPenalized[penalizedPlayerTeam][penalizedPlayerPosition] = false;
 
-            penalizedPlayer.PlayerBody.Server_Unfreeze();
-
-            Ruleset.SystemChatMessages.Add($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED");
-            Logging.Log($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED", Ruleset.ServerConfig);
+            if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
+                Ruleset.SystemChatMessages.Add($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED");
+                Logging.Log($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED", Ruleset.ServerConfig);
+            }
         }
 
         internal static void RemoveOnePenalty(PlayerTeam penalizedPlayerTeam) {
@@ -389,20 +395,13 @@ namespace oomtm450PuckMod_Ruleset {
             PenaltyModule.PenalizedPlayers[SteamId].Remove(penaltyToRemove);
 
             Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(SteamId);
-            if (penalizedPlayer == null || !penalizedPlayer) {
-                PenaltyModule.PositionIsPenalized[Team][Position] = false;
-                Penalty firstPenalty = PenaltyModule.PenalizedPlayers[SteamId].First();
-                firstPenalty.CurrentPenalty = true;
-                firstPenalty.Timer.Start();
-                return;
-            }
 
             Ruleset.SystemChatMessages.Add($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} OVER");
             Logging.Log($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} OVER", Ruleset.ServerConfig);
 
             // Unpenalize player if no more penalties or start the next one.
             if (PenaltyModule.PenalizedPlayers[SteamId].Count == 0)
-                PenaltyModule.UnpenalizePlayer(penalizedPlayer);
+                PenaltyModule.UnpenalizePlayer(penalizedPlayer, penalizedPlayerTeam);
             else {
                 Penalty firstPenalty = PenaltyModule.PenalizedPlayers[SteamId].First();
                 firstPenalty.CurrentPenalty = true;
