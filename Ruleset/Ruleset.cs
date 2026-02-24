@@ -1135,6 +1135,8 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        // TODO : Ref arm up when icing but its pk
+
         /// <summary>
         /// Class that patches the OnPlayerTeamChanged event from Player.
         /// </summary>

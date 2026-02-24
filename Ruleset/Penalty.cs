@@ -156,7 +156,7 @@ namespace oomtm450PuckMod_Ruleset {
                     firstPenalty.CurrentPenalty = true;
 
                     Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(firstPenalty.SteamId);
-                    if (penalizedPlayer == null || !penalizedPlayer)
+                    if (penalizedPlayer == null || !penalizedPlayer || !penalizedPlayer.IsCharacterFullySpawned)
                         return;
 
                     TeleportPlayer(penalizedPlayer);
