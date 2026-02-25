@@ -3305,7 +3305,7 @@ namespace oomtm450PuckMod_Ruleset {
                     return descriptionAttributes[0].Description;
             }
 
-            return "";
+            return enumValue.ToString();
         }
     }
 }

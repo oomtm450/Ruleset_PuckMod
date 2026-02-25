@@ -1,11 +1,15 @@
 ﻿using Codebase;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
     internal static class PenaltyModule {
+        // TODO : Fix interference pen when someone falls themselves from hitting wall or something and someone touches them. (Check if player has been down in the last x seconds)
+        // TODO : Add faceoff violation penalty with a 30 seconds penalty.
+        // TODO : Add embellishment penalty if you dive after a penalty has been called for hitting you (goalie and player).
         #region Constants
         private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2;
         private const int MAX_PENALIZED_PLAYERS = 2;
@@ -138,8 +142,9 @@ namespace oomtm450PuckMod_Ruleset {
 
             Penalty newPenalty = new Penalty(penalizedPlayerSteamId, penalizedPlayer.Team.Value, penaltyType, penalizedPlayer.PlayerPosition.Name, receivingPlayerSteamId);
             penaltyList.Add(newPenalty);
-            Ruleset.SystemChatMessages.Add($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyType}");
-            Logging.Log($"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyType}", Ruleset.ServerConfig);
+            string message = $"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyType.GetDescription("ToString")}";
+            Ruleset.SystemChatMessages.Add(message);
+            Logging.Log(message, Ruleset.ServerConfig);
 
             if (PenaltyToBeCalled.Values.All(x => x))
                 Ruleset.CallPenalty(PlayerTeam.None);
@@ -412,8 +417,13 @@ namespace oomtm450PuckMod_Ruleset {
 
     public enum PenaltyType {
         Interference,
+        [Description("Goalie interference"), Category("ToString")]
         GoalieInterference,
+        [Description("Delay of game"), Category("ToString")]
         DelayOfGame,
         Tripping,
+        Embellishment,
+        [Description("Faceoff violation"), Category("ToString")]
+        FaceoffViolation,
     }
 }
