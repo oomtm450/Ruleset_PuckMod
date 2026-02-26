@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Mathematics;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
@@ -292,7 +293,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static float _puckZCoordinateDifference = 0;
 
-        private static LockDictionary<string, bool> _playersHasBlockedFromChangingTeams = new LockDictionary<string, bool>();
+        private static readonly LockDictionary<string, bool> _playersHasBlockedFromChangingTeams = new LockDictionary<string, bool>();
+
+        private static readonly LockDictionary<string, DateTime> _playersLastSlipDateTime = new LockDictionary<string, DateTime>();
 
         // Client-side.
         private static RefSignals _refSignalsBlueTeam = null;
@@ -795,8 +798,10 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             hasLastPlayerDived = false;
 
-                        if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping || lastPlayerHit.PlayerBody.IsSideways)
-                            hasLastPlayerBeenHit = !hasLastPlayerDived;
+                        if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping || lastPlayerHit.PlayerBody.IsSideways) {
+                            if (!_playersLastSlipDateTime.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitSlipTime) || (now - lastPlayerHitSlipTime).TotalMilliseconds > 3000) // TODO : Config.
+                                hasLastPlayerBeenHit = !hasLastPlayerDived;
+                        }
 
                         bool hasOtherPlayerDived;
                         if (_dives.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > now)
@@ -804,8 +809,10 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             hasOtherPlayerDived = false;
 
-                        if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping || playerBody.Player.PlayerBody.IsSideways)
-                            hasOtherPlayerBeenHit = !hasOtherPlayerDived;
+                        if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping || playerBody.Player.PlayerBody.IsSideways) {
+                            if (!_playersLastSlipDateTime.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitSlipTime) || (now - otherPlayerHitSlipTime).TotalMilliseconds > 3000) // TODO : Config.
+                                hasOtherPlayerBeenHit = !hasOtherPlayerDived;
+                        }
 
                         if (hasLastPlayerBeenHit) {
                             if (hasOtherPlayerDived)
@@ -1396,7 +1403,7 @@ namespace oomtm450PuckMod_Ruleset {
                          puck.Rigidbody.transform.position.y < PenaltyModule.DELAY_OF_GAME_POSITION.y) ||
                          (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION_END_Z)) {
                         bool playerTouched = _playersOnPuckDateTime.TryGetValue(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam], out var lastTouchDateTime);
-                        if (!playerTouched || (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime) || (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z && (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckZCoordinateDifference > ServerConfig.Penalty.DelayOfGameZDelta) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckZCoordinateDifference < -ServerConfig.Penalty.DelayOfGameZDelta)))
+                        if (!playerTouched || (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime) || (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z && ((_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckZCoordinateDifference > ServerConfig.Penalty.DelayOfGameZDelta) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckZCoordinateDifference < -ServerConfig.Penalty.DelayOfGameZDelta))))
                             CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
                         else {
                             Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]);
@@ -1434,6 +1441,9 @@ namespace oomtm450PuckMod_Ruleset {
                             continue;
 
                         string playerSteamId = player.SteamId.Value.ToString();
+
+                        if (player.PlayerBody.IsSlipping)
+                            _playersLastSlipDateTime.AddOrUpdate(playerSteamId, DateTime.UtcNow);
 
                         if (!_isOffside.TryGetValue(playerSteamId, out _))
                             _isOffside.Add(playerSteamId, (player.Team.Value, false));
@@ -1929,6 +1939,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             PenaltyModule.ResetPenalties();
             _playersHasBlockedFromChangingTeams.Clear();
+            _playersLastSlipDateTime.Clear();
         }
 
         private static bool IsAdmin(ulong clientId) {
@@ -2278,6 +2289,11 @@ namespace oomtm450PuckMod_Ruleset {
                             getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(divingValue);
 
                         _dives.AddOrUpdate(value, getUpTime);
+                        if (_playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds < 4000 && new System.Random().Next(0, 2) == 0) { // TODO : Config 4000 and random.
+                            Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(value);
+                            if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned)
+                                PenaltyModule.GivePenalty(PenaltyType.Embellishment, penalizedPlayer);
+                        }
 
                         break;
 
@@ -2883,6 +2899,18 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void CallPenalty(PlayerTeam team, Player referee = null) {
+            string refSignal = "";
+            // TODO : Get more signals.
+            switch (PenaltyModule.LastPenaltyCalled) {
+                case PenaltyType.Interference:
+                    refSignal = RefSignals.INTERFERENCE_REF;
+                    break;
+            }
+            if (!string.IsNullOrEmpty(refSignal)) {
+                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), refSignal, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+            }
+
             if (team == PlayerTeam.Blue) {
                 if (_puckLastStateBeforeCall[Rule.Offside].Position.x > 0)
                     NextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight;
@@ -3297,7 +3325,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!string.IsNullOrEmpty(category)) {
                     CategoryAttribute[] categoryAttributes = (CategoryAttribute[])fieldInfo.GetCustomAttributes(typeof(CategoryAttribute), false);
                     if (categoryAttributes == null || categoryAttributes.Length == 0 || categoryAttributes[0].Category.ToLower() != category.ToLower())
-                        return "";
+                        return enumValue.ToString();
                 }
 
                 DescriptionAttribute[] descriptionAttributes = (DescriptionAttribute[])fieldInfo.GetCustomAttributes(typeof(DescriptionAttribute), false);

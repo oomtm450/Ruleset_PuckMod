@@ -151,14 +151,15 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             // Check if player has hit the penalty threshold.
             if (violation.ViolationCount >= Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty) {
-                // Send penalty chat message.
-                Ruleset.SystemChatMessages.Add(
-                    $"PENALTY: #{violatingPlayer.Number.Value} {violatingPlayer.Username.Value} has {Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty} faceoff violations! Will be frozen after spawn."
-                );
+                if (!Ruleset.ServerConfig.Penalty.FaceoffViolation || !PenaltyModule.GivePenalty(PenaltyType.FaceoffViolation, violatingPlayer)) {
+                    // Send penalty chat message.
+                    Ruleset.SystemChatMessages.Add(
+                        $"PENALTY: #{violatingPlayer.Number.Value} {violatingPlayer.Username.Value} has {Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty} faceoff violations! Will be frozen after spawn."
+                    );
 
-                // Freeze player after they respawn at faceoff. (with delay)
-                StartCoroutine(FreezePlayerAfterRespawn(violatingPlayer));
-                violation.ViolationCount = 0; // Reset after punishment
+                    // Freeze player after they respawn at faceoff. (with delay)
+                    StartCoroutine(FreezePlayerAfterRespawn(violatingPlayer));
+                }
             }
             else {
                 // Just a violation - send chat message.

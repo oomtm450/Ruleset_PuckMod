@@ -116,6 +116,24 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float DelayOfGameZDelta { get; } = 0.0125f;
 
         /// <summary>
+        /// Bool, true if faceoff violation penalty is enabled.
+        /// </summary>
+        public bool FaceoffViolation { get; } = true;
+        /// <summary>
+        /// Int, time in the box for a faceoff violation penalty in milliseconds.
+        /// </summary>
+        public int FaceoffViolationTime { get; } = 30000;
+
+        /// <summary>
+        /// Bool, true if embellishment penalty is enabled.
+        /// </summary>
+        public bool Embellishment { get; } = true;
+        /// <summary>
+        /// Int, time in the box for an embellishment penalty in milliseconds.
+        /// </summary>
+        public int EmbellishmentTime { get; } = 30000;
+
+        /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
         /// </summary>
         /// <param name="oldConfig">ISubConfig, config with old values.</param>

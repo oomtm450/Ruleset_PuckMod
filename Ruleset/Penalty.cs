@@ -7,9 +7,8 @@ using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
     internal static class PenaltyModule {
-        // TODO : Fix interference pen when someone falls themselves from hitting wall or something and someone touches them. (Check if player has been down in the last x seconds)
-        // TODO : Add faceoff violation penalty with a 30 seconds penalty.
         // TODO : Add embellishment penalty if you dive after a penalty has been called for hitting you (goalie and player).
+        // TODO : Fix delay of game goalie giving penalty to already penalized player.
         #region Constants
         private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2;
         private const int MAX_PENALIZED_PLAYERS = 2;
@@ -54,6 +53,8 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Blue, new LockDictionary<string, bool>(POSITION_IS_PENALIZED_DEFAULT) },
             { PlayerTeam.Red, new LockDictionary<string, bool>(POSITION_IS_PENALIZED_DEFAULT) },
         };
+
+        internal static PenaltyType LastPenaltyCalled { get; set; }
         #endregion
 
         #region Methods/Functions
@@ -66,18 +67,22 @@ namespace oomtm450PuckMod_Ruleset {
                 PositionIsPenalized[key] = new LockDictionary<string, bool>(POSITION_IS_PENALIZED_DEFAULT);
         }
 
-        internal static void GivePenalty(PenaltyType penaltyType, Player penalizedPlayer, string receivingPlayerSteamId = "") {
+        internal static bool GivePenalty(PenaltyType penaltyType, Player penalizedPlayer, string receivingPlayerSteamId = "") {
             if (!Ruleset.ServerConfig.Penalty.Interference && (penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.Tripping))
-                return;
+                return false;
             if (!Ruleset.ServerConfig.Penalty.GoalieInterference && penaltyType == PenaltyType.GoalieInterference)
-                return;
+                return false;
             if (!Ruleset.ServerConfig.Penalty.DelayOfGame && penaltyType == PenaltyType.DelayOfGame)
-                return;
+                return false;
+            if (!Ruleset.ServerConfig.Penalty.FaceoffViolation && penaltyType == PenaltyType.FaceoffViolation)
+                return false;
+            if (!Ruleset.ServerConfig.Penalty.Embellishment && penaltyType == PenaltyType.Embellishment)
+                return false;
 
             List<Player> teamPlayers = PlayerManager.Instance.GetPlayersByTeam(penalizedPlayer.Team.Value).Where(x => !Codebase.PlayerFunc.IsGoalie(x)).ToList();
 
             if (teamPlayers.Count < 2)
-                return;
+                return false;
 
             string penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
             if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> penaltyList)) {
@@ -86,11 +91,11 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             if (penaltyList.Count == MAX_SAME_PLAYER_PENALTY_COUNT)
-                return;
+                return false;
 
             DateTime now = DateTime.UtcNow;
             if (PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayer.Team.Value && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000))
-                return;
+                return false;
 
             if ((penalizedPlayer.Team.Value == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == MAX_PENALIZED_PLAYERS) ||
                 (penalizedPlayer.Team.Value == PlayerTeam.Red && PenalizedPlayersCountRedTeam == MAX_PENALIZED_PLAYERS) ||
@@ -106,15 +111,15 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 if (!unpenalizeOnePlayer)
-                    return;
+                    return false;
 
                 KeyValuePair<string, LockList<Penalty>> _penalties = PenalizedPlayers.Where(x => x.Value.Count == 1 && x.Value.First().Team == penalizedPlayer.Team.Value).OrderBy(x => x.Value.Min(y => y.Timer.MillisecondsLeft)).FirstOrDefault();
                 if (_penalties.Equals(default(KeyValuePair<string, LockList<Penalty>>)))
-                    return;
+                    return false;
 
                 Player _playerToUnpenalize = teamPlayers.FirstOrDefault(x => x.SteamId.Value.ToString() == _penalties.Key);
                 if (_playerToUnpenalize.Equals(default(Player)))
-                    return;
+                    return false;
 
                 PositionIsPenalized[_playerToUnpenalize.Team.Value][_playerToUnpenalize.PlayerPosition.Name] = false;
                 UnpenalizePlayer(_playerToUnpenalize, _playerToUnpenalize.Team.Value, _playerToUnpenalize.PlayerPosition.Name);
@@ -140,14 +145,20 @@ namespace oomtm450PuckMod_Ruleset {
                     PenalizedPlayersCountRedTeam++;
             }
 
+            LastPenaltyCalled = penaltyType;
+
             Penalty newPenalty = new Penalty(penalizedPlayerSteamId, penalizedPlayer.Team.Value, penaltyType, penalizedPlayer.PlayerPosition.Name, receivingPlayerSteamId);
             penaltyList.Add(newPenalty);
-            string message = $"PENALTY #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyType.GetDescription("ToString")}";
+            string message = $"Penalty #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {GetPenaltyTypeTime(penaltyType) / 1000} seconds for {penaltyType.GetDescription("ToString")}";
             Ruleset.SystemChatMessages.Add(message);
             Logging.Log(message, Ruleset.ServerConfig);
+            // TODO : Get actual ref signal.
+            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, penalizedPlayer.Team.Value), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, Ruleset.ServerConfig);
 
             if (PenaltyToBeCalled.Values.All(x => x))
                 Ruleset.CallPenalty(PlayerTeam.None);
+
+            return true;
         }
 
         internal static void StartPenalties() {
@@ -339,6 +350,28 @@ namespace oomtm450PuckMod_Ruleset {
 
             return position;
         }
+
+        internal static int GetPenaltyTypeTime(PenaltyType penaltyType) {
+            switch (penaltyType) {
+                case PenaltyType.Interference:
+                case PenaltyType.Tripping:
+                    return Ruleset.ServerConfig.Penalty.InterferenceTime;
+
+                case PenaltyType.GoalieInterference:
+                    return Ruleset.ServerConfig.Penalty.GoalieInterferenceTime;
+
+                case PenaltyType.DelayOfGame:
+                    return Ruleset.ServerConfig.Penalty.DelayOfGameTime;
+
+                case PenaltyType.FaceoffViolation:
+                    return Ruleset.ServerConfig.Penalty.FaceoffViolationTime;
+
+                case PenaltyType.Embellishment:
+                    return Ruleset.ServerConfig.Penalty.EmbellishmentTime;
+            }
+
+            return 45000;
+        }
         #endregion
     }
 
@@ -373,20 +406,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal void SetTimer() {
-            switch (PenaltyType) {
-                case PenaltyType.Interference:
-                case PenaltyType.Tripping:
-                    Timer = new PausableTimer(PenaltyTimer_Elapsed, Ruleset.ServerConfig.Penalty.InterferenceTime);
-                    break;
-
-                case PenaltyType.GoalieInterference:
-                    Timer = new PausableTimer(PenaltyTimer_Elapsed, Ruleset.ServerConfig.Penalty.GoalieInterferenceTime);
-                    break;
-
-                case PenaltyType.DelayOfGame:
-                    Timer = new PausableTimer(PenaltyTimer_Elapsed, Ruleset.ServerConfig.Penalty.DelayOfGameTime);
-                    break;
-            }
+            Timer = new PausableTimer(PenaltyTimer_Elapsed, PenaltyModule.GetPenaltyTypeTime(PenaltyType));
         }
 
         private void PenaltyTimer_Elapsed() {

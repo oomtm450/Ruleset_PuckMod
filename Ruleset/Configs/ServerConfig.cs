@@ -4,7 +4,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
 
 namespace oomtm450PuckMod_Ruleset.Configs {
     /// <summary>
@@ -221,6 +220,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                             Interference = config.Penalty.Interference,
                             GoalieInterference = config.Penalty.GoalieInterference,
                             DelayOfGame = config.Penalty.DelayOfGame,
+                            FaceoffViolation = config.Penalty.FaceoffViolation,
+                            Embellishment = config.Penalty.Embellishment,
                         },
                         Faceoff = new FaceoffConfig {
                             EnableViolations = config.Faceoff.EnableViolations,
@@ -282,6 +283,24 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, delta of the puck Z direction to use with the delay of game.
         /// </summary>
         public float DelayOfGameZDelta { get; set; } = 0.0125f;
+
+        /// <summary>
+        /// Bool, true if faceoff violation penalty is enabled.
+        /// </summary>
+        public bool FaceoffViolation { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a faceoff violation penalty in milliseconds.
+        /// </summary>
+        public int FaceoffViolationTime { get; set; } = 30000;
+
+        /// <summary>
+        /// Bool, true if embellishment penalty is enabled.
+        /// </summary>
+        public bool Embellishment { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for an embellishment penalty in milliseconds.
+        /// </summary>
+        public int EmbellishmentTime { get; set; } = 30000;
         #endregion
 
         #region Constructors
@@ -305,6 +324,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             DelayOfGame = penaltyConfig.DelayOfGame;
             DelayOfGameTime = penaltyConfig.DelayOfGameTime;
             DelayOfGameZDelta = penaltyConfig.DelayOfGameZDelta;
+
+            FaceoffViolation = penaltyConfig.FaceoffViolation;
+            FaceoffViolationTime = penaltyConfig.FaceoffViolationTime;
+
+            Embellishment = penaltyConfig.Embellishment;
+            EmbellishmentTime = penaltyConfig.EmbellishmentTime;
         }
         #endregion
 
@@ -342,6 +367,18 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (DelayOfGameZDelta == _oldConfig.DelayOfGameZDelta)
                 DelayOfGameZDelta = newConfig.DelayOfGameZDelta;
+
+            if (FaceoffViolation == _oldConfig.FaceoffViolation)
+                FaceoffViolation = newConfig.FaceoffViolation;
+
+            if (FaceoffViolationTime == _oldConfig.FaceoffViolationTime)
+                FaceoffViolationTime = newConfig.FaceoffViolationTime;
+
+            if (Embellishment == _oldConfig.Embellishment)
+                Embellishment = newConfig.Embellishment;
+
+            if (EmbellishmentTime == _oldConfig.EmbellishmentTime)
+                EmbellishmentTime = newConfig.EmbellishmentTime;
         }
     }
 
