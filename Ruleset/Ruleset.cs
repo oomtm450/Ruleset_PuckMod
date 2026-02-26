@@ -526,13 +526,14 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(Puck), "OnCollisionStay")]
         public class Puck_OnCollisionStay_Patch {
             [HarmonyPostfix]
-            public static void Postfix(Collision collision) {
+            public static void Postfix(Puck __instance, Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing || !Logic)
                         return;
 
                     DateTime now = DateTime.UtcNow;
+                    _puckDeflectedDateTimeSinceLastTouch = now;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
@@ -546,7 +547,6 @@ namespace oomtm450PuckMod_Ruleset {
                         _lastPlayerOnPuckTipIncludedSteamId[playerBody.Player.Team.Value] = playerBodySteamId;
 
                         _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerBodySteamId, (playerBody.Player.Team.Value, now));
-                        _puckDeflectedDateTimeSinceLastTouch = now;
 
                         return;
                     }
@@ -565,26 +565,26 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!_noHighStickFrames.TryGetValue(playerSteamId, out int _))
                         _noHighStickFrames.Add(playerSteamId, int.MaxValue);
 
-                    Puck puck = PuckManager.Instance.GetPuck();
-                    if (puck && puck.Rigidbody.transform.position.y <= ServerConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y)
+                    if (__instance && __instance.Rigidbody.transform.position.y <= ServerConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y)
                         _noHighStickFrames[playerSteamId] = 0;
 
                     var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
 
-                    if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled)) {
-                        _lastPlayerOnPuckTeam = stick.Player.Team.Value;
-                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
-                            ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
+                    if (__instance) {
+                        if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
+                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight)) {
+                            _lastPlayerOnPuckTeam = stick.Player.Team.Value;
+                            if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
+                                ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
 
-                        _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = playerSteamId;
-                        _playersOnPuckDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, now));
+                            _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = playerSteamId;
+                            _playersOnPuckDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, now));
 
-                        if (puck)
-                            _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
+                            _puckLastStateBeforeCall[Rule.Offside] = (__instance.Rigidbody.transform.position, _puckZone);
+                        }
+
+                        _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.GoalieInt] = (__instance.Rigidbody.transform.position, _puckZone);
                     }
-
-                    if (puck)
-                        _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.GoalieInt] = (puck.Rigidbody.transform.position, _puckZone);
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = playerSteamId;
@@ -657,8 +657,6 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!stick)
                         return;
 
-                    Puck puck = PuckManager.Instance.GetPuck();
-
                     _puckZoneLastTouched = _puckZone;
 
                     string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
@@ -671,20 +669,21 @@ namespace oomtm450PuckMod_Ruleset {
 
                     lastTimeCollisionWatch.Restart();
 
-                    if (!PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled)) {
-                        _lastPlayerOnPuckTeam = stick.Player.Team.Value;
-                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
-                            ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
+                    if (__instance) {
+                        if (!PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
+                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight)) {
+                            _lastPlayerOnPuckTeam = stick.Player.Team.Value;
+                            if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
+                                ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
 
-                        _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
-                        _playersOnPuckDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team.Value, now));
+                            _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
+                            _playersOnPuckDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team.Value, now));
 
-                        if (puck)
-                            _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
+                            _puckLastStateBeforeCall[Rule.Offside] = (__instance.Rigidbody.transform.position, _puckZone);
+                        }
+
+                        _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.GoalieInt] = (__instance.Rigidbody.transform.position, _puckZone);
                     }
-
-                    if (puck)
-                        _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.GoalieInt] = (puck.Rigidbody.transform.position, _puckZone);
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
@@ -704,10 +703,10 @@ namespace oomtm450PuckMod_Ruleset {
                         _isIcingPossible[stick.Player.Team.Value] = new IcingObject();
 
                     // High stick logic.
-                    if (IsHighStickEnabled(stick.Player.Team.Value) && puck &&
+                    if (IsHighStickEnabled(stick.Player.Team.Value) && __instance &&
                         !Codebase.PlayerFunc.IsGoalie(stick.Player) &&
                         Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch, false) != currentPlayerSteamId &&
-                        puck.Rigidbody.transform.position.y > ServerConfig.HighStick.MaxHeight + (stick.Player.PlayerBody.Rigidbody.transform.position.y < 0 ? 0 : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
+                        __instance.Rigidbody.transform.position.y > ServerConfig.HighStick.MaxHeight + (stick.Player.PlayerBody.Rigidbody.transform.position.y < 0 ? 0 : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
                         if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
                             noHighStickFrames = int.MaxValue;
                             _noHighStickFrames.Add(currentPlayerSteamId, noHighStickFrames);
@@ -719,7 +718,7 @@ namespace oomtm450PuckMod_Ruleset {
                             highStickTimer.Change(ServerConfig.HighStick.MaxMilliseconds, Timeout.Infinite);
                             if (!IsHighStick(stick.Player.Team.Value)) {
                                 _isHighStickActive[stick.Player.Team.Value] = true;
-                                _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
+                                _puckLastStateBeforeCall[Rule.HighStick] = (__instance.Rigidbody.transform.position, _puckZone);
                                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                                 SendChat(Rule.HighStick, stick.Player.Team.Value, false);
                             }

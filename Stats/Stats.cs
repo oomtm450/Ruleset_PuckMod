@@ -894,7 +894,7 @@ namespace oomtm450PuckMod_Stats {
         [HarmonyPatch(typeof(Puck), "OnCollisionStay")]
         public class Puck_OnCollisionStay_Patch {
             [HarmonyPostfix]
-            public static void Postfix(Collision collision) {
+            public static void Postfix(Puck __instance, Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Playing || !_logic)
@@ -947,7 +947,8 @@ namespace oomtm450PuckMod_Stats {
 
                     _lastTeamOnPuckTipIncluded = player.Team.Value;
 
-                    if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled)) {
+                    if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
+                        __instance.Rigidbody.transform.position.y, 0.205f)) { // TODO : Config 0.205f.
                         //_lastTeamOnPuck = player.Team.Value;
                         _lastPlayerOnPuckSteamId[player.Team.Value] = (playerSteamId, DateTime.UtcNow);
                     }
@@ -992,7 +993,8 @@ namespace oomtm450PuckMod_Stats {
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = (playerSteamId, DateTime.UtcNow);
                     _lastTeamOnPuckTipIncluded = stick.Player.Team.Value;
 
-                    if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled)) {
+                    if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
+                        __instance.Rigidbody.transform.position.y, 0.205f)) { // TODO : Config 0.205f.
                         //_lastTeamOnPuck = stick.Player.Team.Value;
                         _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = (playerSteamId, DateTime.UtcNow);
                     }
