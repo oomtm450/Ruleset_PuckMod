@@ -7,7 +7,6 @@ using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
     internal static class PenaltyModule {
-        // TODO : Add embellishment penalty if you dive after a penalty has been called for hitting you (goalie and player).
         #region Constants
         private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2;
         private const int MAX_PENALIZED_PLAYERS = 2;
