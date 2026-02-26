@@ -7,6 +7,8 @@ using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
     internal static class PenaltyModule {
+        // TODO : Delay of game z delta fixes.
+        // TODO : Add more benches spot.
         #region Constants
         private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2;
         private const int MAX_PENALIZED_PLAYERS = 2;
@@ -21,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f);
 
-        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(24f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 16f);
+        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(23.9f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 16f);
 
         internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 46.5f;
 
