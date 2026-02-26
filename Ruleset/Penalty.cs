@@ -8,7 +8,6 @@ using UnityEngine;
 namespace oomtm450PuckMod_Ruleset {
     internal static class PenaltyModule {
         // TODO : Add embellishment penalty if you dive after a penalty has been called for hitting you (goalie and player).
-        // TODO : Fix delay of game goalie giving penalty to already penalized player.
         #region Constants
         private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2;
         private const int MAX_PENALIZED_PLAYERS = 2;
@@ -127,13 +126,20 @@ namespace oomtm450PuckMod_Ruleset {
 
             // If goalie has a penalty, take another player.
             if (Codebase.PlayerFunc.IsGoalie(penalizedPlayer)) {
-                penalizedPlayer = teamPlayers.First();
-                penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
-                if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> _penaltyList)) {
-                    _penaltyList = new LockList<Penalty>();
-                    PenalizedPlayers.Add(penalizedPlayerSteamId, _penaltyList);
+                foreach (Player teamPlayer in teamPlayers) {
+                    penalizedPlayer = teamPlayer;
+                    penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
+                    if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> _penaltyList)) {
+                        _penaltyList = new LockList<Penalty>();
+                        PenalizedPlayers.Add(penalizedPlayerSteamId, _penaltyList);
+                    }
+                    penaltyList = _penaltyList;
+
+                    if (penaltyList.Count != 0)
+                        continue;
+
+                    break;
                 }
-                penaltyList = _penaltyList;
             }
 
             PositionIsPenalized[penalizedPlayer.Team.Value][penalizedPlayer.PlayerPosition.Name] = true;
