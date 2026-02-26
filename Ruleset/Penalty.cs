@@ -119,8 +119,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (_playerToUnpenalize.Equals(default(Player)))
                     return false;
 
-                PositionIsPenalized[_playerToUnpenalize.Team.Value][_playerToUnpenalize.PlayerPosition.Name] = false;
-                UnpenalizePlayer(_playerToUnpenalize, _playerToUnpenalize.Team.Value, _playerToUnpenalize.PlayerPosition.Name);
+                RemoveOnePenalty(_playerToUnpenalize.Team.Value);
             }
 
             // If goalie has a penalty, take another player.

@@ -1027,6 +1027,8 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     if (phase == GamePhase.FaceOff) {
+                        _playersLastSlipDateTime.Clear();
+
                         if (!ServerConfig.Faceoff.UseCustomFaceoff) {
                             PenaltyModule.TeleportPlayers();
                             return;
@@ -1060,6 +1062,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
                     }
                     else if (phase == GamePhase.Playing || phase == GamePhase.BlueScore || phase == GamePhase.RedScore || phase == GamePhase.PeriodOver) {
+                        _playersLastSlipDateTime.Clear();
                         PenaltyModule.TeleportPlayers();
                     }
                 }
@@ -2289,9 +2292,9 @@ namespace oomtm450PuckMod_Ruleset {
                             getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(divingValue);
 
                         _dives.AddOrUpdate(value, getUpTime);
-                        if (_playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds < 4000 && new System.Random().Next(0, 2) == 0) { // TODO : Config 4000 and random.
+                        if (_playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds < 3000 && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds > 50 && new System.Random().Next(0, 3) == 0) { // TODO : Config 3000 and random.
                             Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(value);
-                            if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned)
+                            if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned && !Codebase.PlayerFunc.IsGoalie(penalizedPlayer))
                                 PenaltyModule.GivePenalty(PenaltyType.Embellishment, penalizedPlayer);
                         }
 
