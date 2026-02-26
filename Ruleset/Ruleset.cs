@@ -2623,7 +2623,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 break;
 
                             Logging.Log($"Warning client {clientId} mod out of date.", ServerConfig);
-                            UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
+                            UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : TEST - {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from TEST - {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update."); // TODO : Remove TEST from the message.
                             _sentOutOfDateMessage[clientId] = utcNow;
                         }
                         break;

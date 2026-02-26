@@ -7,8 +7,9 @@ using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
     internal static class PenaltyModule {
-        // TODO : Delay of game z delta fixes.
+        // TODO : Test delay of game z delta fixes.
         // TODO : Add more benches spot.
+        // TODO : Stats OverflowException fix.
         #region Constants
         private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2;
         private const int MAX_PENALIZED_PLAYERS = 2;
