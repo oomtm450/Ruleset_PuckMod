@@ -7,26 +7,26 @@ using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
     internal static class PenaltyModule {
-        // TODO : Test delay of game z delta fixes.
+        // TODO : Test delay of game z delta.
         // TODO : Add more benches spot.
-        // TODO : Stats OverflowException fix.
+        // TODO : Adjust DELAY_OF_GAME_POSITION and DELAY_OF_GAME_POSITION_END_Z.
         #region Constants
-        private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2;
-        private const int MAX_PENALIZED_PLAYERS = 2;
+        private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2; // TODO : Config.
+        private const int MAX_PENALIZED_PLAYERS = 2; // TODO : Config.
 
-        private static readonly Vector3 BLUE_PENALTY_BOX_POSITION = new Vector3(26f, 0.9f, 3f);
+        private static readonly Vector3 BLUE_PENALTY_BOX_POSITION = new Vector3(26f, 0.9f, 1.5f); // TODO : Config.
 
-        private static readonly Vector3 RED_PENALTY_BOX_POSITION = new Vector3(BLUE_PENALTY_BOX_POSITION.x, BLUE_PENALTY_BOX_POSITION.y, BLUE_PENALTY_BOX_POSITION.z * -1);
+        private static readonly Vector3 RED_PENALTY_BOX_POSITION = new Vector3(BLUE_PENALTY_BOX_POSITION.x, BLUE_PENALTY_BOX_POSITION.y, BLUE_PENALTY_BOX_POSITION.z * -1); // TODO : Config.
 
-        private static readonly Vector3 INFRONT_BLUE_PENALTY_BOX_POSITION = new Vector3(22f, 0.05f, 3f);
+        private static readonly Vector3 INFRONT_BLUE_PENALTY_BOX_POSITION = new Vector3(22f, 0.05f, 1.5f); // TODO : Config.
 
-        private static readonly Vector3 INFRONT_RED_PENALTY_BOX_POSITION = new Vector3(22f, 0.05f, -3f);
+        private static readonly Vector3 INFRONT_RED_PENALTY_BOX_POSITION = new Vector3(INFRONT_BLUE_PENALTY_BOX_POSITION.x, INFRONT_BLUE_PENALTY_BOX_POSITION.y, INFRONT_BLUE_PENALTY_BOX_POSITION.z * -1); // TODO : Config.
 
-        private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f);
+        private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f); // TODO : Config.
 
-        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(23.9f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 16f);
+        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(23f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 16f); // TODO : Config.
 
-        internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 46.5f;
+        internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 46.3f; // TODO : Config.
 
         private static readonly Dictionary<string, bool> POSITION_IS_PENALIZED_DEFAULT = new Dictionary<string, bool> {
             { Codebase.PlayerFunc.GOALIE_POSITION, false },
