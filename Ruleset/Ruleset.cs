@@ -1404,7 +1404,16 @@ namespace oomtm450PuckMod_Ruleset {
                          puck.Rigidbody.transform.position.y < PenaltyModule.DELAY_OF_GAME_POSITION.y) ||
                          (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION_END_Z)) {
                         bool playerTouched = _playersOnPuckDateTime.TryGetValue(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam], out var lastTouchDateTime);
-                        if (!playerTouched || (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime) || (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z && ((_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckZCoordinateDifference > ServerConfig.Penalty.DelayOfGameZDelta) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckZCoordinateDifference < -ServerConfig.Penalty.DelayOfGameZDelta))))
+
+                        /*Logging.Log("playerTouched : " + playerTouched, ServerConfig, true); // TODO
+                        Logging.Log("_puckDeflectedDateTimeSinceLastTouch : " + _puckDeflectedDateTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                        Logging.Log("lastTouchDateTime.LastTouchDateTime : " + lastTouchDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                        Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds({ServerConfig.MaxTippedMilliseconds * 2}) : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.MaxTippedMilliseconds)), ServerConfig, true); // TODO
+                        Logging.Log("_puckZCoordinateDifference : " + _puckZCoordinateDifference, ServerConfig, true); // TODO
+                        Logging.Log("Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z : " + (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z), ServerConfig, true); // TODO
+                        Logging.Log("delta bool : " + (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z && ((_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckZCoordinateDifference > ServerConfig.Penalty.DelayOfGameZDelta) || (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckZCoordinateDifference < -ServerConfig.Penalty.DelayOfGameZDelta))), ServerConfig, true); // TODO*/
+
+                        if (!playerTouched || (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.MaxTippedMilliseconds * 2)) || (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION.z && ((_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckZCoordinateDifference > ServerConfig.Penalty.DelayOfGameZDelta) || (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckZCoordinateDifference < -ServerConfig.Penalty.DelayOfGameZDelta))))
                             CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
                         else {
                             Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]);

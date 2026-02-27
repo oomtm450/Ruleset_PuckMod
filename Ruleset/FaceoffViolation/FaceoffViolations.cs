@@ -269,13 +269,13 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             if (tether.PlayerBody.Player.Team.Value == PlayerTeam.Blue) {
                 if (xMovement > 0) { // Check right movement
                     if (Mathf.Abs(xMovement) > tether.MaxRightDistance) {
-                        clampedPos.x = spawnPos.x + tether.MaxRightDistance;
+                        clampedPos.x = spawnPos.x - tether.MaxRightDistance;
                         wasClamped = true;
                     }
                 }
                 else { // Check left movement
                     if (Mathf.Abs(xMovement) > tether.MaxLeftDistance) {
-                        clampedPos.x = spawnPos.x - tether.MaxLeftDistance;
+                        clampedPos.x = spawnPos.x + tether.MaxLeftDistance;
                         wasClamped = true;
                     }
                 }
