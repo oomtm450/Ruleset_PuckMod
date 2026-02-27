@@ -24,7 +24,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f); // TODO : Config.
 
-        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(23f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 16f); // TODO : Config.
+        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(23f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 15f); // TODO : Config.
 
         internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 46.3f; // TODO : Config.
 
