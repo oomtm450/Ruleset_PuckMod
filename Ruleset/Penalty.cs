@@ -8,6 +8,7 @@ using UnityEngine;
 namespace oomtm450PuckMod_Ruleset {
     internal static class PenaltyModule {
         // TODO : Add more benches spot.
+        // TODO : Faceoff position when penalty and icing at the same time.
         #region Constants
         private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2; // TODO : Config.
         private const int MAX_PENALIZED_PLAYERS = 2; // TODO : Config.
