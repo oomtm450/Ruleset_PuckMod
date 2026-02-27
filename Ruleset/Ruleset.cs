@@ -797,7 +797,7 @@ namespace oomtm450PuckMod_Ruleset {
                             hasLastPlayerDived = false;
 
                         if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping || lastPlayerHit.PlayerBody.IsSideways) {
-                            if (!_playersLastSlipDateTime.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitSlipTime) || (now - lastPlayerHitSlipTime).TotalMilliseconds > 3000) // TODO : Config.
+                            if (!_playersLastSlipDateTime.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitSlipTime) || (now - lastPlayerHitSlipTime).TotalMilliseconds > 5500) // TODO : Config.
                                 hasLastPlayerBeenHit = !hasLastPlayerDived;
                         }
 
@@ -808,7 +808,7 @@ namespace oomtm450PuckMod_Ruleset {
                             hasOtherPlayerDived = false;
 
                         if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping || playerBody.Player.PlayerBody.IsSideways) {
-                            if (!_playersLastSlipDateTime.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitSlipTime) || (now - otherPlayerHitSlipTime).TotalMilliseconds > 3000) // TODO : Config.
+                            if (!_playersLastSlipDateTime.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitSlipTime) || (now - otherPlayerHitSlipTime).TotalMilliseconds > 5500) // TODO : Config.
                                 hasOtherPlayerBeenHit = !hasOtherPlayerDived;
                         }
 
