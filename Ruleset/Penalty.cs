@@ -7,9 +7,7 @@ using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
     internal static class PenaltyModule {
-        // TODO : Test delay of game z delta.
         // TODO : Add more benches spot.
-        // TODO : Adjust DELAY_OF_GAME_POSITION and DELAY_OF_GAME_POSITION_END_Z.
         #region Constants
         private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2; // TODO : Config.
         private const int MAX_PENALIZED_PLAYERS = 2; // TODO : Config.
@@ -24,9 +22,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f); // TODO : Config.
 
-        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(22.7f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 15f); // TODO : Config.
+        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(22.5f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 14f); // TODO : Config.
 
-        internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 46f; // TODO : Config.
+        internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 45.8f; // TODO : Config.
 
         private static readonly Dictionary<string, bool> POSITION_IS_PENALIZED_DEFAULT = new Dictionary<string, bool> {
             { Codebase.PlayerFunc.GOALIE_POSITION, false },
