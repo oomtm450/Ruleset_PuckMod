@@ -2275,6 +2275,9 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case "dive":
+                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                            break;
+
                         KeyValuePair<string, object> extraMessageKvp = message.ElementAt(1);
                         if (extraMessageKvp.Key != "duration")
                             break;
@@ -2290,6 +2293,10 @@ namespace oomtm450PuckMod_Ruleset {
                             getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(divingValue);
 
                         _dives.AddOrUpdate(value, getUpTime);
+
+                        if (!Logic)
+                            break;
+
                         if (_playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds < 3500 && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds > 50 && new System.Random().Next(0, 2) == 0) { // TODO : Config 3500 and random.
                             Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(value);
                             if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned && !Codebase.PlayerFunc.IsGoalie(penalizedPlayer))
