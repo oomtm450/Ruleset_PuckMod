@@ -2873,25 +2873,43 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void CallOffside(PlayerTeam team, Player referee = null) {
-            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Offside, _puckLastStateBeforeCall[Rule.Offside]);
-            SendChat(Rule.Offside, team, true, false, referee);
-            _lastStoppageReason = Rule.Offside;
-            DoFaceoff();
+            if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Blue])
+                CallPenalty(PlayerTeam.Blue);
+            else if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Red])
+                CallPenalty(PlayerTeam.Red);
+            else {
+                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Offside, _puckLastStateBeforeCall[Rule.Offside]);
+                SendChat(Rule.Offside, team, true, false, referee);
+                _lastStoppageReason = Rule.Offside;
+                DoFaceoff();
+            }
         }
 
         private static void CallHighStick(PlayerTeam team, Player referee = null) {
-            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.HighStick, _puckLastStateBeforeCall[Rule.HighStick]);
-            SendChat(Rule.HighStick, team, true, false, referee);
-            ResetHighSticks();
-            _lastStoppageReason = Rule.HighStick;
-            DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.HIGHSTICK_REF);
+            if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Blue])
+                CallPenalty(PlayerTeam.Blue);
+            else if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Red])
+                CallPenalty(PlayerTeam.Red);
+            else {
+                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.HighStick, _puckLastStateBeforeCall[Rule.HighStick]);
+                SendChat(Rule.HighStick, team, true, false, referee);
+                ResetHighSticks();
+                _lastStoppageReason = Rule.HighStick;
+                DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.HIGHSTICK_REF);
+            }
         }
 
         private static void CallGoalieInt(PlayerTeam team, Player referee = null) {
-            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.GoalieInt, _puckLastStateBeforeCall[Rule.GoalieInt]);
-            SendChat(Rule.GoalieInt, team, true, false, referee);
-            _lastStoppageReason = Rule.GoalieInt;
-            DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
+            if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Blue])
+                CallPenalty(PlayerTeam.Blue);
+            else if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Red])
+                CallPenalty(PlayerTeam.Red);
+            else {
+                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.GoalieInt, _puckLastStateBeforeCall[Rule.GoalieInt]);
+                SendChat(Rule.GoalieInt, team, true, false, referee);
+                _lastStoppageReason = Rule.GoalieInt;
+                DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
+            }
         }
 
         private static void CallIcing(PlayerTeam team, Player referee = null) {
@@ -2915,10 +2933,16 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void CallDelayOfGameStoppage(PlayerTeam team, Player referee = null) {
-            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.DelayOfGame, _puckLastStateBeforeCall[Rule.DelayOfGame]);
-            SendChat(Rule.DelayOfGame, team, true, false, referee);
-            _lastStoppageReason = Rule.Offside;
-            DoFaceoff();
+            if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Blue])
+                CallPenalty(PlayerTeam.Blue);
+            else if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Red])
+                CallPenalty(PlayerTeam.Red);
+            else {
+                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.DelayOfGame, _puckLastStateBeforeCall[Rule.DelayOfGame]);
+                SendChat(Rule.DelayOfGame, team, true, false, referee);
+                _lastStoppageReason = Rule.Offside;
+                DoFaceoff();
+            }
         }
 
         internal static void CallPenalty(PlayerTeam team, bool wasIcing = false, Player referee = null) {
