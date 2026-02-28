@@ -581,10 +581,10 @@ namespace oomtm450PuckMod_Ruleset {
                             _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = playerSteamId;
                             _playersOnPuckDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, now));
 
-                            _puckLastStateBeforeCall[Rule.Offside] = (__instance.Rigidbody.transform.position, _puckZone);
+                            _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.Offside] = (__instance.Rigidbody.transform.position, _puckZone);
                         }
 
-                        _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.GoalieInt] = (__instance.Rigidbody.transform.position, _puckZone);
+                        _puckLastStateBeforeCall[Rule.GoalieInt] = (__instance.Rigidbody.transform.position, _puckZone);
                     }
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
@@ -680,10 +680,10 @@ namespace oomtm450PuckMod_Ruleset {
                             _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
                             _playersOnPuckDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team.Value, now));
 
-                            _puckLastStateBeforeCall[Rule.Offside] = (__instance.Rigidbody.transform.position, _puckZone);
+                            _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.Offside] = (__instance.Rigidbody.transform.position, _puckZone);
                         }
 
-                        _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.GoalieInt] = (__instance.Rigidbody.transform.position, _puckZone);
+                        _puckLastStateBeforeCall[Rule.GoalieInt] = (__instance.Rigidbody.transform.position, _puckZone);
                     }
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
