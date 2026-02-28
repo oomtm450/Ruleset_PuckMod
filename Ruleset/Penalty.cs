@@ -199,6 +199,9 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void TeleportPlayers() {
+            foreach (PlayerTeam key in new List<PlayerTeam>(PenaltyBenchPositionIsOccupied.Keys))
+                PenaltyBenchPositionIsOccupied[key] = new LockDictionary<int, bool>(PENALTY_BENCH_POSITION_DEFAULT);
+
             foreach (LockList<Penalty> penalties in PenalizedPlayers.Values) {
                 // Player to the box and start first penalty.
                 if (penalties.Any(x => x.CurrentPenalty)) {
@@ -239,7 +242,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (player.Team.Value == PlayerTeam.Blue)
                 penaltyBoxPosition = new Vector3(BLUE_PENALTY_BOX_POSITION.x, BLUE_PENALTY_BOX_POSITION.y, BLUE_PENALTY_BOX_POSITION.z - zOffset);
             else
-                penaltyBoxPosition = new Vector3(BLUE_PENALTY_BOX_POSITION.x, BLUE_PENALTY_BOX_POSITION.y, BLUE_PENALTY_BOX_POSITION.z + zOffset);
+                penaltyBoxPosition = new Vector3(RED_PENALTY_BOX_POSITION.x, RED_PENALTY_BOX_POSITION.y, RED_PENALTY_BOX_POSITION.z + zOffset);
 
             player.PlayerBody.Server_Teleport(penaltyBoxPosition, PENALTY_ROTATION);
         }
