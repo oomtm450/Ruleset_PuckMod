@@ -34,6 +34,12 @@ namespace oomtm450PuckMod_Ruleset {
             { Codebase.PlayerFunc.LEFT_DEFENDER_POSITION, false },
             { Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION, false },
         };
+
+        private static readonly Dictionary<int, bool> PENALTY_BENCH_POSITION_DEFAULT = new Dictionary<int, bool> {
+            { 0, false },
+            { 1, false },
+            { 2, false },
+        };
         #endregion
 
         #region Properties
@@ -53,6 +59,11 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, new LockDictionary<string, bool>(POSITION_IS_PENALIZED_DEFAULT) },
         };
 
+        internal static LockDictionary<PlayerTeam, LockDictionary<int, bool>> PenaltyBenchPositionIsOccupied { get; } = new LockDictionary<PlayerTeam, LockDictionary<int, bool>> {
+            { PlayerTeam.Blue, new LockDictionary<int, bool>(PENALTY_BENCH_POSITION_DEFAULT) },
+            { PlayerTeam.Red, new LockDictionary<int, bool>(PENALTY_BENCH_POSITION_DEFAULT) },
+        };
+
         internal static PenaltyType LastPenaltyCalled { get; set; }
         #endregion
 
@@ -64,6 +75,9 @@ namespace oomtm450PuckMod_Ruleset {
 
             foreach (PlayerTeam key in new List<PlayerTeam>(PositionIsPenalized.Keys))
                 PositionIsPenalized[key] = new LockDictionary<string, bool>(POSITION_IS_PENALIZED_DEFAULT);
+
+            foreach (PlayerTeam key in new List<PlayerTeam>(PenaltyBenchPositionIsOccupied.Keys))
+                PenaltyBenchPositionIsOccupied[key] = new LockDictionary<int, bool>(PENALTY_BENCH_POSITION_DEFAULT);
         }
 
         internal static bool GivePenalty(PenaltyType penaltyType, Player penalizedPlayer, string receivingPlayerSteamId = "") {
@@ -209,10 +223,26 @@ namespace oomtm450PuckMod_Ruleset {
             }
             player.PlayerBody.Server_Freeze();
 
+            Vector3 penaltyBoxPosition;
+            float zOffset = 0;
+
+            if (!PenaltyBenchPositionIsOccupied[player.Team.Value][0])
+                PenaltyBenchPositionIsOccupied[player.Team.Value][0] = true;
+            else if (!PenaltyBenchPositionIsOccupied[player.Team.Value][1]) {
+                PenaltyBenchPositionIsOccupied[player.Team.Value][1] = true;
+                zOffset = 1.5f;
+            }
+            else if (!PenaltyBenchPositionIsOccupied[player.Team.Value][2]) {
+                PenaltyBenchPositionIsOccupied[player.Team.Value][2] = true;
+                zOffset = 3f;
+            }
+
             if (player.Team.Value == PlayerTeam.Blue)
-                player.PlayerBody.Server_Teleport(BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+                penaltyBoxPosition = new Vector3(BLUE_PENALTY_BOX_POSITION.x, BLUE_PENALTY_BOX_POSITION.y, BLUE_PENALTY_BOX_POSITION.z - zOffset);
             else
-                player.PlayerBody.Server_Teleport(RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+                penaltyBoxPosition = new Vector3(BLUE_PENALTY_BOX_POSITION.x, BLUE_PENALTY_BOX_POSITION.y, BLUE_PENALTY_BOX_POSITION.z + zOffset);
+
+            player.PlayerBody.Server_Teleport(penaltyBoxPosition, PENALTY_ROTATION);
         }
 
         internal static void PausePenalties() {
@@ -222,6 +252,9 @@ namespace oomtm450PuckMod_Ruleset {
                         penalty.Timer.Pause();
                 }
             }
+
+            foreach (PlayerTeam key in new List<PlayerTeam>(PenaltyBenchPositionIsOccupied.Keys))
+                PenaltyBenchPositionIsOccupied[key] = new LockDictionary<int, bool>(PENALTY_BENCH_POSITION_DEFAULT);
         }
 
         internal static void UnpausePenalties() {
