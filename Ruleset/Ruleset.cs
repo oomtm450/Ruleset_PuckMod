@@ -168,6 +168,7 @@ namespace oomtm450PuckMod_Ruleset {
             { Rule.Icing, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
             { Rule.HighStick, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
             { Rule.GoalieInt, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
+            { Rule.DelayOfGame, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
         };
 
         /// <summary>
@@ -1410,8 +1411,11 @@ namespace oomtm450PuckMod_Ruleset {
                         Logging.Log("lastTouchDateTime.LastTouchDateTime : " + lastTouchDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
                         Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds({(ServerConfig.MaxTippedMilliseconds * 2) + 10}) : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.MaxTippedMilliseconds)), ServerConfig, true); // TODO*/
 
-                        if (!playerTouched || (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds((ServerConfig.MaxTippedMilliseconds * 2) + 10)) || (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _playersZone[_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]].Zone != Zone.BlueTeam_BehindGoalLine && _playersZone[_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]].Zone != Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _playersZone[_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]].Zone != Zone.RedTeam_BehindGoalLine && _playersZone[_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]].Zone != Zone.RedTeam_Zone))
+                        if (!playerTouched ||
+                            (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds((ServerConfig.MaxTippedMilliseconds * 2) + 10)) ||
+                            (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.RedTeam_Zone)) {
                             CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
+                        }
                         else {
                             Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]);
                             if (penalizedDelayOfGamePlayer != null && penalizedDelayOfGamePlayer)
