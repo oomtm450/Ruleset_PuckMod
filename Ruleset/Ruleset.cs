@@ -2895,18 +2895,23 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void CallIcing(PlayerTeam team, Player referee = null) {
-            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Icing, _puckLastStateBeforeCall[Rule.Icing]);
-            SendChat(Rule.Icing, team, true, false, referee);
+            PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
+            if (PenaltyModule.PenaltyToBeCalled[otherTeam] && !PenaltyModule.PenaltyToBeCalled[team])
+                CallPenalty(otherTeam);
+            else {
+                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Icing, _puckLastStateBeforeCall[Rule.Icing]);
+                SendChat(Rule.Icing, team, true, false, referee);
 
-            int remainingPlayTime = GameManager.Instance.GameState.Value.Time;
-            if (_lastStoppageReason == Rule.Icing && _lastIcing[TeamFunc.GetOtherTeam(team)] > _lastIcing[team] && _lastIcing[team] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
-                _icingStaminaDrainPenaltyAmount[team] += 1;
-            else
-                _icingStaminaDrainPenaltyAmount[team] = 0;
+                int remainingPlayTime = GameManager.Instance.GameState.Value.Time;
+                if (_lastStoppageReason == Rule.Icing && _lastIcing[TeamFunc.GetOtherTeam(team)] > _lastIcing[team] && _lastIcing[team] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
+                    _icingStaminaDrainPenaltyAmount[team] += 1;
+                else
+                    _icingStaminaDrainPenaltyAmount[team] = 0;
 
-            _lastStoppageReason = Rule.Icing;
-            _lastIcing[team] = remainingPlayTime;
-            DoFaceoff();
+                _lastStoppageReason = Rule.Icing;
+                _lastIcing[team] = remainingPlayTime;
+                DoFaceoff();
+            }
         }
 
         private static void CallDelayOfGameStoppage(PlayerTeam team, Player referee = null) {
