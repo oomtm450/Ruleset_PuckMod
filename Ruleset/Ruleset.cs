@@ -2897,7 +2897,7 @@ namespace oomtm450PuckMod_Ruleset {
         private static void CallIcing(PlayerTeam team, Player referee = null) {
             PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
             if (PenaltyModule.PenaltyToBeCalled[otherTeam] && !PenaltyModule.PenaltyToBeCalled[team])
-                CallPenalty(otherTeam);
+                CallPenalty(otherTeam, true);
             else {
                 NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Icing, _puckLastStateBeforeCall[Rule.Icing]);
                 SendChat(Rule.Icing, team, true, false, referee);
@@ -2921,7 +2921,7 @@ namespace oomtm450PuckMod_Ruleset {
             DoFaceoff();
         }
 
-        internal static void CallPenalty(PlayerTeam team, Player referee = null) {
+        internal static void CallPenalty(PlayerTeam team, bool wasIcing = false, Player referee = null) {
             string refSignal = "";
             // TODO : Get more signals.
             switch (PenaltyModule.LastPenaltyCalled) {
@@ -2934,7 +2934,9 @@ namespace oomtm450PuckMod_Ruleset {
                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), refSignal, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
             }
 
-            if (team == PlayerTeam.Blue) {
+            if (wasIcing)
+                NextFaceoffSpot = FaceoffSpot.Center;
+            else if (team == PlayerTeam.Blue) {
                 if (_puckLastStateBeforeCall[Rule.Offside].Position.x > 0)
                     NextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight;
                 else
