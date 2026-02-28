@@ -573,7 +573,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (__instance) {
                         if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight)) {
+                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight) || _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == playerSteamId) {
                             _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                             if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
@@ -672,7 +672,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (__instance) {
                         if (!PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight)) {
+                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight) || _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId) {
                             _lastPlayerOnPuckTeam = stick.Player.Team.Value;
                             if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
