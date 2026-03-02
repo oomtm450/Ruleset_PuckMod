@@ -1282,23 +1282,43 @@ namespace oomtm450PuckMod_Ruleset {
                             NetworkCommunication.SendData("gs" + RefSignals.INTERFERENCE_REF, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         else if (message.StartsWith(@"/rule")) {
                             message = message.Replace(@"/rule", "").Replace("true", "1").Replace("false", "0").Trim();
-                            NetworkCommunication.SendData("rule", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(Constants.MOD_NAME + "rule", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                         else if (message.StartsWith(@"/refmode")) {
                             message = message.Replace(@"/refmode", "").Replace("true", "1").Replace("false", "0").Trim();
-                            NetworkCommunication.SendData("refmode", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(Constants.MOD_NAME + "refmode", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                         else if (message.StartsWith(@"/addrefsteamid")) {
                             message = message.Replace(@"/addrefsteamid", "").Trim();
-                            NetworkCommunication.SendData("addrefsteamid", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(Constants.MOD_NAME + "addrefsteamid", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                         else if (message.StartsWith(@"/removerefsteamid")) {
                             message = message.Replace(@"/removerefsteamid", "").Trim();
-                            NetworkCommunication.SendData("removerefsteamid", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(Constants.MOD_NAME + "removerefsteamid", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                         else if (message.StartsWith(@"/addpermrefsteamid")) {
                             message = message.Replace(@"/addpermrefsteamid", "").Trim();
-                            NetworkCommunication.SendData("addpermrefsteamid", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(Constants.MOD_NAME + "addpermrefsteamid", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/pen")) {
+                            message = message.Replace(@"/pen", "").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+
+                            string[] splittedMsgPen = message.Split(' ');
+                            if (splittedMsgPen.Count() != 3)
+                                return true;
+                            NetworkCommunication.SendData(Constants.MOD_NAME + "pen", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                     }
                 }
@@ -2728,7 +2748,7 @@ namespace oomtm450PuckMod_Ruleset {
                         CallGoalieInt((PlayerTeam)gIntStoppageTeamInt, gintReferee);
                         break;
 
-                    case "refmode": // SERVER-SIDE : Remove rules to make the server reffable.
+                    case Constants.MOD_NAME + "refmode": // SERVER-SIDE : Remove rules to make the server reffable.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
@@ -2756,7 +2776,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         break;
 
-                    case "addrefsteamid": // SERVER-SIDE : Add a ref for a game.
+                    case Constants.MOD_NAME + "addrefsteamid": // SERVER-SIDE : Add a ref for a game.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
@@ -2769,7 +2789,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
-                    case "addpermrefsteamid": // SERVER-SIDE : Add a permanent ref (until server restarts).
+                    case Constants.MOD_NAME + "addpermrefsteamid": // SERVER-SIDE : Add a permanent ref (until server restarts).
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
@@ -2783,7 +2803,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
-                    case "removerefsteamid": // SERVER-SIDE : Remove a ref.
+                    case Constants.MOD_NAME + "removerefsteamid": // SERVER-SIDE : Remove a ref.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
@@ -2796,7 +2816,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
-                    case "rule": // SERVER-SIDE : Change rule.
+                    case Constants.MOD_NAME + "rule": // SERVER-SIDE : Change rule.
                         if (!IsAdmin(clientId))
                             return;
 
@@ -2864,6 +2884,65 @@ namespace oomtm450PuckMod_Ruleset {
                             else if (splittedDataStrOff[0] == "r")
                                 ServerConfig.GInt.RedTeam = offToggle;
                         }
+                        break;
+
+                    case Constants.MOD_NAME + "pen": // SERVER-SIDE : Give penalty.
+                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                            break;
+
+                        Player gintPenReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (gintPenReferee == null || !gintPenReferee)
+                            break;
+
+                        string gintPenRefereeSteamId = gintPenReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(gintPenRefereeSteamId) && !_currentRefsSteamId.Contains(gintPenRefereeSteamId))
+                            break;
+
+                        PenaltyType penaltyType;
+                        if (dataStr.Contains("gint")) {
+                            dataStr = dataStr.Replace("gint", "");
+                            penaltyType = PenaltyType.GoalieInterference;
+                        }
+                        else if (dataStr.Contains("int")) {
+                            dataStr = dataStr.Replace("int", "");
+                            penaltyType = PenaltyType.Interference;
+                        }
+                        else if (dataStr.Contains("trip")) {
+                            dataStr = dataStr.Replace("trip", "");
+                            penaltyType = PenaltyType.Tripping;
+                        }
+                        else if (dataStr.Contains("embel")) {
+                            dataStr = dataStr.Replace("embel", "");
+                            penaltyType = PenaltyType.Embellishment;
+                        }
+                        else if (dataStr.Contains("dog")) {
+                            dataStr = dataStr.Replace("dog", "");
+                            penaltyType = PenaltyType.DelayOfGame;
+                        }
+                        else if (dataStr.Contains("foff")) {
+                            dataStr = dataStr.Replace("foff", "");
+                            penaltyType = PenaltyType.FaceoffViolation;
+                        }
+                        else
+                            break;
+
+                        string[] steamIdsPen = dataStr.Trim().Split(' ');
+
+                        if (penaltyType == PenaltyType.Embellishment || penaltyType == PenaltyType.DelayOfGame || penaltyType == PenaltyType.FaceoffViolation) {
+                            if (steamIdsPen.Count() != 1)
+                                break;
+                        }
+                        else {
+                            if (steamIdsPen.Count() != 2)
+                                break;
+                        }
+
+                        Player penPlayer = PlayerManager.Instance.GetPlayerBySteamId(steamIdsPen[0]);
+                        if (penPlayer == null || !penPlayer)
+                            break;
+
+                        PenaltyModule.GivePenalty(penaltyType, penPlayer, steamIdsPen[1]);
                         break;
                 }
             }
