@@ -2929,6 +2929,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         string[] steamIdsPen = dataStr.Trim().Split(' ');
 
+                        string steamIdReceivingPlayer = "";
                         if (penaltyType == PenaltyType.Embellishment || penaltyType == PenaltyType.DelayOfGame || penaltyType == PenaltyType.FaceoffViolation) {
                             if (steamIdsPen.Count() != 1)
                                 break;
@@ -2936,13 +2937,14 @@ namespace oomtm450PuckMod_Ruleset {
                         else {
                             if (steamIdsPen.Count() != 2)
                                 break;
+                            steamIdReceivingPlayer = steamIdsPen[1];
                         }
 
                         Player penPlayer = PlayerManager.Instance.GetPlayerBySteamId(steamIdsPen[0]);
                         if (penPlayer == null || !penPlayer)
                             break;
 
-                        PenaltyModule.GivePenalty(penaltyType, penPlayer, steamIdsPen[1]);
+                        PenaltyModule.GivePenalty(penaltyType, penPlayer, steamIdReceivingPlayer, gintPenReferee);
                         break;
                 }
             }

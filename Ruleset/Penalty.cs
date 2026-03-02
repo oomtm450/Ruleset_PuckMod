@@ -79,7 +79,7 @@ namespace oomtm450PuckMod_Ruleset {
                 PenaltyBenchPositionIsOccupied[key] = new LockDictionary<int, bool>(PENALTY_BENCH_POSITION_DEFAULT);
         }
 
-        internal static bool GivePenalty(PenaltyType penaltyType, Player penalizedPlayer, string receivingPlayerSteamId = "") {
+        internal static bool GivePenalty(PenaltyType penaltyType, Player penalizedPlayer, string receivingPlayerSteamId = "", Player referee = null) {
             if (!Ruleset.ServerConfig.Penalty.Interference && (penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.Tripping))
                 return false;
             if (!Ruleset.ServerConfig.Penalty.GoalieInterference && penaltyType == PenaltyType.GoalieInterference)
@@ -168,6 +168,8 @@ namespace oomtm450PuckMod_Ruleset {
             Penalty newPenalty = new Penalty(penalizedPlayerSteamId, penalizedPlayer.Team.Value, penaltyType, penalizedPlayer.PlayerPosition.Name, receivingPlayerSteamId);
             penaltyList.Add(newPenalty);
             string message = $"Penalty #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {GetPenaltyTypeTime(penaltyType) / 1000} seconds for {penaltyType.GetDescription("ToString")}";
+            if (referee != null)
+                message += $", called by #{referee.Number.Value} {referee.Username.Value}";
             Ruleset.SystemChatMessages.Add(message);
             Logging.Log(message, Ruleset.ServerConfig);
             // TODO : Get actual ref signal.
