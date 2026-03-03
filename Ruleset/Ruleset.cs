@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.0DEV15";
+        private static readonly string MOD_VERSION = "1.0.0DEV16";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -581,10 +581,10 @@ namespace oomtm450PuckMod_Ruleset {
                             _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = playerSteamId;
                             _playersOnPuckDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, now));
 
-                            _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.Offside] = (__instance.Rigidbody.transform.position, _puckZone);
+                            _puckLastStateBeforeCall[Rule.Offside] = (__instance.Rigidbody.transform.position, _puckZone);
                         }
 
-                        _puckLastStateBeforeCall[Rule.GoalieInt] = (__instance.Rigidbody.transform.position, _puckZone);
+                        _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.GoalieInt] = (__instance.Rigidbody.transform.position, _puckZone);
                     }
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
@@ -680,10 +680,10 @@ namespace oomtm450PuckMod_Ruleset {
                             _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
                             _playersOnPuckDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team.Value, now));
 
-                            _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.Offside] = (__instance.Rigidbody.transform.position, _puckZone);
+                            _puckLastStateBeforeCall[Rule.Offside] = (__instance.Rigidbody.transform.position, _puckZone);
                         }
 
-                        _puckLastStateBeforeCall[Rule.GoalieInt] = (__instance.Rigidbody.transform.position, _puckZone);
+                        _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.GoalieInt] = (__instance.Rigidbody.transform.position, _puckZone);
                     }
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
@@ -1315,9 +1315,6 @@ namespace oomtm450PuckMod_Ruleset {
                             if (string.IsNullOrEmpty(message))
                                 return true;
 
-                            string[] splittedMsgPen = message.Split(' ');
-                            if (splittedMsgPen.Count() != 3)
-                                return true;
                             NetworkCommunication.SendData(Constants.MOD_NAME + "pen", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                     }
@@ -1432,7 +1429,7 @@ namespace oomtm450PuckMod_Ruleset {
                         Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds({(ServerConfig.MaxTippedMilliseconds * 2) + 10}) : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.MaxTippedMilliseconds)), ServerConfig, true); // TODO*/
 
                         if (!playerTouched ||
-                            (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds((ServerConfig.MaxTippedMilliseconds * 2) + 10)) ||
+                            (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(160)) || // TODO : Config.
                             (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.RedTeam_Zone)) {
                             CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
                         }
