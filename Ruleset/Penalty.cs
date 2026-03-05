@@ -6,6 +6,8 @@ using System.Linq;
 using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
+    // TODO : Add client-side protection for the team/position switching when in penalty.
+    // TODO : Corner doesn't get called for delay of game.
     internal static class PenaltyModule {
         #region Constants
         private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2; // TODO : Config.

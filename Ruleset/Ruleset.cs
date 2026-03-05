@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.0DEV24";
+        private static readonly string MOD_VERSION = "1.0.0DEV26";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -3394,6 +3394,16 @@ namespace oomtm450PuckMod_Ruleset {
                 if (_puckValidator != null) {
                     UnityEngine.Object.Destroy(_puckValidator.gameObject);
                     _puckValidator = null;
+                }
+
+                if (_penaltiesLabelBlue != null) {
+                    _penaltiesLabelBlue.RemoveFromHierarchy();
+                    _penaltiesLabelBlue = null;
+                }
+
+                if (_penaltiesLabelRed != null) {
+                    _penaltiesLabelRed.RemoveFromHierarchy();
+                    _penaltiesLabelRed = null;
                 }
 
                 _harmony.UnpatchSelf();
