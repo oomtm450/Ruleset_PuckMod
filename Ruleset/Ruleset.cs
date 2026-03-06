@@ -548,7 +548,7 @@ namespace oomtm450PuckMod_Ruleset {
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
                         PlayerBodyV2 playerBody = SystemFunc.GetPlayerBodyV2(collision.gameObject);
-                        if (!playerBody || !playerBody.Player)
+                        if (!playerBody || !playerBody.Player || playerBody.Player.Team.Value == PlayerTeam.None)
                             return;
 
                         string playerBodySteamId = playerBody.Player.SteamId.Value.ToString();
