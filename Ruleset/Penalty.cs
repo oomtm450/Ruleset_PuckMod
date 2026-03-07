@@ -254,9 +254,9 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             if (player.Team.Value == PlayerTeam.Blue)
-                penaltyBoxPosition = new Vector3(BLUE_PENALTY_BOX_POSITION.x, BLUE_PENALTY_BOX_POSITION.y, BLUE_PENALTY_BOX_POSITION.z - zOffset);
+                penaltyBoxPosition = new Vector3(BLUE_PENALTY_BOX_POSITION.x, BLUE_PENALTY_BOX_POSITION.y, BLUE_PENALTY_BOX_POSITION.z + zOffset);
             else
-                penaltyBoxPosition = new Vector3(RED_PENALTY_BOX_POSITION.x, RED_PENALTY_BOX_POSITION.y, RED_PENALTY_BOX_POSITION.z + zOffset);
+                penaltyBoxPosition = new Vector3(RED_PENALTY_BOX_POSITION.x, RED_PENALTY_BOX_POSITION.y, RED_PENALTY_BOX_POSITION.z - zOffset);
 
             player.PlayerBody.Server_Teleport(penaltyBoxPosition, PENALTY_ROTATION);
         }
