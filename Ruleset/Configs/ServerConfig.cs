@@ -683,7 +683,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
         /// </summary>
-        public float MaxHeight { get; set; } = Codebase.Constants.CROSSBAR_HEIGHT;
+        public float MaxHeight { get; set; } = Codebase.Constants.CROSSBAR_HEIGHT + 0.05f;
 
         /// <summary>
         /// Int, number of milliseconds after a high stick to call high stick if no one touches the puck.
@@ -693,7 +693,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, delta used to calculate the high stick maximum frames before activation.
         /// </summary>
-        public float Delta { get; set; } = 17f;
+        public float Delta { get; set; } = 18f;
 
         #region Constructors
         /// <summary>
