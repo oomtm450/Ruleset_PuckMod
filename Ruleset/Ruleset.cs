@@ -1356,7 +1356,6 @@ namespace oomtm450PuckMod_Ruleset {
                             message = message.Replace(@"/pen", "").Trim();
                             if (string.IsNullOrEmpty(message))
                                 return true;
-
                             NetworkCommunication.SendData(PenaltyModule.GIVE_PENALTY_DATANAME, message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                         else if (message.StartsWith(@"/removeallpen")) {
