@@ -813,7 +813,7 @@ namespace oomtm450PuckMod_Ruleset {
                             hasLastPlayerDived = false;
 
                         if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping || lastPlayerHit.PlayerBody.IsSideways) {
-                            if (!_playersLastSlipDateTime.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitSlipTime) || (now - lastPlayerHitSlipTime).TotalMilliseconds > 5500) // TODO : Config.
+                            if (!_playersLastSlipDateTime.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitSlipTime) || (now - lastPlayerHitSlipTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceOnSamePlayerMillisecondsThreshold)
                                 hasLastPlayerBeenHit = !hasLastPlayerDived;
                         }
 
@@ -824,15 +824,15 @@ namespace oomtm450PuckMod_Ruleset {
                             hasOtherPlayerDived = false;
 
                         if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping || playerBody.Player.PlayerBody.IsSideways) {
-                            if (!_playersLastSlipDateTime.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitSlipTime) || (now - otherPlayerHitSlipTime).TotalMilliseconds > 5500) // TODO : Config.
+                            if (!_playersLastSlipDateTime.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitSlipTime) || (now - otherPlayerHitSlipTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceOnSamePlayerMillisecondsThreshold)
                                 hasOtherPlayerBeenHit = !hasOtherPlayerDived;
                         }
 
                         if (hasLastPlayerBeenHit) {
                             if (hasOtherPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
-                            else if (playerBody.Player.PlayerBody.transform.position.y > 0.044f) { // If the other person jumped. // TODO : Config.
-                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var LastTouchDateTimePlayerHit) || (now - LastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
+                            else if (playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum) { // If the other person jumped.
+                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var LastTouchDateTimePlayerHit) || (now - LastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold)
                                     PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
                             }
                         }
@@ -840,8 +840,8 @@ namespace oomtm450PuckMod_Ruleset {
                         if (hasOtherPlayerBeenHit) {
                             if (hasLastPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, lastPlayerHit, currentPlayerSteamId);
-                            else if (lastPlayerHit.PlayerBody.transform.position.y > 0.044f) { // If the other person jumped. // TODO : Config.
-                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var LastTouchDateTimeOtherPlayerHit) || (now - LastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > 2000) // TODO : Set as config.
+                            else if (lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum) { // If the other person jumped.
+                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var LastTouchDateTimeOtherPlayerHit) || (now - LastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold)
                                     PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
                             }
                         }
@@ -1485,10 +1485,10 @@ namespace oomtm450PuckMod_Ruleset {
                         Logging.Log("playerTouched : " + playerTouched, ServerConfig, true); // TODO
                         Logging.Log("_puckDeflectedDateTimeSinceLastTouch : " + _puckDeflectedDateTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
                         Logging.Log("lastTouchDateTime.LastTouchDateTime : " + lastTouchDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
-                        Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds({120}) : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(120)), ServerConfig, true); // TODO
+                        Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds({ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}) : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)), ServerConfig, true); // TODO
 
                         if (!playerTouched ||
-                            (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(120)) || // TODO : Config.
+                            (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)) ||
                             (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.RedTeam_Zone)) {
                             CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
                         }
@@ -2452,7 +2452,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!Logic)
                             break;
 
-                        if (_playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds < 3500 && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds > 50 && new System.Random().Next(0, 2) == 0) { // TODO : Config 3500 and random.
+                        if (_playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds < ServerConfig.Penalty.EmbellishmentMillisecondsThreshold && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds > 50 && new System.Random().Next(0, 2) == 0) { // TODO : Config random.
                             Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(value);
                             if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned && !Codebase.PlayerFunc.IsGoalie(penalizedPlayer))
                                 PenaltyModule.GivePenalty(PenaltyType.Embellishment, penalizedPlayer);
@@ -2817,7 +2817,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 break;
 
                             Logging.Log($"Warning client {clientId} mod out of date.", ServerConfig);
-                            UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : TEST - {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from TEST - {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update."); // TODO : Remove TEST from the message.
+                            UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
                             _sentOutOfDateMessage[clientId] = utcNow;
                         }
                         break;

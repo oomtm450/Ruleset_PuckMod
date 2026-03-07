@@ -250,6 +250,15 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     public class PenaltyConfig : ISubConfig {
         #region Properties
         /// <summary>
+        /// Int, max number of penalties given to one player.
+        /// </summary>
+        public int MaxPenaltiesCountPerPlayer { get; set; } = 2;
+        /// <summary>
+        /// Int, max number of penalized players per team.
+        /// </summary>
+        public int MaxPenalizedPlayersPerTeam { get; set; } = 2;
+
+        /// <summary>
         /// Bool, true if player interference is enabled.
         /// </summary>
         public bool Interference { get; set; } = true;
@@ -261,6 +270,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, interference can be called after this number of milliseconds after touching the puck.
         /// </summary>
         public int InterferenceMillisecondsThreshold { get; set; } = 2000;
+        /// <summary>
+        /// Int, interference can be called after this number of milliseconds after the player hit fell.
+        /// </summary>
+        public int InterferenceOnSamePlayerMillisecondsThreshold { get; set; } = 5500;
+        /// <summary>
+        /// Float, minimum y for a hit to be considered.
+        /// </summary>
+        public float JumpHeightMinimum { get; set; } = 0.044f;
 
         /// <summary>
         /// Bool, true if goalie interference is enabled.
@@ -283,6 +300,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, delta of the puck Z direction to use with the delay of game.
         /// </summary>
         public float DelayOfGameZDelta { get; set; } = 0.0125f;
+        /// <summary>
+        /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds before leaving the stick.
+        /// </summary>
+        public int DelayOfGameMillisecondsThreshold { get; set; } = 120;
 
         /// <summary>
         /// Bool, true if faceoff violation penalty is enabled.
@@ -301,6 +322,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, time in the box for an embellishment penalty in milliseconds.
         /// </summary>
         public int EmbellishmentTime { get; set; } = 30000;
+        /// <summary>
+        /// Int, embellishment can be called after this number of milliseconds after the player gets up.
+        /// </summary>
+        public int EmbellishmentMillisecondsThreshold { get; set; } = 3500;
         #endregion
 
         #region Constructors
@@ -314,9 +339,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <param name="penaltyConfig">PenaltyConfig, config to copy.</param>
         public PenaltyConfig(PenaltyConfig penaltyConfig) {
+            MaxPenaltiesCountPerPlayer = penaltyConfig.MaxPenaltiesCountPerPlayer;
+            MaxPenalizedPlayersPerTeam = penaltyConfig.MaxPenalizedPlayersPerTeam;
+
             Interference = penaltyConfig.Interference;
             InterferenceTime = penaltyConfig.InterferenceTime;
             InterferenceMillisecondsThreshold = penaltyConfig.InterferenceMillisecondsThreshold;
+            InterferenceOnSamePlayerMillisecondsThreshold = penaltyConfig.InterferenceOnSamePlayerMillisecondsThreshold;
+            JumpHeightMinimum = penaltyConfig.JumpHeightMinimum;
 
             GoalieInterference = penaltyConfig.GoalieInterference;
             GoalieInterferenceTime = penaltyConfig.GoalieInterferenceTime;
@@ -324,12 +354,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             DelayOfGame = penaltyConfig.DelayOfGame;
             DelayOfGameTime = penaltyConfig.DelayOfGameTime;
             DelayOfGameZDelta = penaltyConfig.DelayOfGameZDelta;
+            DelayOfGameMillisecondsThreshold = penaltyConfig.DelayOfGameMillisecondsThreshold;
 
             FaceoffViolation = penaltyConfig.FaceoffViolation;
             FaceoffViolationTime = penaltyConfig.FaceoffViolationTime;
 
             Embellishment = penaltyConfig.Embellishment;
             EmbellishmentTime = penaltyConfig.EmbellishmentTime;
+            EmbellishmentMillisecondsThreshold = penaltyConfig.EmbellishmentMillisecondsThreshold;
         }
         #endregion
 
@@ -344,6 +376,13 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             OldPenaltyConfig _oldConfig = oldConfig as OldPenaltyConfig;
             PenaltyConfig newConfig = new PenaltyConfig();
 
+            if (MaxPenaltiesCountPerPlayer == _oldConfig.MaxPenaltiesCountPerPlayer)
+                MaxPenaltiesCountPerPlayer = newConfig.MaxPenaltiesCountPerPlayer;
+
+            if (MaxPenalizedPlayersPerTeam == _oldConfig.MaxPenalizedPlayersPerTeam)
+                MaxPenalizedPlayersPerTeam = newConfig.MaxPenalizedPlayersPerTeam;
+
+
             if (Interference == _oldConfig.Interference)
                 Interference = newConfig.Interference;
 
@@ -353,11 +392,19 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (InterferenceMillisecondsThreshold == _oldConfig.InterferenceMillisecondsThreshold)
                 InterferenceMillisecondsThreshold = newConfig.InterferenceMillisecondsThreshold;
 
+            if (InterferenceOnSamePlayerMillisecondsThreshold == _oldConfig.InterferenceOnSamePlayerMillisecondsThreshold)
+                InterferenceOnSamePlayerMillisecondsThreshold = newConfig.InterferenceOnSamePlayerMillisecondsThreshold;
+
+            if (JumpHeightMinimum == _oldConfig.JumpHeightMinimum)
+                JumpHeightMinimum = newConfig.JumpHeightMinimum;
+
+
             if (GoalieInterference == _oldConfig.GoalieInterference)
                 GoalieInterference = newConfig.GoalieInterference;
 
             if (GoalieInterferenceTime == _oldConfig.GoalieInterferenceTime)
                 GoalieInterferenceTime = newConfig.GoalieInterferenceTime;
+
 
             if (DelayOfGame == _oldConfig.DelayOfGame)
                 DelayOfGame = newConfig.DelayOfGame;
@@ -368,17 +415,25 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (DelayOfGameZDelta == _oldConfig.DelayOfGameZDelta)
                 DelayOfGameZDelta = newConfig.DelayOfGameZDelta;
 
+            if (DelayOfGameMillisecondsThreshold == _oldConfig.DelayOfGameMillisecondsThreshold)
+                DelayOfGameMillisecondsThreshold = newConfig.DelayOfGameMillisecondsThreshold;
+
+
             if (FaceoffViolation == _oldConfig.FaceoffViolation)
                 FaceoffViolation = newConfig.FaceoffViolation;
 
             if (FaceoffViolationTime == _oldConfig.FaceoffViolationTime)
                 FaceoffViolationTime = newConfig.FaceoffViolationTime;
 
+
             if (Embellishment == _oldConfig.Embellishment)
                 Embellishment = newConfig.Embellishment;
 
             if (EmbellishmentTime == _oldConfig.EmbellishmentTime)
                 EmbellishmentTime = newConfig.EmbellishmentTime;
+
+            if (EmbellishmentMillisecondsThreshold == _oldConfig.EmbellishmentMillisecondsThreshold)
+                EmbellishmentMillisecondsThreshold = newConfig.EmbellishmentMillisecondsThreshold;
         }
     }
 

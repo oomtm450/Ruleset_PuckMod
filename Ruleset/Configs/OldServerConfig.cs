@@ -81,6 +81,15 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     /// </summary>
     public class OldPenaltyConfig : ISubConfig {
         /// <summary>
+        /// Int, max number of penalties given to one player.
+        /// </summary>
+        public int MaxPenaltiesCountPerPlayer { get; } = 2;
+        /// <summary>
+        /// Int, max number of penalized players per team.
+        /// </summary>
+        public int MaxPenalizedPlayersPerTeam { get; } = 2;
+
+        /// <summary>
         /// Bool, true if player interference is enabled.
         /// </summary>
         public bool Interference { get; } = true;
@@ -92,6 +101,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, interference can be called after this number of milliseconds after touching the puck.
         /// </summary>
         public int InterferenceMillisecondsThreshold { get; } = 2000;
+        /// <summary>
+        /// Int, interference can be called after this number of milliseconds after the player hit fell.
+        /// </summary>
+        public int InterferenceOnSamePlayerMillisecondsThreshold { get; } = 5500;
+        /// <summary>
+        /// Float, minimum y for a hit to be considered.
+        /// </summary>
+        public float JumpHeightMinimum { get; } = 0.044f;
 
         /// <summary>
         /// Bool, true if goalie interference is enabled.
@@ -114,6 +131,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, delta of the puck Z direction to use with the delay of game.
         /// </summary>
         public float DelayOfGameZDelta { get; } = 0.0125f;
+        /// <summary>
+        /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds before leaving the stick.
+        /// </summary>
+        public int DelayOfGameMillisecondsThreshold { get; } = 120;
 
         /// <summary>
         /// Bool, true if faceoff violation penalty is enabled.
@@ -132,6 +153,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, time in the box for an embellishment penalty in milliseconds.
         /// </summary>
         public int EmbellishmentTime { get; } = 30000;
+        /// <summary>
+        /// Int, embellishment can be called after this number of milliseconds after the player gets up.
+        /// </summary>
+        public int EmbellishmentMillisecondsThreshold { get; } = 3500;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.

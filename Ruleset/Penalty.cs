@@ -12,9 +12,6 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string REMOVE_ALL_PENALTIES_DATANAME = Constants.MOD_NAME + "removeallpen";
         internal const string REMOVE_PENALTY_DATANAME = Constants.MOD_NAME + "removepen";
 
-        private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2; // TODO : Config.
-        private const int MAX_PENALIZED_PLAYERS = 2; // TODO : Config.
-
         private static readonly Vector3 BLUE_PENALTY_BOX_POSITION = new Vector3(26f, 0.9f, 1.5f); // TODO : Config.
 
         private static readonly Vector3 RED_PENALTY_BOX_POSITION = new Vector3(BLUE_PENALTY_BOX_POSITION.x, BLUE_PENALTY_BOX_POSITION.y, BLUE_PENALTY_BOX_POSITION.z * -1); // TODO : Config.
@@ -108,15 +105,15 @@ namespace oomtm450PuckMod_Ruleset {
                 PenalizedPlayers.Add(penalizedPlayerSteamId, penaltyList);
             }
 
-            if (penaltyList.Count == MAX_SAME_PLAYER_PENALTY_COUNT)
+            if (penaltyList.Count == Ruleset.ServerConfig.Penalty.MaxPenaltiesCountPerPlayer)
                 return false;
 
             DateTime now = DateTime.UtcNow;
             if (!string.IsNullOrEmpty(receivingPlayerSteamId) && PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayer.Team.Value && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000))
                 return false;
 
-            if ((penalizedPlayer.Team.Value == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == MAX_PENALIZED_PLAYERS) ||
-                (penalizedPlayer.Team.Value == PlayerTeam.Red && PenalizedPlayersCountRedTeam == MAX_PENALIZED_PLAYERS) ||
+            if ((penalizedPlayer.Team.Value == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
+                (penalizedPlayer.Team.Value == PlayerTeam.Red && PenalizedPlayersCountRedTeam == Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
                 (teamPlayers.Count(x => !PenalizedPlayers.TryGetValue(x.SteamId.Value.ToString(), out LockList<Penalty> penalties) || penalties.Count == 0) < 2)) {
                 bool unpenalizeOnePlayer = false;
                 if (penalizedPlayer.Team.Value == PlayerTeam.Blue) {
