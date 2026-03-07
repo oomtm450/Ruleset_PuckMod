@@ -1955,6 +1955,75 @@ namespace oomtm450PuckMod_Ruleset {
                 return true;
             }
         }
+
+        /// <summary>
+        /// Class that patches the OnClickTeamBlue method from UITeamSelect.
+        /// </summary>
+        [HarmonyPatch(typeof(UITeamSelect), "OnClickTeamBlue")]
+        public class UITeamSelect_OnClickTeamBlue_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix() {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if (_penaltyTimers.Select(x => x.SteamId).Contains(PlayerManager.Instance.GetLocalPlayer().SteamId.Value.ToString()))
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(UITeamSelect_OnClickTeamBlue_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the OnClickTeamRed method from UITeamSelect.
+        /// </summary>
+        [HarmonyPatch(typeof(UITeamSelect), "OnClickTeamRed")]
+        public class UITeamSelect_OnClickTeamRed_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix() {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if (_penaltyTimers.Select(x => x.SteamId).Contains(PlayerManager.Instance.GetLocalPlayer().SteamId.Value.ToString()))
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(UITeamSelect_OnClickTeamRed_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the OnClickTeamSpectator method from UITeamSelect.
+        /// </summary>
+        [HarmonyPatch(typeof(UITeamSelect), "OnClickTeamSpectator")]
+        public class UITeamSelect_OnClickTeamSpectator_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix() {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if (_penaltyTimers.Select(x => x.SteamId).Contains(PlayerManager.Instance.GetLocalPlayer().SteamId.Value.ToString()))
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(UITeamSelect_OnClickTeamSpectator_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
         #endregion
 
         #region Methods/Functions
