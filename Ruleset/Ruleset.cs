@@ -78,6 +78,12 @@ namespace oomtm450PuckMod_Ruleset {
         });
 
         private static Dictionary<PlayerTeam, Dictionary<string, Quaternion>> POSITION_ROTATION_ON_FACEOFF = null;
+
+        private const string TOGGLE_HIGHSTICK_DATANAME = Constants.MOD_NAME + "togglehs";
+        private const string TOGGLE_ICING_DATANAME = Constants.MOD_NAME + "toggleicing";
+        private const string TOGGLE_DEFERRED_ICING_DATANAME = Constants.MOD_NAME + "toggledeficing";
+        private const string TOGGLE_OFFSIDE_DATANAME = Constants.MOD_NAME + "toggleoff";
+        private const string TOGGLE_GINTERFERENCE_DATANAME = Constants.MOD_NAME + "togglegint";
         #endregion
 
         #region Fields
@@ -1300,6 +1306,33 @@ namespace oomtm450PuckMod_Ruleset {
                             if (string.IsNullOrEmpty(message))
                                 return true;
                             NetworkCommunication.SendData(Constants.MOD_NAME + "refmode", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/togglehighstick")) {
+                            message = message.Replace(@"/togglehighstick", "").ToLower().Replace("blue", "b").Replace("red", "r").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(TOGGLE_HIGHSTICK_DATANAME, message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/toggleoffside")) {
+                            message = message.Replace(@"/toggleoffside", "").ToLower().Replace("blue", "b").Replace("red", "r").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(TOGGLE_OFFSIDE_DATANAME, message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/toggleicing")) {
+                            message = message.Replace(@"/toggleicing", "").ToLower().Replace("blue", "b").Replace("red", "r").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(TOGGLE_ICING_DATANAME, message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/toggledeferredicing")) {
+                            NetworkCommunication.SendData(TOGGLE_DEFERRED_ICING_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/togglegint")) {
+                            message = message.Replace(@"/togglegint", "").ToLower().Replace("blue", "b").Replace("red", "r").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(TOGGLE_GINTERFERENCE_DATANAME, message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                         else if (message.StartsWith(@"/addrefsteamid")) {
                             message = message.Replace(@"/addrefsteamid", "").Trim();
@@ -3102,6 +3135,106 @@ namespace oomtm450PuckMod_Ruleset {
                             PenaltyModule.RemoveOnePenalty(PlayerTeam.Blue);
                         else if (dataStr == "r")
                             PenaltyModule.RemoveOnePenalty(PlayerTeam.Red);
+                        break;
+
+                    case TOGGLE_HIGHSTICK_DATANAME: // SERVER-SIDE : Toggle high stick rule.
+                        Player toggleHsPlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (toggleHsPlayer == null || !toggleHsPlayer)
+                            break;
+
+                        string toggleHsPlayerSteamId = toggleHsPlayer.SteamId.Value.ToString();
+
+                        if (!IsAdmin(toggleHsPlayerSteamId))
+                            break;
+
+                        dataStr = dataStr.Trim();
+                        if (dataStr == "b") {
+                            ServerConfig.HighStick.BlueTeam = !ServerConfig.HighStick.BlueTeam;
+                            if (ServerConfig.HighStick.BlueTeam)
+                                SystemChatMessages.Add("High stick is now enabled for the blue team.");
+                            else
+                                SystemChatMessages.Add("High stick is now disabled for the blue team.");
+                        }
+                        else if (dataStr == "r") {
+                            ServerConfig.HighStick.RedTeam = !ServerConfig.HighStick.RedTeam;
+                            if (ServerConfig.HighStick.RedTeam)
+                                SystemChatMessages.Add("High stick is now enabled for the red team.");
+                            else
+                                SystemChatMessages.Add("High stick is now disabled for the red team.");
+                        }
+                        break;
+
+                    case TOGGLE_OFFSIDE_DATANAME: // SERVER-SIDE : Toggle offside rule.
+                        Player toggleOffPlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (toggleOffPlayer == null || !toggleOffPlayer)
+                            break;
+
+                        string toggleOffPlayerSteamId = toggleOffPlayer.SteamId.Value.ToString();
+
+                        if (!IsAdmin(toggleOffPlayerSteamId))
+                            break;
+
+                        dataStr = dataStr.Trim();
+                        if (dataStr == "b") {
+                            ServerConfig.Offside.BlueTeam = !ServerConfig.Offside.BlueTeam;
+                            if (ServerConfig.Offside.BlueTeam)
+                                SystemChatMessages.Add("Offside is now enabled for the blue team.");
+                            else
+                                SystemChatMessages.Add("Offside is now disabled for the blue team.");
+                        }
+                        else if (dataStr == "r") {
+                            ServerConfig.Offside.RedTeam = !ServerConfig.Offside.RedTeam;
+                            if (ServerConfig.Offside.RedTeam)
+                                SystemChatMessages.Add("Offside is now enabled for the red team.");
+                            else
+                                SystemChatMessages.Add("Offside is now disabled for the red team.");
+                        }
+                        break;
+
+                    case TOGGLE_ICING_DATANAME: // SERVER-SIDE : Toggle icing rule.
+                        Player toggleIcePlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (toggleIcePlayer == null || !toggleIcePlayer)
+                            break;
+
+                        string toggleIcePlayerSteamId = toggleIcePlayer.SteamId.Value.ToString();
+
+                        if (!IsAdmin(toggleIcePlayerSteamId))
+                            break;
+
+                        dataStr = dataStr.Trim();
+                        if (dataStr == "b") {
+                            ServerConfig.Icing.BlueTeam = !ServerConfig.Icing.BlueTeam;
+                            if (ServerConfig.Icing.BlueTeam)
+                                SystemChatMessages.Add("Icing is now enabled for the blue team.");
+                            else
+                                SystemChatMessages.Add("Icing is now disabled for the blue team.");
+                        }
+                        else if (dataStr == "r") {
+                            ServerConfig.Icing.RedTeam = !ServerConfig.Icing.RedTeam;
+                            if (ServerConfig.Icing.RedTeam)
+                                SystemChatMessages.Add("Icing is now enabled for the red team.");
+                            else
+                                SystemChatMessages.Add("Icing is now disabled for the red team.");
+                        }
+                        break;
+
+                    case TOGGLE_DEFERRED_ICING_DATANAME: // SERVER-SIDE : Toggle deferred icing rule.
+                        if (dataStr != "1")
+                            break;
+
+                        Player toggleDefIcePlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (toggleDefIcePlayer == null || !toggleDefIcePlayer)
+                            break;
+
+                        string toggleDefIcePlayerSteamId = toggleDefIcePlayer.SteamId.Value.ToString();
+
+                        if (!IsAdmin(toggleDefIcePlayerSteamId))
+                            break;
+                        ServerConfig.Icing.Deferred = !ServerConfig.Icing.Deferred;
+                        if (ServerConfig.Icing.Deferred)
+                            SystemChatMessages.Add("Deferred icing is now enabled.");
+                        else
+                            SystemChatMessages.Add("Deferred icing is now disabled.");
                         break;
                 }
             }
