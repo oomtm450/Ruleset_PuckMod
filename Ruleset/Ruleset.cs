@@ -3293,7 +3293,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             penaltiesLabel.style.bottom = new Length(3.5f, LengthUnit.Percent);
             if (!blue)
-                penaltiesLabel.style.marginLeft = new Length(91f, LengthUnit.Percent);
+                penaltiesLabel.style.marginLeft = new Length(100f - ClientConfig.RedTeamPenaltyTimerXOffset, LengthUnit.Percent);
         }
 
         private static void PenaltiesLabelTimerCallback(object stateInfo) {
