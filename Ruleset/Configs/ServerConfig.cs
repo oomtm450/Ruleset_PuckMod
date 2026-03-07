@@ -693,7 +693,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, delta used to calculate the high stick maximum frames before activation.
         /// </summary>
-        public float Delta { get; set; } = 18f;
+        public float Delta { get; set; } = 20f;
 
         #region Constructors
         /// <summary>
