@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.0a";
+        private static readonly string MOD_VERSION = "1.0.0b";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -64,6 +64,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.27.1",
             "0.28.0",
             "1.0.0",
+            "1.0.0a",
         });
 
         /// <summary>
@@ -2791,7 +2792,11 @@ namespace oomtm450PuckMod_Ruleset {
                         string[] dataStrSplittedUnpausedPenalties = dataStr.Split(';');
                         foreach (string playerPenaltyTimer in dataStrSplittedUnpausedPenalties) {
                             string[] playerPenaltyTimerSplitted = playerPenaltyTimer.Split('!');
-                            PausableTimer newTimer = new PausableTimer(() => { _penaltyTimers.Remove(_penaltyTimers.First(x => x.SteamId == playerPenaltyTimerSplitted[0] && x.Timer.TimerEnded())); }, long.Parse(playerPenaltyTimerSplitted[1]));
+                            PausableTimer newTimer = new PausableTimer(() => {
+                                _penaltyTimers.Remove(_penaltyTimers.First(x => x.SteamId == playerPenaltyTimerSplitted[0] && x.Timer.TimerEnded()));
+                                if (_penaltyTimers.Count(x => x.SteamId == playerPenaltyTimerSplitted[0]) != 0)
+                                    _penaltyTimers.First().Timer.Start();
+                            }, long.Parse(playerPenaltyTimerSplitted[1]));
                             if (playerPenaltyTimerSplitted[2] == "1")
                                 newTimer.Start();
 
