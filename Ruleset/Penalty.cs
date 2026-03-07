@@ -6,10 +6,12 @@ using System.Linq;
 using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset {
-    // TODO : Add client-side protection for the team/position switching when in penalty.
-    // TODO : Corner doesn't get called for delay of game.
     internal static class PenaltyModule {
         #region Constants
+        internal const string GIVE_PENALTY_DATANAME = Constants.MOD_NAME + "pen";
+        internal const string REMOVE_ALL_PENALTIES_DATANAME = Constants.MOD_NAME + "removeallpen";
+        internal const string REMOVE_PENALTY_DATANAME = Constants.MOD_NAME + "removepen";
+
         private const int MAX_SAME_PLAYER_PENALTY_COUNT = 2; // TODO : Config.
         private const int MAX_PENALIZED_PLAYERS = 2; // TODO : Config.
 
@@ -320,19 +322,21 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        internal static void RemoveOnePenalty(PlayerTeam penalizedPlayerTeam) {
+        internal static bool RemoveOnePenalty(PlayerTeam penalizedPlayerTeam) {
             if (penalizedPlayerTeam == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == 0)
-                return;
+                return false;
 
             if (penalizedPlayerTeam == PlayerTeam.Red && PenalizedPlayersCountRedTeam == 0)
-                return;
+                return false;
 
             Penalty penaltyToRemove = PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayerTeam).OrderBy(x => x.Timer.MillisecondsLeft).FirstOrDefault();
             if (penaltyToRemove == null || penaltyToRemove.Equals(default(Penalty)))
-                return;
+                return false;
 
             penaltyToRemove.Timer.Pause();
             penaltyToRemove.Timer.TimerCallback(null);
+
+            return true;
         }
 
         internal static string FakePlayerPositionForFaceoffByAvailability(string position, PlayerTeam team, List<string> claimedPositions) {

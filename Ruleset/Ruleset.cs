@@ -1324,7 +1324,24 @@ namespace oomtm450PuckMod_Ruleset {
                             if (string.IsNullOrEmpty(message))
                                 return true;
 
-                            NetworkCommunication.SendData(Constants.MOD_NAME + "pen", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            NetworkCommunication.SendData(PenaltyModule.GIVE_PENALTY_DATANAME, message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/removeallpen")) {
+                            NetworkCommunication.SendData(PenaltyModule.REMOVE_ALL_PENALTIES_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/removepen")) {
+                            message = message.Replace(@"/removepen", "").Trim().ToLower();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+
+                            if (message == "b" || message == "blue")
+                                message = "b";
+                            else if (message == "r" || message == "red")
+                                message = "r";
+                            else
+                                return true;
+                            
+                            NetworkCommunication.SendData(PenaltyModule.REMOVE_PENALTY_DATANAME, message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                     }
                 }
@@ -2838,7 +2855,7 @@ namespace oomtm450PuckMod_Ruleset {
                         CallIcing((PlayerTeam)icingTeamInt, icingReferee);
                         break;
 
-                    case "gs" + RefSignals.INTERFERENCE_REF: // SERVER-SIDE : Call a goalie interference stoppage.
+                    case "gs" + RefSignals.INTERFERENCE_REF: // SERVER-SIDE : Call a goalie interference stoppage. // TODO : Constant.
                         if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
                             break;
 
@@ -2857,7 +2874,7 @@ namespace oomtm450PuckMod_Ruleset {
                         CallGoalieInt((PlayerTeam)gIntStoppageTeamInt, gintReferee);
                         break;
 
-                    case Constants.MOD_NAME + "refmode": // SERVER-SIDE : Remove rules to make the server reffable.
+                    case Constants.MOD_NAME + "refmode": // SERVER-SIDE : Remove rules to make the server reffable. // TODO : Constant.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
@@ -2874,18 +2891,18 @@ namespace oomtm450PuckMod_Ruleset {
                             ServerConfig.HighStick.RedTeam = false;
 
                             SystemChatMessages.Add("Ref mode has been enabled.");
-                            Logging.Log($"Ref mode has been enabled.", Ruleset.ServerConfig);
+                            Logging.Log($"Ref mode has been enabled.", ServerConfig);
                         }
                         else if (dataStr == "0") {
                             ServerConfig = new ServerConfig(ServerConfigBackup);
 
                             SystemChatMessages.Add("Ref mode has been disabled.");
-                            Logging.Log($"Ref mode has been disabled.", Ruleset.ServerConfig);
+                            Logging.Log($"Ref mode has been disabled.", ServerConfig);
                         }
 
                         break;
 
-                    case Constants.MOD_NAME + "addrefsteamid": // SERVER-SIDE : Add a ref for a game.
+                    case Constants.MOD_NAME + "addrefsteamid": // SERVER-SIDE : Add a ref for a game. // TODO : Constant.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
@@ -2898,7 +2915,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
-                    case Constants.MOD_NAME + "addpermrefsteamid": // SERVER-SIDE : Add a permanent ref (until server restarts).
+                    case Constants.MOD_NAME + "addpermrefsteamid": // SERVER-SIDE : Add a permanent ref (until server restarts). // TODO : Constant.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
@@ -2912,7 +2929,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
-                    case Constants.MOD_NAME + "removerefsteamid": // SERVER-SIDE : Remove a ref.
+                    case Constants.MOD_NAME + "removerefsteamid": // SERVER-SIDE : Remove a ref. // TODO : Constant.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
@@ -2925,7 +2942,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
-                    case Constants.MOD_NAME + "rule": // SERVER-SIDE : Change rule.
+                    case Constants.MOD_NAME + "rule": // SERVER-SIDE : Change rule. // TODO : Constant.
                         if (!IsAdmin(clientId))
                             return;
 
@@ -2995,7 +3012,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
-                    case Constants.MOD_NAME + "pen": // SERVER-SIDE : Give penalty.
+                    case PenaltyModule.GIVE_PENALTY_DATANAME: // SERVER-SIDE : Give penalty.
                         if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
                             break;
 
@@ -3054,6 +3071,37 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         PenaltyModule.GivePenalty(penaltyType, penPlayer, steamIdReceivingPlayer, gintPenReferee);
+                        break;
+
+                    case PenaltyModule.REMOVE_ALL_PENALTIES_DATANAME: // SERVER-SIDE : Remove all penalties.
+                        Player removeAllPenReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (removeAllPenReferee == null || !removeAllPenReferee)
+                            break;
+
+                        string removeAllPenRefereeSteamId = removeAllPenReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(removeAllPenRefereeSteamId) && !_currentRefsSteamId.Contains(removeAllPenRefereeSteamId))
+                            break;
+
+                        while (PenaltyModule.RemoveOnePenalty(PlayerTeam.Blue));
+                        while (PenaltyModule.RemoveOnePenalty(PlayerTeam.Red));
+                        break;
+
+                    case PenaltyModule.REMOVE_PENALTY_DATANAME: // SERVER-SIDE : Remove one penalty.
+                        Player removePenReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (removePenReferee == null || !removePenReferee)
+                            break;
+
+                        string removePenRefereeSteamId = removePenReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(removePenRefereeSteamId) && !_currentRefsSteamId.Contains(removePenRefereeSteamId))
+                            break;
+
+                        dataStr = dataStr.Trim();
+                        if (dataStr == "b")
+                            PenaltyModule.RemoveOnePenalty(PlayerTeam.Blue);
+                        else if (dataStr == "r")
+                            PenaltyModule.RemoveOnePenalty(PlayerTeam.Red);
                         break;
                 }
             }
