@@ -277,13 +277,14 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static void UnpausePenalties() {
             string penaltyUIMsg = "";
-            foreach (LockList<Penalty> penalties in PenalizedPlayers.Values) {
-                foreach (Penalty penalty in penalties) {
-                    if (penalty.CurrentPenalty)
-                        penalty.Timer.Start();
+            foreach (Penalty penalty in new List<Penalty>(PenalizedPlayers.SelectMany(x => x.Value))) {
+                if (penalty.Timer.TimerEnded())
+                    continue;
 
-                    penaltyUIMsg += $"{(penalty.Team == PlayerTeam.Blue ? "B" : "R")} {penalty.Position} #{penalty.PlayerNumber}!{penalty.Timer.MillisecondsLeft}!{(penalty.CurrentPenalty ? "1" : "0")};";
-                }
+                if (penalty.CurrentPenalty)
+                    penalty.Timer.Start();
+
+                penaltyUIMsg += $"{(penalty.Team == PlayerTeam.Blue ? "B" : "R")} {penalty.Position} #{penalty.PlayerNumber}!{penalty.Timer.MillisecondsLeft}!{(penalty.CurrentPenalty ? "1" : "0")};";
             }
 
             if (string.IsNullOrEmpty(penaltyUIMsg)) {

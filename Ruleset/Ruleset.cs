@@ -2789,7 +2789,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         string[] dataStrSplittedUnpausedPenalties = dataStr.Split(';');
                         foreach (string playerPenaltyTimer in dataStrSplittedUnpausedPenalties) {
-                            string[] playerPenaltyTimerSplitted = dataStr.Split('!');
+                            string[] playerPenaltyTimerSplitted = playerPenaltyTimer.Split('!');
                             PausableTimer newTimer = new PausableTimer(() => { _penaltyTimers.Remove(_penaltyTimers.First(x => x.SteamId == playerPenaltyTimerSplitted[0] && x.Timer.TimerEnded())); }, long.Parse(playerPenaltyTimerSplitted[1]));
                             if (playerPenaltyTimerSplitted[2] == "1")
                                 newTimer.Start();
