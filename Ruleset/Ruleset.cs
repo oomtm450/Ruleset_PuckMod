@@ -2765,7 +2765,7 @@ namespace oomtm450PuckMod_Ruleset {
                         StopRedRefSignals(dataStr);
                         break;
 
-                    case "removeallpen": // CLIENT-SIDE : Pause penalty timers.
+                    case "removeallpen": // CLIENT-SIDE : Remove all penalty timers.
                         if (dataStr != "1")
                             break;
 
