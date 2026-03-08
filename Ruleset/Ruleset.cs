@@ -1478,10 +1478,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 // Delay of game penalty logic or offside.
                 try {
-                    if (ServerConfig.Penalty.DelayOfGame &&
-                        (Math.Abs(puck.Rigidbody.transform.position.x) > PenaltyModule.DELAY_OF_GAME_POSITION.x ||
-                         puck.Rigidbody.transform.position.y < PenaltyModule.DELAY_OF_GAME_POSITION.y) ||
-                         (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION_END_Z)) {
+                    if (ServerConfig.Penalty.DelayOfGame && PenaltyModule.PuckIsOutsideOfBounds(puck)) {
                         bool playerTouched = _playersOnPuckDateTime.TryGetValue(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam], out var lastTouchDateTime);
 
                         Logging.Log("playerTouched : " + playerTouched, ServerConfig, true); // TODO
@@ -3852,6 +3849,25 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             return enumValue.ToString();
+        }
+    }
+
+    public static class Vector3Extensions {
+        /// <summary>
+        /// Determines which side of the line from A to B the point P lies on.
+        /// </summary>
+        /// <param name="P">The point to check.</param>
+        /// <param name="A">Start point of the line.</param>
+        /// <param name="B">End point of the line.</param>
+        /// <returns>
+        /// A positive value if P is to the "left" of the line AB.
+        /// A negative value if P is to the "right" of the line AB.
+        /// Zero if P is collinear with the line AB.
+        /// </returns>
+        public static float GetSideOfLine(this Vector3 P, Vector3 A, Vector3 B) {
+            // The 2D "cross product" (signed area of the triangle formed by A, B, P)
+            // cross = (P.x - A.x) * (B.z - A.z) - (P.z - A.z) * (B.x - A.x);
+            return (P.x - A.x) * (B.z - A.z) - (P.z - A.z) * (B.x - A.x);
         }
     }
 }
