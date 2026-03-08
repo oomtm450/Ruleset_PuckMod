@@ -41,7 +41,7 @@ namespace Codebase {
         /// <param name="player">Player, player to check.</param>
         /// <returns>Bool, is player playing or not.</returns>
         public static bool IsPlayerPlaying(Player player) {
-            return !(!player || player.Role.Value == PlayerRole.None || !player.IsCharacterFullySpawned);
+            return !(!player || player.Role.Value == PlayerRole.None || !player.IsCharacterFullySpawned || (player.Team.Value != PlayerTeam.Red && player.Team.Value != PlayerTeam.Blue));
         }
 
         /// <summary>

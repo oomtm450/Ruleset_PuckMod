@@ -67,7 +67,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; set; } = 91;
+        public int MaxTippedMilliseconds { get; set; } = 50;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
@@ -78,6 +78,40 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
         public int MaxPossessionMilliseconds { get; set; } = 1000;
+
+        /// <summary>
+        /// Bool, authorize ref mode to be voted or activated by an admin.
+        /// </summary>
+        public bool RefMode { get; set; } = true;
+        #endregion
+
+        #region Constructors
+        /// <summary>
+        /// Default constructor of ServerConfig.
+        /// </summary>
+        public ServerConfig() { }
+
+        /// <summary>
+        /// Copy constructor of ServerConfig.
+        /// </summary>
+        /// <param name="serverConfig">ServerConfig, config to copy.</param>
+        public ServerConfig(ServerConfig serverConfig) {
+            LogInfo = serverConfig.LogInfo;
+            ModName = serverConfig.ModName;
+            UseDefaultNumericValues = serverConfig.UseDefaultNumericValues;
+            Faceoff = new FaceoffConfig(serverConfig.Faceoff);
+            Offside = new OffsideConfig(serverConfig.Offside);
+            Icing = new IcingConfig(serverConfig.Icing);
+            HighStick = new HighStickConfig(serverConfig.HighStick);
+            GInt = new GIntConfig(serverConfig.GInt);
+            Penalty = new PenaltyConfig(serverConfig.Penalty);
+
+            MaxTippedMilliseconds = serverConfig.MaxTippedMilliseconds;
+            MinPossessionMilliseconds = serverConfig.MinPossessionMilliseconds;
+            MaxPossessionMilliseconds = serverConfig.MaxPossessionMilliseconds;
+
+            RefMode = serverConfig.RefMode;
+        }
         #endregion
 
         #region Methods/Functions
@@ -103,6 +137,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (MaxPossessionMilliseconds == _oldConfig.MaxPossessionMilliseconds)
                 MaxPossessionMilliseconds = newConfig.MaxPossessionMilliseconds;
+
+            if (RefMode == _oldConfig.RefMode)
+                RefMode = newConfig.RefMode;
 
             Offside.UpdateDefaultValues(_oldConfig.Offside);
             Icing.UpdateDefaultValues(_oldConfig.Icing);
@@ -161,6 +198,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                     ServerConfig defaultConfig = new ServerConfig {
                         LogInfo = config.LogInfo,
                         UseDefaultNumericValues = config.UseDefaultNumericValues,
+                        RefMode = config.RefMode,
                         GInt = new GIntConfig {
                             BlueTeam = config.GInt.BlueTeam,
                             RedTeam = config.GInt.RedTeam,
@@ -179,6 +217,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                             RedTeam = config.HighStick.RedTeam,
                         },
                         Penalty = new PenaltyConfig {
+                            Interference = config.Penalty.Interference,
+                            GoalieInterference = config.Penalty.GoalieInterference,
+                            DelayOfGame = config.Penalty.DelayOfGame,
+                            FaceoffViolation = config.Penalty.FaceoffViolation,
+                            Embellishment = config.Penalty.Embellishment,
                         },
                         Faceoff = new FaceoffConfig {
                             EnableViolations = config.Faceoff.EnableViolations,
@@ -205,10 +248,122 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     /// Class containing the config for penalties.
     /// </summary>
     public class PenaltyConfig : ISubConfig {
+        #region Properties
+        /// <summary>
+        /// Int, max number of penalties given to one player.
+        /// </summary>
+        public int MaxPenaltiesCountPerPlayer { get; set; } = 2;
+        /// <summary>
+        /// Int, max number of penalized players per team.
+        /// </summary>
+        public int MaxPenalizedPlayersPerTeam { get; set; } = 2;
+
+        /// <summary>
+        /// Bool, true if player interference is enabled.
+        /// </summary>
+        public bool Interference { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a player interference penalty in milliseconds.
+        /// </summary>
+        public int InterferenceTime { get; set; } = 45000;
         /// <summary>
         /// Int, interference can be called after this number of milliseconds after touching the puck.
         /// </summary>
         public int InterferenceMillisecondsThreshold { get; set; } = 2000;
+        /// <summary>
+        /// Int, interference can be called after this number of milliseconds after the player hit fell.
+        /// </summary>
+        public int InterferenceOnSamePlayerMillisecondsThreshold { get; set; } = 5500;
+        /// <summary>
+        /// Float, minimum y for a hit to be considered.
+        /// </summary>
+        public float JumpHeightMinimum { get; set; } = 0.044f;
+
+        /// <summary>
+        /// Bool, true if goalie interference is enabled.
+        /// </summary>
+        public bool GoalieInterference { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a goalie interference penalty in milliseconds.
+        /// </summary>
+        public int GoalieInterferenceTime { get; set; } = 45000;
+
+        /// <summary>
+        /// Bool, true if delay of game is enabled and the invisible wall has to be lowered.
+        /// </summary>
+        public bool DelayOfGame { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a delay of game penalty in milliseconds.
+        /// </summary>
+        public int DelayOfGameTime { get; set; } = 45000;
+        /// <summary>
+        /// Float, delta of the puck Z direction to use with the delay of game.
+        /// </summary>
+        public float DelayOfGameZDelta { get; set; } = 0.0125f;
+        /// <summary>
+        /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds before leaving the stick.
+        /// </summary>
+        public int DelayOfGameMillisecondsThreshold { get; set; } = 120;
+
+        /// <summary>
+        /// Bool, true if faceoff violation penalty is enabled.
+        /// </summary>
+        public bool FaceoffViolation { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a faceoff violation penalty in milliseconds.
+        /// </summary>
+        public int FaceoffViolationTime { get; set; } = 30000;
+
+        /// <summary>
+        /// Bool, true if embellishment penalty is enabled.
+        /// </summary>
+        public bool Embellishment { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for an embellishment penalty in milliseconds.
+        /// </summary>
+        public int EmbellishmentTime { get; set; } = 30000;
+        /// <summary>
+        /// Int, embellishment can be called after this number of milliseconds after the player gets up.
+        /// </summary>
+        public int EmbellishmentMillisecondsThreshold { get; set; } = 3500;
+        #endregion
+
+        #region Constructors
+        /// <summary>
+        /// Default constructor of PenaltyConfig.
+        /// </summary>
+        public PenaltyConfig() { }
+
+        /// <summary>
+        /// Copy constructor of PenaltyConfig.
+        /// </summary>
+        /// <param name="penaltyConfig">PenaltyConfig, config to copy.</param>
+        public PenaltyConfig(PenaltyConfig penaltyConfig) {
+            MaxPenaltiesCountPerPlayer = penaltyConfig.MaxPenaltiesCountPerPlayer;
+            MaxPenalizedPlayersPerTeam = penaltyConfig.MaxPenalizedPlayersPerTeam;
+
+            Interference = penaltyConfig.Interference;
+            InterferenceTime = penaltyConfig.InterferenceTime;
+            InterferenceMillisecondsThreshold = penaltyConfig.InterferenceMillisecondsThreshold;
+            InterferenceOnSamePlayerMillisecondsThreshold = penaltyConfig.InterferenceOnSamePlayerMillisecondsThreshold;
+            JumpHeightMinimum = penaltyConfig.JumpHeightMinimum;
+
+            GoalieInterference = penaltyConfig.GoalieInterference;
+            GoalieInterferenceTime = penaltyConfig.GoalieInterferenceTime;
+
+            DelayOfGame = penaltyConfig.DelayOfGame;
+            DelayOfGameTime = penaltyConfig.DelayOfGameTime;
+            DelayOfGameZDelta = penaltyConfig.DelayOfGameZDelta;
+            DelayOfGameMillisecondsThreshold = penaltyConfig.DelayOfGameMillisecondsThreshold;
+
+            FaceoffViolation = penaltyConfig.FaceoffViolation;
+            FaceoffViolationTime = penaltyConfig.FaceoffViolationTime;
+
+            Embellishment = penaltyConfig.Embellishment;
+            EmbellishmentTime = penaltyConfig.EmbellishmentTime;
+            EmbellishmentMillisecondsThreshold = penaltyConfig.EmbellishmentMillisecondsThreshold;
+        }
+        #endregion
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -221,8 +376,64 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             OldPenaltyConfig _oldConfig = oldConfig as OldPenaltyConfig;
             PenaltyConfig newConfig = new PenaltyConfig();
 
+            if (MaxPenaltiesCountPerPlayer == _oldConfig.MaxPenaltiesCountPerPlayer)
+                MaxPenaltiesCountPerPlayer = newConfig.MaxPenaltiesCountPerPlayer;
+
+            if (MaxPenalizedPlayersPerTeam == _oldConfig.MaxPenalizedPlayersPerTeam)
+                MaxPenalizedPlayersPerTeam = newConfig.MaxPenalizedPlayersPerTeam;
+
+
+            if (Interference == _oldConfig.Interference)
+                Interference = newConfig.Interference;
+
+            if (InterferenceTime == _oldConfig.InterferenceTime)
+                InterferenceTime = newConfig.InterferenceTime;
+
             if (InterferenceMillisecondsThreshold == _oldConfig.InterferenceMillisecondsThreshold)
                 InterferenceMillisecondsThreshold = newConfig.InterferenceMillisecondsThreshold;
+
+            if (InterferenceOnSamePlayerMillisecondsThreshold == _oldConfig.InterferenceOnSamePlayerMillisecondsThreshold)
+                InterferenceOnSamePlayerMillisecondsThreshold = newConfig.InterferenceOnSamePlayerMillisecondsThreshold;
+
+            if (JumpHeightMinimum == _oldConfig.JumpHeightMinimum)
+                JumpHeightMinimum = newConfig.JumpHeightMinimum;
+
+
+            if (GoalieInterference == _oldConfig.GoalieInterference)
+                GoalieInterference = newConfig.GoalieInterference;
+
+            if (GoalieInterferenceTime == _oldConfig.GoalieInterferenceTime)
+                GoalieInterferenceTime = newConfig.GoalieInterferenceTime;
+
+
+            if (DelayOfGame == _oldConfig.DelayOfGame)
+                DelayOfGame = newConfig.DelayOfGame;
+
+            if (DelayOfGameTime == _oldConfig.DelayOfGameTime)
+                DelayOfGameTime = newConfig.DelayOfGameTime;
+
+            if (DelayOfGameZDelta == _oldConfig.DelayOfGameZDelta)
+                DelayOfGameZDelta = newConfig.DelayOfGameZDelta;
+
+            if (DelayOfGameMillisecondsThreshold == _oldConfig.DelayOfGameMillisecondsThreshold)
+                DelayOfGameMillisecondsThreshold = newConfig.DelayOfGameMillisecondsThreshold;
+
+
+            if (FaceoffViolation == _oldConfig.FaceoffViolation)
+                FaceoffViolation = newConfig.FaceoffViolation;
+
+            if (FaceoffViolationTime == _oldConfig.FaceoffViolationTime)
+                FaceoffViolationTime = newConfig.FaceoffViolationTime;
+
+
+            if (Embellishment == _oldConfig.Embellishment)
+                Embellishment = newConfig.Embellishment;
+
+            if (EmbellishmentTime == _oldConfig.EmbellishmentTime)
+                EmbellishmentTime = newConfig.EmbellishmentTime;
+
+            if (EmbellishmentMillisecondsThreshold == _oldConfig.EmbellishmentMillisecondsThreshold)
+                EmbellishmentMillisecondsThreshold = newConfig.EmbellishmentMillisecondsThreshold;
         }
     }
 
@@ -239,6 +450,22 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if red team offsides are activated.
         /// </summary>
         public bool RedTeam { get; set; } = true;
+
+        #region Constructors
+        /// <summary>
+        /// Default constructor of OffsideConfig.
+        /// </summary>
+        public OffsideConfig() { }
+
+        /// <summary>
+        /// Copy constructor of OffsideConfig.
+        /// </summary>
+        /// <param name="offsideConfig">OffsideConfig, config to copy.</param>
+        public OffsideConfig(OffsideConfig offsideConfig) {
+            BlueTeam = offsideConfig.BlueTeam;
+            RedTeam = offsideConfig.RedTeam;
+        }
+        #endregion
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -345,6 +572,37 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         public int StaminaDrainDivisionAmountPenaltyTime { get; set; } = 21;
 
+        #region Constructors
+        /// <summary>
+        /// Default constructor of IcingConfig.
+        /// </summary>
+        public IcingConfig() { }
+
+        /// <summary>
+        /// Copy constructor of IcingConfig.
+        /// </summary>
+        /// <param name="icingConfig">IcingConfig, config to copy.</param>
+        public IcingConfig(IcingConfig icingConfig) {
+            BlueTeam = icingConfig.BlueTeam;
+            RedTeam = icingConfig.RedTeam;
+
+            Deferred = icingConfig.Deferred;
+            DeferredMaxPossibleTimeMultiplicator = icingConfig.DeferredMaxPossibleTimeMultiplicator;
+            DeferredMaxPossibleTimeAddition = icingConfig.DeferredMaxPossibleTimeAddition;
+            DeferredMaxPossibleTimeDistanceDelta = icingConfig.DeferredMaxPossibleTimeDistanceDelta;
+            MaxPossibleTime = new Dictionary<Zone, float>(icingConfig.MaxPossibleTime);
+            MaxActiveTime = icingConfig.MaxActiveTime;
+            Delta = icingConfig.Delta;
+            DeferredMaxHeight = icingConfig.DeferredMaxHeight;
+
+            StaminaDrain = icingConfig.StaminaDrain;
+            StaminaDrainGoalie = icingConfig.StaminaDrainGoalie;
+            StaminaDrainDivisionAmount = icingConfig.StaminaDrainDivisionAmount;
+            StaminaDrainDivisionAmountPenaltyDelta = icingConfig.StaminaDrainDivisionAmountPenaltyDelta;
+            StaminaDrainDivisionAmountPenaltyTime = icingConfig.StaminaDrainDivisionAmountPenaltyTime;
+        }
+        #endregion
+
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
         /// </summary>
@@ -425,7 +683,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
         /// </summary>
-        public float MaxHeight { get; set; } = Codebase.Constants.CROSSBAR_HEIGHT;
+        public float MaxHeight { get; set; } = Codebase.Constants.CROSSBAR_HEIGHT + 0.05f;
 
         /// <summary>
         /// Int, number of milliseconds after a high stick to call high stick if no one touches the puck.
@@ -435,7 +693,27 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, delta used to calculate the high stick maximum frames before activation.
         /// </summary>
-        public float Delta { get; set; } = 17f;
+        public float Delta { get; set; } = 20f;
+
+        #region Constructors
+        /// <summary>
+        /// Default constructor of HighStickConfig.
+        /// </summary>
+        public HighStickConfig() { }
+
+        /// <summary>
+        /// Copy constructor of HighStickConfig.
+        /// </summary>
+        /// <param name="highStickConfig">HighStickConfig, config to copy.</param>
+        public HighStickConfig(HighStickConfig highStickConfig) {
+            BlueTeam = highStickConfig.BlueTeam;
+            RedTeam = highStickConfig.RedTeam;
+
+            MaxHeight = highStickConfig.MaxHeight;
+            MaxMilliseconds = highStickConfig.MaxMilliseconds;
+            Delta = highStickConfig.Delta;
+        }
+        #endregion
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -485,11 +763,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public int PushNoGoalMilliseconds { get; set; } = 3750;
 
         /// <summary>
-        /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
-        /// </summary>
-        public int HitNoGoalMilliseconds { get; set; } = 11000; // TODO : Remove when penalty is added.
-
-        /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
         public float CollisionForceThreshold { get; set; } = 0.97f;
@@ -498,6 +771,26 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
         public float GoalieRadius { get; set; } = 0.805f;
+
+        #region Constructors
+        /// <summary>
+        /// Default constructor of GIntConfig.
+        /// </summary>
+        public GIntConfig() { }
+
+        /// <summary>
+        /// Copy constructor of GIntConfig.
+        /// </summary>
+        /// <param name="gIntConfig">GIntConfig, config to copy.</param>
+        public GIntConfig(GIntConfig gIntConfig) {
+            BlueTeam = gIntConfig.BlueTeam;
+            RedTeam = gIntConfig.RedTeam;
+
+            PushNoGoalMilliseconds = gIntConfig.PushNoGoalMilliseconds;
+            CollisionForceThreshold = gIntConfig.CollisionForceThreshold;
+            GoalieRadius = gIntConfig.GoalieRadius;
+        }
+        #endregion
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -518,9 +811,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (PushNoGoalMilliseconds == _oldConfig.PushNoGoalMilliseconds)
                 PushNoGoalMilliseconds = newConfig.PushNoGoalMilliseconds;
-
-            if (HitNoGoalMilliseconds == _oldConfig.HitNoGoalMilliseconds)
-                HitNoGoalMilliseconds = newConfig.HitNoGoalMilliseconds;
 
             if (CollisionForceThreshold == _oldConfig.CollisionForceThreshold)
                 CollisionForceThreshold = newConfig.CollisionForceThreshold;
@@ -613,6 +903,52 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float GoalieMaxBackward { get; set; } = 2f;    // Backward wall
         public float GoalieMaxLeft { get; set; } = 2f;
         public float GoalieMaxRight { get; set; } = 2f;
+
+        #region Constructors
+        /// <summary>
+        /// Default constructor of ServerConfig.
+        /// </summary>
+        public FaceoffConfig() { }
+
+        /// <summary>
+        /// Copy constructor of ServerConfig.
+        /// </summary>
+        /// <param name="faceoffConfig">FaceoffConfig, config to copy.</param>
+        public FaceoffConfig(FaceoffConfig faceoffConfig) {
+            UseCustomFaceoff = faceoffConfig.UseCustomFaceoff;
+            ReAdd1SecondAfterFaceoff = faceoffConfig.ReAdd1SecondAfterFaceoff;
+            UseDefaultPuckDropHeight = faceoffConfig.UseDefaultPuckDropHeight;
+            PuckDropHeight = faceoffConfig.PuckDropHeight;
+
+            EnableViolations = faceoffConfig.EnableViolations;
+            PuckIceContactHeight = faceoffConfig.PuckIceContactHeight;
+            MaxViolationsBeforePenalty = faceoffConfig.MaxViolationsBeforePenalty;
+            PenaltyFreezeDistance = faceoffConfig.PenaltyFreezeDistance;
+            PenaltyFreezeDuration = faceoffConfig.PenaltyFreezeDuration;
+            FreezePlayersBeforeDrop = faceoffConfig.FreezePlayersBeforeDrop;
+            FreezeBeforeDropTime = faceoffConfig.FreezeBeforeDropTime;
+
+            CenterMaxForward = faceoffConfig.CenterMaxForward;
+            CenterMaxBackward = faceoffConfig.CenterMaxBackward;
+            CenterMaxLeft = faceoffConfig.CenterMaxLeft;
+            CenterMaxRight = faceoffConfig.CenterMaxRight;
+
+            WingerMaxForward = faceoffConfig.WingerMaxForward;
+            WingerMaxBackward = faceoffConfig.WingerMaxBackward;
+            WingerMaxToward = faceoffConfig.WingerMaxToward;
+            WingerMaxAway = faceoffConfig.WingerMaxAway;
+
+            DefenseMaxForward = faceoffConfig.DefenseMaxForward;
+            DefenseMaxBackward = faceoffConfig.DefenseMaxBackward;
+            DefenseMaxToward = faceoffConfig.DefenseMaxToward;
+            DefenseMaxAway = faceoffConfig.DefenseMaxAway;
+
+            GoalieMaxForward = faceoffConfig.GoalieMaxForward;
+            GoalieMaxBackward = faceoffConfig.GoalieMaxBackward;
+            GoalieMaxLeft = faceoffConfig.GoalieMaxLeft;
+            GoalieMaxRight = faceoffConfig.GoalieMaxRight;
+        }
+        #endregion
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.

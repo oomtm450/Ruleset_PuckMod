@@ -46,17 +46,22 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; } = 91;
+        public int MaxTippedMilliseconds { get; } = 91; // TODO : Change after release.
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; } = 300; // TODO : Change after release.
+        public int MinPossessionMilliseconds { get; } = 450;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; } = 700;  // TODO : Change after release.
+        public int MaxPossessionMilliseconds { get; } = 1000;
+
+        /// <summary>
+        /// Bool, authorize ref mode to be voted or activated by an admin.
+        /// </summary>
+        public bool RefMode { get; } = true;
         #endregion
 
         #region Methods/Functions
@@ -76,9 +81,82 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     /// </summary>
     public class OldPenaltyConfig : ISubConfig {
         /// <summary>
+        /// Int, max number of penalties given to one player.
+        /// </summary>
+        public int MaxPenaltiesCountPerPlayer { get; } = 2;
+        /// <summary>
+        /// Int, max number of penalized players per team.
+        /// </summary>
+        public int MaxPenalizedPlayersPerTeam { get; } = 2;
+
+        /// <summary>
+        /// Bool, true if player interference is enabled.
+        /// </summary>
+        public bool Interference { get; } = true;
+        /// <summary>
+        /// Int, time in the box for a player interference penalty in milliseconds.
+        /// </summary>
+        public int InterferenceTime { get; } = 45000;
+        /// <summary>
         /// Int, interference can be called after this number of milliseconds after touching the puck.
         /// </summary>
         public int InterferenceMillisecondsThreshold { get; } = 2000;
+        /// <summary>
+        /// Int, interference can be called after this number of milliseconds after the player hit fell.
+        /// </summary>
+        public int InterferenceOnSamePlayerMillisecondsThreshold { get; } = 5500;
+        /// <summary>
+        /// Float, minimum y for a hit to be considered.
+        /// </summary>
+        public float JumpHeightMinimum { get; } = 0.044f;
+
+        /// <summary>
+        /// Bool, true if goalie interference is enabled.
+        /// </summary>
+        public bool GoalieInterference { get; } = true;
+        /// <summary>
+        /// Int, time in the box for a goalie interference penalty in milliseconds.
+        /// </summary>
+        public int GoalieInterferenceTime { get; } = 45000;
+
+        /// <summary>
+        /// Bool, true if delay of game is enabled and the invisible wall has to be lowered.
+        /// </summary>
+        public bool DelayOfGame { get; } = true;
+        /// <summary>
+        /// Int, time in the box for a delay of game penalty in milliseconds.
+        /// </summary>
+        public int DelayOfGameTime { get; } = 45000;
+        /// <summary>
+        /// Float, delta of the puck Z direction to use with the delay of game.
+        /// </summary>
+        public float DelayOfGameZDelta { get; } = 0.0125f;
+        /// <summary>
+        /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds before leaving the stick.
+        /// </summary>
+        public int DelayOfGameMillisecondsThreshold { get; } = 120;
+
+        /// <summary>
+        /// Bool, true if faceoff violation penalty is enabled.
+        /// </summary>
+        public bool FaceoffViolation { get; } = true;
+        /// <summary>
+        /// Int, time in the box for a faceoff violation penalty in milliseconds.
+        /// </summary>
+        public int FaceoffViolationTime { get; } = 30000;
+
+        /// <summary>
+        /// Bool, true if embellishment penalty is enabled.
+        /// </summary>
+        public bool Embellishment { get; } = true;
+        /// <summary>
+        /// Int, time in the box for an embellishment penalty in milliseconds.
+        /// </summary>
+        public int EmbellishmentTime { get; } = 30000;
+        /// <summary>
+        /// Int, embellishment can be called after this number of milliseconds after the player gets up.
+        /// </summary>
+        public int EmbellishmentMillisecondsThreshold { get; } = 3500;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -188,7 +266,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, amount to divide the stamina by for the team causing the icing if StaminaDrain is on.
         /// </summary>
-        public float StaminaDrainDivisionAmount { get; } = 2f; // TODO : Change after release.
+        public float StaminaDrainDivisionAmount { get; } = 2.5f;
 
         /// <summary>
         /// Float, amount to remove from StaminaDrainDivisionAmount when applying additional stamina drain penalties.
@@ -198,7 +276,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, time between 2 icings to apply additional stamina drain penalties.
         /// </summary>
-        public int StaminaDrainDivisionAmountPenaltyTime { get; } = 16; // TODO : Change after release.
+        public int StaminaDrainDivisionAmountPenaltyTime { get; } = 21;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -266,22 +344,17 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after a push on the goalie to be considered no goal.
         /// </summary>
-        public int PushNoGoalMilliseconds { get; } = 3500; // TODO : Change after release.
-
-        /// <summary>
-        /// Int, number of milliseconds after a hit on the goalie to be considered no goal.
-        /// </summary>
-        public int HitNoGoalMilliseconds { get; } = 11000;
+        public int PushNoGoalMilliseconds { get; } = 3750;
 
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
-        public float CollisionForceThreshold { get; } = 0.971f; // TODO : Change after release.
+        public float CollisionForceThreshold { get; } = 0.97f;
 
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
-        public float GoalieRadius { get; } = 0.8f; // TODO : Change after release.
+        public float GoalieRadius { get; } = 0.805f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.

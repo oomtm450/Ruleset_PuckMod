@@ -9,6 +9,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     /// Class containing the configuration from oomtm450_ruleset_clientconfig.json used for this mod.
     /// </summary>
     public class ClientConfig : IConfig {
+        private const float RED_TEAM_PENALTY_TIMER_X_OFFSET_DEFAULT = 9f;
         /// <summary>
         /// Bool, true if the info logs must be printed.
         /// </summary>
@@ -29,6 +30,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, scale of the 2D refs from 0.0 to 2.0 for the music.
         /// </summary>
         public float TwoDRefsScale { get; set; } = 1.0f;
+
+        /// <summary>
+        /// Float, X offset for the penalty timer UI of the red team.
+        /// </summary>
+        public float RedTeamPenaltyTimerXOffset { get; set; } = RED_TEAM_PENALTY_TIMER_X_OFFSET_DEFAULT;
 
         /// <summary>
         /// String, full path for the config file.
@@ -67,6 +73,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                     config = SetConfig(configFileContent);
                     Logging.Log($"Client config read.", config, true);
                 }
+
+                if (config.RedTeamPenaltyTimerXOffset < RED_TEAM_PENALTY_TIMER_X_OFFSET_DEFAULT)
+                    config.RedTeamPenaltyTimerXOffset = RED_TEAM_PENALTY_TIMER_X_OFFSET_DEFAULT;
+                else if (config.RedTeamPenaltyTimerXOffset > 100f)
+                    config.RedTeamPenaltyTimerXOffset = 100f;
 
                 config.Save();
             }

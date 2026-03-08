@@ -17,6 +17,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
 
 namespace oomtm450PuckMod_Ruleset {
     /// <summary>
@@ -27,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.28.0";
+        private static readonly string MOD_VERSION = "1.0.0b";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -61,6 +62,9 @@ namespace oomtm450PuckMod_Ruleset {
             "0.26.4",
             "0.27.0",
             "0.27.1",
+            "0.28.0",
+            "1.0.0",
+            "1.0.0a",
         });
 
         /// <summary>
@@ -74,6 +78,14 @@ namespace oomtm450PuckMod_Ruleset {
             RefSignals.STOP_SIGNAL_RED,
             RefSignals.STOP_SIGNAL,
         });
+
+        private static Dictionary<PlayerTeam, Dictionary<string, Quaternion>> POSITION_ROTATION_ON_FACEOFF = null;
+
+        private const string TOGGLE_HIGHSTICK_DATANAME = Constants.MOD_NAME + "togglehs";
+        private const string TOGGLE_ICING_DATANAME = Constants.MOD_NAME + "toggleicing";
+        private const string TOGGLE_DEFERRED_ICING_DATANAME = Constants.MOD_NAME + "toggledeficing";
+        private const string TOGGLE_OFFSIDE_DATANAME = Constants.MOD_NAME + "toggleoff";
+        private const string TOGGLE_GINTERFERENCE_DATANAME = Constants.MOD_NAME + "togglegint";
         #endregion
 
         #region Fields
@@ -86,6 +98,11 @@ namespace oomtm450PuckMod_Ruleset {
         /// Bool, true if the mod has been patched in.
         /// </summary>
         private static bool _harmonyPatched = false;
+
+        /// <summary>
+        /// Bool, true if glass barriers have been lowered.
+        /// </summary>
+        private static bool _barriersLowered = false;
 
         /// <summary>
         /// LockList of PlayerIcing, positions of the players on the ice for icing logic.
@@ -160,6 +177,7 @@ namespace oomtm450PuckMod_Ruleset {
             { Rule.Icing, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
             { Rule.HighStick, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
             { Rule.GoalieInt, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
+            { Rule.DelayOfGame, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
         };
 
         /// <summary>
@@ -225,19 +243,21 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static readonly LockDictionary<string, (PlayerTeam Team, DateTime LastTouchDateTime)> _playersOnPuckTipIncludedDateTime = new LockDictionary<string, (PlayerTeam, DateTime)>();
 
-        private static readonly LockDictionary<PlayerTeam, bool> _lastGoalieStateCollision = new LockDictionary<PlayerTeam, bool> {
-            { PlayerTeam.Blue, false },
-            { PlayerTeam.Red, false },
-        };
+        /// <summary>
+        /// LockDictionary of string and (PlayerTeam and DateTime), dictionary of all DateTime of every player last puck touch, without tip.
+        /// </summary>
+        private static readonly LockDictionary<string, (PlayerTeam Team, DateTime LastTouchDateTime)> _playersOnPuckDateTime = new LockDictionary<string, (PlayerTeam, DateTime)>();
+
+        private static DateTime _puckDeflectedDateTimeSinceLastTouch = DateTime.MinValue;
 
         /// <summary>
         /// LockDictionary of string and DateTime, steamId of a player that dived and when he's supposed to get up.
         /// </summary>
         private static readonly LockDictionary<string, DateTime> _dives = new LockDictionary<string, DateTime>();
 
-        private static float _lastForceOnGoalie = 0;
+        private static float _lastForceOnPlayer = 0;
 
-        private static string _lastForceOnGoaliePlayerSteamId = "";
+        private static string _lastForceOnPlayerPlayerSteamId = "";
 
         /// <summary>
         /// Bool, true if there's a pause in play.
@@ -274,7 +294,27 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static FaceOffPuckValidator _puckValidator = null;
 
+        private static readonly LockList<string> _currentRefsSteamId = new LockList<string>();
+
+        private static readonly LockList<string> _permaRefsSteamId = new LockList<string>();
+
+        private static Vector3 _puckLastCoordinate = Vector3.zero;
+
+        private static float _puckZCoordinateDifference = 0;
+
+        private static readonly LockDictionary<string, bool> _playersHasBlockedFromChangingTeams = new LockDictionary<string, bool>();
+
+        private static readonly LockDictionary<string, DateTime> _playersLastSlipDateTime = new LockDictionary<string, DateTime>();
+
         // Client-side.
+        private static Label _penaltiesLabelBlue = null;
+
+        private static Label _penaltiesLabelRed = null;
+
+        private static readonly LockList<(string SteamId, PausableTimer Timer)> _penaltyTimers = new LockList<(string SteamId, PausableTimer Timer)>();
+
+        private static Timer _penaltiesLabelTimer = null;
+
         private static RefSignals _refSignalsBlueTeam = null;
 
         private static RefSignals _refSignalsRedTeam = null;
@@ -303,15 +343,18 @@ namespace oomtm450PuckMod_Ruleset {
         /// Int, number of time client asked the server for startup data.
         /// </summary>
         private static int _askServerForStartupDataCount = 0;
-
-        // Barrier collider, position 0 -19 0 is realistic.
         #endregion
 
         #region Properties
         /// <summary>
-        /// ServerConfig, config set and sent by the server.
+        /// ServerConfig, config set by the server.
         /// </summary>
         internal static ServerConfig ServerConfig { get; set; } = new ServerConfig();
+
+        /// <summary>
+        /// ServerConfig, backup of the server config.
+        /// </summary>
+        internal static ServerConfig ServerConfigBackup { get; set; } = new ServerConfig();
 
         /// <summary>
         /// ClientConfig, config set by the client.
@@ -468,19 +511,17 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // High stick logic.
-                    Puck puck = PuckManager.Instance.GetPuck();
-                    if (puck) {
-                        if (puck.IsGrounded) {
-                            if (IsHighStick(stick.Player.Team.Value)) {
-                                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, _puckLastStateBeforeCall[Rule.HighStick]);
+                    if (IsHighStick(stick.Player.Team.Value)) {
+                        Puck puck = PuckManager.Instance.GetPuck();
+                        if (puck && puck.Rigidbody.transform.position.y < PuckRadius) {
+                            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, Rule.HighStick, _puckLastStateBeforeCall[Rule.HighStick]);
 
-                                _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
-                                highStickTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                            _isHighStickActiveTimers.TryGetValue(stick.Player.Team.Value, out Timer highStickTimer);
+                            highStickTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
-                                SendChat(Rule.HighStick, stick.Player.Team.Value, true);
-                                _lastStoppageReason = Rule.HighStick;
-                                DoFaceoff(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_REF);
-                            }
+                            SendChat(Rule.HighStick, stick.Player.Team.Value, true);
+                            _lastStoppageReason = Rule.HighStick;
+                            DoFaceoff(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_REF);
                         }
                     }
 
@@ -492,7 +533,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in Puck_OnCollisionEnter_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(Puck_OnCollisionEnter_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -503,23 +544,27 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(Puck), "OnCollisionStay")]
         public class Puck_OnCollisionStay_Patch {
             [HarmonyPostfix]
-            public static void Postfix(Collision collision) {
+            public static void Postfix(Puck __instance, Collision collision) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing || !Logic)
                         return;
 
+                    DateTime now = DateTime.UtcNow;
+                    _puckDeflectedDateTimeSinceLastTouch = now;
+
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
                         PlayerBodyV2 playerBody = SystemFunc.GetPlayerBodyV2(collision.gameObject);
-                        if (!playerBody || !playerBody.Player)
+                        if (!playerBody || !playerBody.Player || playerBody.Player.Team.Value == PlayerTeam.None)
                             return;
 
                         string playerBodySteamId = playerBody.Player.SteamId.Value.ToString();
 
                         _lastPlayerOnPuckTeamTipIncluded = playerBody.Player.Team.Value;
                         _lastPlayerOnPuckTipIncludedSteamId[playerBody.Player.Team.Value] = playerBodySteamId;
-                        _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerBodySteamId, (playerBody.Player.Team.Value, DateTime.UtcNow));
+
+                        _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerBodySteamId, (playerBody.Player.Team.Value, now));
 
                         return;
                     }
@@ -538,52 +583,56 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!_noHighStickFrames.TryGetValue(playerSteamId, out int _))
                         _noHighStickFrames.Add(playerSteamId, int.MaxValue);
 
-                    Puck puck = PuckManager.Instance.GetPuck();
-                    if (puck && puck.Rigidbody.transform.position.y <= ServerConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y)
+                    if (__instance && __instance.Rigidbody.transform.position.y <= ServerConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y)
                         _noHighStickFrames[playerSteamId] = 0;
 
                     var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
 
-                    if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled)) {
-                        _lastPlayerOnPuckTeam = stick.Player.Team.Value;
-                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
-                            ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
-                        _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = playerSteamId;
+                    if (__instance) {
+                        if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
+                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight) || _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == playerSteamId) {
+                            _lastPlayerOnPuckTeam = stick.Player.Team.Value;
+                            if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
+                                ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
 
-                        if (puck)
-                            _puckLastStateBeforeCall[Rule.GoalieInt] = _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
+                            _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = playerSteamId;
+                            _playersOnPuckDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, now));
+
+                            _puckLastStateBeforeCall[Rule.Offside] = (__instance.Rigidbody.transform.position, _puckZone);
+                        }
+
+                        _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.GoalieInt] = (__instance.Rigidbody.transform.position, _puckZone);
                     }
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = playerSteamId;
-                    _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, DateTime.UtcNow));
+                    _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, now));
+
+                    //if (PenaltyModule.PenaltyToBeCalled.Any(x => x.Value)) {
+                        //string possessionPlayer = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch);
+
+                        //if (possessionPlayer != null && possessionPlayer) {
+                            if (PenaltyModule.PenaltyToBeCalled[stick.Player.Team.Value]) {
+                                CallPenalty(stick.Player.Team.Value);
+                                return;
+                            }
+                        //}
+                    //}
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(stick.Player.Team.Value);
                     // Offside logic.
                     List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
                     if (IsOffside(stick.Player.Team.Value) && (_puckZone == otherTeamZones[0] || _puckZone == otherTeamZones[1])) {
-                        NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team.Value, false, puckLastStateBeforeCallOffside);
-                        SendChat(Rule.Offside, stick.Player.Team.Value, true);
-                        _lastStoppageReason = Rule.Offside;
-                        DoFaceoff();
+                        var temp = _puckLastStateBeforeCall[Rule.Offside];
+                        _puckLastStateBeforeCall[Rule.Offside] = puckLastStateBeforeCallOffside;
+                        CallOffside(stick.Player.Team.Value);
+                        _puckLastStateBeforeCall[Rule.Offside] = temp;
                     }
 
                     // Icing logic.
                     if (IsIcing(otherTeam)) {
-                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player)) {
-                            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
-                            SendChat(Rule.Icing, otherTeam, true);
-
-                            int remainingPlayTime = GameManager.Instance.GameState.Value.Time;
-                            if (_lastStoppageReason == Rule.Icing && _lastIcing[stick.Player.Team.Value] > _lastIcing[otherTeam] && _lastIcing[otherTeam] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
-                                _icingStaminaDrainPenaltyAmount[otherTeam] += 1;
-                            else
-                                _icingStaminaDrainPenaltyAmount[otherTeam] = 0;
-
-                            _lastStoppageReason = Rule.Icing;
-                            _lastIcing[otherTeam] = remainingPlayTime;
-                            DoFaceoff();
-                        }
+                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
+                            CallIcing(otherTeam);
                         else {
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, otherTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send stop icing signal for client-side UI.
                             SendChat(Rule.Icing, otherTeam, true, true);
@@ -599,7 +648,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in Puck_OnCollisionStay_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(Puck_OnCollisionStay_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -616,14 +665,15 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Playing || !Logic)
                         return;
 
+                    DateTime now = DateTime.UtcNow;
+                    _puckDeflectedDateTimeSinceLastTouch = now;
+
                     //if (!__instance.IsTouchingStick)
                         //return;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick)
                         return;
-
-                    Puck puck = PuckManager.Instance.GetPuck();
 
                     _puckZoneLastTouched = _puckZone;
 
@@ -637,19 +687,25 @@ namespace oomtm450PuckMod_Ruleset {
 
                     lastTimeCollisionWatch.Restart();
 
-                    if (!PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled)) {
-                        _lastPlayerOnPuckTeam = stick.Player.Team.Value;
-                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
-                            ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
-                        _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
+                    if (__instance) {
+                        if (!PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
+                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight) || _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId) {
+                            _lastPlayerOnPuckTeam = stick.Player.Team.Value;
+                            if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
+                                ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
 
-                        if (puck)
-                            _puckLastStateBeforeCall[Rule.GoalieInt] = _puckLastStateBeforeCall[Rule.Offside] = (puck.Rigidbody.transform.position, _puckZone);
+                            _lastPlayerOnPuckSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
+                            _playersOnPuckDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team.Value, now));
+
+                            _puckLastStateBeforeCall[Rule.Offside] = (__instance.Rigidbody.transform.position, _puckZone);
+                        }
+
+                        _puckLastStateBeforeCall[Rule.DelayOfGame] = _puckLastStateBeforeCall[Rule.GoalieInt] = (__instance.Rigidbody.transform.position, _puckZone);
                     }
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team.Value;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = currentPlayerSteamId;
-                    _playersOnPuckTipIncludedDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team.Value, DateTime.UtcNow));
+                    _playersOnPuckTipIncludedDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team.Value, now));
 
                     // Icing logic.
                     bool icingPossible = false;
@@ -665,10 +721,10 @@ namespace oomtm450PuckMod_Ruleset {
                         _isIcingPossible[stick.Player.Team.Value] = new IcingObject();
 
                     // High stick logic.
-                    if (IsHighStickEnabled(stick.Player.Team.Value) && puck &&
+                    if (IsHighStickEnabled(stick.Player.Team.Value) && __instance &&
                         !Codebase.PlayerFunc.IsGoalie(stick.Player) &&
                         Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch, false) != currentPlayerSteamId &&
-                        puck.Rigidbody.transform.position.y > ServerConfig.HighStick.MaxHeight + (stick.Player.PlayerBody.Rigidbody.transform.position.y < 0 ? 0 : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
+                        __instance.Rigidbody.transform.position.y > ServerConfig.HighStick.MaxHeight + (stick.Player.PlayerBody.Rigidbody.transform.position.y < 0 ? 0 : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
                         if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
                             noHighStickFrames = int.MaxValue;
                             _noHighStickFrames.Add(currentPlayerSteamId, noHighStickFrames);
@@ -680,7 +736,7 @@ namespace oomtm450PuckMod_Ruleset {
                             highStickTimer.Change(ServerConfig.HighStick.MaxMilliseconds, Timeout.Infinite);
                             if (!IsHighStick(stick.Player.Team.Value)) {
                                 _isHighStickActive[stick.Player.Team.Value] = true;
-                                _puckLastStateBeforeCall[Rule.HighStick] = (puck.Rigidbody.transform.position, _puckZone);
+                                _puckLastStateBeforeCall[Rule.HighStick] = (__instance.Rigidbody.transform.position, _puckZone);
                                 NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, stick.Player.Team.Value), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                                 SendChat(Rule.HighStick, stick.Player.Team.Value, false);
                             }
@@ -688,7 +744,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex)  {
-                    Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(Puck_OnCollisionExit_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -717,25 +773,81 @@ namespace oomtm450PuckMod_Ruleset {
 
                     float force = Utils.GetCollisionForce(collision);
 
-                    if (_lastForceOnGoalie != force) {
-                        _lastForceOnGoalie = force;
-                        _lastForceOnGoaliePlayerSteamId = playerBody.Player.SteamId.Value.ToString();
+                    string currentPlayerSteamId = playerBody.Player.SteamId.Value.ToString();
+
+                    if (_lastForceOnPlayer != force || string.IsNullOrEmpty(_lastForceOnPlayerPlayerSteamId)) {
+                        _lastForceOnPlayer = force;
+                        _lastForceOnPlayerPlayerSteamId = currentPlayerSteamId;
                         return;
                     }
 
-                    Player lastPlayerHit = PlayerManager.Instance.GetPlayerBySteamId(_lastForceOnGoaliePlayerSteamId);
-                    // If the goalie has been hit by the same team, return;
+                    Player lastPlayerHit = PlayerManager.Instance.GetPlayerBySteamId(_lastForceOnPlayerPlayerSteamId);
+
+                    if (lastPlayerHit == null || !lastPlayerHit)
+                        return;
+
+                    // If the player has been hit by the same team, return;
                     if (playerBody.Player.Team.Value == lastPlayerHit.Team.Value)
                         return;
 
-                    Player goalie;
-                    if (Codebase.PlayerFunc.IsGoalie(playerBody.Player))
+                    _lastForceOnPlayerPlayerSteamId = "";
+
+                    DateTime now = DateTime.UtcNow;
+
+                    Player goalie, hitter;
+                    if (Codebase.PlayerFunc.IsGoalie(playerBody.Player)) {
                         goalie = playerBody.Player;
-                    else if (Codebase.PlayerFunc.IsGoalie(lastPlayerHit))
+                        hitter = lastPlayerHit;
+                    }
+                    else if (Codebase.PlayerFunc.IsGoalie(lastPlayerHit)) {
                         goalie = lastPlayerHit;
+                        hitter = playerBody.Player;
+                    }
                     else {
-                        _lastForceOnGoaliePlayerSteamId = "";
-                        _lastForceOnGoalie = 0;
+                        bool hasLastPlayerBeenHit = false, hasOtherPlayerBeenHit = false;
+
+                        string lastPlayerHitSteamId = lastPlayerHit.SteamId.Value.ToString();
+
+                        bool hasLastPlayerDived;
+                        if (_dives.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitDateTime) && lastPlayerHitDateTime > now)
+                            hasLastPlayerDived = true;
+                        else
+                            hasLastPlayerDived = false;
+
+                        if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping || lastPlayerHit.PlayerBody.IsSideways) {
+                            if (!_playersLastSlipDateTime.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitSlipTime) || (now - lastPlayerHitSlipTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceOnSamePlayerMillisecondsThreshold)
+                                hasLastPlayerBeenHit = !hasLastPlayerDived;
+                        }
+
+                        bool hasOtherPlayerDived;
+                        if (_dives.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > now)
+                            hasOtherPlayerDived = true;
+                        else
+                            hasOtherPlayerDived = false;
+
+                        if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping || playerBody.Player.PlayerBody.IsSideways) {
+                            if (!_playersLastSlipDateTime.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitSlipTime) || (now - otherPlayerHitSlipTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceOnSamePlayerMillisecondsThreshold)
+                                hasOtherPlayerBeenHit = !hasOtherPlayerDived;
+                        }
+
+                        if (hasLastPlayerBeenHit) {
+                            if (hasOtherPlayerDived)
+                                PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
+                            else if (playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum) { // If the other person jumped.
+                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var LastTouchDateTimePlayerHit) || (now - LastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold)
+                                    PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
+                            }
+                        }
+
+                        if (hasOtherPlayerBeenHit) {
+                            if (hasLastPlayerDived)
+                                PenaltyModule.GivePenalty(PenaltyType.Tripping, lastPlayerHit, currentPlayerSteamId);
+                            else if (lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum) { // If the other person jumped.
+                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var LastTouchDateTimeOtherPlayerHit) || (now - LastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold)
+                                    PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
+                            }
+                        }
+
                         return;
                     }
 
@@ -761,15 +873,24 @@ namespace oomtm450PuckMod_Ruleset {
                     PlayerTeam goalieOtherTeam = TeamFunc.GetOtherTeam(goalie.Team.Value);
 
                     bool hasGoalieDived;
-                    if (_dives.TryGetValue(goalie.SteamId.Value.ToString(), out DateTime dateTime) && dateTime > DateTime.UtcNow)
+                    if (_dives.TryGetValue(goalie.SteamId.Value.ToString(), out DateTime dateTime) && dateTime > now)
                         hasGoalieDived = true;
                     else
                         hasGoalieDived = false;
 
-                    bool goalieDown = (goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived;
-                    _lastGoalieStateCollision[goalieOtherTeam] = goalieDown;
+                    if ((goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived) {
+                        bool hasHitterDived;
+                        if (_dives.TryGetValue(hitter.SteamId.Value.ToString(), out DateTime hitterDiveDateTime) && hitterDiveDateTime > now)
+                            hasHitterDived = true;
+                        else
+                            hasHitterDived = false;
 
-                    if (goalieDown || (force > ServerConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease)) {
+                        if (hasHitterDived)
+                            PenaltyModule.GivePenalty(PenaltyType.Tripping, hitter, goalie.SteamId.Value.ToString());
+                        else
+                            PenaltyModule.GivePenalty(PenaltyType.GoalieInterference, hitter, goalie.SteamId.Value.ToString());
+                    }
+                    else if (force > ServerConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease) {
                         _ = _goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch);
 
                         if (watch == null) {
@@ -810,6 +931,8 @@ namespace oomtm450PuckMod_Ruleset {
                     _doFaceoff = false;
 
                     if (phase == GamePhase.PeriodOver || phase == GamePhase.BlueScore || phase == GamePhase.RedScore) {
+                        PenaltyModule.PausePenalties();
+
                         NextFaceoffSpot = FaceoffSpot.Center;
                         _lastStoppageReason = Rule.None;
 
@@ -820,18 +943,21 @@ namespace oomtm450PuckMod_Ruleset {
                             _icingStaminaDrainPenaltyAmount[key] = 0;
 
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+
+                        if (PenaltyModule.PenalizedPlayersCountBlueTeam != PenaltyModule.PenalizedPlayersCountRedTeam) {
+                            if (phase == GamePhase.BlueScore)
+                                PenaltyModule.RemoveOnePenalty(PlayerTeam.Red);
+                            else if (phase == GamePhase.RedScore)
+                                PenaltyModule.RemoveOnePenalty(PlayerTeam.Blue);
+                        }
                     }
                     else if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver) {
-                        if (phase == GamePhase.GameOver || phase == GamePhase.Warmup) {
-                            NextFaceoffSpot = FaceoffSpot.Center;
-                            _lastStoppageReason = Rule.None;
+                        if (phase == GamePhase.GameOver || phase == GamePhase.Warmup)
+                            ResetGame();
 
-                            foreach (PlayerTeam key in new List<PlayerTeam>(_lastIcing.Keys))
-                                _lastIcing[key] = int.MaxValue;
-
-                            foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
-                                _icingStaminaDrainPenaltyAmount[key] = 0;
-                        }
+                        // Reset puck coordinates.
+                        _puckLastCoordinate = Vector3.zero;
+                        _puckZCoordinateDifference = 0;
 
                         // Reset players zone.
                         _playersZone.Clear();
@@ -862,7 +988,7 @@ namespace oomtm450PuckMod_Ruleset {
                         ResetHighSticks();
                         ResetIcings();
                         _dictPlayersPositionsForIcing.Clear();
-                        ResetGoalieInt();
+                        ResetInt();
 
                         _puckZone = ZoneFunc.GetZone(NextFaceoffSpot);
                         _puckZoneLastTouched = _puckZone;
@@ -876,10 +1002,17 @@ namespace oomtm450PuckMod_Ruleset {
                             _lastPlayerOnPuckTipIncludedSteamId[key] = "";
 
                         _playersOnPuckTipIncludedDateTime.Clear();
+                        _playersOnPuckDateTime.Clear();
+
+                        _puckDeflectedDateTimeSinceLastTouch = DateTime.MinValue;
 
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+
+                        PenaltyModule.StartPenalties();
                     }
                     else if (phase == GamePhase.Playing) {
+                        PenaltyModule.UnpausePenalties();
+
                         if (time == -1 && ServerConfig.Faceoff.ReAdd1SecondAfterFaceoff)
                             time = SystemFunc.GetPrivateField<int>(typeof(GameManager), GameManager.Instance, "remainingPlayTime") + 1;
                     }
@@ -910,16 +1043,43 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     if (phase == GamePhase.FaceOff) {
-                        if (NextFaceoffSpot == FaceoffSpot.Center || !ServerConfig.Faceoff.UseCustomFaceoff)
+                        _playersLastSlipDateTime.Clear();
+
+                        if (!ServerConfig.Faceoff.UseCustomFaceoff) {
+                            PenaltyModule.TeleportPlayers();
                             return;
+                        }
 
                         Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
 
-                        List<Player> players = PlayerManager.Instance.GetPlayers();
-                        foreach (Player player in players)
-                            PlayerFunc.TeleportOnFaceoff(player, dot, NextFaceoffSpot);
+                        List<string> claimedPositionsBlue = GetClaimedPositions(PlayerTeam.Blue);
+                        List<string> claimedPositionsRed = GetClaimedPositions(PlayerTeam.Red);
 
+                        List<Player> players = PlayerManager.Instance.GetPlayers();
+                        foreach (Player player in players) {
+                            if (!Codebase.PlayerFunc.IsPlayerPlaying(player) || player.Team.Value == PlayerTeam.Spectator || player.Team.Value == PlayerTeam.None || PenaltyModule.PositionIsPenalized[player.Team.Value][player.PlayerPosition.Name])
+                                continue;
+
+                            List<string> claimedPositions;
+                            if (player.Team.Value == PlayerTeam.Blue)
+                                claimedPositions = claimedPositionsBlue;
+                            else
+                                claimedPositions = claimedPositionsRed;
+
+                            string newFaceoffPosition = PenaltyModule.GetPlayerPositionForFaceoff(player.PlayerPosition.Name, player.Team.Value, NextFaceoffSpot, claimedPositions);
+                            PlayerFunc.TeleportOnFaceoff(
+                                player, dot, NextFaceoffSpot,
+                                newFaceoffPosition,
+                                POSITION_ROTATION_ON_FACEOFF[player.Team.Value][newFaceoffPosition]
+                            );
+                        }
+
+                        PenaltyModule.TeleportPlayers();
                         return;
+                    }
+                    else if (phase == GamePhase.Playing || phase == GamePhase.BlueScore || phase == GamePhase.RedScore || phase == GamePhase.PeriodOver) {
+                        _playersLastSlipDateTime.Clear();
+                        PenaltyModule.TeleportPlayers();
                     }
                 }
                 catch (Exception ex) {
@@ -947,8 +1107,109 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         position = new Vector3(dot.x, ServerConfig.Faceoff.PuckDropHeight, dot.z);
                 }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(PuckManager_Server_SpawnPuck_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_Claim event from PlayerPosition.
+        /// </summary>
+        [HarmonyPatch(typeof(PlayerPosition), nameof(PlayerPosition.Server_Claim))]
+        public class PlayerPosition_Server_Claim_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(Player player) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if (PenaltyModule.PenalizedPlayers.TryGetValue(player.SteamId.Value.ToString(), out LockList<Penalty> penalties) && penalties.Count != 0)
+                        return false;
+                }
                 catch (Exception ex)  {
-                    Logging.LogError($"Error in PuckManager_Server_SpawnPuck_Patch Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(PlayerPosition_Server_Claim_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_Unclaim event from PlayerPosition.
+        /// </summary>
+        [HarmonyPatch(typeof(PlayerPosition), nameof(PlayerPosition.Server_Unclaim))]
+        public class PlayerPosition_Server_Unclaim_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(PlayerPosition __instance) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if (PenaltyModule.PenalizedPlayers.TryGetValue(__instance.ClaimedBy.SteamId.Value.ToString(), out LockList<Penalty> penalties) && penalties.Count != 0)
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(PlayerPosition_Server_Claim_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the OnPlayerTeamChanged event from Player.
+        /// </summary>
+        [HarmonyPatch(typeof(Player), "OnPlayerTeamChanged")]
+        public class Player_OnPlayerTeamChanged_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(Player __instance, PlayerTeam oldTeam, PlayerTeam newTeam) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    string playerSteamId = __instance.SteamId.Value.ToString();
+
+                    if (_playersHasBlockedFromChangingTeams.TryGetValue(playerSteamId, out bool hasBeenBlocked) && hasBeenBlocked) {
+                        _playersHasBlockedFromChangingTeams[playerSteamId] = false;
+                        return false;
+                    }
+
+                    if (PenaltyModule.PenalizedPlayers.TryGetValue(playerSteamId, out LockList<Penalty> penalties) && penalties.Count != 0) {
+                        _playersHasBlockedFromChangingTeams.AddOrUpdate(playerSteamId, true);
+                        __instance.Team.Value = oldTeam;
+                        return false;
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(Player_OnPlayerTeamChanged_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_StartGame event from GameManager.
+        /// </summary>
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_StartGame))]
+        public class GameManager_Server_StartGame_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(bool warmup, int warmupTime) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    ResetGame(false);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(GameManager_Server_StartGame_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1020,10 +1281,106 @@ namespace oomtm450PuckMod_Ruleset {
                                 }
                             }
                         }
+                        else if (message.StartsWith(@"/offblue"))
+                            NetworkCommunication.SendData(RefSignals.OFFSIDE_LINESMAN, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/offred"))
+                            NetworkCommunication.SendData(RefSignals.OFFSIDE_LINESMAN, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/icblue"))
+                            NetworkCommunication.SendData(RefSignals.ICING_LINESMAN, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/icred"))
+                            NetworkCommunication.SendData(RefSignals.ICING_LINESMAN, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/hsblue"))
+                            NetworkCommunication.SendData(RefSignals.HIGHSTICK_LINESMAN, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/hsred"))
+                            NetworkCommunication.SendData(RefSignals.HIGHSTICK_LINESMAN, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/gintblue"))
+                            NetworkCommunication.SendData("gs" + RefSignals.INTERFERENCE_REF, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/gintred"))
+                            NetworkCommunication.SendData("gs" + RefSignals.INTERFERENCE_REF, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        else if (message.StartsWith(@"/rule")) {
+                            message = message.Replace(@"/rule", "").Replace("true", "1").Replace("false", "0").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(Constants.MOD_NAME + "rule", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/refmode")) {
+                            message = message.Replace(@"/refmode", "").Replace("true", "1").Replace("false", "0").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(Constants.MOD_NAME + "refmode", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/togglehighstick")) {
+                            message = message.Replace(@"/togglehighstick", "").ToLower().Replace("blue", "b").Replace("red", "r").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(TOGGLE_HIGHSTICK_DATANAME, message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/toggleoffside")) {
+                            message = message.Replace(@"/toggleoffside", "").ToLower().Replace("blue", "b").Replace("red", "r").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(TOGGLE_OFFSIDE_DATANAME, message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/toggleicing")) {
+                            message = message.Replace(@"/toggleicing", "").ToLower().Replace("blue", "b").Replace("red", "r").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(TOGGLE_ICING_DATANAME, message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/toggledeferredicing")) {
+                            NetworkCommunication.SendData(TOGGLE_DEFERRED_ICING_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/togglegint")) {
+                            message = message.Replace(@"/togglegint", "").ToLower().Replace("blue", "b").Replace("red", "r").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(TOGGLE_GINTERFERENCE_DATANAME, message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/addrefsteamid")) {
+                            message = message.Replace(@"/addrefsteamid", "").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(Constants.MOD_NAME + "addrefsteamid", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/removerefsteamid")) {
+                            message = message.Replace(@"/removerefsteamid", "").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(Constants.MOD_NAME + "removerefsteamid", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/addpermrefsteamid")) {
+                            message = message.Replace(@"/addpermrefsteamid", "").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(Constants.MOD_NAME + "addpermrefsteamid", message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/pen")) {
+                            message = message.Replace(@"/pen", "").Trim();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+                            NetworkCommunication.SendData(PenaltyModule.GIVE_PENALTY_DATANAME, message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/removeallpen")) {
+                            NetworkCommunication.SendData(PenaltyModule.REMOVE_ALL_PENALTIES_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
+                        else if (message.StartsWith(@"/removepen")) {
+                            message = message.Replace(@"/removepen", "").Trim().ToLower();
+                            if (string.IsNullOrEmpty(message))
+                                return true;
+
+                            if (message == "b" || message == "blue")
+                                message = "b";
+                            else if (message == "r" || message == "red")
+                                message = "r";
+                            else
+                                return true;
+                            
+                            NetworkCommunication.SendData(PenaltyModule.REMOVE_PENALTY_DATANAME, message, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                        }
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in UIChat_Client_SendClientChatMessage_Patch Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(UIChat_Client_SendClientChatMessage_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1044,7 +1401,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in UIChat_Client_SendClientChatMessage_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(UIChat_Client_SendClientChatMessage_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -1084,16 +1441,8 @@ namespace oomtm450PuckMod_Ruleset {
                     foreach (PlayerTeam callHighStickTeam in new List<PlayerTeam>(_callHighStickNextFrame.Keys)) {
                         if (!_callHighStickNextFrame[callHighStickTeam])
                             continue;
-                        /*_callOffHighStickNextFrame[callOffHighStickTeam] = false;
-                        NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, callOffHighStickTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                        SendChat(Rule.HighStick, callOffHighStickTeam, true, true);*/
 
-                        NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(callHighStickTeam, false, _puckLastStateBeforeCall[Rule.HighStick]);
-                        SendChat(Rule.HighStick, callHighStickTeam, true);
-                        ResetHighSticks();
-
-                        _lastStoppageReason = Rule.HighStick;
-                        DoFaceoff(RefSignals.GetSignalConstant(true, callHighStickTeam), RefSignals.HIGHSTICK_REF);
+                        CallHighStick(callHighStickTeam);
                         break;
                     }
 
@@ -1110,6 +1459,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (players.Count == 0 || puck == null || !puck || Paused)
                         return true;
+
+                    _puckZCoordinateDifference = (puck.Rigidbody.transform.position.z - _puckLastCoordinate.z) / 240 * ServerManager.Instance.ServerConfigurationManager.ServerConfiguration.serverTickRate;
+                    _puckLastCoordinate = new Vector3(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.y, puck.Rigidbody.transform.position.z);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 1.\n{ex}", ServerConfig);
@@ -1121,6 +1473,36 @@ namespace oomtm450PuckMod_Ruleset {
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 2.\n{ex}", ServerConfig);
+                }
+
+                // Delay of game penalty logic or offside.
+                try {
+                    if (ServerConfig.Penalty.DelayOfGame &&
+                        (Math.Abs(puck.Rigidbody.transform.position.x) > PenaltyModule.DELAY_OF_GAME_POSITION.x ||
+                         puck.Rigidbody.transform.position.y < PenaltyModule.DELAY_OF_GAME_POSITION.y) ||
+                         (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION_END_Z)) {
+                        bool playerTouched = _playersOnPuckDateTime.TryGetValue(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam], out var lastTouchDateTime);
+
+                        Logging.Log("playerTouched : " + playerTouched, ServerConfig, true); // TODO
+                        Logging.Log("_puckDeflectedDateTimeSinceLastTouch : " + _puckDeflectedDateTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                        Logging.Log("lastTouchDateTime.LastTouchDateTime : " + lastTouchDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                        Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds({ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}) : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)), ServerConfig, true); // TODO
+
+                        if (!playerTouched ||
+                            (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)) ||
+                            (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.RedTeam_Zone)) {
+                            CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
+                        }
+                        else {
+                            Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]);
+                            if (penalizedDelayOfGamePlayer != null && penalizedDelayOfGamePlayer)
+                                PenaltyModule.GivePenalty(PenaltyType.DelayOfGame, penalizedDelayOfGamePlayer);
+                            CallPenalty(_lastPlayerOnPuckTeam);
+                        }
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 3.\n{ex}", ServerConfig);
                 }
 
                 Dictionary<PlayerTeam, bool> isTeamOffside = new Dictionary<PlayerTeam, bool> {
@@ -1147,6 +1529,9 @@ namespace oomtm450PuckMod_Ruleset {
                             continue;
 
                         string playerSteamId = player.SteamId.Value.ToString();
+
+                        if (player.PlayerBody.IsSlipping || player.PlayerBody.HasSlipped)
+                            _playersLastSlipDateTime.AddOrUpdate(playerSteamId, DateTime.UtcNow);
 
                         if (!_isOffside.TryGetValue(playerSteamId, out _))
                             _isOffside.Add(playerSteamId, (player.Team.Value, false));
@@ -1200,7 +1585,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                                 if (IsIcing(otherTeam) && AreBothNegativeOrPositive(player.PlayerBody.transform.position.x, puck.Rigidbody.transform.position.x)) {
                                     considerForIcing = true;
-                                    NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, true, _puckLastStateBeforeCall[Rule.Icing]);
+                                    NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, Rule.Icing, _puckLastStateBeforeCall[Rule.Icing]);
                                 }
                             }
 
@@ -1302,7 +1687,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 3.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 4.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1311,7 +1696,7 @@ namespace oomtm450PuckMod_Ruleset {
                     ServerManager_Update_IcingLogic(PlayerTeam.Red, puck, icingHasToBeWarned, _dictPlayersPositionsForIcing.Any(x => x.IsBehindBlueTeamHashmarks));
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 4.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 5.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1333,7 +1718,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 5.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 6.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1341,7 +1726,7 @@ namespace oomtm450PuckMod_Ruleset {
                     _isPuckBehindHashmarks[PlayerTeam.Red] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Red, puck.Rigidbody.transform.position, PuckRadius);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 6.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 7.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1349,7 +1734,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _noHighStickFrames[playerSteamId] += 1;
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 7.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ServerManager_Update_Patch)} Prefix() 8.\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1404,24 +1789,12 @@ namespace oomtm450PuckMod_Ruleset {
                         isHighStick = IsHighStick(team);
 
                         if (isOffside || isHighStick || isGoalieInt) {
-                            if (isOffside) {
-                                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.Offside]);
-                                SendChat(Rule.Offside, team, true, false);
-                                _lastStoppageReason = Rule.Offside;
-                                DoFaceoff();
-                            }
-                            else if (isHighStick) {
-                                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.HighStick]);
-                                SendChat(Rule.HighStick, team, true, false);
-                                _lastStoppageReason = Rule.HighStick;
-                                DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.HIGHSTICK_REF);
-                            }
-                            else if (isGoalieInt) {
-                                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
-                                SendChat(Rule.GoalieInt, team, true, false);
-                                _lastStoppageReason = Rule.GoalieInt;
-                                DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
-                            }
+                            if (isOffside)
+                                CallOffside(team);
+                            else if (isHighStick)
+                                CallHighStick(team);
+                            else if (isGoalieInt)
+                                CallGoalieInt(team);
                             return false;
                         }
 
@@ -1444,10 +1817,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     if (isGoalieInt) {
-                        NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, false, _puckLastStateBeforeCall[Rule.GoalieInt]);
-                        SendChat(Rule.GoalieInt, team, true, false);
-                        _lastStoppageReason = Rule.GoalieInt;
-                        DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
+                        CallGoalieInt(team);
                         return false;
                     }
 
@@ -1482,7 +1852,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     // If this game is not started or faceoff is on the default dot (center), do not use the patch.
-                    if (GameManager.Instance.Phase != GamePhase.FaceOff || NextFaceoffSpot == FaceoffSpot.Center || !ServerConfig.Faceoff.UseCustomFaceoff)
+                    if (GameManager.Instance.Phase != GamePhase.FaceOff || !ServerConfig.Faceoff.UseCustomFaceoff)
                         return;
 
                     Player player = PlayerManager.Instance.GetPlayers()
@@ -1496,13 +1866,46 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     // Reteleport player on faceoff to the correct faceoff.
-                    PlayerFunc.TeleportOnFaceoff(player, Faceoff.GetFaceoffDot(NextFaceoffSpot), NextFaceoffSpot);
+                    string playerSteamId = player.SteamId.Value.ToString();
+                    if (!PenaltyModule.PenalizedPlayers.TryGetValue(playerSteamId, out LockList<Penalty> penalties) || penalties.Count == 0) {
+                        string newFaceoffPosition = PenaltyModule.GetPlayerPositionForFaceoff(player.PlayerPosition.Name, player.Team.Value, NextFaceoffSpot, GetClaimedPositions(player.Team.Value));
+                        PlayerFunc.TeleportOnFaceoff(
+                            player, Faceoff.GetFaceoffDot(NextFaceoffSpot), NextFaceoffSpot,
+                            newFaceoffPosition,
+                            POSITION_ROTATION_ON_FACEOFF[player.Team.Value][newFaceoffPosition]);
+                    }
+                    else
+                        PenaltyModule.TeleportPlayer(player);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(Player_Server_RespawnCharacter_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
+
+        /*/// <summary>
+        /// Class that patches the OnPositionSelectActionPerformed event from UIManagerInputs.
+        /// </summary>
+        [HarmonyPatch(typeof(UIManagerInputs), "OnPositionSelectActionPerformed")]
+        public class UIManagerInputs_OnPositionSelectActionPerformed_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(UIManagerInputs __instance) {
+                try {
+                    // If this is not the client, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    string playerSteamId = __instance.SteamId.Value.ToString();
+                    if (PenaltyModule.PenalizedPlayers.TryGetValue(playerSteamId, out LockList<Penalty> penalties) && penalties.Count != 0)
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(UIManagerInputs_OnPositionSelectActionPerformed_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }*/
 
         /// <summary>
         /// Class that patches the UpdatePlayer event from UIScoreboard.
@@ -1593,7 +1996,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (ServerFunc.IsDedicatedServer() || !_serverHasResponded)
                         return true;
 
-                    if ((message.StartsWith("HIGH STICK") || message.StartsWith("OFFSIDE") || message.StartsWith("ICING")) && !message.EndsWith("CALLED"))
+                    if ((message.StartsWith("HIGH STICK") || message.StartsWith("OFFSIDE") || message.StartsWith("ICING")) && (message.Contains("CALLED OFF") || !message.Contains("CALLED")))
                         return false;
                 }
                 catch (Exception ex) {
@@ -1603,15 +2006,123 @@ namespace oomtm450PuckMod_Ruleset {
                 return true;
             }
         }
+
+        /// <summary>
+        /// Class that patches the OnClickTeamBlue method from UITeamSelect.
+        /// </summary>
+        [HarmonyPatch(typeof(UITeamSelect), "OnClickTeamBlue")]
+        public class UITeamSelect_OnClickTeamBlue_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix() {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if (_penaltyTimers.Select(x => x.SteamId).Contains(PlayerManager.Instance.GetLocalPlayer().SteamId.Value.ToString()))
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(UITeamSelect_OnClickTeamBlue_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the OnClickTeamRed method from UITeamSelect.
+        /// </summary>
+        [HarmonyPatch(typeof(UITeamSelect), "OnClickTeamRed")]
+        public class UITeamSelect_OnClickTeamRed_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix() {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if (_penaltyTimers.Select(x => x.SteamId).Contains(PlayerManager.Instance.GetLocalPlayer().SteamId.Value.ToString()))
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(UITeamSelect_OnClickTeamRed_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the OnClickTeamSpectator method from UITeamSelect.
+        /// </summary>
+        [HarmonyPatch(typeof(UITeamSelect), "OnClickTeamSpectator")]
+        public class UITeamSelect_OnClickTeamSpectator_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix() {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if (_penaltyTimers.Select(x => x.SteamId).Contains(PlayerManager.Instance.GetLocalPlayer().SteamId.Value.ToString()))
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(UITeamSelect_OnClickTeamSpectator_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
         #endregion
 
         #region Methods/Functions
-        private static void SendChat(Rule rule, PlayerTeam team, bool called, bool off = false) {
+        private static void ResetGame(bool resetRefSteamIds = true) {
+            NextFaceoffSpot = FaceoffSpot.Center;
+            _lastStoppageReason = Rule.None;
+
+            foreach (PlayerTeam key in new List<PlayerTeam>(_lastIcing.Keys))
+                _lastIcing[key] = int.MaxValue;
+
+            foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
+                _icingStaminaDrainPenaltyAmount[key] = 0;
+
+            if (resetRefSteamIds) {
+                _currentRefsSteamId.Clear();
+                foreach (string permaRefSteamId in _permaRefsSteamId)
+                    _currentRefsSteamId.Add(permaRefSteamId);
+            }
+
+            PenaltyModule.ResetPenalties();
+            _playersHasBlockedFromChangingTeams.Clear();
+            _playersLastSlipDateTime.Clear();
+        }
+
+        private static bool IsAdmin(ulong clientId) {
+            Player player = PlayerManager.Instance.GetPlayerByClientId(clientId);
+            if (player == null || !player)
+                return false;
+
+            return IsAdmin(player.SteamId.Value.ToString());
+        }
+
+        private static bool IsAdmin(string steamId) {
+            return ServerManager.Instance.AdminSteamIds.Contains(steamId);
+        }
+
+        private static void SendChat(Rule rule, PlayerTeam team, bool called, bool off = false, Player referee = null) {
             string ruleStr = rule.GetDescription("ToString");
             if (string.IsNullOrEmpty(ruleStr))
                 return;
 
-            UIChat.Instance.Server_SendSystemChatMessage($"{ruleStr} {team.ToString().ToUpperInvariant()} TEAM" + (called ? (" CALLED" + (off ? " OFF" : "")) : ""));
+            string teamPart;
+            if (team == PlayerTeam.None)
+                teamPart = "";
+            else
+                teamPart = $" {team.ToString().ToUpperInvariant()} TEAM";
+
+            UIChat.Instance.Server_SendSystemChatMessage($"{ruleStr}{teamPart}" + (called ? (" CALLED" + (off ? " OFF" : "")) : "") + (referee != null ? $" BY #{referee.Number.Value} {referee.Username.Value}" : ""));
         }
 
         private static void WarnOffside(bool active, PlayerTeam team) {
@@ -1654,15 +2165,12 @@ namespace oomtm450PuckMod_Ruleset {
             _callHighStickNextFrame[team] = true;
         }
 
-        private static void ResetGoalieInt() {
+        private static void ResetInt() {
             foreach (PlayerTeam key in new List<PlayerTeam>(_goalieIntTimer.Keys))
                 _goalieIntTimer[key] = null;
 
-            foreach (PlayerTeam key in new List<PlayerTeam>(_lastGoalieStateCollision.Keys))
-                _lastGoalieStateCollision[key] = false;
-
-            _lastForceOnGoalie = 0;
-            _lastForceOnGoaliePlayerSteamId = "";
+            _lastForceOnPlayer = 0;
+            _lastForceOnPlayerPlayerSteamId = "";
         }
 
         private static void ResetOffsides() {
@@ -1693,6 +2201,7 @@ namespace oomtm450PuckMod_Ruleset {
             ResetHighSticks();
 
             Paused = true;
+            PenaltyModule.PausePenalties();
 
             NetworkCommunication.SendDataToAll(SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(SoundsSystem.WHISTLE),
                 Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT, ServerConfig);
@@ -1769,10 +2278,16 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static bool IsIcingEnabled(PlayerTeam team) {
-            if (team == PlayerTeam.Blue)
+            if (team == PlayerTeam.Blue) {
+                if (PenaltyModule.PenalizedPlayersCountBlueTeam > PenaltyModule.PenalizedPlayersCountRedTeam)
+                    return false;
                 return ServerConfig.Icing.BlueTeam;
-            else
+            }
+            else {
+                if (PenaltyModule.PenalizedPlayersCountRedTeam > PenaltyModule.PenalizedPlayersCountBlueTeam)
+                    return false;
                 return ServerConfig.Icing.RedTeam;
+            }
         }
 
         private static bool IsIcingPossible(Puck puck, PlayerTeam team, bool checkPossibleTime = true) {
@@ -1825,11 +2340,6 @@ namespace oomtm450PuckMod_Ruleset {
             if (watch == null)
                 return false;
 
-            Logging.Log($"Goalie is down : {_lastGoalieStateCollision[team]}.", ServerConfig);
-            Logging.Log($"Goalie was last touched : {((double)watch.ElapsedMilliseconds) / 1000d} seconds ago.", ServerConfig);
-            if (_lastGoalieStateCollision[team])
-                return watch.ElapsedMilliseconds < ServerConfig.GInt.HitNoGoalMilliseconds;
-
             return watch.ElapsedMilliseconds < ServerConfig.GInt.PushNoGoalMilliseconds;
         }
 
@@ -1863,7 +2373,7 @@ namespace oomtm450PuckMod_Ruleset {
                     buffer.Remove(collision);
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in ResetAssists.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(ResetGoalAndAssistAttribution)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -1921,15 +2431,33 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case "dive":
+                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                            break;
+
                         KeyValuePair<string, object> extraMessageKvp = message.ElementAt(1);
                         if (extraMessageKvp.Key != "duration")
                             break;
 
-                        DateTime getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(int.Parse((string)extraMessageKvp.Value));
-                        if (!_dives.TryGetValue(value, out DateTime _))
-                            _dives.Add(value, getUpTime);
+                        int divingValue = int.Parse((string)extraMessageKvp.Value);
+
+                        DateTime getUpTime;
+                        if (divingValue == int.MinValue)
+                            getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(2750d);
+                        else if (divingValue == int.MaxValue)
+                            getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(60000d);
                         else
-                            _dives[value] = getUpTime;
+                            getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(divingValue);
+
+                        _dives.AddOrUpdate(value, getUpTime);
+
+                        if (!Logic)
+                            break;
+
+                        if (_playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds < ServerConfig.Penalty.EmbellishmentMillisecondsThreshold && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds > 50 && new System.Random().Next(0, 2) == 0) { // TODO : Config random.
+                            Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(value);
+                            if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned && !Codebase.PlayerFunc.IsGoalie(penalizedPlayer))
+                                PenaltyModule.GivePenalty(PenaltyType.Embellishment, penalizedPlayer);
+                        }
 
                         break;
 
@@ -1940,7 +2468,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnRulesetTrigger.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_OnRulesetTrigger)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -1962,7 +2490,7 @@ namespace oomtm450PuckMod_Ruleset {
                 LoadAssets();
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnSceneLoaded.\n{ex}", ClientConfig);
+                Logging.LogError($"Error in {nameof(Event_OnSceneLoaded)}.\n{ex}", ClientConfig);
             }
         }
 
@@ -1977,6 +2505,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 ServerConfig = new ServerConfig();
+                ServerConfigBackup = new ServerConfig();
 
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
@@ -1997,7 +2526,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_Client_OnClientStopped.\n{ex}", ClientConfig);
+                Logging.LogError($"Error in {nameof(Event_Client_OnClientStopped)}.\n{ex}", ClientConfig);
             }
         }
         
@@ -2027,6 +2556,51 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             try {
+                if (!_barriersLowered && ServerConfig.Penalty.DelayOfGame) {
+                    for (int i = 0; i < LevelManager.Instance.gameObject.transform.childCount; i++) {
+                        Transform levelManagerChild = LevelManager.Instance.gameObject.transform.GetChild(i);
+                        if (levelManagerChild.gameObject.name != "Rink")
+                            continue;
+
+                        for (int j = 0; j < levelManagerChild.childCount; j++) {
+                            // Barrier Collider, position 0 -19.05 0
+                            // Front Collider, Back Collider, Left Collider, Right Collider, 0 4.9 0
+                            Transform rinkChild = levelManagerChild.GetChild(j);
+                            if (rinkChild.gameObject.name == "Front Collider" || rinkChild.gameObject.name == "Back Collider" ||
+                                rinkChild.gameObject.name == "Left Collider" || rinkChild.gameObject.name == "Right Collider") {
+                                rinkChild.position = new Vector3(rinkChild.position.x, 4.9f, rinkChild.position.z);
+                                continue;
+                            }
+
+                            if (rinkChild.gameObject.name == "Barrier Collider") {
+                                rinkChild.position = new Vector3(rinkChild.position.x, -19.05f, rinkChild.position.z);
+                                continue;
+                            }
+                        }
+
+                        _barriersLowered = true;
+                        break;
+                    }
+                }
+
+                if (POSITION_ROTATION_ON_FACEOFF == null) {
+                    List<PlayerPosition> playerBluePositions = SystemFunc.GetPrivateField<List<PlayerPosition>>(typeof(LevelManager), LevelManager.Instance, "playerBluePositions");
+                    List<PlayerPosition> playerRedPositions = SystemFunc.GetPrivateField<List<PlayerPosition>>(typeof(LevelManager), LevelManager.Instance, "playerRedPositions");
+
+                    Dictionary<string, Quaternion> blueRotationsOnFaceoff = new Dictionary<string, Quaternion>();
+                    foreach (PlayerPosition position in playerBluePositions)
+                        blueRotationsOnFaceoff.Add(position.Name, new Quaternion(position.transform.rotation.x, position.transform.rotation.y, position.transform.rotation.z, position.transform.rotation.w));
+
+                    Dictionary<string, Quaternion> redRotationsOnFaceoff = new Dictionary<string, Quaternion>();
+                    foreach (PlayerPosition position in playerRedPositions)
+                        redRotationsOnFaceoff.Add(position.Name, new Quaternion(position.transform.rotation.x, position.transform.rotation.y, position.transform.rotation.z, position.transform.rotation.w));
+
+                    POSITION_ROTATION_ON_FACEOFF = new Dictionary<PlayerTeam, Dictionary<string, Quaternion>> {
+                        { PlayerTeam.Blue, blueRotationsOnFaceoff },
+                        { PlayerTeam.Red, redRotationsOnFaceoff },
+                    };
+                }
+
                 if (NetworkManager.Singleton != null && NetworkManager.Singleton.CustomMessagingManager != null && !_hasRegisteredWithNamedMessageHandler) {
                     Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_CLIENT_TO_SERVER}.", ServerConfig);
                     NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER, ReceiveData);
@@ -2044,7 +2618,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in Event_OnClientConnected.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_OnClientConnected)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -2101,6 +2675,8 @@ namespace oomtm450PuckMod_Ruleset {
                 // Prevent the default freeze behavior during faceoffs.
                 if (GameManager.Instance.GameState.Value.Phase == GamePhase.FaceOff) {
                     PlayerBodyV2 playerBody = (PlayerBodyV2)message["playerBody"];
+                    if (PenaltyModule.PenalizedPlayers.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out LockList<Penalty> penalties) && penalties.Count != 0)
+                        return;
                     _playerUnfreezer?.RegisterPlayer(playerBody, NextFaceoffSpot);
                 }
             }
@@ -2126,9 +2702,13 @@ namespace oomtm450PuckMod_Ruleset {
                     (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, ServerConfig);
                 }
 
+                if (string.IsNullOrEmpty(dataStr))
+                    return;
+
                 switch (dataName) {
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
                         _serverHasResponded = true;
+                        AddPenaltiesLabel();
 
                         if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
                             break;
@@ -2187,6 +2767,43 @@ namespace oomtm450PuckMod_Ruleset {
                         StopRedRefSignals(dataStr);
                         break;
 
+                    case "removeallpen": // CLIENT-SIDE : Remove all penalty timers.
+                        if (dataStr != "1")
+                            break;
+
+                        foreach (var penaltyTimer in _penaltyTimers)
+                            penaltyTimer.Timer.Reset();
+                        _penaltyTimers.Clear();
+                        break;
+
+                    case "penpause": // CLIENT-SIDE : Pause penalty timers.
+                        if (dataStr != "1")
+                            break;
+
+                        foreach (var penaltyTimer in _penaltyTimers)
+                            penaltyTimer.Timer.Pause();
+                        break;
+
+                    case "penunpause": // CLIENT-SIDE : Start penalty timers.
+                        foreach (var penaltyTimer in _penaltyTimers)
+                            penaltyTimer.Timer.Reset();
+                        _penaltyTimers.Clear();
+
+                        string[] dataStrSplittedUnpausedPenalties = dataStr.Split(';');
+                        foreach (string playerPenaltyTimer in dataStrSplittedUnpausedPenalties) {
+                            string[] playerPenaltyTimerSplitted = playerPenaltyTimer.Split('!');
+                            PausableTimer newTimer = new PausableTimer(() => {
+                                _penaltyTimers.Remove(_penaltyTimers.First(x => x.SteamId == playerPenaltyTimerSplitted[0] && x.Timer.TimerEnded()));
+                                if (_penaltyTimers.Count(x => x.SteamId == playerPenaltyTimerSplitted[0]) != 0)
+                                    _penaltyTimers.First().Timer.Start();
+                            }, long.Parse(playerPenaltyTimerSplitted[1]));
+                            if (playerPenaltyTimerSplitted[2] == "1")
+                                newTimer.Start();
+
+                            _penaltyTimers.Add((playerPenaltyTimerSplitted[0], newTimer));
+                        }
+                        break;
+
                     case Constants.MOD_NAME + "_kick": // SERVER-SIDE : Kick the client that asked to be kicked.
                         if (dataStr != "1")
                             break;
@@ -2218,11 +2835,607 @@ namespace oomtm450PuckMod_Ruleset {
                         NetworkCommunication.SendData(SoundsSystem.LOAD_EXTRA_SOUNDS, Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "sounds"),
                             clientId, Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT, ServerConfig);
                         break;
+
+                    case RefSignals.OFFSIDE_LINESMAN: // SERVER-SIDE : Call an offside.
+                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                            break;
+
+                        Player offsideReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (offsideReferee == null || !offsideReferee)
+                            break;
+
+                        string offsideRefereeSteamId = offsideReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(offsideRefereeSteamId) && !_currentRefsSteamId.Contains(offsideRefereeSteamId))
+                            break;
+
+                        if (!int.TryParse(dataStr, out int offsideTeamInt))
+                            break;
+
+                        CallOffside((PlayerTeam)offsideTeamInt, offsideReferee);
+                        break;
+
+                    case RefSignals.HIGHSTICK_LINESMAN: // SERVER-SIDE : Call a high stick stoppage.
+                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                            break;
+
+                        Player highStickReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (highStickReferee == null || !highStickReferee)
+                            break;
+
+                        string highStickRefereeSteamId = highStickReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(highStickRefereeSteamId) && !_currentRefsSteamId.Contains(highStickRefereeSteamId))
+                            break;
+
+                        if (!int.TryParse(dataStr, out int highStickTeamInt))
+                            break;
+
+                        CallHighStick((PlayerTeam)highStickTeamInt, highStickReferee);
+                        break;
+
+                    case RefSignals.ICING_LINESMAN: // SERVER-SIDE : Call an icing.
+                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                            break;
+
+                        Player icingReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (icingReferee == null || !icingReferee)
+                            break;
+
+                        string icingRefereeSteamId = icingReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(icingRefereeSteamId) && !_currentRefsSteamId.Contains(icingRefereeSteamId))
+                            break;
+
+                        if (!int.TryParse(dataStr, out int icingTeamInt))
+                            break;
+
+                        CallIcing((PlayerTeam)icingTeamInt, icingReferee);
+                        break;
+
+                    case "gs" + RefSignals.INTERFERENCE_REF: // SERVER-SIDE : Call a goalie interference stoppage. // TODO : Constant.
+                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                            break;
+
+                        Player gintReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (gintReferee == null || !gintReferee)
+                            break;
+
+                        string gintRefereeSteamId = gintReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(gintRefereeSteamId) && !_currentRefsSteamId.Contains(gintRefereeSteamId))
+                            break;
+
+                        if (!int.TryParse(dataStr, out int gIntStoppageTeamInt))
+                            break;
+
+                        CallGoalieInt((PlayerTeam)gIntStoppageTeamInt, gintReferee);
+                        break;
+
+                    case Constants.MOD_NAME + "refmode": // SERVER-SIDE : Remove rules to make the server reffable. // TODO : Constant.
+                        if (!ServerConfig.RefMode || !IsAdmin(clientId))
+                            return;
+
+                        if (dataStr == "1") {
+                            ServerConfigBackup = new ServerConfig(ServerConfig);
+
+                            ServerConfig.Offside.BlueTeam = false;
+                            ServerConfig.Offside.RedTeam = false;
+
+                            ServerConfig.Icing.BlueTeam = false;
+                            ServerConfig.Icing.RedTeam = false;
+
+                            ServerConfig.HighStick.BlueTeam = false;
+                            ServerConfig.HighStick.RedTeam = false;
+
+                            SystemChatMessages.Add("Ref mode has been enabled.");
+                            Logging.Log($"Ref mode has been enabled.", ServerConfig);
+                        }
+                        else if (dataStr == "0") {
+                            ServerConfig = new ServerConfig(ServerConfigBackup);
+
+                            SystemChatMessages.Add("Ref mode has been disabled.");
+                            Logging.Log($"Ref mode has been disabled.", ServerConfig);
+                        }
+
+                        break;
+
+                    case Constants.MOD_NAME + "addrefsteamid": // SERVER-SIDE : Add a ref for a game. // TODO : Constant.
+                        if (!ServerConfig.RefMode || !IsAdmin(clientId))
+                            return;
+
+                        _currentRefsSteamId.Add(dataStr);
+
+                        Player addedRefSteamIdPlayer = PlayerManager.Instance.GetPlayerBySteamId(dataStr);
+                        if (addedRefSteamIdPlayer != null && addedRefSteamIdPlayer) {
+                            SystemChatMessages.Add($"#{addedRefSteamIdPlayer.Number.Value} {addedRefSteamIdPlayer.Username.Value} is now a referee for a game.");
+                            Logging.Log($"Added #{addedRefSteamIdPlayer.Number.Value} {addedRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee for a game.", ServerConfig);
+                        }
+                        break;
+
+                    case Constants.MOD_NAME + "addpermrefsteamid": // SERVER-SIDE : Add a permanent ref (until server restarts). // TODO : Constant.
+                        if (!ServerConfig.RefMode || !IsAdmin(clientId))
+                            return;
+
+                        _currentRefsSteamId.Add(dataStr);
+                        _permaRefsSteamId.Add(dataStr);
+
+                        Player addedPermaRefSteamIdPlayer = PlayerManager.Instance.GetPlayerBySteamId(dataStr);
+                        if (addedPermaRefSteamIdPlayer != null && addedPermaRefSteamIdPlayer) {
+                            SystemChatMessages.Add($"#{addedPermaRefSteamIdPlayer.Number.Value} {addedPermaRefSteamIdPlayer.Username.Value} is now a referee until server restart.");
+                            Logging.Log($"Added #{addedPermaRefSteamIdPlayer.Number.Value} {addedPermaRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee until server restart.", ServerConfig);
+                        }
+                        break;
+
+                    case Constants.MOD_NAME + "removerefsteamid": // SERVER-SIDE : Remove a ref. // TODO : Constant.
+                        if (!ServerConfig.RefMode || !IsAdmin(clientId))
+                            return;
+
+                        _currentRefsSteamId.Remove(dataStr);
+
+                        Player removedRefSteamIdPlayer = PlayerManager.Instance.GetPlayerBySteamId(dataStr);
+                        if (removedRefSteamIdPlayer != null && removedRefSteamIdPlayer) {
+                            SystemChatMessages.Add($"#{removedRefSteamIdPlayer.Number.Value} {removedRefSteamIdPlayer.Username.Value} is not a referee anymore.");
+                            Logging.Log($"Removed #{removedRefSteamIdPlayer.Number.Value} {removedRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee.", ServerConfig);
+                        }
+                        break;
+
+                    case Constants.MOD_NAME + "rule": // SERVER-SIDE : Change rule. // TODO : Constant.
+                        if (!IsAdmin(clientId))
+                            return;
+
+                        if (dataStr.Contains("offside")) {
+                            string[] splittedDataStrOff = dataStr.Replace("offside", "").Trim().Split(' ');
+
+                            bool offToggle;
+                            if (splittedDataStrOff[1] == "1")
+                                offToggle = true;
+                            else if (splittedDataStrOff[1] == "0")
+                                offToggle = false;
+                            else
+                                break;
+
+                            if (splittedDataStrOff[0] == "b")
+                                ServerConfig.Offside.BlueTeam = offToggle;
+                            else if (splittedDataStrOff[0] == "r")
+                                ServerConfig.Offside.RedTeam = offToggle;
+                        }
+                        else if (dataStr.Contains("icing")) {
+                            string[] splittedDataStrOff = dataStr.Replace("icing", "").Trim().Split(' ');
+
+                            bool offToggle;
+                            if (splittedDataStrOff[1] == "1")
+                                offToggle = true;
+                            else if (splittedDataStrOff[1] == "0")
+                                offToggle = false;
+                            else
+                                break;
+
+                            if (splittedDataStrOff[0] == "b")
+                                ServerConfig.Icing.BlueTeam = offToggle;
+                            else if (splittedDataStrOff[0] == "r")
+                                ServerConfig.Icing.RedTeam = offToggle;
+                        }
+                        else if (dataStr.Contains("highstick")) {
+                            string[] splittedDataStrOff = dataStr.Replace("highstick", "").Trim().Split(' ');
+
+                            bool offToggle;
+                            if (splittedDataStrOff[1] == "1")
+                                offToggle = true;
+                            else if (splittedDataStrOff[1] == "0")
+                                offToggle = false;
+                            else
+                                break;
+
+                            if (splittedDataStrOff[0] == "b")
+                                ServerConfig.HighStick.BlueTeam = offToggle;
+                            else if (splittedDataStrOff[0] == "r")
+                                ServerConfig.HighStick.RedTeam = offToggle;
+                        }
+                        else if (dataStr.Contains("gint")) {
+                            string[] splittedDataStrOff = dataStr.Replace("gint", "").Trim().Split(' ');
+
+                            bool offToggle;
+                            if (splittedDataStrOff[1] == "1")
+                                offToggle = true;
+                            else if (splittedDataStrOff[1] == "0")
+                                offToggle = false;
+                            else
+                                break;
+
+                            if (splittedDataStrOff[0] == "b")
+                                ServerConfig.GInt.BlueTeam = offToggle;
+                            else if (splittedDataStrOff[0] == "r")
+                                ServerConfig.GInt.RedTeam = offToggle;
+                        }
+                        break;
+
+                    case PenaltyModule.GIVE_PENALTY_DATANAME: // SERVER-SIDE : Give penalty.
+                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Playing)
+                            break;
+
+                        Player gintPenReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (gintPenReferee == null || !gintPenReferee)
+                            break;
+
+                        string gintPenRefereeSteamId = gintPenReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(gintPenRefereeSteamId) && !_currentRefsSteamId.Contains(gintPenRefereeSteamId))
+                            break;
+
+                        PenaltyType penaltyType;
+                        if (dataStr.Contains("gint")) {
+                            dataStr = dataStr.Replace("gint", "");
+                            penaltyType = PenaltyType.GoalieInterference;
+                        }
+                        else if (dataStr.Contains("int")) {
+                            dataStr = dataStr.Replace("int", "");
+                            penaltyType = PenaltyType.Interference;
+                        }
+                        else if (dataStr.Contains("trip")) {
+                            dataStr = dataStr.Replace("trip", "");
+                            penaltyType = PenaltyType.Tripping;
+                        }
+                        else if (dataStr.Contains("embel")) {
+                            dataStr = dataStr.Replace("embel", "");
+                            penaltyType = PenaltyType.Embellishment;
+                        }
+                        else if (dataStr.Contains("dog")) {
+                            dataStr = dataStr.Replace("dog", "");
+                            penaltyType = PenaltyType.DelayOfGame;
+                        }
+                        else if (dataStr.Contains("foff")) {
+                            dataStr = dataStr.Replace("foff", "");
+                            penaltyType = PenaltyType.FaceoffViolation;
+                        }
+                        else
+                            break;
+
+                        string[] steamIdsPen = dataStr.Trim().Split(' ');
+
+                        string steamIdReceivingPlayer = "";
+                        if (penaltyType == PenaltyType.Embellishment || penaltyType == PenaltyType.DelayOfGame || penaltyType == PenaltyType.FaceoffViolation) {
+                            if (steamIdsPen.Count() != 1)
+                                break;
+                        }
+                        else {
+                            if (steamIdsPen.Count() != 2)
+                                break;
+                            steamIdReceivingPlayer = steamIdsPen[1];
+                        }
+
+                        Player penPlayer = PlayerManager.Instance.GetPlayerBySteamId(steamIdsPen[0]);
+                        if (penPlayer == null || !penPlayer)
+                            break;
+
+                        PenaltyModule.GivePenalty(penaltyType, penPlayer, steamIdReceivingPlayer, gintPenReferee);
+                        break;
+
+                    case PenaltyModule.REMOVE_ALL_PENALTIES_DATANAME: // SERVER-SIDE : Remove all penalties.
+                        Player removeAllPenReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (removeAllPenReferee == null || !removeAllPenReferee)
+                            break;
+
+                        string removeAllPenRefereeSteamId = removeAllPenReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(removeAllPenRefereeSteamId) && !_currentRefsSteamId.Contains(removeAllPenRefereeSteamId))
+                            break;
+
+                        while (PenaltyModule.RemoveOnePenalty(PlayerTeam.Blue));
+                        while (PenaltyModule.RemoveOnePenalty(PlayerTeam.Red));
+                        break;
+
+                    case PenaltyModule.REMOVE_PENALTY_DATANAME: // SERVER-SIDE : Remove one penalty.
+                        Player removePenReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (removePenReferee == null || !removePenReferee)
+                            break;
+
+                        string removePenRefereeSteamId = removePenReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(removePenRefereeSteamId) && !_currentRefsSteamId.Contains(removePenRefereeSteamId))
+                            break;
+
+                        dataStr = dataStr.Trim();
+                        if (dataStr == "b")
+                            PenaltyModule.RemoveOnePenalty(PlayerTeam.Blue);
+                        else if (dataStr == "r")
+                            PenaltyModule.RemoveOnePenalty(PlayerTeam.Red);
+                        break;
+
+                    case TOGGLE_HIGHSTICK_DATANAME: // SERVER-SIDE : Toggle high stick rule.
+                        Player toggleHsPlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (toggleHsPlayer == null || !toggleHsPlayer)
+                            break;
+
+                        string toggleHsPlayerSteamId = toggleHsPlayer.SteamId.Value.ToString();
+
+                        if (!IsAdmin(toggleHsPlayerSteamId))
+                            break;
+
+                        dataStr = dataStr.Trim();
+                        if (dataStr == "b") {
+                            ServerConfig.HighStick.BlueTeam = !ServerConfig.HighStick.BlueTeam;
+                            if (ServerConfig.HighStick.BlueTeam)
+                                SystemChatMessages.Add("High stick is now enabled for the blue team.");
+                            else
+                                SystemChatMessages.Add("High stick is now disabled for the blue team.");
+                        }
+                        else if (dataStr == "r") {
+                            ServerConfig.HighStick.RedTeam = !ServerConfig.HighStick.RedTeam;
+                            if (ServerConfig.HighStick.RedTeam)
+                                SystemChatMessages.Add("High stick is now enabled for the red team.");
+                            else
+                                SystemChatMessages.Add("High stick is now disabled for the red team.");
+                        }
+                        break;
+
+                    case TOGGLE_OFFSIDE_DATANAME: // SERVER-SIDE : Toggle offside rule.
+                        Player toggleOffPlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (toggleOffPlayer == null || !toggleOffPlayer)
+                            break;
+
+                        string toggleOffPlayerSteamId = toggleOffPlayer.SteamId.Value.ToString();
+
+                        if (!IsAdmin(toggleOffPlayerSteamId))
+                            break;
+
+                        dataStr = dataStr.Trim();
+                        if (dataStr == "b") {
+                            ServerConfig.Offside.BlueTeam = !ServerConfig.Offside.BlueTeam;
+                            if (ServerConfig.Offside.BlueTeam)
+                                SystemChatMessages.Add("Offside is now enabled for the blue team.");
+                            else
+                                SystemChatMessages.Add("Offside is now disabled for the blue team.");
+                        }
+                        else if (dataStr == "r") {
+                            ServerConfig.Offside.RedTeam = !ServerConfig.Offside.RedTeam;
+                            if (ServerConfig.Offside.RedTeam)
+                                SystemChatMessages.Add("Offside is now enabled for the red team.");
+                            else
+                                SystemChatMessages.Add("Offside is now disabled for the red team.");
+                        }
+                        break;
+
+                    case TOGGLE_ICING_DATANAME: // SERVER-SIDE : Toggle icing rule.
+                        Player toggleIcePlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (toggleIcePlayer == null || !toggleIcePlayer)
+                            break;
+
+                        string toggleIcePlayerSteamId = toggleIcePlayer.SteamId.Value.ToString();
+
+                        if (!IsAdmin(toggleIcePlayerSteamId))
+                            break;
+
+                        dataStr = dataStr.Trim();
+                        if (dataStr == "b") {
+                            ServerConfig.Icing.BlueTeam = !ServerConfig.Icing.BlueTeam;
+                            if (ServerConfig.Icing.BlueTeam)
+                                SystemChatMessages.Add("Icing is now enabled for the blue team.");
+                            else
+                                SystemChatMessages.Add("Icing is now disabled for the blue team.");
+                        }
+                        else if (dataStr == "r") {
+                            ServerConfig.Icing.RedTeam = !ServerConfig.Icing.RedTeam;
+                            if (ServerConfig.Icing.RedTeam)
+                                SystemChatMessages.Add("Icing is now enabled for the red team.");
+                            else
+                                SystemChatMessages.Add("Icing is now disabled for the red team.");
+                        }
+                        break;
+
+                    case TOGGLE_DEFERRED_ICING_DATANAME: // SERVER-SIDE : Toggle deferred icing rule.
+                        if (dataStr != "1")
+                            break;
+
+                        Player toggleDefIcePlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (toggleDefIcePlayer == null || !toggleDefIcePlayer)
+                            break;
+
+                        string toggleDefIcePlayerSteamId = toggleDefIcePlayer.SteamId.Value.ToString();
+
+                        if (!IsAdmin(toggleDefIcePlayerSteamId))
+                            break;
+                        ServerConfig.Icing.Deferred = !ServerConfig.Icing.Deferred;
+                        if (ServerConfig.Icing.Deferred)
+                            SystemChatMessages.Add("Deferred icing is now enabled.");
+                        else
+                            SystemChatMessages.Add("Deferred icing is now disabled.");
+                        break;
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in ReceiveData.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(ReceiveData)}.\n{ex}", ServerConfig);
             }
+        }
+
+        private static void AddPenaltiesLabel() {
+            try {
+                if (_penaltiesLabelBlue != null)
+                    return;
+
+                Label speedLabel = SystemFunc.GetPrivateField<Label>(typeof(UIHUD), UIHUD.Instance, "speedLabel");
+
+                _penaltiesLabelBlue = new Label {
+                    name = "PenaltiesLabelBlue",
+                };
+                SetPenaltiesLabel(_penaltiesLabelBlue, speedLabel, true);
+                SystemFunc.GetPrivateField<VisualElement>(typeof(UIHUD), UIHUD.Instance, "container").Add(_penaltiesLabelBlue);
+
+                _penaltiesLabelRed = new Label {
+                    name = "PenaltiesLabelRed",
+                };
+                SetPenaltiesLabel(_penaltiesLabelRed, speedLabel, false);
+                SystemFunc.GetPrivateField<VisualElement>(typeof(UIHUD), UIHUD.Instance, "container").Add(_penaltiesLabelRed);
+
+                _penaltiesLabelTimer = new Timer(PenaltiesLabelTimerCallback, null, 0, 1000);
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(AddPenaltiesLabel)}.\n{ex}", ClientConfig);
+            }
+        }
+
+        private static void SetPenaltiesLabel(Label penaltiesLabel, Label referenceLabel, bool blue) {
+            if (blue)
+                penaltiesLabel.style.color = new StyleColor(Color.blue);
+            else
+                penaltiesLabel.style.color = new StyleColor(Color.red);
+
+            penaltiesLabel.style.fontSize = referenceLabel.resolvedStyle.fontSize;
+            penaltiesLabel.style.unityFont = referenceLabel.resolvedStyle.unityFont;
+            penaltiesLabel.style.unityFontDefinition = referenceLabel.resolvedStyle.unityFontDefinition;
+            penaltiesLabel.style.unityFontStyleAndWeight = referenceLabel.resolvedStyle.unityFontStyleAndWeight;
+            penaltiesLabel.style.position = referenceLabel.resolvedStyle.position;
+            penaltiesLabel.style.alignItems = referenceLabel.resolvedStyle.alignItems;
+            penaltiesLabel.style.backgroundColor = referenceLabel.resolvedStyle.backgroundColor;
+            penaltiesLabel.style.unityTextOutlineColor = referenceLabel.resolvedStyle.unityTextOutlineColor;
+            penaltiesLabel.style.unityTextOutlineWidth = referenceLabel.resolvedStyle.unityTextOutlineWidth;
+            penaltiesLabel.style.textShadow = new StyleTextShadow(StyleKeyword.Auto);
+
+            penaltiesLabel.style.bottom = new Length(3.5f, LengthUnit.Percent);
+            if (!blue)
+                penaltiesLabel.style.marginLeft = new Length(100f - ClientConfig.RedTeamPenaltyTimerXOffset, LengthUnit.Percent);
+        }
+
+        private static void PenaltiesLabelTimerCallback(object stateInfo) {
+            try {
+                if (Paused)
+                    return;
+
+                List<(string PlayerIdentity, PausableTimer Timer)> penaltyTimers = new List<(string, PausableTimer)>(_penaltyTimers);
+
+                // Blue team.
+                string penaltyTimersTextBlueTeam = "";
+                foreach (var timer in penaltyTimers.Where(x => x.PlayerIdentity.StartsWith("B"))) {
+                    TimeSpan ts = TimeSpan.FromMilliseconds(timer.Timer.MillisecondsLeft);
+                    penaltyTimersTextBlueTeam += $"{timer.PlayerIdentity.Remove(0, 2)} {string.Format("{0}:{1:00}", (int)ts.TotalMinutes, ts.Seconds)}\n";
+                }
+
+                if (!string.IsNullOrEmpty(penaltyTimersTextBlueTeam))
+                    penaltyTimersTextBlueTeam = penaltyTimersTextBlueTeam.Remove(penaltyTimersTextBlueTeam.Length - 1);
+                _penaltiesLabelBlue.text = penaltyTimersTextBlueTeam;
+
+                // Red team.
+                string penaltyTimersTextRedTeam = "";
+                foreach (var timer in penaltyTimers.Where(x => x.PlayerIdentity.StartsWith("R"))) {
+                    TimeSpan ts = TimeSpan.FromMilliseconds(timer.Timer.MillisecondsLeft);
+                    penaltyTimersTextRedTeam += $"{timer.PlayerIdentity.Remove(0, 2)} {string.Format("{0}:{1:00}", (int)ts.TotalMinutes, ts.Seconds)}\n";
+                }
+
+                if (!string.IsNullOrEmpty(penaltyTimersTextRedTeam))
+                    penaltyTimersTextRedTeam = penaltyTimersTextRedTeam.Remove(penaltyTimersTextRedTeam.Length - 1);
+                _penaltiesLabelRed.text = penaltyTimersTextRedTeam;
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(PenaltiesLabelTimerCallback)}.\n{ex}", ClientConfig);
+            }
+        }
+
+        private static void CallOffside(PlayerTeam team, Player referee = null) {
+            if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Blue])
+                CallPenalty(PlayerTeam.Blue);
+            else if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Red])
+                CallPenalty(PlayerTeam.Red);
+            else {
+                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Offside, _puckLastStateBeforeCall[Rule.Offside]);
+                SendChat(Rule.Offside, team, true, false, referee);
+                _lastStoppageReason = Rule.Offside;
+                DoFaceoff();
+            }
+        }
+
+        private static void CallHighStick(PlayerTeam team, Player referee = null) {
+            if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Blue])
+                CallPenalty(PlayerTeam.Blue);
+            else if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Red])
+                CallPenalty(PlayerTeam.Red);
+            else {
+                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.HighStick, _puckLastStateBeforeCall[Rule.HighStick]);
+                SendChat(Rule.HighStick, team, true, false, referee);
+                ResetHighSticks();
+                _lastStoppageReason = Rule.HighStick;
+                DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.HIGHSTICK_REF);
+            }
+        }
+
+        private static void CallGoalieInt(PlayerTeam team, Player referee = null) {
+            if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Blue])
+                CallPenalty(PlayerTeam.Blue);
+            else if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Red])
+                CallPenalty(PlayerTeam.Red);
+            else {
+                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.GoalieInt, _puckLastStateBeforeCall[Rule.GoalieInt]);
+                SendChat(Rule.GoalieInt, team, true, false, referee);
+                _lastStoppageReason = Rule.GoalieInt;
+                DoFaceoff(RefSignals.GetSignalConstant(true, team), RefSignals.INTERFERENCE_REF);
+            }
+        }
+
+        private static void CallIcing(PlayerTeam team, Player referee = null) {
+            PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
+            if (PenaltyModule.PenaltyToBeCalled[otherTeam] && !PenaltyModule.PenaltyToBeCalled[team])
+                CallPenalty(otherTeam, true);
+            else {
+                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Icing, _puckLastStateBeforeCall[Rule.Icing]);
+                SendChat(Rule.Icing, team, true, false, referee);
+
+                int remainingPlayTime = GameManager.Instance.GameState.Value.Time;
+                if (_lastStoppageReason == Rule.Icing && _lastIcing[TeamFunc.GetOtherTeam(team)] > _lastIcing[team] && _lastIcing[team] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
+                    _icingStaminaDrainPenaltyAmount[team] += 1;
+                else
+                    _icingStaminaDrainPenaltyAmount[team] = 0;
+
+                _lastStoppageReason = Rule.Icing;
+                _lastIcing[team] = remainingPlayTime;
+                DoFaceoff();
+            }
+        }
+
+        private static void CallDelayOfGameStoppage(PlayerTeam team, Player referee = null) {
+            if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Blue])
+                CallPenalty(PlayerTeam.Blue);
+            else if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Red])
+                CallPenalty(PlayerTeam.Red);
+            else {
+                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.DelayOfGame, _puckLastStateBeforeCall[Rule.DelayOfGame]);
+                SendChat(Rule.DelayOfGame, team, true, false, referee);
+                _lastStoppageReason = Rule.Offside;
+                DoFaceoff();
+            }
+        }
+
+        internal static void CallPenalty(PlayerTeam team, bool wasIcing = false, Player referee = null) {
+            string refSignal = "";
+            // TODO : Get more signals.
+            switch (PenaltyModule.LastPenaltyCalled) {
+                case PenaltyType.Interference:
+                    refSignal = RefSignals.INTERFERENCE_REF;
+                    break;
+            }
+            if (!string.IsNullOrEmpty(refSignal)) {
+                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), refSignal, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+            }
+
+            if (wasIcing)
+                NextFaceoffSpot = FaceoffSpot.Center;
+            else if (team == PlayerTeam.Blue) {
+                if (_puckLastStateBeforeCall[Rule.Offside].Position.x > 0)
+                    NextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight;
+                else
+                    NextFaceoffSpot = FaceoffSpot.BlueteamDZoneLeft;
+            }
+            else if (team == PlayerTeam.Red) {
+                if (_puckLastStateBeforeCall[Rule.Offside].Position.x > 0)
+                    NextFaceoffSpot = FaceoffSpot.RedteamDZoneRight;
+                else
+                    NextFaceoffSpot = FaceoffSpot.RedteamDZoneLeft;
+            }
+            else
+                NextFaceoffSpot = FaceoffSpot.Center;
+
+            SendChat(Rule.Penalty, team, true, false, referee);
+            _lastStoppageReason = Rule.Penalty;
+            DoFaceoff();
         }
 
         private static void StopBlueRefSignals(string dataStr) {
@@ -2230,7 +3443,7 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             if (_refSignalsBlueTeam.Errors.Count != 0) {
-                Logging.LogError("There was an error when initializing _refSignalsBlueTeam.", ClientConfig);
+                Logging.LogError($"There was an error when initializing {nameof(_refSignalsBlueTeam)}.", ClientConfig);
                 foreach (string error in _refSignalsBlueTeam.Errors)
                     Logging.LogError(error, ClientConfig);
             }
@@ -2249,7 +3462,7 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             if (_refSignalsRedTeam.Errors.Count != 0) {
-                Logging.LogError("There was an error when initializing _refSignalsRedTeam.", ClientConfig);
+                Logging.LogError($"There was an error when initializing {nameof(_refSignalsRedTeam)}.", ClientConfig);
                 foreach (string error in _refSignalsRedTeam.Errors)
                     Logging.LogError(error, ClientConfig);
             }
@@ -2313,6 +3526,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     Logging.Log("Setting server sided config.", ServerConfig, true);
                     ServerConfig = ServerConfig.ReadConfig();
+                    ServerConfigBackup = new ServerConfig(ServerConfig);
                 }
                 else {
                     Logging.Log("Setting client sided config.", ServerConfig, true);
@@ -2437,6 +3651,16 @@ namespace oomtm450PuckMod_Ruleset {
                     _puckValidator = null;
                 }
 
+                if (_penaltiesLabelBlue != null) {
+                    _penaltiesLabelBlue.RemoveFromHierarchy();
+                    _penaltiesLabelBlue = null;
+                }
+
+                if (_penaltiesLabelRed != null) {
+                    _penaltiesLabelRed.RemoveFromHierarchy();
+                    _penaltiesLabelRed = null;
+                }
+
                 _harmony.UnpatchSelf();
 
                 Logging.Log($"Disabled.", ServerConfig, true);
@@ -2464,6 +3688,22 @@ namespace oomtm450PuckMod_Ruleset {
             catch (Exception ex) {
                 Logging.LogError(ex.ToString(), ServerConfig);
             }
+        }
+
+        internal static List<string> GetClaimedPositions(PlayerTeam team) {
+            List<PlayerPosition> positions;
+            if (team == PlayerTeam.Blue)
+                positions = PlayerPositionManager.Instance.BluePositions;
+            else
+                positions = PlayerPositionManager.Instance.RedPositions;
+
+            List<string> claimedPositions = new List<string>();
+            foreach (PlayerPosition playerPosition in positions) {
+                if (playerPosition.IsClaimed)
+                    claimedPositions.Add(playerPosition.Name);
+            }
+
+            return claimedPositions;
         }
 
         /// <summary>
@@ -2548,8 +3788,12 @@ namespace oomtm450PuckMod_Ruleset {
         Icing,
         [Description("HIGH STICK"), Category("ToString")]
         HighStick,
-        [Description("GOALIE INT"), Category("ToString")]
+        [Description("GOALIE INTERFERENCE"), Category("ToString")]
         GoalieInt,
+        [Description("OUT OF BOUNDS"), Category("ToString")]
+        DelayOfGame,
+        [Description("PENALTY"), Category("ToString")]
+        Penalty,
     }
 
     internal class PlayerIcing {
@@ -2598,7 +3842,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!string.IsNullOrEmpty(category)) {
                     CategoryAttribute[] categoryAttributes = (CategoryAttribute[])fieldInfo.GetCustomAttributes(typeof(CategoryAttribute), false);
                     if (categoryAttributes == null || categoryAttributes.Length == 0 || categoryAttributes[0].Category.ToLower() != category.ToLower())
-                        return "";
+                        return enumValue.ToString();
                 }
 
                 DescriptionAttribute[] descriptionAttributes = (DescriptionAttribute[])fieldInfo.GetCustomAttributes(typeof(DescriptionAttribute), false);
@@ -2606,7 +3850,7 @@ namespace oomtm450PuckMod_Ruleset {
                     return descriptionAttributes[0].Description;
             }
 
-            return "";
+            return enumValue.ToString();
         }
     }
 }

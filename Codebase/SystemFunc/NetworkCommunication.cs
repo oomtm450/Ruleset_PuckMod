@@ -111,8 +111,9 @@ namespace Codebase {
         /// <param name="config">IConfig, config for the logs.</param>
         /// <returns>(string DataName, string DataStr), header of the data and the content of the data.</returns>
         public static (string DataName, string DataStr) GetData(ulong clientId, FastBufferReader reader, IConfig config) {
+            string dataName = "?";
             try {
-                reader.ReadValue(out string dataName);
+                reader.ReadValue(out dataName);
 
                 int length = reader.Length - reader.Position;
                 int totalLength = length + sizeof(ulong) + Encoding.UTF8.GetByteCount(dataName);
@@ -130,7 +131,7 @@ namespace Codebase {
                 return (dataName, dataStr);
             }
             catch (Exception ex)  {
-                Logging.LogError($"Error when reading streamed data: {ex}", config);
+                Logging.LogError($"Error from cliend Id {clientId} when reading streamed data \"{dataName}\": {ex}", config);
             }
 
             return ("", "");
