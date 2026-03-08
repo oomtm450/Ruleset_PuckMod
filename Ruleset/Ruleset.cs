@@ -609,11 +609,13 @@ namespace oomtm450PuckMod_Ruleset {
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = playerSteamId;
                     _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, now));
 
-                    //if (PenaltyModule.PenaltyToBeCalled.Any(x => x.Value)) {
+                    bool isGoalie = Codebase.PlayerFunc.IsGoalie(stick.Player);
+
+                    //if (!PenaltyModule.PenaltyToBeCalled.Any(x => x.Value)) {
                         //string possessionPlayer = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch);
 
                         //if (possessionPlayer != null && possessionPlayer) {
-                            if (PenaltyModule.PenaltyToBeCalled[stick.Player.Team.Value]) {
+                            if (!isGoalie && PenaltyModule.PenaltyToBeCalled[stick.Player.Team.Value]) {
                                 CallPenalty(stick.Player.Team.Value);
                                 return;
                             }
@@ -632,7 +634,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Icing logic.
                     if (IsIcing(otherTeam)) {
-                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
+                        if (!isGoalie)
                             CallIcing(otherTeam);
                         else {
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, otherTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send stop icing signal for client-side UI.
