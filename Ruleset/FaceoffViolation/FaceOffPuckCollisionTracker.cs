@@ -116,13 +116,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             Stick stick = FaceOffPuckCollisionTracker.LastStickCollision;
 
-            // Only penalize center players
-            string positionName = stick.Player.PlayerPosition?.Name ?? "";
-            if (positionName != "C") {
-                Logging.Log($"Non-center player {stick.Player.Username.Value} ({positionName}) touched puck - ignoring", Ruleset.ServerConfig);
-                return;
-            }
-
             HandlePuckViolation(stick.Player);
             _isMonitoring = false; // Stop monitoring after violation
             FaceOffPuckCollisionTracker.StopMonitoring();
