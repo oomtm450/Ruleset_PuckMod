@@ -2954,8 +2954,11 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case Constants.MOD_NAME + "addpermrefsteamid": // SERVER-SIDE : Add a permanent ref (until server restarts). // TODO : Constant.
-                        PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1, Quaternion.identity, Vector3.zero).Server_Freeze(); // TODO
-                        PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2, Quaternion.identity, Vector3.zero).Server_Freeze(); // TODO
+                        /*PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1, Quaternion.identity, Vector3.zero).Server_Freeze();
+                        PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2, Quaternion.identity, Vector3.zero).Server_Freeze();
+
+                        PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1, Quaternion.identity, Vector3.zero).Server_Freeze();
+                        PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2, Quaternion.identity, Vector3.zero).Server_Freeze();*/
 
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;

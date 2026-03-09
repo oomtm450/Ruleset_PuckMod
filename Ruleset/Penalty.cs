@@ -24,8 +24,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(22.4f, 0f, 45.7f); // TODO : Config.
 
-        internal static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1 = new Vector3(19.4f, 0f, 43.8f); // TODO : Config.
-        internal static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2 = new Vector3(23f, 0f, 33.6f); // TODO : Config.
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1 = new Vector3(19.35f, 0f, 43.7f); // TODO : Config.
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2 = new Vector3(23f, 0f, 33.6f); // TODO : Config.
         
         private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_RIGHT_LINE_1_POSITION_1 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.x, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.z * -1);
         private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_RIGHT_LINE_1_POSITION_2 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.x, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.z * -1);
@@ -36,8 +36,8 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_LEFT_LINE_1_POSITION_1 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.x * -1, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.z * -1);
         private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_LEFT_LINE_1_POSITION_2 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.x * -1, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.z * -1);
 
-        internal static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1 = new Vector3(19.4f, 0f, 43.8f); // TODO : Config.
-        internal static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2 = new Vector3(23f, 0f, 33.6f); // TODO : Config.
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1 = new Vector3(15.5f, 0f, 45.2f); // TODO : Config.
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2 = new Vector3(21.55f, 0f, 39.1f); // TODO : Config.
 
         private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_RIGHT_LINE_2_POSITION_1 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1.x, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1.z * -1);
         private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_RIGHT_LINE_2_POSITION_2 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2.x, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2.z * -1);
@@ -91,10 +91,10 @@ namespace oomtm450PuckMod_Ruleset {
 
         #region Methods/Functions
         internal static bool PuckIsOutsideOfBounds(Puck puck) {
-            /*if (Math.Abs(puck.Rigidbody.transform.position.x) > DELAY_OF_GAME_POSITION.x ||
+            if (Math.Abs(puck.Rigidbody.transform.position.x) > DELAY_OF_GAME_POSITION.x ||
                 puck.Rigidbody.transform.position.y < DELAY_OF_GAME_POSITION.y ||
                 Math.Abs(puck.Rigidbody.transform.position.z) > DELAY_OF_GAME_POSITION.z)
-                return true;*/
+                return true;
 
             // Check for corners.
             if (puck.Rigidbody.transform.position.GetSideOfLine(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2) <= 0) // TOP RIGHT BLUE ZONE
