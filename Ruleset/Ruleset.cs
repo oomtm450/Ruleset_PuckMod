@@ -611,16 +611,14 @@ namespace oomtm450PuckMod_Ruleset {
 
                     bool isGoalie = Codebase.PlayerFunc.IsGoalie(stick.Player);
 
-                    //if (!PenaltyModule.PenaltyToBeCalled.Any(x => x.Value)) {
-                        //string possessionPlayer = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch);
+                    if (!isGoalie && PenaltyModule.PenaltyToBeCalled[stick.Player.Team.Value]) {
+                        string possessionPlayer = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch);
 
-                        //if (possessionPlayer != null && possessionPlayer) {
-                            if (!isGoalie && PenaltyModule.PenaltyToBeCalled[stick.Player.Team.Value]) {
-                                CallPenalty(stick.Player.Team.Value);
-                                return;
-                            }
-                        //}
-                    //}
+                        if (possessionPlayer == playerSteamId) {
+                            CallPenalty(stick.Player.Team.Value);
+                            return;
+                        }
+                    }
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(stick.Player.Team.Value);
                     // Offside logic.
