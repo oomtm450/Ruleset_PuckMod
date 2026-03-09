@@ -2277,12 +2277,12 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static bool IsIcingEnabled(PlayerTeam team) {
             if (team == PlayerTeam.Blue) {
-                if (PenaltyModule.PenalizedPlayersCountBlueTeam > PenaltyModule.PenalizedPlayersCountRedTeam)
+                if (PenaltyModule.PenalizedPlayersInBoxCountBlueTeam > PenaltyModule.PenalizedPlayersInBoxCountRedTeam)
                     return false;
                 return ServerConfig.Icing.BlueTeam;
             }
             else {
-                if (PenaltyModule.PenalizedPlayersCountRedTeam > PenaltyModule.PenalizedPlayersCountBlueTeam)
+                if (PenaltyModule.PenalizedPlayersInBoxCountRedTeam > PenaltyModule.PenalizedPlayersInBoxCountBlueTeam)
                     return false;
                 return ServerConfig.Icing.RedTeam;
             }

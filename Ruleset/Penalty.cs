@@ -69,7 +69,11 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static int PenalizedPlayersCountBlueTeam { get; set; } = 0;
 
+        internal static int PenalizedPlayersInBoxCountBlueTeam { get; set; } = 0;
+
         internal static int PenalizedPlayersCountRedTeam { get; set; } = 0;
+
+        internal static int PenalizedPlayersInBoxCountRedTeam { get; set; } = 0;
 
         internal static LockDictionary<PlayerTeam, bool> PenaltyToBeCalled { get; } = new LockDictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, false },
@@ -127,7 +131,9 @@ namespace oomtm450PuckMod_Ruleset {
         internal static void ResetPenalties() {
             PenalizedPlayers.Clear();
             PenalizedPlayersCountBlueTeam = 0;
+            PenalizedPlayersInBoxCountBlueTeam = 0;
             PenalizedPlayersCountRedTeam = 0;
+            PenalizedPlayersInBoxCountRedTeam = 0;
 
             foreach (PlayerTeam key in new List<PlayerTeam>(PositionIsPenalized.Keys))
                 PositionIsPenalized[key] = new LockDictionary<string, bool>(POSITION_IS_PENALIZED_DEFAULT);
@@ -192,7 +198,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (_playerToUnpenalize.Equals(default(Player)))
                     return false;
 
-                RemoveOnePenalty(_playerToUnpenalize.Team.Value);
+                RemoveOnePenalty(_playerToUnpenalize.Team.Value); // TODO : Remove penalty after stoppage.
             }
 
             // If goalie has a penalty, take another player.
@@ -252,6 +258,9 @@ namespace oomtm450PuckMod_Ruleset {
         internal static void StartPenalties() {
             PenaltyToBeCalled[PlayerTeam.Blue] = false;
             PenaltyToBeCalled[PlayerTeam.Red] = false;
+
+            PenalizedPlayersInBoxCountBlueTeam = PenalizedPlayersCountBlueTeam;
+            PenalizedPlayersInBoxCountRedTeam = PenalizedPlayersCountRedTeam;
 
             foreach (LockList<Penalty> penalties in PenalizedPlayers.Values) {
                 // Player to the box and start first penalty.
@@ -355,6 +364,7 @@ namespace oomtm450PuckMod_Ruleset {
         internal static void UnpenalizePlayer(Player penalizedPlayer, PlayerTeam penalizedPlayerTeam, string penalizedPlayerPosition) {
             if (penalizedPlayerTeam == PlayerTeam.Blue) {
                 PenalizedPlayersCountBlueTeam--;
+                PenalizedPlayersInBoxCountBlueTeam--;
                 if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
                     penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
                     penalizedPlayer.PlayerBody.Server_Unfreeze();
@@ -362,6 +372,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
             else {
                 PenalizedPlayersCountRedTeam--;
+                PenalizedPlayersInBoxCountRedTeam--;
                 if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
                     penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
                     penalizedPlayer.PlayerBody.Server_Unfreeze();
