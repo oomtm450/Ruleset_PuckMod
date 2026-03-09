@@ -3260,7 +3260,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 Label speedLabel = SystemFunc.GetPrivateField<Label>(typeof(UIHUD), UIHUD.Instance, "speedLabel");
 
-                VisualElement container = SystemFunc.GetPrivateField<VisualElement>(typeof(UIGameState), UIGameState.Instance, "container");
+                VisualElement container = SystemFunc.GetPrivateField<VisualElement>(typeof(UIHUD), UIHUD.Instance, "container");
 
                 _penaltiesLabelBlue = new Label {
                     name = "PenaltiesLabelBlue",
@@ -3298,7 +3298,7 @@ namespace oomtm450PuckMod_Ruleset {
             penaltiesLabel.style.unityTextOutlineWidth = referenceLabel.resolvedStyle.unityTextOutlineWidth;
             penaltiesLabel.style.textShadow = new StyleTextShadow(StyleKeyword.Auto);
 
-            penaltiesLabel.style.bottom = new Length(403.5f, LengthUnit.Percent);
+            penaltiesLabel.style.bottom = new Length(3.5f, LengthUnit.Percent);
             if (!blue)
                 penaltiesLabel.style.marginLeft = new Length(100f - ClientConfig.RedTeamPenaltyTimerXOffset, LengthUnit.Percent);
         }
