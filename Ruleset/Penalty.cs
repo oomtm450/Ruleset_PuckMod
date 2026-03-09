@@ -24,8 +24,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(22.45f, 0f, 45.7f); // TODO : Config.
 
-        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1 = new Vector3(19.35f, 0f, 43.7f); // TODO : Config.
-        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2 = new Vector3(23f, 0f, 33.6f); // TODO : Config.
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1 = new Vector3(19.4f, 0f, 43.7f); // TODO : Config.
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2 = new Vector3(23.05f, 0f, 33.6f); // TODO : Config.
         
         private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_RIGHT_LINE_1_POSITION_1 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.x, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.z * -1);
         private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_RIGHT_LINE_1_POSITION_2 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.x, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.z * -1);
