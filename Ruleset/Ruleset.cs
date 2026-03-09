@@ -2954,6 +2954,9 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case Constants.MOD_NAME + "addpermrefsteamid": // SERVER-SIDE : Add a permanent ref (until server restarts). // TODO : Constant.
+                        PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1, Quaternion.identity, Vector3.zero).Server_Freeze(); // TODO
+                        PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2, Quaternion.identity, Vector3.zero).Server_Freeze(); // TODO
+
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
@@ -3255,17 +3258,19 @@ namespace oomtm450PuckMod_Ruleset {
 
                 Label speedLabel = SystemFunc.GetPrivateField<Label>(typeof(UIHUD), UIHUD.Instance, "speedLabel");
 
+                VisualElement container = SystemFunc.GetPrivateField<VisualElement>(typeof(UIGameState), UIGameState.Instance, "container");
+
                 _penaltiesLabelBlue = new Label {
                     name = "PenaltiesLabelBlue",
                 };
                 SetPenaltiesLabel(_penaltiesLabelBlue, speedLabel, true);
-                SystemFunc.GetPrivateField<VisualElement>(typeof(UIHUD), UIHUD.Instance, "container").Add(_penaltiesLabelBlue);
+                container.Add(_penaltiesLabelBlue);
 
                 _penaltiesLabelRed = new Label {
                     name = "PenaltiesLabelRed",
                 };
                 SetPenaltiesLabel(_penaltiesLabelRed, speedLabel, false);
-                SystemFunc.GetPrivateField<VisualElement>(typeof(UIHUD), UIHUD.Instance, "container").Add(_penaltiesLabelRed);
+                container.Add(_penaltiesLabelRed);
 
                 _penaltiesLabelTimer = new Timer(PenaltiesLabelTimerCallback, null, 0, 1000);
             }
