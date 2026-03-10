@@ -615,10 +615,8 @@ namespace oomtm450PuckMod_Ruleset {
                     bool isGoalie = Codebase.PlayerFunc.IsGoalie(stick.Player);
 
                     if (!isGoalie && PenaltyModule.PenaltyToBeCalled[stick.Player.Team.Value]) {
-                        string possessionPlayer = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds,
-                            _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false);
-
-                        if (possessionPlayer == playerSteamId) {
+                        if (Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds,
+                            _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == playerSteamId) {
                             CallPenalty(stick.Player.Team.Value);
                             return;
                         }
