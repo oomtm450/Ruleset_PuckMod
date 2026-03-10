@@ -580,7 +580,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(playerSteamId, out Stopwatch lastTimeCollisionWatch)) {
                         lastTimeCollisionWatch = new Stopwatch();
-                        lastTimeCollisionWatch.Start();
                         _lastTimeOnCollisionStayOrExitWasCalled.Add(playerSteamId, lastTimeCollisionWatch);
                     }
                     lastTimeCollisionWatch.Restart();
