@@ -22,9 +22,31 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f); // TODO : Config.
 
-        internal static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(22.5f, 0f, (float)ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].End + 14f); // TODO : Config.
+        private static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(22.47f, 0f, 45.72f); // TODO : Config.
 
-        internal static readonly float DELAY_OF_GAME_POSITION_END_Z = 45.8f; // TODO : Config.
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1 = new Vector3(19.45f, 0f, 43.8f); // TODO : Config.
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2 = new Vector3(23.20f, 0f, 33.7f); // TODO : Config.
+        
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_RIGHT_LINE_1_POSITION_1 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.x, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.z * -1);
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_RIGHT_LINE_1_POSITION_2 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.x, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.z * -1);
+
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_LEFT_LINE_1_POSITION_1 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.x * -1, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.z);
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_LEFT_LINE_1_POSITION_2 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.x * -1, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.z);
+
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_LEFT_LINE_1_POSITION_1 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.x * -1, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1.z * -1);
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_LEFT_LINE_1_POSITION_2 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.x * -1, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2.z * -1);
+
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1 = new Vector3(15.55f, 0f, 45.3f); // TODO : Config.
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2 = new Vector3(21.65f, 0f, 39.15f); // TODO : Config.
+
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_RIGHT_LINE_2_POSITION_1 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1.x, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1.z * -1);
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_RIGHT_LINE_2_POSITION_2 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2.x, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2.z * -1);
+
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_LEFT_LINE_2_POSITION_1 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1.x * -1, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1.z);
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_LEFT_LINE_2_POSITION_2 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2.x * -1, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2.z);
+
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_LEFT_LINE_2_POSITION_1 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1.x * -1, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1.z * -1);
+        private static readonly Vector3 DELAY_OF_GAME_CORNER_BOTTOM_LEFT_LINE_2_POSITION_2 = new Vector3(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2.x * -1, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2.y, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2.z * -1);
 
         private static readonly Dictionary<string, bool> POSITION_IS_PENALIZED_DEFAULT = new Dictionary<string, bool> {
             { Codebase.PlayerFunc.GOALIE_POSITION, false },
@@ -47,7 +69,11 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static int PenalizedPlayersCountBlueTeam { get; set; } = 0;
 
+        internal static int PenalizedPlayersInBoxCountBlueTeam { get; set; } = 0;
+
         internal static int PenalizedPlayersCountRedTeam { get; set; } = 0;
+
+        internal static int PenalizedPlayersInBoxCountRedTeam { get; set; } = 0;
 
         internal static LockDictionary<PlayerTeam, bool> PenaltyToBeCalled { get; } = new LockDictionary<PlayerTeam, bool> {
             { PlayerTeam.Blue, false },
@@ -68,10 +94,46 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Methods/Functions
+        internal static bool PuckIsOutsideOfBounds(Puck puck) {
+            if (Math.Abs(puck.Rigidbody.transform.position.x) > DELAY_OF_GAME_POSITION.x ||
+                puck.Rigidbody.transform.position.y < DELAY_OF_GAME_POSITION.y ||
+                Math.Abs(puck.Rigidbody.transform.position.z) > DELAY_OF_GAME_POSITION.z)
+                return true;
+
+            // Check for corners.
+            if (puck.Rigidbody.transform.position.GetSideOfLine(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2) <= 0) // TOP RIGHT BLUE ZONE
+                return true;
+
+            if (puck.Rigidbody.transform.position.GetSideOfLine(DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1, DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2) <= 0) // TOP RIGHT BLUE ZONE
+                return true;
+
+            if (puck.Rigidbody.transform.position.GetSideOfLine(DELAY_OF_GAME_CORNER_BOTTOM_RIGHT_LINE_1_POSITION_1, DELAY_OF_GAME_CORNER_BOTTOM_RIGHT_LINE_1_POSITION_2) >= 0) // TOP RIGHT BLUE ZONE
+                return true;
+
+            if (puck.Rigidbody.transform.position.GetSideOfLine(DELAY_OF_GAME_CORNER_BOTTOM_RIGHT_LINE_2_POSITION_1, DELAY_OF_GAME_CORNER_BOTTOM_RIGHT_LINE_2_POSITION_2) >= 0) // TOP RIGHT BLUE ZONE
+                return true;
+
+            if (puck.Rigidbody.transform.position.GetSideOfLine(DELAY_OF_GAME_CORNER_TOP_LEFT_LINE_1_POSITION_1, DELAY_OF_GAME_CORNER_TOP_LEFT_LINE_1_POSITION_2) >= 0) // TOP LEFT BLUE ZONE
+                return true;
+
+            if (puck.Rigidbody.transform.position.GetSideOfLine(DELAY_OF_GAME_CORNER_TOP_LEFT_LINE_2_POSITION_1, DELAY_OF_GAME_CORNER_TOP_LEFT_LINE_2_POSITION_2) >= 0) // TOP LEFT BLUE ZONE
+                return true;
+
+            if (puck.Rigidbody.transform.position.GetSideOfLine(DELAY_OF_GAME_CORNER_BOTTOM_LEFT_LINE_1_POSITION_1, DELAY_OF_GAME_CORNER_BOTTOM_LEFT_LINE_1_POSITION_2) <= 0) // TOP LEFT BLUE ZONE
+                return true;
+
+            if (puck.Rigidbody.transform.position.GetSideOfLine(DELAY_OF_GAME_CORNER_BOTTOM_LEFT_LINE_2_POSITION_1, DELAY_OF_GAME_CORNER_BOTTOM_LEFT_LINE_2_POSITION_2) <= 0) // TOP LEFT BLUE ZONE
+                return true;
+
+            return false;
+        }
+
         internal static void ResetPenalties() {
             PenalizedPlayers.Clear();
             PenalizedPlayersCountBlueTeam = 0;
+            PenalizedPlayersInBoxCountBlueTeam = 0;
             PenalizedPlayersCountRedTeam = 0;
+            PenalizedPlayersInBoxCountRedTeam = 0;
 
             foreach (PlayerTeam key in new List<PlayerTeam>(PositionIsPenalized.Keys))
                 PositionIsPenalized[key] = new LockDictionary<string, bool>(POSITION_IS_PENALIZED_DEFAULT);
@@ -136,7 +198,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (_playerToUnpenalize.Equals(default(Player)))
                     return false;
 
-                RemoveOnePenalty(_playerToUnpenalize.Team.Value);
+                RemoveOnePenalty(_playerToUnpenalize.Team.Value); // TODO : Remove penalty after stoppage.
             }
 
             // If goalie has a penalty, take another player.
@@ -196,6 +258,9 @@ namespace oomtm450PuckMod_Ruleset {
         internal static void StartPenalties() {
             PenaltyToBeCalled[PlayerTeam.Blue] = false;
             PenaltyToBeCalled[PlayerTeam.Red] = false;
+
+            PenalizedPlayersInBoxCountBlueTeam = PenalizedPlayersCountBlueTeam;
+            PenalizedPlayersInBoxCountRedTeam = PenalizedPlayersCountRedTeam;
 
             foreach (LockList<Penalty> penalties in PenalizedPlayers.Values) {
                 // Player to the box and start first penalty.
@@ -299,6 +364,7 @@ namespace oomtm450PuckMod_Ruleset {
         internal static void UnpenalizePlayer(Player penalizedPlayer, PlayerTeam penalizedPlayerTeam, string penalizedPlayerPosition) {
             if (penalizedPlayerTeam == PlayerTeam.Blue) {
                 PenalizedPlayersCountBlueTeam--;
+                PenalizedPlayersInBoxCountBlueTeam--;
                 if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
                     penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
                     penalizedPlayer.PlayerBody.Server_Unfreeze();
@@ -306,6 +372,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
             else {
                 PenalizedPlayersCountRedTeam--;
+                PenalizedPlayersInBoxCountRedTeam--;
                 if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
                     penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
                     penalizedPlayer.PlayerBody.Server_Unfreeze();

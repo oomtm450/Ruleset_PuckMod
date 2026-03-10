@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.0b";
+        private static readonly string MOD_VERSION = "1.0.1c";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -65,6 +65,10 @@ namespace oomtm450PuckMod_Ruleset {
             "0.28.0",
             "1.0.0",
             "1.0.0a",
+            "1.0.0b",
+            "1.0.1",
+            "1.0.1a",
+            "1.0.1b",
         });
 
         /// <summary>
@@ -608,16 +612,16 @@ namespace oomtm450PuckMod_Ruleset {
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team.Value] = playerSteamId;
                     _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team.Value, now));
 
-                    //if (PenaltyModule.PenaltyToBeCalled.Any(x => x.Value)) {
-                        //string possessionPlayer = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch);
+                    bool isGoalie = Codebase.PlayerFunc.IsGoalie(stick.Player);
 
-                        //if (possessionPlayer != null && possessionPlayer) {
-                            if (PenaltyModule.PenaltyToBeCalled[stick.Player.Team.Value]) {
-                                CallPenalty(stick.Player.Team.Value);
-                                return;
-                            }
+                    if (!isGoalie && PenaltyModule.PenaltyToBeCalled[stick.Player.Team.Value]) {
+                        //string possessionPlayer = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch); // TODO
+
+                        //if (possessionPlayer == playerSteamId) {
+                            CallPenalty(stick.Player.Team.Value);
+                            return;
                         //}
-                    //}
+                    }
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(stick.Player.Team.Value);
                     // Offside logic.
@@ -631,7 +635,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Icing logic.
                     if (IsIcing(otherTeam)) {
-                        if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
+                        if (!isGoalie)
                             CallIcing(otherTeam);
                         else {
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, otherTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send stop icing signal for client-side UI.
@@ -1477,10 +1481,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 // Delay of game penalty logic or offside.
                 try {
-                    if (ServerConfig.Penalty.DelayOfGame &&
-                        (Math.Abs(puck.Rigidbody.transform.position.x) > PenaltyModule.DELAY_OF_GAME_POSITION.x ||
-                         puck.Rigidbody.transform.position.y < PenaltyModule.DELAY_OF_GAME_POSITION.y) ||
-                         (Math.Abs(puck.Rigidbody.transform.position.z) > PenaltyModule.DELAY_OF_GAME_POSITION_END_Z)) {
+                    if (ServerConfig.Penalty.DelayOfGame && PenaltyModule.PuckIsOutsideOfBounds(puck)) {
                         bool playerTouched = _playersOnPuckDateTime.TryGetValue(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam], out var lastTouchDateTime);
 
                         Logging.Log("playerTouched : " + playerTouched, ServerConfig, true); // TODO
@@ -2279,12 +2280,12 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static bool IsIcingEnabled(PlayerTeam team) {
             if (team == PlayerTeam.Blue) {
-                if (PenaltyModule.PenalizedPlayersCountBlueTeam > PenaltyModule.PenalizedPlayersCountRedTeam)
+                if (PenaltyModule.PenalizedPlayersInBoxCountBlueTeam > PenaltyModule.PenalizedPlayersInBoxCountRedTeam)
                     return false;
                 return ServerConfig.Icing.BlueTeam;
             }
             else {
-                if (PenaltyModule.PenalizedPlayersCountRedTeam > PenaltyModule.PenalizedPlayersCountBlueTeam)
+                if (PenaltyModule.PenalizedPlayersInBoxCountRedTeam > PenaltyModule.PenalizedPlayersInBoxCountBlueTeam)
                     return false;
                 return ServerConfig.Icing.RedTeam;
             }
@@ -2954,6 +2955,12 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case Constants.MOD_NAME + "addpermrefsteamid": // SERVER-SIDE : Add a permanent ref (until server restarts). // TODO : Constant.
+                        /*PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1, Quaternion.identity, Vector3.zero).Server_Freeze();
+                        PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2, Quaternion.identity, Vector3.zero).Server_Freeze();
+
+                        PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_1, Quaternion.identity, Vector3.zero).Server_Freeze();
+                        PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2, Quaternion.identity, Vector3.zero).Server_Freeze();*/
+
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
@@ -3255,17 +3262,19 @@ namespace oomtm450PuckMod_Ruleset {
 
                 Label speedLabel = SystemFunc.GetPrivateField<Label>(typeof(UIHUD), UIHUD.Instance, "speedLabel");
 
+                VisualElement container = SystemFunc.GetPrivateField<VisualElement>(typeof(UIHUD), UIHUD.Instance, "container");
+
                 _penaltiesLabelBlue = new Label {
                     name = "PenaltiesLabelBlue",
                 };
                 SetPenaltiesLabel(_penaltiesLabelBlue, speedLabel, true);
-                SystemFunc.GetPrivateField<VisualElement>(typeof(UIHUD), UIHUD.Instance, "container").Add(_penaltiesLabelBlue);
+                container.Add(_penaltiesLabelBlue);
 
                 _penaltiesLabelRed = new Label {
                     name = "PenaltiesLabelRed",
                 };
                 SetPenaltiesLabel(_penaltiesLabelRed, speedLabel, false);
-                SystemFunc.GetPrivateField<VisualElement>(typeof(UIHUD), UIHUD.Instance, "container").Add(_penaltiesLabelRed);
+                container.Add(_penaltiesLabelRed);
 
                 _penaltiesLabelTimer = new Timer(PenaltiesLabelTimerCallback, null, 0, 1000);
             }
@@ -3851,6 +3860,25 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             return enumValue.ToString();
+        }
+    }
+
+    public static class Vector3Extensions {
+        /// <summary>
+        /// Determines which side of the line from A to B the point P lies on.
+        /// </summary>
+        /// <param name="P">The point to check.</param>
+        /// <param name="A">Start point of the line.</param>
+        /// <param name="B">End point of the line.</param>
+        /// <returns>
+        /// A positive value if P is to the "left" of the line AB.
+        /// A negative value if P is to the "right" of the line AB.
+        /// Zero if P is collinear with the line AB.
+        /// </returns>
+        public static float GetSideOfLine(this Vector3 P, Vector3 A, Vector3 B) {
+            // The 2D "cross product" (signed area of the triangle formed by A, B, P)
+            // cross = (P.x - A.x) * (B.z - A.z) - (P.z - A.z) * (B.x - A.x);
+            return (P.x - A.x) * (B.z - A.z) - (P.z - A.z) * (B.x - A.x);
         }
     }
 }
