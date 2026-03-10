@@ -837,8 +837,10 @@ namespace oomtm450PuckMod_Ruleset {
                             if (hasOtherPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
                             else if (playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum) { // If the other person jumped.
-                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var LastTouchDateTimePlayerHit) || (now - LastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold)
-                                    PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
+                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var lastTouchDateTimePlayerHit) || (now - lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
+                                    if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var lastTouchDateTimeOtherPlayerHit) || (now - lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000)
+                                        PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
+                                }
                             }
                         }
 
@@ -846,8 +848,10 @@ namespace oomtm450PuckMod_Ruleset {
                             if (hasLastPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, lastPlayerHit, currentPlayerSteamId);
                             else if (lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum) { // If the other person jumped.
-                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var LastTouchDateTimeOtherPlayerHit) || (now - LastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold)
-                                    PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
+                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var lastTouchDateTimeOtherPlayerHit) || (now - lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
+                                    if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var lastTouchDateTimePlayerHit) || (now - lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000)
+                                        PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
+                                }
                             }
                         }
 
