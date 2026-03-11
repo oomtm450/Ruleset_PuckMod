@@ -72,7 +72,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; set; } = 375;
+        public int MinPossessionMilliseconds { get; set; } = 350;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
