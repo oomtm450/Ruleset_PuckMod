@@ -152,6 +152,9 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
                     // Freeze player after they respawn at faceoff. (with delay)
                     StartCoroutine(FreezePlayerAfterRespawn(violatingPlayer));
+
+                    _playerViolations.Clear();
+                    _playerViolations.Add(clientId, violation);
                 }
             }
             else {
