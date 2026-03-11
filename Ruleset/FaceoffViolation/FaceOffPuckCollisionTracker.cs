@@ -128,13 +128,13 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             ulong clientId = violatingPlayer.OwnerClientId;
 
             // Track violation
-            if (!_playerViolations.ContainsKey(clientId)) {
-                _playerViolations[clientId] = new PlayerViolation {
+            if (!_playerViolations.TryGetValue(clientId, out PlayerViolation violation)) {
+                violation = new PlayerViolation {
                     ViolationCount = 0,
                 };
+                _playerViolations.Add(clientId, violation);
             }
 
-            PlayerViolation violation = _playerViolations[clientId];
             violation.ViolationCount++;
 
             Logging.Log($"VIOLATION! #{violatingPlayer.Number.Value} {violatingPlayer.Username.Value} touched puck before ice contact. Count: {violation.ViolationCount}", Ruleset.ServerConfig);
