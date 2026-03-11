@@ -115,7 +115,7 @@ namespace Codebase {
             LockDictionary<string, Stopwatch> lastTimeOnCollisionStayOrExitWasCalled, bool checkForChallenge = true) {
             Dictionary<string, Stopwatch> dict = new Dictionary<string, Stopwatch>(playersCurrentPuckTouch.ToDictionary(x => x.Key, x => x.Value));
             // Remove players that didn't touch the puck in a too long time.
-            foreach (var kvp in dict) {
+            foreach (var kvp in playersCurrentPuckTouch) {
                 if (lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(kvp.Key, out Stopwatch watch) && watch.ElapsedMilliseconds > maxPossessionMilliseconds)
                     dict.Remove(kvp.Key);
             }
