@@ -111,8 +111,19 @@ namespace Codebase {
         /// </summary>
         /// <param name="checkForChallenge">Bool, false if we only check logic without challenging puck possession from other players to determine possession.</param>
         /// <returns>String, player steam Id with the possession or an empty string if no one has the puck (or it is challenged).</returns>
-        public static string GetPlayerSteamIdInPossession(int minPossessionMilliseconds, LockDictionary<string, Stopwatch> playersCurrentPuckTouch, bool checkForChallenge = true) {
-            Dictionary<string, Stopwatch> dict = playersCurrentPuckTouch
+        public static string GetPlayerSteamIdInPossession(int minPossessionMilliseconds, int maxPossessionMilliseconds, LockDictionary<string, Stopwatch> playersCurrentPuckTouch,
+            LockDictionary<string, Stopwatch> lastTimeOnCollisionStayOrExitWasCalled, bool checkForChallenge = true) {
+            Dictionary<string, Stopwatch> dict = new Dictionary<string, Stopwatch>(playersCurrentPuckTouch.ToDictionary(x => x.Key, x => x.Value));
+            // Remove players that didn't touch the puck in a too long time.
+            foreach (var kvp in playersCurrentPuckTouch) {
+                if (lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(kvp.Key, out Stopwatch watch) && watch.ElapsedMilliseconds > maxPossessionMilliseconds)
+                    dict.Remove(kvp.Key);
+            }
+
+            if (dict.Count == 1)
+                return dict.First().Key;
+
+            dict = dict
                 .Where(x => x.Value.ElapsedMilliseconds > minPossessionMilliseconds)
                 .ToDictionary(x => x.Key, x => x.Value);
 
