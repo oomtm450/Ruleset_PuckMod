@@ -216,8 +216,6 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static readonly LockDictionary<ulong, DateTime> _sentOutOfDateMessage = new LockDictionary<ulong, DateTime>();
 
-        //private static InputAction _getStickLocation;
-
         /// <summary>
         /// LockDictionary of string and Stopwatch, dictionary of all players last puck OnCollisionStay or OnCollisionExit time.
         /// </summary>
@@ -1223,36 +1221,6 @@ namespace oomtm450PuckMod_Ruleset {
                 return true;
             }
         }
-
-        /*/// <summary>
-        /// Class that patches the Update event from PlayerInput.
-        /// </summary>
-        [HarmonyPatch(typeof(PlayerInput), "Update")]
-        public class PlayerInput_Update_Patch {
-            [HarmonyPrefix]
-            public static bool Prefix() {
-                try {
-                    // If this is the server, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer())
-                        return true;
-
-                    UIChat chat = UIChat.Instance;
-
-                    if (chat.IsFocused)
-                        return true;
-
-                    if (_getStickLocation.WasPressedThisFrame()) {
-                        Logging.Log($"Stick position : {PlayerManager.Instance.GetLocalPlayer().Stick.BladeHandlePosition}", ClientConfig);
-                    }
-                        
-                }
-                catch (Exception ex) {
-                    Logging.LogError($"Error in PlayerInput_Update_Patch Prefix().\n{ex}", ClientConfig);
-                }
-
-                return true;
-            }
-        }*/
 
         /// <summary>
         /// Class that patches the Client_SendClientChatMessage event from UIChat.
