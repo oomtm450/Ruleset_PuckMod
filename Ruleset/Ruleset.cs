@@ -3338,7 +3338,7 @@ namespace oomtm450PuckMod_Ruleset {
                     penaltyTimersTextRedTeam = penaltyTimersTextRedTeam.Remove(penaltyTimersTextRedTeam.Length - 1);
                 _penaltiesLabelRed.text = penaltyTimersTextRedTeam;
 
-                UIHUD.Instance.Show();
+                //UIHUD.Instance.Show();
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(PenaltiesLabelTimerCallback)}.\n{ex}", ClientConfig);
