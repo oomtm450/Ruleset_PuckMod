@@ -360,7 +360,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// ServerConfig, backup of the server config.
         /// </summary>
-        internal static ServerConfig ServerConfigBackup { get; set; } = new ServerConfig();
+        internal static ServerConfig ServerConfigBackup { get; set; } = null;
 
         /// <summary>
         /// ClientConfig, config set by the client.
@@ -2510,7 +2510,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 ServerConfig = new ServerConfig();
-                ServerConfigBackup = new ServerConfig();
+                ServerConfigBackup = null;
 
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
@@ -2922,25 +2922,30 @@ namespace oomtm450PuckMod_Ruleset {
                             return;
 
                         if (dataStr == "1") {
-                            ServerConfigBackup = new ServerConfig(ServerConfig);
+                            if (ServerConfigBackup == null) {
+                                ServerConfigBackup = new ServerConfig(ServerConfig);
 
-                            ServerConfig.Offside.BlueTeam = false;
-                            ServerConfig.Offside.RedTeam = false;
+                                ServerConfig.Offside.BlueTeam = false;
+                                ServerConfig.Offside.RedTeam = false;
 
-                            ServerConfig.Icing.BlueTeam = false;
-                            ServerConfig.Icing.RedTeam = false;
+                                ServerConfig.Icing.BlueTeam = false;
+                                ServerConfig.Icing.RedTeam = false;
 
-                            ServerConfig.HighStick.BlueTeam = false;
-                            ServerConfig.HighStick.RedTeam = false;
+                                ServerConfig.HighStick.BlueTeam = false;
+                                ServerConfig.HighStick.RedTeam = false;
 
+                                Logging.Log($"Ref mode has been enabled.", ServerConfig);
+                            }
                             SystemChatMessages.Add("Ref mode has been enabled.");
-                            Logging.Log($"Ref mode has been enabled.", ServerConfig);
                         }
                         else if (dataStr == "0") {
-                            ServerConfig = new ServerConfig(ServerConfigBackup);
+                            if (ServerConfigBackup != null) {
+                                ServerConfig = new ServerConfig(ServerConfigBackup);
+                                ServerConfigBackup = null;
 
+                                Logging.Log($"Ref mode has been disabled.", ServerConfig);
+                            }
                             SystemChatMessages.Add("Ref mode has been disabled.");
-                            Logging.Log($"Ref mode has been disabled.", ServerConfig);
                         }
 
                         break;
@@ -3568,7 +3573,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     Logging.Log("Setting server sided config.", ServerConfig, true);
                     ServerConfig = ServerConfig.ReadConfig();
-                    ServerConfigBackup = new ServerConfig(ServerConfig);
+                    ServerConfigBackup = null;
                 }
                 else {
                     Logging.Log("Setting client sided config.", ServerConfig, true);
