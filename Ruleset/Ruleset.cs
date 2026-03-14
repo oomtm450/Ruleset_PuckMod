@@ -3234,6 +3234,33 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
+                    case TOGGLE_GINTERFERENCE_DATANAME: // SERVER-SIDE : Toggle gint rule.
+                        Player toggleGIntPlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (toggleGIntPlayer == null || !toggleGIntPlayer)
+                            break;
+
+                        string toggleGIntPlayerSteamId = toggleGIntPlayer.SteamId.Value.ToString();
+
+                        if (!IsAdmin(toggleGIntPlayerSteamId))
+                            break;
+
+                        dataStr = dataStr.Trim();
+                        if (dataStr == "b") {
+                            ServerConfig.GInt.BlueTeam = !ServerConfig.GInt.BlueTeam;
+                            if (ServerConfig.GInt.BlueTeam)
+                                SystemChatMessages.Add("Goalie interference stoppage is now enabled for the blue team.");
+                            else
+                                SystemChatMessages.Add("Goalie interference stoppage is now disabled for the blue team.");
+                        }
+                        else if (dataStr == "r") {
+                            ServerConfig.GInt.RedTeam = !ServerConfig.GInt.RedTeam;
+                            if (ServerConfig.GInt.RedTeam)
+                                SystemChatMessages.Add("Goalie interference stoppage is now enabled for the red team.");
+                            else
+                                SystemChatMessages.Add("Goalie interference stoppage is now disabled for the red team.");
+                        }
+                        break;
+
                     case TOGGLE_DEFERRED_ICING_DATANAME: // SERVER-SIDE : Toggle deferred icing rule.
                         if (dataStr != "1")
                             break;
