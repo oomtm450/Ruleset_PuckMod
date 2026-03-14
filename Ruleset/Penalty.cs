@@ -203,20 +203,28 @@ namespace oomtm450PuckMod_Ruleset {
 
             // If goalie has a penalty, take another player.
             if (Codebase.PlayerFunc.IsGoalie(penalizedPlayer)) {
+                List<Player> possiblePlayersToPenalize = new List<Player>();
                 foreach (Player teamPlayer in teamPlayers) {
-                    penalizedPlayer = teamPlayer;
-                    penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
-                    if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> _penaltyList)) {
-                        _penaltyList = new LockList<Penalty>();
-                        PenalizedPlayers.Add(penalizedPlayerSteamId, _penaltyList);
-                    }
-                    penaltyList = _penaltyList;
-
-                    if (penaltyList.Count != 0)
+                    if (!PenalizedPlayers.TryGetValue(penalizedPlayer.SteamId.Value.ToString(), out LockList<Penalty> __penaltyList))
                         continue;
 
-                    break;
+                    if (__penaltyList.Count != 0)
+                        continue;
+
+                    possiblePlayersToPenalize.Add(teamPlayer);
                 }
+
+                if (possiblePlayersToPenalize.Count == 0)
+                    return false;
+
+                penalizedPlayer = possiblePlayersToPenalize.OrderBy(x => x.Goals.Value + x.Assists.Value).First();
+                penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
+
+                if (!PenalizedPlayers.TryGetValue(penalizedPlayer.SteamId.Value.ToString(), out LockList<Penalty> _penaltyList)) {
+                    _penaltyList = new LockList<Penalty>();
+                    PenalizedPlayers.Add(penalizedPlayerSteamId, _penaltyList);
+                }
+                penaltyList = _penaltyList;
             }
 
             PositionIsPenalized[penalizedPlayer.Team.Value][penalizedPlayer.PlayerPosition.Name] = true;
