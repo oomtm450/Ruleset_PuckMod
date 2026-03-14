@@ -27,5 +27,10 @@ namespace oomtm450PuckMod_Ruleset {
         /// Const string, tag to ask the server for the startup data.
         /// </summary>
         internal const string ASK_SERVER_FOR_STARTUP_DATA = MOD_NAME + "ASKDATA";
+
+        /// <summary>
+        /// Const string, data name for sending referee state (isRef and isRefmodeActive) to clients.
+        /// </summary>
+        internal const string REF_STATE_DATA = MOD_NAME + "refstate";
     }
 }
