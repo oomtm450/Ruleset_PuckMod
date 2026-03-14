@@ -2,6 +2,7 @@
 using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.FaceoffViolation;
+using oomtm450PuckMod_Ruleset.RefUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -334,6 +335,13 @@ namespace oomtm450PuckMod_Ruleset {
         /// Bool, true if the server has responded and sent the startup data.
         /// </summary>
         private static bool _serverHasResponded = false;
+
+        // Server-side: tracks whether refmode is currently active.
+        private static bool _isRefmodeActive = false;
+
+        // Client-side: ref state received from the server.
+        internal static HashSet<string> RefSteamIds { get; private set; } = new HashSet<string>();
+        internal static bool IsRefmodeActive { get; private set; } = false;
 
         /// <summary>
         /// Bool, true if the client asked to be kicked because of versionning problems.
@@ -2116,6 +2124,21 @@ namespace oomtm450PuckMod_Ruleset {
             return ServerManager.Instance.AdminSteamIds.Contains(steamId);
         }
 
+        private static void SendRefState(ulong? clientId = null) {
+            try {
+                string refList = string.Join(",", _currentRefsSteamId.ToList());
+                string payload = $"{(_isRefmodeActive ? "1" : "0")}|{refList}";
+
+                if (clientId.HasValue)
+                    NetworkCommunication.SendData(Constants.REF_STATE_DATA, payload, clientId.Value, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                else
+                    NetworkCommunication.SendDataToAll(Constants.REF_STATE_DATA, payload, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(SendRefState)}: {ex}", ServerConfig);
+            }
+        }
+
         private static void SendChat(Rule rule, PlayerTeam team, bool called, bool off = false, Player referee = null) {
             string ruleStr = rule.GetDescription("ToString");
             if (string.IsNullOrEmpty(ruleStr))
@@ -2515,6 +2538,8 @@ namespace oomtm450PuckMod_Ruleset {
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
 
+                RefUIManager.Shutdown();
+
                 if (_refSignalsBlueTeam == null && _refSignalsRedTeam == null)
                     return;
 
@@ -2714,6 +2739,7 @@ namespace oomtm450PuckMod_Ruleset {
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
                         _serverHasResponded = true;
                         AddPenaltiesLabel();
+                        RefUIManager.Init();
 
                         if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
                             break;
@@ -2723,6 +2749,24 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         _askForKick = true;
+                        break;
+
+                    case Constants.REF_STATE_DATA: // CLIENT-SIDE : Receive referee state from server.
+                        try {
+                            string[] refStateParts = dataStr.Split('|');
+
+                            if (refStateParts.Length >= 2) {
+                                IsRefmodeActive = refStateParts[0] == "1";
+
+                                RefSteamIds = new HashSet<string>(
+                                    string.IsNullOrEmpty(refStateParts[1])
+                                        ? new string[0]
+                                        : refStateParts[1].Split(','));
+                            }
+                        }
+                        catch (Exception ex) {
+                            Logging.LogError($"Error parsing ref state data: {ex}", ClientConfig);
+                        }
                         break;
 
                     case RefSignals.SHOW_SIGNAL_BLUE: // CLIENT-SIDE : Show blue team ref signal in the UI.
@@ -2839,6 +2883,8 @@ namespace oomtm450PuckMod_Ruleset {
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                         NetworkCommunication.SendData(SoundsSystem.LOAD_EXTRA_SOUNDS, Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "sounds"),
                             clientId, Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT, ServerConfig);
+
+                        SendRefState(clientId);
                         break;
 
                     case RefSignals.OFFSIDE_LINESMAN: // SERVER-SIDE : Call an offside.
@@ -2937,6 +2983,10 @@ namespace oomtm450PuckMod_Ruleset {
                                 Logging.Log($"Ref mode has been enabled.", ServerConfig);
                             }
                             SystemChatMessages.Add("Ref mode has been enabled.");
+                            Logging.Log($"Ref mode has been enabled.", ServerConfig);
+
+                            _isRefmodeActive = true;
+                            SendRefState();
                         }
                         else if (dataStr == "0") {
                             if (ServerConfigBackup != null) {
@@ -2946,6 +2996,10 @@ namespace oomtm450PuckMod_Ruleset {
                                 Logging.Log($"Ref mode has been disabled.", ServerConfig);
                             }
                             SystemChatMessages.Add("Ref mode has been disabled.");
+                            Logging.Log($"Ref mode has been disabled.", ServerConfig);
+
+                            _isRefmodeActive = false;
+                            SendRefState();
                         }
 
                         break;
@@ -2961,6 +3015,7 @@ namespace oomtm450PuckMod_Ruleset {
                             SystemChatMessages.Add($"#{addedRefSteamIdPlayer.Number.Value} {addedRefSteamIdPlayer.Username.Value} is now a referee for a game.");
                             Logging.Log($"Added #{addedRefSteamIdPlayer.Number.Value} {addedRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee for a game.", ServerConfig);
                         }
+                        SendRefState();
                         break;
 
                     case Constants.MOD_NAME + "addpermrefsteamid": // SERVER-SIDE : Add a permanent ref (until server restarts). // TODO : Constant.
@@ -2981,6 +3036,7 @@ namespace oomtm450PuckMod_Ruleset {
                             SystemChatMessages.Add($"#{addedPermaRefSteamIdPlayer.Number.Value} {addedPermaRefSteamIdPlayer.Username.Value} is now a referee until server restart.");
                             Logging.Log($"Added #{addedPermaRefSteamIdPlayer.Number.Value} {addedPermaRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee until server restart.", ServerConfig);
                         }
+                        SendRefState();
                         break;
 
                     case Constants.MOD_NAME + "removerefsteamid": // SERVER-SIDE : Remove a ref. // TODO : Constant.
@@ -2994,6 +3050,7 @@ namespace oomtm450PuckMod_Ruleset {
                             SystemChatMessages.Add($"#{removedRefSteamIdPlayer.Number.Value} {removedRefSteamIdPlayer.Username.Value} is not a referee anymore.");
                             Logging.Log($"Removed #{removedRefSteamIdPlayer.Number.Value} {removedRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee.", ServerConfig);
                         }
+                        SendRefState();
                         break;
 
                     case Constants.MOD_NAME + "rule": // SERVER-SIDE : Change rule. // TODO : Constant.
@@ -3317,6 +3374,16 @@ namespace oomtm450PuckMod_Ruleset {
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(AddPenaltiesLabel)}.\n{ex}", ClientConfig);
             }
+        }
+
+        private static void InitRefUI() {
+            RefUIManager.Init();
+        }
+
+        private static void DestroyRefUI() {
+            RefSteamIds = new HashSet<string>();
+            IsRefmodeActive = false;
+            RefUIManager.Shutdown();
         }
 
         private static void SetPenaltiesLabel(Label penaltiesLabel, Label referenceLabel, bool blue) {
@@ -3670,6 +3737,8 @@ namespace oomtm450PuckMod_Ruleset {
                 _hasRegisteredWithNamedMessageHandler = false;
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
+
+                DestroyRefUI();
 
                 if (_refSignalsBlueTeam != null) {
                     _refSignalsBlueTeam.StopAllSignals();
