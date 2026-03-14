@@ -368,7 +368,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// ServerConfig, backup of the server config.
         /// </summary>
-        internal static ServerConfig ServerConfigBackup { get; set; } = new ServerConfig();
+        internal static ServerConfig ServerConfigBackup { get; set; } = null;
 
         /// <summary>
         /// ClientConfig, config set by the client.
@@ -2533,7 +2533,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 ServerConfig = new ServerConfig();
-                ServerConfigBackup = new ServerConfig();
+                ServerConfigBackup = null;
 
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
@@ -2968,17 +2968,20 @@ namespace oomtm450PuckMod_Ruleset {
                             return;
 
                         if (dataStr == "1") {
-                            ServerConfigBackup = new ServerConfig(ServerConfig);
+                            if (ServerConfigBackup == null) {
+                                ServerConfigBackup = new ServerConfig(ServerConfig);
 
-                            ServerConfig.Offside.BlueTeam = false;
-                            ServerConfig.Offside.RedTeam = false;
+                                ServerConfig.Offside.BlueTeam = false;
+                                ServerConfig.Offside.RedTeam = false;
 
-                            ServerConfig.Icing.BlueTeam = false;
-                            ServerConfig.Icing.RedTeam = false;
+                                ServerConfig.Icing.BlueTeam = false;
+                                ServerConfig.Icing.RedTeam = false;
 
-                            ServerConfig.HighStick.BlueTeam = false;
-                            ServerConfig.HighStick.RedTeam = false;
+                                ServerConfig.HighStick.BlueTeam = false;
+                                ServerConfig.HighStick.RedTeam = false;
 
+                                Logging.Log($"Ref mode has been enabled.", ServerConfig);
+                            }
                             SystemChatMessages.Add("Ref mode has been enabled.");
                             Logging.Log($"Ref mode has been enabled.", ServerConfig);
 
@@ -2986,8 +2989,12 @@ namespace oomtm450PuckMod_Ruleset {
                             SendRefState();
                         }
                         else if (dataStr == "0") {
-                            ServerConfig = new ServerConfig(ServerConfigBackup);
+                            if (ServerConfigBackup != null) {
+                                ServerConfig = new ServerConfig(ServerConfigBackup);
+                                ServerConfigBackup = null;
 
+                                Logging.Log($"Ref mode has been disabled.", ServerConfig);
+                            }
                             SystemChatMessages.Add("Ref mode has been disabled.");
                             Logging.Log($"Ref mode has been disabled.", ServerConfig);
 
@@ -3286,6 +3293,33 @@ namespace oomtm450PuckMod_Ruleset {
                                 SystemChatMessages.Add("Icing is now enabled for the red team.");
                             else
                                 SystemChatMessages.Add("Icing is now disabled for the red team.");
+                        }
+                        break;
+
+                    case TOGGLE_GINTERFERENCE_DATANAME: // SERVER-SIDE : Toggle gint rule.
+                        Player toggleGIntPlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (toggleGIntPlayer == null || !toggleGIntPlayer)
+                            break;
+
+                        string toggleGIntPlayerSteamId = toggleGIntPlayer.SteamId.Value.ToString();
+
+                        if (!IsAdmin(toggleGIntPlayerSteamId))
+                            break;
+
+                        dataStr = dataStr.Trim();
+                        if (dataStr == "b") {
+                            ServerConfig.GInt.BlueTeam = !ServerConfig.GInt.BlueTeam;
+                            if (ServerConfig.GInt.BlueTeam)
+                                SystemChatMessages.Add("Goalie interference stoppage is now enabled for the blue team.");
+                            else
+                                SystemChatMessages.Add("Goalie interference stoppage is now disabled for the blue team.");
+                        }
+                        else if (dataStr == "r") {
+                            ServerConfig.GInt.RedTeam = !ServerConfig.GInt.RedTeam;
+                            if (ServerConfig.GInt.RedTeam)
+                                SystemChatMessages.Add("Goalie interference stoppage is now enabled for the red team.");
+                            else
+                                SystemChatMessages.Add("Goalie interference stoppage is now disabled for the red team.");
                         }
                         break;
 
@@ -3606,7 +3640,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     Logging.Log("Setting server sided config.", ServerConfig, true);
                     ServerConfig = ServerConfig.ReadConfig();
-                    ServerConfigBackup = new ServerConfig(ServerConfig);
+                    ServerConfigBackup = null;
                 }
                 else {
                     Logging.Log("Setting client sided config.", ServerConfig, true);
