@@ -44,8 +44,9 @@ namespace oomtm450PuckMod_Ruleset {
         /// <returns>FaceoffSpot, next faceoff position.</returns>
         private static FaceoffSpot SetNextFaceoffPositionFromLastTouch(PlayerTeam team, bool left, (Vector3 Position, Zone Zone) puckLastState, Rule rule) {
             Zone puckZone = ZoneFunc.GetZone(puckLastState.Position, puckLastState.Zone, Ruleset.PuckRadius);
+
             if (puckZone == Zone.BlueTeam_BehindGoalLine || puckZone == Zone.BlueTeam_Zone) {
-                if (team == PlayerTeam.Blue || rule == Rule.DelayOfGame || rule == Rule.GoalieInt) {
+                if (team == PlayerTeam.Blue || rule == Rule.DelayOfGame) {
                     if (left)
                         return FaceoffSpot.BlueteamDZoneLeft;
                     else
@@ -59,7 +60,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
             else if (puckZone == Zone.RedTeam_BehindGoalLine || puckZone == Zone.RedTeam_Zone) {
-                if (team == PlayerTeam.Red || rule == Rule.DelayOfGame || rule == Rule.GoalieInt) {
+                if (team == PlayerTeam.Red || rule == Rule.DelayOfGame) {
                     if (left)
                         return FaceoffSpot.RedteamDZoneLeft;
                     else
