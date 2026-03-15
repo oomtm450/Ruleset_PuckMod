@@ -1753,21 +1753,26 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || !Logic)
                         return true;
 
-                    bool isGoalieInt = IsGoalieInt(team);
+                    // No goal if goalie interference.
+                    if (IsGoalieInt(team)) {
+                        CallGoalieInt(team);
+                        return false;
+                    }
 
                     if (goalPlayer != null) {
-                        // No goal if offside or high stick or goalie interference.
-                        bool isOffside = false, isHighStick = false;
-                        isOffside = IsOffside(team);
-                        isHighStick = IsHighStick(team);
+                        // No goal if offside or high stick or penalty.
+                        if (PenaltyModule.PenaltyToBeCalled[team]) {
+                            CallPenalty(team);
+                            return false;
+                        }
 
-                        if (isOffside || isHighStick || isGoalieInt) {
-                            if (isOffside)
-                                CallOffside(team);
-                            else if (isHighStick)
-                                CallHighStick(team);
-                            else if (isGoalieInt)
-                                CallGoalieInt(team);
+                        if (IsHighStick(team)) {
+                            CallHighStick(team);
+                            return false;
+                        }
+
+                        if (IsOffside(team)) {
+                            CallOffside(team);
                             return false;
                         }
 
@@ -1787,11 +1792,6 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         SendSOGDuringGoal(goalPlayer);
                         return true;
-                    }
-
-                    if (isGoalieInt) {
-                        CallGoalieInt(team);
-                        return false;
                     }
 
                     // If own goal, add goal attribution to last player on puck on the other team.
