@@ -375,10 +375,16 @@ namespace oomtm450PuckMod_Ruleset {
             if (penalizedPlayerTeam == PlayerTeam.Blue) {
                 PenalizedPlayersCountBlueTeam--;
                 PenalizedPlayersInBoxCountBlueTeam--;
+
+                if (PenalizedPlayersInBoxCountBlueTeam < 0)
+                    PenalizedPlayersInBoxCountBlueTeam = 0;
             }
             else {
                 PenalizedPlayersCountRedTeam--;
                 PenalizedPlayersInBoxCountRedTeam--;
+
+                if (PenalizedPlayersInBoxCountRedTeam < 0)
+                    PenalizedPlayersInBoxCountRedTeam = 0;
             }
 
             if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
@@ -394,10 +400,10 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static bool RemoveOnePenalty(PlayerTeam penalizedPlayerTeam) {
-            if (penalizedPlayerTeam == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == 0)
+            if (penalizedPlayerTeam == PlayerTeam.Blue && PenalizedPlayersInBoxCountBlueTeam == 0)
                 return false;
 
-            if (penalizedPlayerTeam == PlayerTeam.Red && PenalizedPlayersCountRedTeam == 0)
+            if (penalizedPlayerTeam == PlayerTeam.Red && PenalizedPlayersInBoxCountRedTeam == 0)
                 return false;
 
             Penalty penaltyToRemove = PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayerTeam).OrderBy(x => x.Timer.MillisecondsLeft).FirstOrDefault();
