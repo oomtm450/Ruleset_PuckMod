@@ -562,8 +562,10 @@ namespace oomtm450PuckMod_Ruleset {
             Penalty penaltyToRemove = null;
             // Remove elapsed penalty.
             foreach (Penalty penalty in PenaltyModule.PenalizedPlayers[SteamId]) {
-                if (penalty.Timer.TimerEnded())
+                if (penalty.Timer.TimerEnded()) {
                     penaltyToRemove = penalty;
+                    break;
+                }
             }
 
             PenaltyModule.PenalizedPlayers[SteamId].Remove(penaltyToRemove);
