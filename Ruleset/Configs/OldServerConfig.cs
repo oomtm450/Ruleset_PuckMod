@@ -156,7 +156,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, embellishment can be called after this number of milliseconds after the player gets up.
         /// </summary>
-        public int EmbellishmentMillisecondsThreshold { get; } = 3500;
+        public int EmbellishmentMillisecondsThreshold { get; } = 3500; // TODO : Change after release.
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
