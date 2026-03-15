@@ -570,8 +570,9 @@ namespace oomtm450PuckMod_Ruleset {
 
             PenaltyModule.PenalizedPlayers[SteamId].Remove(penaltyToRemove);
 
-            Ruleset.SystemChatMessages.Add($"PENALTY #{PlayerNumber} {PlayerUsername} OVER");
-            Logging.Log($"PENALTY #{PlayerNumber} {PlayerUsername} OVER", Ruleset.ServerConfig);
+            string penaltyOverMsg = $"PENALTY #{PlayerNumber} {PlayerUsername} OVER";
+            Ruleset.SystemChatMessages.Add(penaltyOverMsg);
+            Logging.Log(penaltyOverMsg, Ruleset.ServerConfig);
 
             // Unpenalize player if no more penalties or start the next one.
             if (PenaltyModule.PenalizedPlayers[SteamId].Count == 0)
