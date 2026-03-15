@@ -1454,20 +1454,24 @@ namespace oomtm450PuckMod_Ruleset {
                 // Delay of game penalty logic or offside.
                 try {
                     if (ServerConfig.Penalty.DelayOfGame && PenaltyModule.PuckIsOutsideOfBounds(puck)) {
-                        bool playerTouched = _playersOnPuckDateTime.TryGetValue(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam], out var lastTouchDateTime);
+                        string lastPlayerOnPuckSteamId = _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam];
+                        bool playerTouched = _playersOnPuckDateTime.TryGetValue(lastPlayerOnPuckSteamId, out var lastTouchDateTime);
+                        bool playerWasLastInPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == lastPlayerOnPuckSteamId;
 
                         Logging.Log("playerTouched : " + playerTouched, ServerConfig, true); // TODO
+                        Logging.Log("playerWasLastInPossession : " + playerWasLastInPossession, ServerConfig, true); // TODO
                         Logging.Log("_puckDeflectedDateTimeSinceLastTouch : " + _puckDeflectedDateTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
                         Logging.Log("lastTouchDateTime.LastTouchDateTime : " + lastTouchDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
                         Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds({ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}) : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)), ServerConfig, true); // TODO
 
+                        playerTouched = playerTouched || playerWasLastInPossession;
                         if (!playerTouched ||
                             (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)) ||
                             (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.RedTeam_Zone)) {
                             CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
                         }
                         else {
-                            Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]);
+                            Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(lastPlayerOnPuckSteamId);
                             if (penalizedDelayOfGamePlayer != null && penalizedDelayOfGamePlayer)
                                 PenaltyModule.GivePenalty(PenaltyType.DelayOfGame, penalizedDelayOfGamePlayer);
                             CallPenalty(_lastPlayerOnPuckTeam);
