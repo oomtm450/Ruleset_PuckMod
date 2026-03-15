@@ -370,26 +370,24 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void UnpenalizePlayer(Player penalizedPlayer, PlayerTeam penalizedPlayerTeam, string penalizedPlayerPosition) {
+            PositionIsPenalized[penalizedPlayerTeam][penalizedPlayerPosition] = false;
+
             if (penalizedPlayerTeam == PlayerTeam.Blue) {
                 PenalizedPlayersCountBlueTeam--;
                 PenalizedPlayersInBoxCountBlueTeam--;
-                if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
-                    penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
-                    penalizedPlayer.PlayerBody.Server_Unfreeze();
-                }
             }
             else {
                 PenalizedPlayersCountRedTeam--;
                 PenalizedPlayersInBoxCountRedTeam--;
-                if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
-                    penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
-                    penalizedPlayer.PlayerBody.Server_Unfreeze();
-                }
             }
 
-            PositionIsPenalized[penalizedPlayerTeam][penalizedPlayerPosition] = false;
-
             if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
+                if (penalizedPlayerTeam == PlayerTeam.Blue)
+                    penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+                else
+                    penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+
+                penalizedPlayer.PlayerBody.Server_Unfreeze();
                 Ruleset.SystemChatMessages.Add($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED");
                 Logging.Log($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED", Ruleset.ServerConfig);
             }
