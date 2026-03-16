@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.2";
+        private static readonly string MOD_VERSION = "1.0.3";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -70,6 +70,7 @@ namespace oomtm450PuckMod_Ruleset {
             "1.0.1a",
             "1.0.1b",
             "1.0.1c",
+            "1.0.2",
         });
 
         /// <summary>
@@ -215,8 +216,6 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static readonly LockDictionary<ulong, DateTime> _sentOutOfDateMessage = new LockDictionary<ulong, DateTime>();
 
-        //private static InputAction _getStickLocation;
-
         /// <summary>
         /// LockDictionary of string and Stopwatch, dictionary of all players last puck OnCollisionStay or OnCollisionExit time.
         /// </summary>
@@ -359,7 +358,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// ServerConfig, backup of the server config.
         /// </summary>
-        internal static ServerConfig ServerConfigBackup { get; set; } = new ServerConfig();
+        internal static ServerConfig ServerConfigBackup { get; set; } = null;
 
         /// <summary>
         /// ClientConfig, config set by the client.
@@ -1223,36 +1222,6 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        /*/// <summary>
-        /// Class that patches the Update event from PlayerInput.
-        /// </summary>
-        [HarmonyPatch(typeof(PlayerInput), "Update")]
-        public class PlayerInput_Update_Patch {
-            [HarmonyPrefix]
-            public static bool Prefix() {
-                try {
-                    // If this is the server, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer())
-                        return true;
-
-                    UIChat chat = UIChat.Instance;
-
-                    if (chat.IsFocused)
-                        return true;
-
-                    if (_getStickLocation.WasPressedThisFrame()) {
-                        Logging.Log($"Stick position : {PlayerManager.Instance.GetLocalPlayer().Stick.BladeHandlePosition}", ClientConfig);
-                    }
-                        
-                }
-                catch (Exception ex) {
-                    Logging.LogError($"Error in PlayerInput_Update_Patch Prefix().\n{ex}", ClientConfig);
-                }
-
-                return true;
-            }
-        }*/
-
         /// <summary>
         /// Class that patches the Client_SendClientChatMessage event from UIChat.
         /// </summary>
@@ -1485,20 +1454,24 @@ namespace oomtm450PuckMod_Ruleset {
                 // Delay of game penalty logic or offside.
                 try {
                     if (ServerConfig.Penalty.DelayOfGame && PenaltyModule.PuckIsOutsideOfBounds(puck)) {
-                        bool playerTouched = _playersOnPuckDateTime.TryGetValue(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam], out var lastTouchDateTime);
+                        string lastPlayerOnPuckSteamId = _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam];
+                        bool playerTouched = _playersOnPuckDateTime.TryGetValue(lastPlayerOnPuckSteamId, out var lastTouchDateTime);
+                        bool playerWasLastInPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == lastPlayerOnPuckSteamId;
 
                         Logging.Log("playerTouched : " + playerTouched, ServerConfig, true); // TODO
+                        Logging.Log("playerWasLastInPossession : " + playerWasLastInPossession, ServerConfig, true); // TODO
                         Logging.Log("_puckDeflectedDateTimeSinceLastTouch : " + _puckDeflectedDateTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
                         Logging.Log("lastTouchDateTime.LastTouchDateTime : " + lastTouchDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
                         Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds({ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}) : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)), ServerConfig, true); // TODO
 
+                        playerTouched = playerTouched || playerWasLastInPossession;
                         if (!playerTouched ||
                             (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)) ||
                             (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.RedTeam_Zone)) {
                             CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
                         }
                         else {
-                            Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam]);
+                            Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(lastPlayerOnPuckSteamId);
                             if (penalizedDelayOfGamePlayer != null && penalizedDelayOfGamePlayer)
                                 PenaltyModule.GivePenalty(PenaltyType.DelayOfGame, penalizedDelayOfGamePlayer);
                             CallPenalty(_lastPlayerOnPuckTeam);
@@ -1784,21 +1757,26 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || !Logic)
                         return true;
 
-                    bool isGoalieInt = IsGoalieInt(team);
+                    // No goal if goalie interference.
+                    if (IsGoalieInt(team)) {
+                        CallGoalieInt(team);
+                        return false;
+                    }
 
                     if (goalPlayer != null) {
-                        // No goal if offside or high stick or goalie interference.
-                        bool isOffside = false, isHighStick = false;
-                        isOffside = IsOffside(team);
-                        isHighStick = IsHighStick(team);
+                        // No goal if offside or high stick or penalty.
+                        if (PenaltyModule.PenaltyToBeCalled[team]) {
+                            CallPenalty(team);
+                            return false;
+                        }
 
-                        if (isOffside || isHighStick || isGoalieInt) {
-                            if (isOffside)
-                                CallOffside(team);
-                            else if (isHighStick)
-                                CallHighStick(team);
-                            else if (isGoalieInt)
-                                CallGoalieInt(team);
+                        if (IsHighStick(team)) {
+                            CallHighStick(team);
+                            return false;
+                        }
+
+                        if (IsOffside(team)) {
+                            CallOffside(team);
                             return false;
                         }
 
@@ -1818,11 +1796,6 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         SendSOGDuringGoal(goalPlayer);
                         return true;
-                    }
-
-                    if (isGoalieInt) {
-                        CallGoalieInt(team);
-                        return false;
                     }
 
                     // If own goal, add goal attribution to last player on puck on the other team.
@@ -2509,7 +2482,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 ServerConfig = new ServerConfig();
-                ServerConfigBackup = new ServerConfig();
+                ServerConfigBackup = null;
 
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
@@ -2921,25 +2894,30 @@ namespace oomtm450PuckMod_Ruleset {
                             return;
 
                         if (dataStr == "1") {
-                            ServerConfigBackup = new ServerConfig(ServerConfig);
+                            if (ServerConfigBackup == null) {
+                                ServerConfigBackup = new ServerConfig(ServerConfig);
 
-                            ServerConfig.Offside.BlueTeam = false;
-                            ServerConfig.Offside.RedTeam = false;
+                                ServerConfig.Offside.BlueTeam = false;
+                                ServerConfig.Offside.RedTeam = false;
 
-                            ServerConfig.Icing.BlueTeam = false;
-                            ServerConfig.Icing.RedTeam = false;
+                                ServerConfig.Icing.BlueTeam = false;
+                                ServerConfig.Icing.RedTeam = false;
 
-                            ServerConfig.HighStick.BlueTeam = false;
-                            ServerConfig.HighStick.RedTeam = false;
+                                ServerConfig.HighStick.BlueTeam = false;
+                                ServerConfig.HighStick.RedTeam = false;
 
+                                Logging.Log($"Ref mode has been enabled.", ServerConfig);
+                            }
                             SystemChatMessages.Add("Ref mode has been enabled.");
-                            Logging.Log($"Ref mode has been enabled.", ServerConfig);
                         }
                         else if (dataStr == "0") {
-                            ServerConfig = new ServerConfig(ServerConfigBackup);
+                            if (ServerConfigBackup != null) {
+                                ServerConfig = new ServerConfig(ServerConfigBackup);
+                                ServerConfigBackup = null;
 
+                                Logging.Log($"Ref mode has been disabled.", ServerConfig);
+                            }
                             SystemChatMessages.Add("Ref mode has been disabled.");
-                            Logging.Log($"Ref mode has been disabled.", ServerConfig);
                         }
 
                         break;
@@ -3233,6 +3211,33 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
+                    case TOGGLE_GINTERFERENCE_DATANAME: // SERVER-SIDE : Toggle gint rule.
+                        Player toggleGIntPlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (toggleGIntPlayer == null || !toggleGIntPlayer)
+                            break;
+
+                        string toggleGIntPlayerSteamId = toggleGIntPlayer.SteamId.Value.ToString();
+
+                        if (!IsAdmin(toggleGIntPlayerSteamId))
+                            break;
+
+                        dataStr = dataStr.Trim();
+                        if (dataStr == "b") {
+                            ServerConfig.GInt.BlueTeam = !ServerConfig.GInt.BlueTeam;
+                            if (ServerConfig.GInt.BlueTeam)
+                                SystemChatMessages.Add("Goalie interference stoppage is now enabled for the blue team.");
+                            else
+                                SystemChatMessages.Add("Goalie interference stoppage is now disabled for the blue team.");
+                        }
+                        else if (dataStr == "r") {
+                            ServerConfig.GInt.RedTeam = !ServerConfig.GInt.RedTeam;
+                            if (ServerConfig.GInt.RedTeam)
+                                SystemChatMessages.Add("Goalie interference stoppage is now enabled for the red team.");
+                            else
+                                SystemChatMessages.Add("Goalie interference stoppage is now disabled for the red team.");
+                        }
+                        break;
+
                     case TOGGLE_DEFERRED_ICING_DATANAME: // SERVER-SIDE : Toggle deferred icing rule.
                         if (dataStr != "1")
                             break;
@@ -3337,7 +3342,7 @@ namespace oomtm450PuckMod_Ruleset {
                     penaltyTimersTextRedTeam = penaltyTimersTextRedTeam.Remove(penaltyTimersTextRedTeam.Length - 1);
                 _penaltiesLabelRed.text = penaltyTimersTextRedTeam;
 
-                UIHUD.Instance.Show();
+                //UIHUD.Instance.Show();
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(PenaltiesLabelTimerCallback)}.\n{ex}", ClientConfig);
@@ -3540,7 +3545,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     Logging.Log("Setting server sided config.", ServerConfig, true);
                     ServerConfig = ServerConfig.ReadConfig();
-                    ServerConfigBackup = new ServerConfig(ServerConfig);
+                    ServerConfigBackup = null;
                 }
                 else {
                     Logging.Log("Setting client sided config.", ServerConfig, true);

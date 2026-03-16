@@ -46,17 +46,17 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; } = 46; // TODO : Change after release.
+        public int MaxTippedMilliseconds { get; } = 70; // TODO : Change after release.
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; } = 425; // TODO : Change after release.
+        public int MinPossessionMilliseconds { get; } = 350;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; } = 1000; // TODO : Change after release.
+        public int MaxPossessionMilliseconds { get; } = 900;
 
         /// <summary>
         /// Bool, authorize ref mode to be voted or activated by an admin.
@@ -156,7 +156,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, embellishment can be called after this number of milliseconds after the player gets up.
         /// </summary>
-        public int EmbellishmentMillisecondsThreshold { get; } = 3500;
+        public int EmbellishmentMillisecondsThreshold { get; } = 3500; // TODO : Change after release.
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -349,12 +349,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
-        public float CollisionForceThreshold { get; } = 0.97f;
+        public float CollisionForceThreshold { get; } = 0.97f; // TODO : Change after release.
 
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
-        public float GoalieRadius { get; } = 0.805f;
+        public float GoalieRadius { get; } = 0.805f; // TODO : Change after release.
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.

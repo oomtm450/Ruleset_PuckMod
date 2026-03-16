@@ -203,20 +203,28 @@ namespace oomtm450PuckMod_Ruleset {
 
             // If goalie has a penalty, take another player.
             if (Codebase.PlayerFunc.IsGoalie(penalizedPlayer)) {
+                List<Player> possiblePlayersToPenalize = new List<Player>();
                 foreach (Player teamPlayer in teamPlayers) {
-                    penalizedPlayer = teamPlayer;
-                    penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
-                    if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> _penaltyList)) {
-                        _penaltyList = new LockList<Penalty>();
-                        PenalizedPlayers.Add(penalizedPlayerSteamId, _penaltyList);
-                    }
-                    penaltyList = _penaltyList;
-
-                    if (penaltyList.Count != 0)
+                    if (!PenalizedPlayers.TryGetValue(penalizedPlayer.SteamId.Value.ToString(), out LockList<Penalty> __penaltyList))
                         continue;
 
-                    break;
+                    if (__penaltyList.Count != 0)
+                        continue;
+
+                    possiblePlayersToPenalize.Add(teamPlayer);
                 }
+
+                if (possiblePlayersToPenalize.Count == 0)
+                    return false;
+
+                penalizedPlayer = possiblePlayersToPenalize.OrderBy(x => x.Goals.Value + x.Assists.Value).First();
+                penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
+
+                if (!PenalizedPlayers.TryGetValue(penalizedPlayer.SteamId.Value.ToString(), out LockList<Penalty> _penaltyList)) {
+                    _penaltyList = new LockList<Penalty>();
+                    PenalizedPlayers.Add(penalizedPlayerSteamId, _penaltyList);
+                }
+                penaltyList = _penaltyList;
             }
 
             PositionIsPenalized[penalizedPlayer.Team.Value][penalizedPlayer.PlayerPosition.Name] = true;
@@ -362,36 +370,40 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void UnpenalizePlayer(Player penalizedPlayer, PlayerTeam penalizedPlayerTeam, string penalizedPlayerPosition) {
+            PositionIsPenalized[penalizedPlayerTeam][penalizedPlayerPosition] = false;
+
             if (penalizedPlayerTeam == PlayerTeam.Blue) {
                 PenalizedPlayersCountBlueTeam--;
                 PenalizedPlayersInBoxCountBlueTeam--;
-                if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
-                    penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
-                    penalizedPlayer.PlayerBody.Server_Unfreeze();
-                }
+
+                if (PenalizedPlayersInBoxCountBlueTeam < 0)
+                    PenalizedPlayersInBoxCountBlueTeam = 0;
             }
             else {
                 PenalizedPlayersCountRedTeam--;
                 PenalizedPlayersInBoxCountRedTeam--;
-                if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
-                    penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
-                    penalizedPlayer.PlayerBody.Server_Unfreeze();
-                }
+
+                if (PenalizedPlayersInBoxCountRedTeam < 0)
+                    PenalizedPlayersInBoxCountRedTeam = 0;
             }
 
-            PositionIsPenalized[penalizedPlayerTeam][penalizedPlayerPosition] = false;
-
             if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
+                if (penalizedPlayerTeam == PlayerTeam.Blue)
+                    penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+                else
+                    penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+
+                penalizedPlayer.PlayerBody.Server_Unfreeze();
                 Ruleset.SystemChatMessages.Add($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED");
                 Logging.Log($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED", Ruleset.ServerConfig);
             }
         }
 
         internal static bool RemoveOnePenalty(PlayerTeam penalizedPlayerTeam) {
-            if (penalizedPlayerTeam == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == 0)
+            if (penalizedPlayerTeam == PlayerTeam.Blue && PenalizedPlayersInBoxCountBlueTeam == 0)
                 return false;
 
-            if (penalizedPlayerTeam == PlayerTeam.Red && PenalizedPlayersCountRedTeam == 0)
+            if (penalizedPlayerTeam == PlayerTeam.Red && PenalizedPlayersInBoxCountRedTeam == 0)
                 return false;
 
             Penalty penaltyToRemove = PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayerTeam).OrderBy(x => x.Timer.MillisecondsLeft).FirstOrDefault();
@@ -556,14 +568,17 @@ namespace oomtm450PuckMod_Ruleset {
             Penalty penaltyToRemove = null;
             // Remove elapsed penalty.
             foreach (Penalty penalty in PenaltyModule.PenalizedPlayers[SteamId]) {
-                if (penalty.Timer.TimerEnded())
+                if (penalty.Timer.TimerEnded()) {
                     penaltyToRemove = penalty;
+                    break;
+                }
             }
 
             PenaltyModule.PenalizedPlayers[SteamId].Remove(penaltyToRemove);
 
-            Ruleset.SystemChatMessages.Add($"PENALTY #{PlayerNumber} {PlayerUsername} OVER");
-            Logging.Log($"PENALTY #{PlayerNumber} {PlayerUsername} OVER", Ruleset.ServerConfig);
+            string penaltyOverMsg = $"PENALTY #{PlayerNumber} {PlayerUsername} OVER";
+            Ruleset.SystemChatMessages.Add(penaltyOverMsg);
+            Logging.Log(penaltyOverMsg, Ruleset.ServerConfig);
 
             // Unpenalize player if no more penalties or start the next one.
             if (PenaltyModule.PenalizedPlayers[SteamId].Count == 0)
