@@ -14,7 +14,7 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie save crease system.
         /// </summary>
-        public float GoalieRadius { get; } = 0.7f; // TODO : Change next release.
+        public float GoalieRadius { get; } = 0.75f;
 
         /// <summary>
         /// Float, delta of the puck Z direction to use with the goalie save crease system.
@@ -34,12 +34,12 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; } = 300; // TODO : Change after release.
+        public int MinPossessionMilliseconds { get; } = 450; // TODO : Change after release.
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; } = 700; // TODO : Change after release.
+        public int MaxPossessionMilliseconds { get; } = 1000; // TODO : Change after release.
 
         /// <summary>
         /// Int, number of milliseconds for a change of possession to the other team be considered a turnover.

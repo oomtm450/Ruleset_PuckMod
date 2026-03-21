@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.2";
+        private static readonly string MOD_VERSION = "0.7.3";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -39,6 +39,7 @@ namespace oomtm450PuckMod_Stats {
             "0.6.0",
             "0.7.0",
             "0.7.1",
+            "0.7.2",
         });
 
         /// <summary>
@@ -679,7 +680,7 @@ namespace oomtm450PuckMod_Stats {
                     }
 
                     // Takeaways/turnovers logic.
-                    string currentPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, _playersCurrentPuckTouch);
+                    string currentPossessionSteamId = PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled);
                     if (!string.IsNullOrEmpty(currentPossessionSteamId)) {
                         Player possessionPlayer = PlayerManager.Instance.GetPlayerBySteamId(currentPossessionSteamId);
 
