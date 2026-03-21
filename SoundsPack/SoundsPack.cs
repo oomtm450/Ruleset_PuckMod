@@ -15,7 +15,7 @@ namespace oomtm450PuckMod_SoundsPack {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.1DEV";
+        private static readonly string MOD_VERSION = "1.0.2";
 
         /// <summary>
         /// ReadOnlyCollection of string, collection of datanames to not log.

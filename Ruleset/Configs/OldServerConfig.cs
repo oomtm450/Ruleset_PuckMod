@@ -46,7 +46,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; } = 70; // TODO : Change after release.
+        public int MaxTippedMilliseconds { get; } = 68; // TODO : Change after release.
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
@@ -56,7 +56,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; } = 900;
+        public int MaxPossessionMilliseconds { get; } = 1000; // TODO : Change after release.
 
         /// <summary>
         /// Bool, authorize ref mode to be voted or activated by an admin.
@@ -156,7 +156,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, embellishment can be called after this number of milliseconds after the player gets up.
         /// </summary>
-        public int EmbellishmentMillisecondsThreshold { get; } = 3500; // TODO : Change after release.
+        public int EmbellishmentMillisecondsThreshold { get; } = 3250;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
