@@ -72,7 +72,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             _playerTethers.RemoveAll(t => t.PlayerBody == playerBody);
 
             // Get player role and position AFTER ruleset has positioned them
-            PlayerTeam team = playerBody.Player.Team.Value;
+            PlayerTeam team = playerBody.Player.Team;
 
             string positionName = PenaltyModule.GetPlayerPositionForFaceoff(playerBody.Player.PlayerPosition.Name, team, currentFaceoffSpot, Ruleset.GetClaimedPositions(team));
 
@@ -85,10 +85,10 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             PlayerTether tether = new PlayerTether {
                 PlayerBody = playerBody,
                 SpawnPosition = playerBody.transform.position,
-                MaxForwardDistance = GetMaxForwardDistance(positionName, playerBody.Player.Team.Value, currentFaceoffSpot),
-                MaxBackwardDistance = GetMaxBackwardDistance(positionName, playerBody.Player.Team.Value, currentFaceoffSpot),
-                MaxLeftDistance = GetMaxLeftDistance(positionName, playerBody.Player.Team.Value, currentFaceoffSpot),
-                MaxRightDistance = GetMaxRightDistance(positionName, playerBody.Player.Team.Value, currentFaceoffSpot),
+                MaxForwardDistance = GetMaxForwardDistance(positionName, playerBody.Player.Team, currentFaceoffSpot),
+                MaxBackwardDistance = GetMaxBackwardDistance(positionName, playerBody.Player.Team, currentFaceoffSpot),
+                MaxLeftDistance = GetMaxLeftDistance(positionName, playerBody.Player.Team, currentFaceoffSpot),
+                MaxRightDistance = GetMaxRightDistance(positionName, playerBody.Player.Team, currentFaceoffSpot),
             };
 
             if (positionName != "G" && currentFaceoffSpot == FaceoffSpot.Center) {
@@ -250,7 +250,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             Vector3 clampedPos = currentPos;
             bool wasClamped = false;
 
-            float forwardDirection = (tether.PlayerBody.Player.Team.Value == PlayerTeam.Blue) ? -1f : 1f;
+            float forwardDirection = (tether.PlayerBody.Player.Team == PlayerTeam.Blue) ? -1f : 1f;
 
             // Check forward movement (toward opponent goal)
             float forwardDelta = (currentPos.z - spawnPos.z) * forwardDirection;
@@ -266,7 +266,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
 
             float xMovement = spawnPos.x - currentPos.x;
-            if (tether.PlayerBody.Player.Team.Value == PlayerTeam.Blue) {
+            if (tether.PlayerBody.Player.Team == PlayerTeam.Blue) {
                 if (xMovement > 0) { // Check right movement
                     if (Mathf.Abs(xMovement) > tether.MaxRightDistance) {
                         clampedPos.x = spawnPos.x - tether.MaxRightDistance;

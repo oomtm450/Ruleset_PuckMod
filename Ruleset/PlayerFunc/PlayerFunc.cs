@@ -36,14 +36,14 @@ namespace oomtm450PuckMod_Ruleset {
                     break;
                 case LEFT_WINGER_POSITION:
                     zOffset = 1.5f;
-                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team.Value == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team.Value == PlayerTeam.Blue))
+                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team == PlayerTeam.Blue))
                         xOffset = 6.5f;
                     else
                         xOffset = 9f;
                     break;
                 case RIGHT_WINGER_POSITION:
                     zOffset = 1.5f;
-                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team.Value == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team.Value == PlayerTeam.Blue))
+                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team == PlayerTeam.Blue))
                         xOffset = -6.5f;
                     else
                         xOffset = -9f;
@@ -53,10 +53,10 @@ namespace oomtm450PuckMod_Ruleset {
                     if ((ushort)faceoffSpot >= 5)
                         zOffset -= 1f;
 
-                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team.Value == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team.Value == PlayerTeam.Blue)) {
+                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team == PlayerTeam.Blue)) {
                         zOffset = 1.5f;
                         xOffset = -9f;
-                        if (player.Team.Value == PlayerTeam.Red)
+                        if (player.Team == PlayerTeam.Red)
                             rotation = Quaternion.Euler(0, -90, 0);
                         else
                             rotation = Quaternion.Euler(0, 90, 0);
@@ -69,10 +69,10 @@ namespace oomtm450PuckMod_Ruleset {
                     if ((ushort)faceoffSpot >= 5)
                         zOffset -= 1f;
 
-                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team.Value == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team.Value == PlayerTeam.Blue)) {
+                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team == PlayerTeam.Blue)) {
                         zOffset = 1.5f;
                         xOffset = 9f;
-                        if (player.Team.Value == PlayerTeam.Red)
+                        if (player.Team == PlayerTeam.Red)
                             rotation = Quaternion.Euler(0, 90, 0);
                         else
                             rotation = Quaternion.Euler(0, -90, 0);
@@ -86,7 +86,7 @@ namespace oomtm450PuckMod_Ruleset {
                     xOffset = 0.6f;
                     float quaternionY = 35;
 
-                    if (player.Team.Value == PlayerTeam.Red) {
+                    if (player.Team == PlayerTeam.Red) {
                         zOffset *= -1f;
                         if (faceoffSpot == FaceoffSpot.RedteamDZoneLeft) {
                             xOffset *= -1f;
@@ -118,7 +118,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             if (playerPosition != GOALIE_POSITION) {
-                if (player.Team.Value == PlayerTeam.Red) {
+                if (player.Team == PlayerTeam.Red) {
                     xOffset *= -1;
                     zOffset *= -1;
                 }

@@ -182,7 +182,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             Vector3 penaltyPos = new Vector3(
                 currentPos.x,
                 currentPos.y,
-                currentPos.z + (player.Team.Value == PlayerTeam.Blue ? Ruleset.ServerConfig.Faceoff.PenaltyFreezeDistance : -Ruleset.ServerConfig.Faceoff.PenaltyFreezeDistance)
+                currentPos.z + (player.Team == PlayerTeam.Blue ? Ruleset.ServerConfig.Faceoff.PenaltyFreezeDistance : -Ruleset.ServerConfig.Faceoff.PenaltyFreezeDistance)
             );
 
             // Use Server_Teleport for proper networked teleportation.

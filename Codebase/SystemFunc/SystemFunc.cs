@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -10,6 +11,20 @@ namespace Codebase {
                 return (T)typeContainingField.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Static).GetValue(instanceOfType);
             else
                 return (T)typeContainingField.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(instanceOfType);
+        }
+
+        public static void AddClientChatMessage(string message, Player localPlayer) {
+            ChatMessage chatMsg = new ChatMessage {
+                SteamID = localPlayer.SteamId.Value,
+                Username = localPlayer.Username.Value,
+                Team = localPlayer.Team,
+                Content = message,
+                Timestamp = Utils.GetTimestamp(),
+                IsQuickChat = false,
+                IsTeamChat = false,
+                IsSystem = false,
+            };
+            EventManager.TriggerEvent("Event_Server_OnChatMessageReceived", new Dictionary<string, object> { { "chatMessage", chatMsg } });
         }
 
         /// <summary>
