@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.4";
+        private static readonly string MOD_VERSION = "1.0.4DEV1";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -1875,7 +1875,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(PhysicsManager), "Update")]
         public class PhysicsManager_Update_Client_Patch { // TODO : Check for better function for this.
             [HarmonyPostfix]
-            public static void Postfix(Player player) {
+            public static void Postfix() {
                 try {
                     // If this is the server, do not use the patch.
                     if (ServerFunc.IsDedicatedServer())

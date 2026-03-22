@@ -22,7 +22,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f); // TODO : Config.
 
-        private static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(22.47f, 0f, 45.74f); // TODO : Config.
+        private static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(22.47f, 0f, 45.75f); // TODO : Config.
 
         private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1 = new Vector3(19.45f, 0f, 43.8f); // TODO : Config.
         private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2 = new Vector3(23.20f, 0f, 33.7f); // TODO : Config.
