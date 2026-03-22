@@ -9,7 +9,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
     /// </summary>
     internal class FaceOffPlayerUnfreezer : MonoBehaviour {
         private class PlayerTether {
-            internal PlayerBodyV2 PlayerBody { get; set; }
+            internal PlayerBody PlayerBody { get; set; }
             internal Vector3 SpawnPosition { get; set; }
             internal float MaxForwardDistance { get; set; }
             internal float MaxBackwardDistance { get; set; }
@@ -24,11 +24,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         internal static HashSet<Player> PenalizedPlayers { get; } = new HashSet<Player>();
 
         private void Awake() {
-            EventManager.Instance.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
+            EventManager.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
         }
 
         private void OnDestroy() {
-            EventManager.Instance?.RemoveEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
+            EventManager.RemoveEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
         }
 
         private void OnGamePhaseChanged(Dictionary<string, object> message) {
@@ -40,7 +40,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                     _freezeStartTime = Time.time;
 
                     GamePhase oldGamePhase = (GamePhase)message["oldGamePhase"];
-                    if (oldGamePhase == GamePhase.Replay || oldGamePhase == GamePhase.PeriodOver)
+                    if (oldGamePhase == GamePhase.Replay || oldGamePhase == GamePhase.Intermission)
                         _freezeStartTime -= 1f;
                 }
             }
@@ -50,7 +50,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
         }
 
-        internal void RegisterPlayer(PlayerBodyV2 playerBody, FaceoffSpot currentFaceoffSpot) {
+        internal void RegisterPlayer(PlayerBody playerBody, FaceoffSpot currentFaceoffSpot) {
             if (playerBody == null || !playerBody.Player)
                 return;
 
@@ -61,7 +61,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             StartCoroutine(RegisterPlayerDelayed(playerBody, currentFaceoffSpot));
         }
 
-        private System.Collections.IEnumerator RegisterPlayerDelayed(PlayerBodyV2 playerBody, FaceoffSpot currentFaceoffSpot) {
+        private System.Collections.IEnumerator RegisterPlayerDelayed(PlayerBody playerBody, FaceoffSpot currentFaceoffSpot) {
             // Wait for Ruleset mod to finish positioning players
             yield return new WaitForSeconds(0.1f);
 

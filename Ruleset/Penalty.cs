@@ -277,7 +277,7 @@ namespace oomtm450PuckMod_Ruleset {
                     firstPenalty.CurrentPenalty = true;
 
                     Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(firstPenalty.SteamId);
-                    if (penalizedPlayer == null || !penalizedPlayer || !penalizedPlayer.IsCharacterFullySpawned)
+                    if (penalizedPlayer == null || !penalizedPlayer || !penalizedPlayer.IsCharacterSpawned)
                         return;
 
                     TeleportPlayer(penalizedPlayer);
@@ -299,14 +299,14 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static void TeleportPlayer(string playerSteamId) {
             Player player = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-            if (player == null || !player || !player.IsCharacterFullySpawned)
+            if (player == null || !player || !player.IsCharacterSpawned)
                 return;
 
             TeleportPlayer(player);
         }
 
         internal static void TeleportPlayer(Player player) {
-            if (player.IsCharacterFullySpawned) {
+            if (player.IsCharacterSpawned) {
                 player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
                 player.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
             }
@@ -387,7 +387,7 @@ namespace oomtm450PuckMod_Ruleset {
                     PenalizedPlayersInBoxCountRedTeam = 0;
             }
 
-            if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterFullySpawned) {
+            if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned) {
                 if (penalizedPlayerTeam == PlayerTeam.Blue)
                     penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
                 else

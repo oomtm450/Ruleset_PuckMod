@@ -46,11 +46,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         private readonly LockList<Player> _frozenPlayers = new LockList<Player>();
 
         private void Awake() {
-            EventManager.Instance.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
+            EventManager.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
         }
 
         private void OnDestroy() {
-            EventManager.Instance?.RemoveEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
+            EventManager.RemoveEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
         }
 
         private void OnGamePhaseChanged(Dictionary<string, object> message) {
@@ -68,7 +68,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 // Faceoff ended - keep monitoring
                 _isFaceOffActive = false;
             }
-            else if (newGamePhase == GamePhase.Warmup || newGamePhase == GamePhase.BlueScore || newGamePhase == GamePhase.RedScore || newGamePhase == GamePhase.PeriodOver || newGamePhase == GamePhase.GameOver)
+            else if (newGamePhase == GamePhase.Warmup || newGamePhase == GamePhase.BlueScore || newGamePhase == GamePhase.RedScore || newGamePhase == GamePhase.Intermission || newGamePhase == GamePhase.GameOver)
                 ClearViolations();
         }
 
@@ -218,11 +218,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             _isMonitoring = false;
 
             // Use Ruleset mod's instant faceoff event to restart at the same spot.
-            if (EventManager.Instance == null || !NetworkManager.Singleton.IsServer)
+            if (!NetworkManager.Singleton.IsServer)
                 return;
 
             try {
-                EventManager.Instance.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME,
+                EventManager.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME,
                     new Dictionary<string, object> { { Codebase.Constants.INSTANT_FACEOFF, ((ushort)Ruleset.NextFaceoffSpot).ToString() } });
 
                 // Clear the flag after a short delay to allow the restart to complete.

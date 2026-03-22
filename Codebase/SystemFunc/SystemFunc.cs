@@ -13,16 +13,16 @@ namespace Codebase {
                 return (T)typeContainingField.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(instanceOfType);
         }
 
-        public static void AddClientChatMessage(string message, Player localPlayer) {
+        public static void AddClientChatMessage(string message) {
             ChatMessage chatMsg = new ChatMessage {
-                SteamID = localPlayer.SteamId.Value,
-                Username = localPlayer.Username.Value,
-                Team = localPlayer.Team,
+                SteamID = null,
+                Username = null,
+                Team = null,
                 Content = message,
                 Timestamp = Utils.GetTimestamp(),
                 IsQuickChat = false,
                 IsTeamChat = false,
-                IsSystem = false,
+                IsSystem = true,
             };
             EventManager.TriggerEvent("Event_Server_OnChatMessageReceived", new Dictionary<string, object> { { "chatMessage", chatMsg } });
         }
