@@ -1712,6 +1712,33 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        /// <summary>
+        /// Class that patches the Server_OnPuckEnterGoal event from Goal.
+        /// </summary>
+        [HarmonyPatch(typeof(Goal), nameof(Goal.Server_OnPuckEnterGoal))]
+        public class Goal_Server_OnPuckEnterGoal_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(Puck puck) {
+                try {
+                    // If this is not the server or game is not started, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Play || !Logic)
+                        return true;
+
+                    if (Paused)
+                        return false;
+
+                    NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+
+                    NextFaceoffSpot = FaceoffSpot.Center;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(Goal_Server_OnPuckEnterGoal_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
         /*/// <summary> 
         /// Class that patches the Server_GoalScored event from GameManager.
         /// </summary>
@@ -2633,20 +2660,6 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private void Event_Server_OnPuckEnterGoal(Dictionary<string, object> message) {
-            try {
-                // If game is not started, do not use the patch.
-                if (PlayerManager.Instance == null || PuckManager.Instance == null || GameManager.Instance.Phase != GamePhase.Play || !Logic || Paused)
-                    return;
-
-                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                NextFaceoffSpot = FaceoffSpot.Center;
-            }
-            catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(Event_Server_OnPuckEnterGoal)}.\n{ex}", ServerConfig);
-            }
-        }
-
         /// <summary>
         /// Method that manages received data from client-server communications.
         /// </summary>
@@ -3548,7 +3561,6 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.AddEventListener("Event_Everyone_OnPlayerGameStateChanged", Event_Everyone_OnPlayerGameStateChanged);
                     EventManager.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     EventManager.AddEventListener("Event_Everyone_OnPlayerBodySpawned", Event_Everyone_OnPlayerBodySpawned);
-                    EventManager.AddEventListener("Event_Server_OnPuckEnterGoal", Event_Server_OnPuckEnterGoal);
 
                     if (ServerConfig.Faceoff.EnableViolations) {
                         // Create boundary manager
@@ -3613,7 +3625,6 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.RemoveEventListener("Event_Everyone_OnPlayerGameStateChanged", Event_Everyone_OnPlayerGameStateChanged);
                     EventManager.RemoveEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     EventManager.RemoveEventListener("Event_Everyone_OnPlayerBodySpawned", Event_Everyone_OnPlayerBodySpawned);
-                    EventManager.RemoveEventListener("Event_Server_OnPuckEnterGoal", Event_Server_OnPuckEnterGoal);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
