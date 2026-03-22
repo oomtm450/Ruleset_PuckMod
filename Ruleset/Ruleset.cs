@@ -1377,17 +1377,15 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /// <summary>
-        /// Class that patches the Server_Tick event from GameManager.
+        /// Class that patches the Update event from PhysicsManager.
         /// </summary>
-        [HarmonyPatch(typeof(GameManager), "Server_Tick")]
-        public class GameManager_Server_Tick_Patch {
+        [HarmonyPatch(typeof(PhysicsManager), "Update")]
+        public class PhysicsManager_Update_Patch {
             [HarmonyPostfix]
-            public static void Postfix(GameManager __instance) {
+            public static void Postfix() {
                 // If this is not the server or game is not started, do not use the patch.
                 if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null)
                     return;
-
-                Logging.Log("GameManager.Tick : " + __instance.Tick, ServerConfig, true); // TODO
 
                 if (SystemChatMessages.Count != 0) {
                     List<string> systemChatMessages = new List<string>(SystemChatMessages);
@@ -1397,7 +1395,7 @@ namespace oomtm450PuckMod_Ruleset {
                         ChatManager.Instance.Server_BroadcastChatMessage(message);
                 }
 
-                if (__instance.Phase != GamePhase.Play || !Logic)
+                if (GameManager.Instance.Phase != GamePhase.Play || !Logic)
                     return;
 
                 Puck puck = null;
@@ -1436,7 +1434,7 @@ namespace oomtm450PuckMod_Ruleset {
                     _puckLastCoordinate = new Vector3(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.y, puck.Rigidbody.transform.position.z);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_Tick_Patch)} Postfix() 1.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix() 1.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1444,7 +1442,7 @@ namespace oomtm450PuckMod_Ruleset {
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, oldZone, PuckRadius);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_Tick_Patch)} Postfix() 2.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix() 2.\n{ex}", ServerConfig);
                 }
 
                 // Delay of game penalty logic or offside.
@@ -1475,7 +1473,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_Tick_Patch)} Postfix() 3.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix() 3.\n{ex}", ServerConfig);
                 }
 
                 Dictionary<PlayerTeam, bool> isTeamOffside = new Dictionary<PlayerTeam, bool> {
@@ -1646,7 +1644,7 @@ namespace oomtm450PuckMod_Ruleset {
                             else if (IsIcing(closestPlayerToEndBoardOtherTeam)) {
                                 SendChat(Rule.Icing, closestPlayerToEndBoardOtherTeam, true);
 
-                                int remainingPlayTime = __instance.Tick;
+                                int remainingPlayTime = GameManager.Instance.Tick;
                                 if (_lastStoppageReason == Rule.Icing && _lastIcing[closestPlayerToEndBoard.Team] > _lastIcing[closestPlayerToEndBoardOtherTeam] && _lastIcing[closestPlayerToEndBoardOtherTeam] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
                                     _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] += 1;
                                 else
@@ -1660,7 +1658,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_Tick_Patch)} Postfix() 4.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix() 4.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1669,7 +1667,7 @@ namespace oomtm450PuckMod_Ruleset {
                     ServerManager_Update_IcingLogic(PlayerTeam.Red, puck, icingHasToBeWarned, _dictPlayersPositionsForIcing.Any(x => x.IsBehindBlueTeamHashmarks));
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_Tick_Patch)} Postfix() 5.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix() 5.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1691,7 +1689,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_Tick_Patch)} Postfix() 6.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix() 6.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1699,7 +1697,7 @@ namespace oomtm450PuckMod_Ruleset {
                     _isPuckBehindHashmarks[PlayerTeam.Red] = ZoneFunc.IsBehindHashmarks(PlayerTeam.Red, puck.Rigidbody.transform.position, PuckRadius);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_Tick_Patch)} Postfix() 7.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix() 7.\n{ex}", ServerConfig);
                 }
 
                 try {
@@ -1707,7 +1705,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _noHighStickFrames[playerSteamId] += 1;
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_Tick_Patch)} Postfix() 8.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix() 8.\n{ex}", ServerConfig);
                 }
             }
         }
@@ -2202,12 +2200,13 @@ namespace oomtm450PuckMod_Ruleset {
             _doFaceoff = false;
             Paused = false;
 
-            //GameManager.Instance.Server_Resume();
+            UnpauseGame();
             if (GameManager.Instance.GameState.Value.Phase != GamePhase.Play)
                 return;
 
             ChangedPhase = true;
-            GameManager.Instance.Server_SetGameState(GamePhase.FaceOff);
+
+            GameManager.Instance.Server_SetGameState(GamePhase.FaceOff, 3); // TODO : Get actual faceoff tick.
         }
 
         private static bool IsOffside(PlayerTeam team) {
@@ -3708,6 +3707,10 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static void PauseGame() {
             GameManager.Instance.Server_StopTicking();
+        }
+
+        internal static void UnpauseGame() {
+            GameManager.Instance.Server_StartTicking();
         }
 
         internal static List<string> GetClaimedPositions(PlayerTeam team) {
