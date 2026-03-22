@@ -1870,10 +1870,10 @@ namespace oomtm450PuckMod_Ruleset {
         }*/
 
         /// <summary>
-        /// Class that patches the AddPlayer event from UIScoreboard.
+        /// Class that patches the Update event from PhysicsManager.
         /// </summary>
-        [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.AddPlayer))]
-        public class UIScoreboard_AddPlayer_Patch { // TODO : Check for better function for this.
+        [HarmonyPatch(typeof(PhysicsManager), "Update")]
+        public class PhysicsManager_Update_Client_Patch { // TODO : Check for better function for this.
             [HarmonyPostfix]
             public static void Postfix(Player player) {
                 try {
@@ -1902,7 +1902,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(UIScoreboard_AddPlayer_Patch)} Postfix().\n{ex}", ClientConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Client_Patch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
         }
