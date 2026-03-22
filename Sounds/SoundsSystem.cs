@@ -316,6 +316,7 @@ namespace oomtm450PuckMod_Sounds {
                 if (GameObject.Find("Changing Room"))
                     return;
 
+                GameObject.
                 GameObject levelGameObj = GameObject.Find("Level");
                 if (!levelGameObj) {
                     Errors.Add("Cant't find GameObject \"Level\" !");
