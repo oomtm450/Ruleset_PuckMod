@@ -79,7 +79,7 @@ namespace oomtm450PuckMod_SoundsPack {
         [HarmonyPatch(typeof(PhysicsManager), "Update")]
         public class PhysicsManager_Update_Patch { // TODO : Check for better function for this.
             [HarmonyPostfix]
-            public static void Postfix(Player player) {
+            public static void Postfix() {
                 try {
                     // If this is the server, do not use the patch.
                     if (ServerFunc.IsDedicatedServer() || string.IsNullOrEmpty(ModName))
