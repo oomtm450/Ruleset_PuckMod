@@ -1,9 +1,6 @@
 ﻿using System;
-using System.IO;
-using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using UnityEngine;
 
 namespace Codebase {
@@ -22,12 +19,12 @@ namespace Codebase {
         }
 
         /// <summary>
-        /// Function that returns a PlayerBodyV2 instance from a GameObject.
+        /// Function that returns a PlayerBody instance from a GameObject.
         /// </summary>
         /// <param name="gameObject">GameObject, GameObject to use.</param>
-        /// <returns>PlayerBodyV2, found PlayerBodyV2 object or null.</returns>
-        public static PlayerBodyV2 GetPlayerBodyV2(GameObject gameObject) {
-            return gameObject.GetComponent<PlayerBodyV2>();
+        /// <returns>PlayerBody, found PlayerBody object or null.</returns>
+        public static PlayerBody GetPlayerBody(GameObject gameObject) {
+            return gameObject.GetComponent<PlayerBody>();
         }
 
         public static string RemoveWhitespace(string input) {

@@ -589,7 +589,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             PenaltyModule.UnpausePenalties();
-            if (GameManager.Instance.Phase != GamePhase.Playing)
+            if (GameManager.Instance.Phase != GamePhase.Play)
                 PenaltyModule.PausePenalties();
         }
     }
