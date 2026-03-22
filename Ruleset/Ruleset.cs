@@ -926,7 +926,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static bool Prefix(GameState oldGameState, GameState newGameState) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || !Logic)
+                    if (!ServerFunc.IsDedicatedServer() || !Logic || oldGameState.Phase == newGameState.Phase)
                         return true;
 
                     if (Paused) {
@@ -1647,7 +1647,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 SendChat(Rule.Icing, closestPlayerToEndBoardOtherTeam, true);
 
                                 int remainingPlayTime = __instance.Tick;
-                                if (_lastStoppageReason == Rule.Icing && _lastIcing[closestPlayerToEndBoard.Team] > _lastIcing[closestPlayerToEndBoardOtherTeam] && _lastIcing[closestPlayerToEndBoardOtherTeam] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime * ServerManager.Instance.ServerConfig.tickRate)
+                                if (_lastStoppageReason == Rule.Icing && _lastIcing[closestPlayerToEndBoard.Team] > _lastIcing[closestPlayerToEndBoardOtherTeam] && _lastIcing[closestPlayerToEndBoardOtherTeam] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
                                     _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] += 1;
                                 else
                                     _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] = 0;
@@ -1957,11 +1957,13 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(UIChat), nameof(UIChat.AddChatMessage))]
         public class UIChat_AddChatMessage_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(string message) {
+            public static bool Prefix(ChatMessage chatMessage, Units units, bool filterProfanity) {
                 try {
                     // If this is the server or server doesn't use the mod, do not use the patch.
                     if (ServerFunc.IsDedicatedServer() || !_serverHasResponded)
                         return true;
+
+                    string message = chatMessage.Content.ToString();
 
                     if ((message.StartsWith("HIGH STICK") || message.StartsWith("OFFSIDE") || message.StartsWith("ICING")) && (message.Contains("CALLED OFF") || !message.Contains("CALLED")))
                         return false;
@@ -3396,7 +3398,7 @@ namespace oomtm450PuckMod_Ruleset {
                 SendChat(Rule.Icing, team, true, false, referee);
 
                 int remainingPlayTick = GameManager.Instance.Tick;
-                if (_lastStoppageReason == Rule.Icing && _lastIcing[TeamFunc.GetOtherTeam(team)] > _lastIcing[team] && _lastIcing[team] - remainingPlayTick <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime * ServerManager.Instance.ServerConfig.tickRate)
+                if (_lastStoppageReason == Rule.Icing && _lastIcing[TeamFunc.GetOtherTeam(team)] > _lastIcing[team] && _lastIcing[team] - remainingPlayTick <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
                     _icingStaminaDrainPenaltyAmount[team] += 1;
                 else
                     _icingStaminaDrainPenaltyAmount[team] = 0;
