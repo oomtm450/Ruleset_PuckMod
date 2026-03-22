@@ -1163,15 +1163,15 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /// <summary>
-        /// Class that patches the OnPlayerTeamChanged event from Player.
+        /// Class that patches the Server_SetGameState event from Player.
         /// </summary>
-        [HarmonyPatch(typeof(Player), "OnPlayerTeamChanged")]
-        public class Player_OnPlayerTeamChanged_Patch {
+        [HarmonyPatch(typeof(Player), nameof(Player.Server_SetGameState))]
+        public class Player_Server_SetGameState_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(Player __instance, PlayerTeam oldTeam, PlayerTeam newTeam) {
+            public static bool Prefix(Player __instance, PlayerPhase? phase, PlayerTeam? team, PlayerRole? role, float? delay) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer())
+                    if (!ServerFunc.IsDedicatedServer() || team == null)
                         return true;
 
                     string playerSteamId = __instance.SteamId.Value.ToString();
@@ -1183,12 +1183,11 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (PenaltyModule.PenalizedPlayers.TryGetValue(playerSteamId, out LockList<Penalty> penalties) && penalties.Count != 0) {
                         _playersHasBlockedFromChangingTeams.AddOrUpdate(playerSteamId, true);
-                        __instance.Server_SetGameState(__instance.Phase, oldTeam, __instance.Role);
                         return false;
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(Player_OnPlayerTeamChanged_Patch)} Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(Player_Server_SetGameState_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1358,16 +1357,16 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             [HarmonyPostfix]
-            public static void Postfix(string message, bool useTeamChat) {
+            public static void Postfix(string content, bool isQuickChat, bool isTeamChat) {
                 try {
                     // If this is the server, do not use the patch.
                     if (ServerFunc.IsDedicatedServer())
                         return;
 
-                    if (message.StartsWith(@"/")) {
-                        message = message.ToLowerInvariant();
+                    if (content.StartsWith(@"/")) {
+                        content = content.ToLowerInvariant();
 
-                        if (message.StartsWith(@"/help"))
+                        if (content.StartsWith(@"/help"))
                             SystemFunc.AddClientChatMessage("Ruleset commands:\n* <b>/refscale</b> - Change the scale of the 2D refs images (0.0-2.0)\n");
                     }
                 }
