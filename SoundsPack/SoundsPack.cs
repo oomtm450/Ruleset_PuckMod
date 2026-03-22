@@ -74,10 +74,10 @@ namespace oomtm450PuckMod_SoundsPack {
 
         #region Harmony Patches
         /// <summary>
-        /// Class that patches the Update event from PhysicsManager.
+        /// Class that patches the Server_Tick event from GameManager.
         /// </summary>
-        [HarmonyPatch(typeof(PhysicsManager), "Update")]
-        public class PhysicsManager_Update_Patch { // TODO : Check for better function for this.
+        [HarmonyPatch(typeof(GameManager), "Server_Tick")]
+        public class GameManager_Server_Tick_Patch {
             [HarmonyPostfix]
             public static void Postfix() {
                 try {
@@ -100,7 +100,7 @@ namespace oomtm450PuckMod_SoundsPack {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix().\n{ex}", ClientConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_Tick_Patch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
         }

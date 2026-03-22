@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.4DEV1";
+        private static readonly string MOD_VERSION = "1.0.4DEV2";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -930,7 +930,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return true;
 
                     if (Paused) {
-                        //GameManager.Instance.Server_Resume(); // TODO
+                        UnpauseGame();
                         ChangedPhase = false;
                     }
 
@@ -1870,10 +1870,10 @@ namespace oomtm450PuckMod_Ruleset {
         }*/
 
         /// <summary>
-        /// Class that patches the Update event from PhysicsManager.
+        /// Class that patches the Server_Tick event from GameManager.
         /// </summary>
-        [HarmonyPatch(typeof(PhysicsManager), "Update")]
-        public class PhysicsManager_Update_Client_Patch { // TODO : Check for better function for this.
+        [HarmonyPatch(typeof(GameManager), "Server_Tick")]
+        public class GameManager_Server_Tick_Patch {
             [HarmonyPostfix]
             public static void Postfix() {
                 try {
@@ -1902,7 +1902,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Client_Patch)} Postfix().\n{ex}", ClientConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_Tick_Patch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
         }
@@ -2523,9 +2523,10 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             try {
-                /*if (!_barriersLowered && ServerConfig.Penalty.DelayOfGame) { // TODO
-                    for (int i = 0; i < LevelManager.Instance.gameObject.transform.childCount; i++) {
-                        Transform levelManagerChild = LevelManager.Instance.gameObject.transform.GetChild(i);
+                if (!_barriersLowered && ServerConfig.Penalty.DelayOfGame) {
+                    GameObject levelObj = GameObject.Find("Level Default");
+                    for (int i = 0; i < levelObj.transform.childCount; i++) {
+                        Transform levelManagerChild = levelObj.transform.GetChild(i);
                         if (levelManagerChild.gameObject.name != "Rink")
                             continue;
 
@@ -2548,9 +2549,9 @@ namespace oomtm450PuckMod_Ruleset {
                         _barriersLowered = true;
                         break;
                     }
-                }*/
+                }
 
-                if (POSITION_ROTATION_ON_FACEOFF == null) { // TODO
+                if (POSITION_ROTATION_ON_FACEOFF == null) {
                     Dictionary<PlayerPosition, VisualElement> playerPositions = SystemFunc.GetPrivateField<Dictionary<PlayerPosition, VisualElement>>(typeof(UIPositionSelect), UIManager.Instance.PositionSelect, "playerPositionVisualElementMap");
 
                     List<PlayerPosition> playerBluePositions = new List<PlayerPosition>();
