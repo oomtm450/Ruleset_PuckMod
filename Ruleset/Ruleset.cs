@@ -2557,7 +2557,6 @@ namespace oomtm450PuckMod_Ruleset {
                     List<PlayerPosition> playerBluePositions = new List<PlayerPosition>();
                     List<PlayerPosition> playerRedPositions = new List<PlayerPosition>();
                     foreach (PlayerPosition ppos in playerPositions.Keys) {
-                        Logging.Log("ppos Team : " + ppos.Team + ", Name : " + ppos.Name, ServerConfig, true); // TODO
                         if (ppos.Team == PlayerTeam.Blue)
                             playerBluePositions.Add(ppos);
                         else
@@ -3716,7 +3715,6 @@ namespace oomtm450PuckMod_Ruleset {
             Dictionary<PlayerPosition, VisualElement> playerPositions = SystemFunc.GetPrivateField<Dictionary<PlayerPosition, VisualElement>>(typeof(UIPositionSelect), UIManager.Instance.PositionSelect, "playerPositionVisualElementMap");
 
             foreach (PlayerPosition ppos in playerPositions.Keys) {
-                Logging.Log("ppos Team : " + ppos.Team + ", Name : " + ppos.Name, ServerConfig, true); // TODO
                 if (ppos.Team == team)
                     positions.Add(ppos);
             }
