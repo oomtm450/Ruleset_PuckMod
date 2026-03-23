@@ -34,6 +34,7 @@ namespace oomtm450PuckMod_Ruleset {
                 case CENTER_POSITION:
                     zOffset = 1.5f;
                     break;
+
                 case LEFT_WINGER_POSITION:
                     zOffset = 1.5f;
                     if ((faceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team == PlayerTeam.Blue))
@@ -41,6 +42,7 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         xOffset = 9f;
                     break;
+
                 case RIGHT_WINGER_POSITION:
                     zOffset = 1.5f;
                     if ((faceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team == PlayerTeam.Blue))
@@ -48,6 +50,7 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         xOffset = -9f;
                     break;
+
                 case LEFT_DEFENDER_POSITION:
                     zOffset = 13.75f;
                     if ((ushort)faceoffSpot >= 5)
@@ -64,6 +67,7 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         xOffset = 4.5f;
                     break;
+
                 case RIGHT_DEFENDER_POSITION:
                     zOffset = 13.75f;
                     if ((ushort)faceoffSpot >= 5)
@@ -134,6 +138,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                 player.PlayerBody.Server_Teleport(new Vector3(faceoffDot.x + xOffset, faceoffDot.y, faceoffDot.z + zOffset), rotation);
             }
+
+            player.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.None;
         }
         #endregion
     }

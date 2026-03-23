@@ -24,23 +24,28 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         internal static HashSet<Player> PenalizedPlayers { get; } = new HashSet<Player>();
 
         private void Awake() {
-            EventManager.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
+            EventManager.AddEventListener("Event_Everyone_OnGameStateChanged", Event_Everyone_OnGameStateChanged);
         }
 
         private void OnDestroy() {
-            EventManager.RemoveEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
+            EventManager.RemoveEventListener("Event_Everyone_OnGameStateChanged", Event_Everyone_OnGameStateChanged);
         }
 
-        private void OnGamePhaseChanged(Dictionary<string, object> message) {
-            _isFaceOffActive = (GamePhase)message["newGamePhase"] == GamePhase.FaceOff;
+        private void Event_Everyone_OnGameStateChanged(Dictionary<string, object> message) {
+            GameState oldGameState = (GameState)message["oldGameState"];
+            GameState newGameState = (GameState)message["newGameState"];
+
+            if (oldGameState.Phase == newGameState.Phase)
+                return;
+
+            _isFaceOffActive = newGameState.Phase == GamePhase.FaceOff;
 
             if (_isFaceOffActive) {
                 // Start countdown to freeze players before puck drop
                 if (Ruleset.ServerConfig.Faceoff.FreezePlayersBeforeDrop) {
                     _freezeStartTime = Time.time;
 
-                    GamePhase oldGamePhase = (GamePhase)message["oldGamePhase"];
-                    if (oldGamePhase == GamePhase.Replay || oldGamePhase == GamePhase.Intermission)
+                    if (oldGameState.Phase == GamePhase.Replay || oldGameState.Phase == GamePhase.Intermission)
                         _freezeStartTime -= 1f;
                 }
             }

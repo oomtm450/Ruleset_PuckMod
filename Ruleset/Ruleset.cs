@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.4DEV2";
+        private static readonly string MOD_VERSION = "1.0.4DEV4";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -227,7 +227,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static bool _changedPhase = false;
 
-        private static int _periodTickRemaining = 0;
+        private static int _periodTickRemaining = -1;
 
         private static PlayerTeam _lastPlayerOnPuckTeam = TeamFunc.DEFAULT_TEAM;
 
@@ -923,7 +923,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "OnGameStateChanged")]
         public class BaseGameMode_OnGameStateChanged_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(GameState oldGameState, GameState newGameState) {
+            public static bool Prefix(BaseGameMode<BaseGameModeConfig> __instance, GameState oldGameState, GameState newGameState) {
                 try {
                     // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || !Logic || oldGameState.Phase == newGameState.Phase)
@@ -958,8 +958,8 @@ namespace oomtm450PuckMod_Ruleset {
                                 PenaltyModule.RemoveOnePenalty(PlayerTeam.Blue);
                         }
                     }
-                    else if (newGameState.Phase == GamePhase.FaceOff || newGameState.Phase == GamePhase.Warmup || newGameState.Phase == GamePhase.GameOver) {
-                        if (newGameState.Phase == GamePhase.GameOver || newGameState.Phase == GamePhase.Warmup)
+                    else if (newGameState.Phase == GamePhase.FaceOff || newGameState.Phase == GamePhase.Warmup || newGameState.Phase == GamePhase.GameOver || newGameState.Phase == GamePhase.PreGame) {
+                        if (newGameState.Phase == GamePhase.GameOver || newGameState.Phase == GamePhase.Warmup || newGameState.Phase == GamePhase.PreGame)
                             ResetGame();
 
                         // Reset puck coordinates.
@@ -1019,6 +1019,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                     else if (newGameState.Phase == GamePhase.Play) {
                         PenaltyModule.UnpausePenalties();
+                        GameManager.Instance.Server_SetGameState(GamePhase.Play, _periodTickRemaining);
                     }
 
                     if (!ChangedPhase)
@@ -1737,46 +1738,46 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        /*/// <summary> 
-        /// Class that patches the Server_GoalScored event from GameManager.
+        /// <summary>
+        /// Class that patches the ScoreGoal event from BaseGameMode.
         /// </summary>
-        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_GoalScored))]
-        public class GameManager_Server_GoalScored_Patch { // TODO
+        [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "ScoreGoal")]
+        public class BaseGameMode_ScoreGoal_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(PlayerTeam team, ref Player lastPlayer, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
+            public static bool Prefix(PlayerTeam byTeam, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
                 try {
                     // If this is not the server or logic is paused, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || !Logic)
                         return true;
 
                     // No goal if goalie interference.
-                    if (IsGoalieInt(team)) {
-                        CallGoalieInt(team);
+                    if (IsGoalieInt(byTeam)) {
+                        CallGoalieInt(byTeam);
                         return false;
                     }
 
                     if (goalPlayer != null) {
                         // No goal if offside or high stick or penalty.
-                        if (PenaltyModule.PenaltyToBeCalled[team]) {
-                            CallPenalty(team);
+                        if (PenaltyModule.PenaltyToBeCalled[byTeam]) {
+                            CallPenalty(byTeam);
                             return false;
                         }
 
-                        if (IsHighStick(team)) {
-                            CallHighStick(team);
+                        if (IsHighStick(byTeam)) {
+                            CallHighStick(byTeam);
                             return false;
                         }
 
-                        if (IsOffside(team)) {
-                            CallOffside(team);
+                        if (IsOffside(byTeam)) {
+                            CallOffside(byTeam);
                             return false;
                         }
 
-                        Player lastTouchPlayerTipIncluded = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
+                        Player lastTouchPlayerTipIncluded = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam]).FirstOrDefault();
                         if (lastTouchPlayerTipIncluded != null && lastTouchPlayerTipIncluded.SteamId.Value.ToString() != goalPlayer.SteamId.Value.ToString()) {
                             secondAssistPlayer = assistPlayer;
                             assistPlayer = goalPlayer;
-                            goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
+                            goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam]).FirstOrDefault();
 
                             while (assistPlayer != null && assistPlayer.SteamId.Value.ToString() == goalPlayer.SteamId.Value.ToString()) {
                                 assistPlayer = secondAssistPlayer;
@@ -1791,22 +1792,20 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // If own goal, add goal attribution to last player on puck on the other team.
-                    Player ownGoalPlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(team)]);
+                    Player ownGoalPlayer = PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(byTeam)]);
                     SystemChatMessages.Add($"OWN GOAL BY #{ownGoalPlayer.Number.Value} {ownGoalPlayer.Username.Value}");
-                    goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team]).FirstOrDefault();
+                    goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam]).FirstOrDefault();
 
-                    if (goalPlayer != null) {
-                        lastPlayer = goalPlayer;
+                    if (goalPlayer != null)
                         SendSOGDuringGoal(goalPlayer);
-                    }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_GoalScored_Patch)} Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
             }
-        }*/
+        }
 
         /// <summary>
         /// Class that patches the Server_SpawnCharacter event from Player.
@@ -1870,10 +1869,10 @@ namespace oomtm450PuckMod_Ruleset {
         }*/
 
         /// <summary>
-        /// Class that patches the Server_Tick event from GameManager.
+        /// Class that patches the Update event from PhysicsManager.
         /// </summary>
-        [HarmonyPatch(typeof(GameManager), "Server_Tick")]
-        public class GameManager_Server_Tick_Patch {
+        [HarmonyPatch(typeof(PhysicsManager), "Update")]
+        public class PhysicsManager_Update_ClientPatch { // TODO : Check for better function for this.
             [HarmonyPostfix]
             public static void Postfix() {
                 try {
@@ -1902,7 +1901,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_Tick_Patch)} Postfix().\n{ex}", ClientConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
         }
@@ -2188,6 +2187,10 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             _periodTickRemaining = GameManager.Instance.Tick;
+
+            if (ServerConfig.Faceoff.ReAdd1SecondAfterFaceoff)
+                _periodTickRemaining += 1;
+
             PauseGame();
 
             _ = Task.Run(() => {
@@ -3548,7 +3551,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
                 else {
                     Logging.Log("Setting client sided config.", ServerConfig, true);
-                    ClientConfig = ClientConfig.ReadConfig();
+                    ClientConfig = Configs.ClientConfig.ReadConfig();
 
                     //_getStickLocation = new InputAction(binding: "<keyboard>/#(o)");
                     //_getStickLocation.Enable();
@@ -3564,11 +3567,6 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.AddEventListener("Event_Everyone_OnPlayerBodySpawned", Event_Everyone_OnPlayerBodySpawned);
 
                     if (ServerConfig.Faceoff.EnableViolations) {
-                        // Create boundary manager
-                        /*GameObject boundaryManagerObj = new GameObject("FaceOffBoundaryManager");
-                        _boundaryManager = boundaryManagerObj.AddComponent<FaceOffBoundaryManager>();
-                        UnityEngine.Object.DontDestroyOnLoad(boundaryManagerObj);*/
-
                         // Create player unfreezer/tether system
                         GameObject playerUnfreezerObj = new GameObject("FaceOffPlayerUnfreezer");
                         _playerUnfreezer = playerUnfreezerObj.AddComponent<FaceOffPlayerUnfreezer>();
@@ -3651,11 +3649,6 @@ namespace oomtm450PuckMod_Ruleset {
                     _refSignalsRedTeam.DestroyGameObjects();
                     _refSignalsRedTeam = null;
                 }
-
-                /*if (_boundaryManager != null) {
-                    UnityEngine.Object.Destroy(_boundaryManager.gameObject);
-                    _boundaryManager = null;
-                }*/
 
                 if (_playerUnfreezer != null) {
                     UnityEngine.Object.Destroy(_playerUnfreezer.gameObject);

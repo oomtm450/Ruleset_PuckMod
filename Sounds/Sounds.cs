@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.2.2DEV2";
+        private static readonly string MOD_VERSION = "0.2.2DEV4";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -164,8 +164,8 @@ namespace oomtm450PuckMod_Sounds {
                         if ((string.IsNullOrEmpty(_currentMusicPlaying) || _currentMusicPlaying == Codebase.SoundsSystem.WARMUP_MUSIC) && ServerConfig.EnableMusic) {
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
-                            if (newGameState.Phase == GamePhase.FaceOff) {
-                                if (!_hasPlayedLastMinuteMusic && GameManager.Instance.Tick <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
+                            if (newGameState.Phase == GamePhase.FaceOff || newGameState.Phase == GamePhase.PreGame) { // TODO : Fix pregame.
+                                if (!_hasPlayedLastMinuteMusic && GameManager.Instance.Tick <= 60 && GameManager.Instance.Period == 3) {
                                     _hasPlayedLastMinuteMusic = true;
                                     _currentMusicPlaying = Codebase.SoundsSystem.LAST_MINUTE_MUSIC;
                                 }
@@ -383,10 +383,10 @@ namespace oomtm450PuckMod_Sounds {
         }
 
         /// <summary>
-        /// Class that patches the Server_Tick event from GameManager.
+        /// Class that patches the Update event from PhysicsManager.
         /// </summary>
-        [HarmonyPatch(typeof(GameManager), "Server_Tick")]
-        public class GameManager_Server_Tick_Patch {
+        [HarmonyPatch(typeof(PhysicsManager), "Update")]
+        public class PhysicsManager_Update_Patch { // TODO : Check for better function for this.
             [HarmonyPostfix]
             public static void Postfix() {
                 try {
@@ -422,7 +422,7 @@ namespace oomtm450PuckMod_Sounds {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_Tick_Patch)} Postfix().\n{ex}", ClientConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
         }

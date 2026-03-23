@@ -46,16 +46,21 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         private readonly LockList<Player> _frozenPlayers = new LockList<Player>();
 
         private void Awake() {
-            EventManager.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
+            EventManager.AddEventListener("Event_Everyone_OnGameStateChanged", Event_Everyone_OnGameStateChanged);
         }
 
         private void OnDestroy() {
-            EventManager.RemoveEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
+            EventManager.RemoveEventListener("Event_Everyone_OnGameStateChanged", Event_Everyone_OnGameStateChanged);
         }
 
-        private void OnGamePhaseChanged(Dictionary<string, object> message) {
-            GamePhase newGamePhase = (GamePhase)message["newGamePhase"];
-            if (newGamePhase == GamePhase.FaceOff) {
+        private void Event_Everyone_OnGameStateChanged(Dictionary<string, object> message) {
+            GameState oldGameState = (GameState)message["oldGameState"];
+            GameState newGameState = (GameState)message["newGameState"];
+
+            if (oldGameState.Phase == newGameState.Phase)
+                return;
+
+            if (newGameState.Phase == GamePhase.FaceOff) {
                 // Faceoff started - prepare for monitoring
                 _isFaceOffActive = true;
                 _puckTouchedIce = false;
@@ -64,11 +69,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
                 FaceOffPuckCollisionTracker.Reset();
             }
-            else if ((GamePhase)message["oldGamePhase"] == GamePhase.FaceOff) {
+            else if (oldGameState.Phase == GamePhase.FaceOff) {
                 // Faceoff ended - keep monitoring
                 _isFaceOffActive = false;
             }
-            else if (newGamePhase == GamePhase.Warmup || newGamePhase == GamePhase.BlueScore || newGamePhase == GamePhase.RedScore || newGamePhase == GamePhase.Intermission || newGamePhase == GamePhase.GameOver)
+            else if (newGameState.Phase == GamePhase.Warmup || newGameState.Phase == GamePhase.BlueScore || newGameState.Phase == GamePhase.RedScore || newGameState.Phase == GamePhase.Intermission || newGameState.Phase == GamePhase.GameOver || newGameState.Phase == GamePhase.PreGame || newGameState.Phase == GamePhase.PostGame)
                 ClearViolations();
         }
 
@@ -188,8 +193,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             // Use Server_Teleport for proper networked teleportation.
             player.PlayerBody.Server_Teleport(penaltyPos, player.PlayerBody.transform.rotation);
             player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
-
-            player.PlayerBody.Server_Freeze();
+            player.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
             _frozenPlayers.Add(player);
 
             Logging.Log($"Player {player.Username.Value} frozen at ({Ruleset.ServerConfig.Faceoff.PenaltyFreezeDistance}m back) after {Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty} violations!", Ruleset.ServerConfig);

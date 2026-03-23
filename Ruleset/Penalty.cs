@@ -22,7 +22,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly Quaternion PENALTY_ROTATION = Quaternion.Euler(0f, 270f, 0f); // TODO : Config.
 
-        private static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(22.48f, 0f, 45.755f); // TODO : Config.
+        private static readonly Vector3 DELAY_OF_GAME_POSITION = new Vector3(22.51f, 0f, 45.77f); // TODO : Config.
 
         private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1 = new Vector3(19.45f, 0f, 43.8f); // TODO : Config.
         private static readonly Vector3 DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2 = new Vector3(23.20f, 0f, 33.7f); // TODO : Config.
@@ -310,7 +310,8 @@ namespace oomtm450PuckMod_Ruleset {
                 player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
                 player.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
             }
-            player.PlayerBody.Server_Freeze();
+
+            player.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
 
             Vector3 penaltyBoxPosition;
             float zOffset = 0;
