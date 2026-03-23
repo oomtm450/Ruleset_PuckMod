@@ -1019,7 +1019,6 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                     else if (newGameState.Phase == GamePhase.Play) {
                         PenaltyModule.UnpausePenalties();
-                        GameManager.Instance.Server_SetGameState(GamePhase.Play, _periodTickRemaining);
                     }
 
                     if (!ChangedPhase)
@@ -1027,6 +1026,10 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (newGameState.Phase == GamePhase.Play) {
                         ChangedPhase = false;
+
+                        if (_periodTickRemaining != -1)
+                            GameManager.Instance.Server_SetGameState(GamePhase.Play, _periodTickRemaining);
+
                         IcingStaminaDrain();
                     }
                 }

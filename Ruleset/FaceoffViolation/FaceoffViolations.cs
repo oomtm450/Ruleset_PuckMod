@@ -31,7 +31,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             EventManager.RemoveEventListener("Event_Everyone_OnGameStateChanged", Event_Everyone_OnGameStateChanged);
         }
 
-        private void Event_Everyone_OnGameStateChanged(Dictionary<string, object> message) {
+        private void Event_Everyone_OnGameStateChanged(Dictionary<string, object> message) { // TODO : Fix tether on custom faceoff or after a violation.
             GameState oldGameState = (GameState)message["oldGameState"];
             GameState newGameState = (GameState)message["newGameState"];
 
