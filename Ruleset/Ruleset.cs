@@ -2191,9 +2191,6 @@ namespace oomtm450PuckMod_Ruleset {
 
             _periodTickRemaining = GameManager.Instance.Tick;
 
-            if (ServerConfig.Faceoff.ReAdd1SecondAfterFaceoff)
-                _periodTickRemaining += 1;
-
             PauseGame();
 
             _ = Task.Run(() => {
