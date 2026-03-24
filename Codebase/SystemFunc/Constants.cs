@@ -3,7 +3,7 @@
         /// <summary>
         /// Const string, added current Puck Application.version to check for mod compatibility.
         /// </summary>
-        internal const string CURRENT_APPLICATION_VERSION = "202";
+        internal const string CURRENT_APPLICATION_VERSION = "310";
 
         /// <summary>
         /// Const string, prefix of all the mod's names.
