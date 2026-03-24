@@ -378,7 +378,7 @@ namespace oomtm450PuckMod_Stats {
                     }
 
                     // If own goal, add goal attribution to last player on puck on the other team.
-                    UIChat.Instance.Server_SendSystemChatMessage($"OWN GOAL BY {PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(team)].SteamId).Username.Value}");
+                    ChatManager.Instance.Server_BroadcastChatMessage($"OWN GOAL BY {PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(team)].SteamId).Username.Value}");
                     goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team].SteamId).FirstOrDefault();
 
                     bool saveWasCounted = false;
@@ -1229,7 +1229,7 @@ namespace oomtm450PuckMod_Stats {
                             starPoints = starPoints.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
 
                             if (starPoints.Count != 0) {
-                                UIChat.Instance.Server_SendSystemChatMessage("STARS OF THE MATCH");
+                                ChatManager.Instance.Server_BroadcastChatMessage("STARS OF THE MATCH");
                                 _stars[1] = starPoints.ElementAt(0).Key;
                             }
                             else
@@ -1251,7 +1251,7 @@ namespace oomtm450PuckMod_Stats {
 
                                 Player player = PlayerManager.Instance.GetPlayerBySteamId(star.Value);
                                 if (player != null && player)
-                                    UIChat.Instance.Server_SendSystemChatMessage($"The {(star.Key == 1 ? "first" : (star.Key == 2 ? "second" : "third"))} star is... #{player.Number.Value} {player.Username.Value} !");
+                                    ChatManager.Instance.Server_BroadcastChatMessage($"The {(star.Key == 1 ? "first" : (star.Key == 2 ? "second" : "third"))} star is... #{player.Number.Value} {player.Username.Value} !");
 
                                 NetworkCommunication.SendDataToAll(STAR, $"{star.Value};{star.Key}", Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                                 LogStar(star.Value, star.Key);
@@ -1317,39 +1317,41 @@ namespace oomtm450PuckMod_Stats {
                             foreach (var kvp in _plusMinus)
                                 plusMinusDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
 
-                            // Log JSON for game stats.
-                            Dictionary<string, object> jsonDict = new Dictionary<string, object> {
-                                { "sog", sogDict },
-                                { "passes", passesDict },
-                                { "blocks", blocksDict },
-                                { "hits", hitsDict },
-                                { "takeaways", takeawaysDict },
-                                { "turnovers", turnoversDict },
-                                { "saveperc", savePercDict },
-                                { "sticksaves", stickSavesDict },
-                                { "bluegoals", blueGoalsDict },
-                                { "redgoals", redGoalsDict },
-                                { "blueassists", blueAssistsDict },
-                                { "redassists", redAssistsDict },
-                                { "gwg", gwgSteamId + "," + (playersUsername.TryGetValue(gwgSteamId, out string gwgUsername) == true ? gwgUsername : "") },
-                                { "stars", starsDict },
-                                { "plusminus", plusMinusDict },
-                            };
+                            if (sogDict.Count != 0) {
+                                // Log JSON for game stats.
+                                Dictionary<string, object> jsonDict = new Dictionary<string, object> {
+                                    { "sog", sogDict },
+                                    { "passes", passesDict },
+                                    { "blocks", blocksDict },
+                                    { "hits", hitsDict },
+                                    { "takeaways", takeawaysDict },
+                                    { "turnovers", turnoversDict },
+                                    { "saveperc", savePercDict },
+                                    { "sticksaves", stickSavesDict },
+                                    { "bluegoals", blueGoalsDict },
+                                    { "redgoals", redGoalsDict },
+                                    { "blueassists", blueAssistsDict },
+                                    { "redassists", redAssistsDict },
+                                    { "gwg", gwgSteamId + "," + (playersUsername.TryGetValue(gwgSteamId, out string gwgUsername) == true ? gwgUsername : "") },
+                                    { "stars", starsDict },
+                                    { "plusminus", plusMinusDict },
+                                };
 
-                            string jsonContent = JsonConvert.SerializeObject(jsonDict, Formatting.Indented);
-                            Logging.Log("Stats:" + jsonContent, ServerConfig);
+                                string jsonContent = JsonConvert.SerializeObject(jsonDict, Formatting.Indented);
+                                Logging.Log("Stats:" + jsonContent, ServerConfig);
 
-                            if (ServerConfig.SaveEOGJSON) {
-                                try {
-                                    string statsFolderPath = Path.Combine(Path.GetFullPath("."), "stats");
-                                    if (!Directory.Exists(statsFolderPath))
-                                        Directory.CreateDirectory(statsFolderPath);
-                                    string jsonPath = Path.Combine(statsFolderPath, Constants.MOD_NAME + "_" + DateTime.UtcNow.ToString("dd-MM-yyyy_HH-mm-ss") + ".json");
+                                if (ServerConfig.SaveEOGJSON) {
+                                    try {
+                                        string statsFolderPath = Path.Combine(Path.GetFullPath("."), "stats");
+                                        if (!Directory.Exists(statsFolderPath))
+                                            Directory.CreateDirectory(statsFolderPath);
+                                        string jsonPath = Path.Combine(statsFolderPath, Constants.MOD_NAME + "_" + DateTime.UtcNow.ToString("dd-MM-yyyy_HH-mm-ss") + ".json");
 
-                                    File.WriteAllText(jsonPath, jsonContent);
-                                }
-                                catch (Exception ex) {
-                                    Logging.LogError($"Can't write the end of game stats in the stats folder. (Permission error ?)\n{ex}", ServerConfig);
+                                        File.WriteAllText(jsonPath, jsonContent);
+                                    }
+                                    catch (Exception ex) {
+                                        Logging.LogError($"Can't write the end of game stats in the stats folder. (Permission error ?)\n{ex}", ServerConfig);
+                                    }
                                 }
                             }
                         }
@@ -1416,14 +1418,14 @@ namespace oomtm450PuckMod_Stats {
                 Logging.Log("Subscribing to events.", ServerConfig, true);
 
                 if (ServerFunc.IsDedicatedServer()) {
-                    EventManager.AddEventListener("Event_OnClientConnected", Event_OnClientConnected);
-                    EventManager.AddEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
-                    EventManager.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
+                    EventManager.AddEventListener(nameof(Event_Everyone_OnClientConnected), Event_Everyone_OnClientConnected);
+                    EventManager.AddEventListener(nameof(Event_Everyone_OnClientDisconnected), Event_Everyone_OnClientDisconnected);
+                    EventManager.AddEventListener(nameof(Event_Everyone_OnPlayerGameStateChanged), Event_Everyone_OnPlayerGameStateChanged);
                     EventManager.AddEventListener(Codebase.Constants.STATS_MOD_NAME, Event_OnStatsTrigger);
                     EventManager.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                 }
                 else {
-                    EventManager.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
+                    EventManager.AddEventListener(nameof(Event_OnClientStopped), Event_OnClientStopped);
                 }
 
                 _harmonyPatched = true;
@@ -1450,16 +1452,16 @@ namespace oomtm450PuckMod_Stats {
                 Logging.Log("Unsubscribing from events.", ServerConfig, true);
                 NetworkCommunication.RemoveFromNotLogList(DATA_NAMES_TO_IGNORE);
                 if (ServerFunc.IsDedicatedServer()) {
-                    EventManager.RemoveEventListener("Event_OnClientConnected", Event_OnClientConnected);
-                    EventManager.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
-                    EventManager.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
+                    EventManager.RemoveEventListener("Event_Everyone_OnClientConnected", Event_Everyone_OnClientConnected);
+                    EventManager.RemoveEventListener("Event_Everyone_OnClientDisconnected", Event_Everyone_OnClientDisconnected);
+                    EventManager.RemoveEventListener("Event_Everyone_OnPlayerGameStateChanged", Event_Everyone_OnPlayerGameStateChanged);
                     EventManager.RemoveEventListener(Codebase.Constants.STATS_MOD_NAME, Event_OnStatsTrigger);
                     EventManager.RemoveEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
-                    EventManager.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
-                    Event_Client_OnClientStopped(new Dictionary<string, object>());
+                    EventManager.RemoveEventListener("Event_OnClientStopped", Event_OnClientStopped);
+                    Event_OnClientStopped(new Dictionary<string, object>());
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER_TO_CLIENT);
                 }
 
@@ -1537,11 +1539,9 @@ namespace oomtm450PuckMod_Stats {
         /// Used to set server-sided stuff after the game has loaded.
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
-        public static void Event_OnClientConnected(Dictionary<string, object> message) {
+        public static void Event_Everyone_OnClientConnected(Dictionary<string, object> message) {
             if (!ServerFunc.IsDedicatedServer())
                 return;
-
-            //Logging.Log("Event_OnClientConnected", ServerConfig);
 
             try {
                 Server_RegisterNamedMessageHandler();
@@ -1559,7 +1559,7 @@ namespace oomtm450PuckMod_Stats {
                 CheckForRulesetMod();
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(Event_OnClientConnected)}.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_Everyone_OnClientConnected)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -1568,11 +1568,9 @@ namespace oomtm450PuckMod_Stats {
         /// Used to unset data linked to the player like rule status.
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
-        public static void Event_OnClientDisconnected(Dictionary<string, object> message) {
+        public static void Event_Everyone_OnClientDisconnected(Dictionary<string, object> message) {
             if (!ServerFunc.IsDedicatedServer())
                 return;
-
-            //Logging.Log("Event_OnClientDisconnected", ServerConfig);
 
             try {
                 ulong clientId = (ulong)message["clientId"];
@@ -1594,7 +1592,7 @@ namespace oomtm450PuckMod_Stats {
                 _playersInfo.Remove(clientId);
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(Event_OnClientDisconnected)}.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_Everyone_OnClientDisconnected)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -1603,11 +1601,9 @@ namespace oomtm450PuckMod_Stats {
         /// Used to reset the config so that it doesn't carry over between servers.
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
-        public static void Event_Client_OnClientStopped(Dictionary<string, object> message) {
+        public static void Event_OnClientStopped(Dictionary<string, object> message) {
             if (NetworkManager.Singleton == null || ServerFunc.IsDedicatedServer())
                 return;
-
-            //Logging.Log("Event_Client_OnClientStopped", _clientConfig);
 
             try {
                 ServerConfig = new Configs.ServerConfig();
@@ -1632,11 +1628,11 @@ namespace oomtm450PuckMod_Stats {
                 ScoreboardModifications(false);
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(Event_Client_OnClientStopped)}.\n{ex}", _clientConfig);
+                Logging.LogError($"Error in {nameof(Event_OnClientStopped)}.\n{ex}", _clientConfig);
             }
         }
 
-        public static void Event_OnPlayerRoleChanged(Dictionary<string, object> message) {
+        public static void Event_Everyone_OnPlayerGameStateChanged(Dictionary<string, object> message) { // TODO : Optimize by using another function that gets called less often.
             // Use the event to link client Ids to Steam Ids.
             Dictionary<ulong, (string SteamId, string Username)> playersInfo_ToChange = new Dictionary<ulong, (string, string)>();
             foreach (var kvp in _playersInfo) {
@@ -1784,7 +1780,7 @@ namespace oomtm450PuckMod_Stats {
                                 break;
 
                             Logging.Log($"Warning client {clientId} mod out of date.", ServerConfig);
-                            UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
+                            ChatManager.Instance.Server_BroadcastChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
                             _sentOutOfDateMessage[clientId] = utcNow;
                         }
                         break;
@@ -1977,11 +1973,11 @@ namespace oomtm450PuckMod_Stats {
         /// Method used to modify the scoreboard to add additional stats.
         /// </summary>
         /// <param name="enable">Bool, true if new stats scoreboard has to added to the scoreboard. False if they need to be removed.</param>
-        private static void ScoreboardModifications(bool enable) {
-            if (UIScoreboard.Instance == null)
+        private static void ScoreboardModifications(bool enable) { // TODO
+            if (UIManager.Instance == null || UIManager.Instance.Scoreboard == null)
                 return;
 
-            VisualElement scoreboardContainer = SystemFunc.GetPrivateField<VisualElement>(typeof(UIScoreboard), UIScoreboard.Instance, "container");
+            VisualElement scoreboardContainer = SystemFunc.GetPrivateField<VisualElement>(typeof(UIScoreboard), UIManager.Instance.Scoreboard, "container");
 
             if (!_hasUpdatedUIScoreboard.Contains("header") && enable) {
                 foreach (VisualElement ve in scoreboardContainer.Children()) {
