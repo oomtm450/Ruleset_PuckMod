@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.3";
+        private static readonly string MOD_VERSION = "0.7.3DEV4";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -568,10 +568,10 @@ namespace oomtm450PuckMod_Stats {
         }
 
         /// <summary>
-        /// Class that patches the Update event from ServerManager.
+        /// Class that patches the Update event from PhysicsManager.
         /// </summary>
-        [HarmonyPatch(typeof(ServerManager), "Update")]
-        public class ServerManager_Update_Patch {
+        [HarmonyPatch(typeof(PhysicsManager), "Update")]
+        public class PhysicsManager_Update_Patch {
             [HarmonyPostfix]
             public static void Postfix() {
                 try {
@@ -700,7 +700,7 @@ namespace oomtm450PuckMod_Stats {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in ServerManager_Update_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
 
                 return;
@@ -767,7 +767,7 @@ namespace oomtm450PuckMod_Stats {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in UIScoreboard_UpdateServer_Patch Postfix().\n{ex}", ClientConfig);
+                    Logging.LogError($"Error in {nameof(UIScoreboard_AddPlayer_Patch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
         }
@@ -778,7 +778,7 @@ namespace oomtm450PuckMod_Stats {
         [HarmonyPatch(typeof(Puck), "OnCollisionEnter")]
         public class Puck_OnCollisionEnter_Patch {
             [HarmonyPostfix]
-            public static void Postfix(Puck __instance, Collision collision) {
+            public static void Postfix(Collision collision) {
                 // If this is not the server or game is not started, do not use the patch.
                 if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Play || !_logic)
                     return;
@@ -896,7 +896,7 @@ namespace oomtm450PuckMod_Stats {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in Puck_OnCollisionEnter_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(Puck_OnCollisionEnter_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -967,7 +967,7 @@ namespace oomtm450PuckMod_Stats {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in Puck_OnCollisionStay_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(Puck_OnCollisionStay_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -1013,7 +1013,7 @@ namespace oomtm450PuckMod_Stats {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in Puck_OnCollisionExit_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(Puck_OnCollisionExit_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -1383,11 +1383,14 @@ namespace oomtm450PuckMod_Stats {
         [HarmonyPatch(typeof(UIChat), "GetChatMessagePrefix")]
         public static class UIChat_GetChatMessagePrefix_Patch {
             public static void Postfix(ChatMessage chatMessage, ref string __result) {
+                if (chatMessage.IsSystem)
+                    return;
+
                 string steamId = chatMessage.SteamID.Value.ToString();
                 if (string.IsNullOrEmpty(steamId))
                     return;
 
-                 __result = GetStarTag(steamId) + __result;
+                __result = GetStarTag(steamId) + __result;
             }
         }
 
@@ -1642,6 +1645,12 @@ namespace oomtm450PuckMod_Stats {
         }
 
         public static void Event_Everyone_OnPlayerGameStateChanged(Dictionary<string, object> message) { // TODO : Optimize by using another function that gets called less often.
+            PlayerGameState newGameState = (PlayerGameState)message["newGameState"];
+            PlayerGameState oldGameState = (PlayerGameState)message["oldGameState"];
+
+            if (oldGameState.Role == newGameState.Role)
+                return;
+
             // Use the event to link client Ids to Steam Ids.
             Dictionary<ulong, (string SteamId, string Username)> playersInfo_ToChange = new Dictionary<ulong, (string, string)>();
             foreach (var kvp in _playersInfo) {
@@ -1665,9 +1674,7 @@ namespace oomtm450PuckMod_Stats {
             if (string.IsNullOrEmpty(playerSteamId))
                 return;
 
-            PlayerRole newRole = (PlayerRole)message["newRole"];
-
-            if (newRole != PlayerRole.Goalie) {
+            if (newGameState.Role != PlayerRole.Goalie) {
                 if (!_sog.TryGetValue(playerSteamId, out int _))
                     _sog.Add(playerSteamId, 0);
 
@@ -1986,39 +1993,35 @@ namespace oomtm450PuckMod_Stats {
             if (UIManager.Instance == null || UIManager.Instance.Scoreboard == null)
                 return;
 
-            VisualElement scoreboardContainer = SystemFunc.GetPrivateField<VisualElement>(typeof(UIScoreboard), UIManager.Instance.Scoreboard, "container");
+            VisualElement scoreboardContainer = SystemFunc.GetPrivateField<VisualElement>(typeof(UIScoreboard), UIManager.Instance.Scoreboard, "scoreboard");
 
             if (!_hasUpdatedUIScoreboard.Contains("header") && enable) {
-                foreach (VisualElement ve in scoreboardContainer.Children()) {
-                    if (ve is TemplateContainer && ve.childCount == 1) {
-                        VisualElement templateContainer = ve.Children().First();
+                VisualElement templateContainer = scoreboardContainer.Children().ElementAt(1).Children().ElementAt(0);
 
-                        Label sogHeader = new Label("S/SV%") {
-                            name = SOG_HEADER_LABEL_NAME,
-                        };
-                        templateContainer.Add(sogHeader);
-                        sogHeader.transform.position = new Vector3(sogHeader.transform.position.x - 260, sogHeader.transform.position.y + 15, sogHeader.transform.position.z);
+                Label sogHeader = new Label("S/SV%") {
+                    name = SOG_HEADER_LABEL_NAME,
+                };
+                templateContainer.Add(sogHeader);
+                sogHeader.style.translate = new Vector3(sogHeader.resolvedStyle.translate.x - 200, sogHeader.resolvedStyle.translate.y - 2, sogHeader.resolvedStyle.translate.z);
 
-                        foreach (VisualElement child in templateContainer.Children()) {
-                            if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
-                                child.transform.position = new Vector3(child.transform.position.x - 100, child.transform.position.y, child.transform.position.z);
-                        }
+                foreach (VisualElement templateContainerChild in templateContainer.Children()) {
+                    foreach (VisualElement child in templateContainerChild.Children()) {
+                        if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
+                            child.style.translate = new Vector3(child.resolvedStyle.translate.x - 95, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
                     }
                 }
 
                 _hasUpdatedUIScoreboard.Add("header");
             }
             else if (_hasUpdatedUIScoreboard.Contains("header") && !enable) {
-                foreach (VisualElement ve in scoreboardContainer.Children()) {
-                    if (ve is TemplateContainer && ve.childCount == 1) {
-                        VisualElement templateContainer = ve.Children().First();
+                VisualElement templateContainer = scoreboardContainer.Children().ElementAt(1).Children().ElementAt(0);
 
-                        templateContainer.Remove(templateContainer.Children().First(x => x.name == SOG_HEADER_LABEL_NAME));
+                templateContainer.Remove(templateContainer.Children().First(x => x.name == SOG_HEADER_LABEL_NAME));
 
-                        foreach (VisualElement child in templateContainer.Children()) {
-                            if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
-                                child.transform.position = new Vector3(child.transform.position.x + 100, child.transform.position.y, child.transform.position.z);
-                        }
+                foreach (VisualElement templateContainerChild in templateContainer.Children()) {
+                    foreach (VisualElement child in templateContainerChild.Children()) {
+                        if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
+                            child.style.translate = new Vector3(child.resolvedStyle.translate.x + 95, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
                     }
                 }
             }
@@ -2034,17 +2037,19 @@ namespace oomtm450PuckMod_Stats {
                         VisualElement playerContainer = kvp.Value.Children().First();
 
                         Label sogLabel = new Label("0") {
-                            name = SOG_LABEL
+                            name = SOG_LABEL,
                         };
                         sogLabel.style.flexGrow = 1;
                         sogLabel.style.unityTextAlign = TextAnchor.UpperRight;
                         playerContainer.Add(sogLabel);
-                        sogLabel.transform.position = new Vector3(sogLabel.transform.position.x - 225, sogLabel.transform.position.y, sogLabel.transform.position.z);
+                        sogLabel.style.translate = new Vector3(sogLabel.resolvedStyle.translate.x - 250, sogLabel.resolvedStyle.translate.y, sogLabel.resolvedStyle.translate.z);
                         _sogLabels.Add(playerSteamId, sogLabel);
 
                         foreach (VisualElement child in playerContainer.Children()) {
                             if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
-                                child.transform.position = new Vector3(child.transform.position.x - 100, child.transform.position.y, child.transform.position.z);
+                                child.style.translate = new Vector3(child.resolvedStyle.translate.x - 90, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
+                            else if (child.name == "PingLabel") // TODO
+                                child.style.translate = new Vector3(child.resolvedStyle.translate.x + 600, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
                         }
 
                         _hasUpdatedUIScoreboard.Add(playerSteamId);
@@ -2062,13 +2067,15 @@ namespace oomtm450PuckMod_Stats {
 
                         foreach (VisualElement child in playerContainer.Children()) {
                             if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
-                                child.transform.position = new Vector3(child.transform.position.x + 100, child.transform.position.y, child.transform.position.z);
+                                child.style.translate = new Vector3(child.resolvedStyle.translate.x + 90, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
+                            else if (child.name == "PingLabel") // TODO
+                                child.style.translate = new Vector3(child.resolvedStyle.translate.x - 600, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
                         }
                     }
                     else {
-                        Logging.Log($"Not adding player {kvp.Key.Username.Value}, childCount {kvp.Value.childCount}.", ClientConfig, true);
+                        Logging.LogError($"Not adding player {kvp.Key.Username.Value}, childCount {kvp.Value.childCount}.", ClientConfig);
                         foreach (var test in kvp.Value.Children())
-                            Logging.Log($"{test.name}", ClientConfig, true);
+                            Logging.LogError($"{test.name}", ClientConfig);
                     }
                 }
             }
@@ -2343,7 +2350,7 @@ namespace oomtm450PuckMod_Stats {
             internal string BlockerSteamId { get; set; } = "";
             internal PlayerTeam ShooterTeam { get; set; } = PlayerTeam.Blue;
         }
-        
+
         internal class Possession {
             internal string SteamId { get; set; } = "";
 

@@ -82,7 +82,7 @@ namespace oomtm450PuckMod_Stats.Configs {
             ServerConfig newConfig = new ServerConfig();
 
             //if (LogInfo == _oldConfig.LogInfo)
-                //LogInfo = newConfig.LogInfo;
+            //LogInfo = newConfig.LogInfo;
 
             if (GoalieRadius == _oldConfig.GoalieRadius)
                 GoalieRadius = newConfig.GoalieRadius;
