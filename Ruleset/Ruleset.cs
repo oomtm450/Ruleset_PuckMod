@@ -2502,16 +2502,19 @@ namespace oomtm450PuckMod_Ruleset {
         
         public static void Event_Everyone_OnPlayerGameStateChanged(Dictionary<string, object> message) { // TODO : Optimize by using another function that gets called less often.
             // Use the event to link client Ids to Steam Ids.
-            Dictionary<ulong, string> players_ClientId_SteamId_ToChange = new Dictionary<ulong, string>();
+            Dictionary<ulong, (string SteamId, string Username)> playersInfo_ToChange = new Dictionary<ulong, (string, string)>();
             foreach (var kvp in PlayerFunc.Players_ClientId_SteamId) {
-                if (string.IsNullOrEmpty(kvp.Value))
-                    players_ClientId_SteamId_ToChange.Add(kvp.Key, PlayerManager.Instance.GetPlayerByClientId(kvp.Key).SteamId.Value.ToString());
+                if (string.IsNullOrEmpty(kvp.Value)) {
+                    Player player = PlayerManager.Instance.GetPlayerByClientId(kvp.Key);
+                    playersInfo_ToChange.Add(kvp.Key, (player.SteamId.Value.ToString(), player.Username.Value.ToString()));
+                }
+                    
             }
 
-            foreach (var kvp in players_ClientId_SteamId_ToChange) {
-                if (!string.IsNullOrEmpty(kvp.Value)) {
-                    PlayerFunc.Players_ClientId_SteamId[kvp.Key] = kvp.Value;
-                    Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value}.", ServerConfig);
+            foreach (var kvp in playersInfo_ToChange) {
+                if (!string.IsNullOrEmpty(kvp.Value.SteamId)) {
+                    PlayerFunc.Players_ClientId_SteamId[kvp.Key] = kvp.Value.SteamId;
+                    Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value} ({kvp.Value.Username}).", ServerConfig);
                 }
             }
         }
