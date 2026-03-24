@@ -292,7 +292,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// ClientConfig, config set by the client.
         /// </summary>
-        internal static ClientConfig _clientConfig = new ClientConfig();
+        internal static Configs.ClientConfig ClientConfig { get; set; } = new Configs.ClientConfig();
 
         /// <summary>
         /// DateTime, last time client asked the server for startup data.
@@ -341,29 +341,29 @@ namespace oomtm450PuckMod_Stats {
                     _puckRaycast = __result.gameObject.GetComponent<PuckRaycast>();
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in PuckManager_Server_SpawnPuck_Patch Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(PuckManager_Server_SpawnPuck_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
 
         /// <summary>
-        /// Class that patches the Server_GoalScored event from GameManager.
+        /// Class that patches the ScoreGoal event from BaseGameMode.
         /// </summary>
-        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_GoalScored))]
-        public class GameManager_Server_GoalScored_Patch {
+        [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "ScoreGoal")]
+        public class BaseGameMode_ScoreGoal_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(PlayerTeam team, ref Player lastPlayer, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
+            public static bool Prefix(PlayerTeam byTeam, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || RulesetModEnabled() || !_logic)
                         return true;
 
                     if (goalPlayer != null) {
-                        Player lastTouchPlayerTipIncluded = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team].SteamId).FirstOrDefault();
+                        Player lastTouchPlayerTipIncluded = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam].SteamId).FirstOrDefault();
                         if (lastTouchPlayerTipIncluded != null && lastTouchPlayerTipIncluded.SteamId.Value.ToString() != goalPlayer.SteamId.Value.ToString()) {
                             secondAssistPlayer = assistPlayer;
                             assistPlayer = goalPlayer;
-                            goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team].SteamId).FirstOrDefault();
+                            goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam].SteamId).FirstOrDefault();
 
                             while (assistPlayer != null && assistPlayer.SteamId.Value.ToString() == goalPlayer.SteamId.Value.ToString()) {
                                 assistPlayer = secondAssistPlayer;
@@ -373,31 +373,29 @@ namespace oomtm450PuckMod_Stats {
                             if (secondAssistPlayer != null && (secondAssistPlayer.SteamId.Value.ToString() == assistPlayer.SteamId.Value.ToString() || secondAssistPlayer.SteamId.Value.ToString() == goalPlayer.SteamId.Value.ToString()))
                                 secondAssistPlayer = null;
                         }
-                        SendSavePercDuringGoal(team, SendSOGDuringGoal(goalPlayer));
+                        SendSavePercDuringGoal(byTeam, SendSOGDuringGoal(goalPlayer));
                         return true;
                     }
 
                     // If own goal, add goal attribution to last player on puck on the other team.
-                    ChatManager.Instance.Server_BroadcastChatMessage($"OWN GOAL BY {PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(team)].SteamId).Username.Value}");
-                    goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[team].SteamId).FirstOrDefault();
+                    ChatManager.Instance.Server_BroadcastChatMessage($"OWN GOAL BY {PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(byTeam)].SteamId).Username.Value}");
+                    goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam].SteamId).FirstOrDefault();
 
                     bool saveWasCounted = false;
-                    if (goalPlayer != null) {
-                        lastPlayer = goalPlayer;
+                    if (goalPlayer != null)
                         saveWasCounted = SendSOGDuringGoal(goalPlayer);
-                    }
 
-                    SendSavePercDuringGoal(team, saveWasCounted);
+                    SendSavePercDuringGoal(byTeam, saveWasCounted);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_GoalScored_Patch)} Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
             }
 
             [HarmonyPostfix]
-            public static void Postfix(PlayerTeam team, Player lastPlayer, Player goalPlayer, Player assistPlayer, Player secondAssistPlayer, Puck puck) {
+            public static void Postfix(PlayerTeam byTeam, Player goalPlayer, Player assistPlayer, Player secondAssistPlayer, Puck puck) {
                 try {
                     // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer())
@@ -411,7 +409,7 @@ namespace oomtm450PuckMod_Stats {
                         if (!_plusMinus.TryGetValue(playerSteamId, out int _))
                             _plusMinus.Add(playerSteamId, 0);
 
-                        if (player.Team == team)
+                        if (player.Team == byTeam)
                             _plusMinus[playerSteamId] += 1;
                         else
                             _plusMinus[playerSteamId] -= 1;
@@ -422,7 +420,7 @@ namespace oomtm450PuckMod_Stats {
 
                     LockList<string> goalsList, assistsList;
 
-                    if (team == PlayerTeam.Blue) {
+                    if (byTeam == PlayerTeam.Blue) {
                         goalsList = _blueGoals;
                         assistsList = _blueAssists;
                     }
@@ -439,7 +437,7 @@ namespace oomtm450PuckMod_Stats {
                         assistsList.Add(secondAssistPlayer.SteamId.Value.ToString());
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_GoalScored_Patch)} Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -460,21 +458,21 @@ namespace oomtm450PuckMod_Stats {
                     _hasUpdatedUIScoreboard.Remove(player.SteamId.Value.ToString());
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(UIScoreboard_RemovePlayer_Patch)} Postfix().\n{ex}", _clientConfig);
+                    Logging.LogError($"Error in {nameof(UIScoreboard_RemovePlayer_Patch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
         }
 
         /// <summary>
-        /// Class that patches the Server_ResetGameState event from GameManager.
+        /// Class that patches the OnGameStateChanged event from BaseGameMode.
         /// </summary>
-        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_ResetGameState))]
-        public class GameManager_Server_ResetGameState_Patch {
+        [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "OnGameStateChanged")]
+        public class BaseGameMode_OnGameStateChanged_Patch {
             [HarmonyPostfix]
-            public static void Postfix(bool resetPhase) {
+            public static void Postfix(GameState oldGameState, GameState newGameState) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer())
+                    if (!ServerFunc.IsDedicatedServer() || oldGameState.Phase == newGameState.Phase || newGameState.Phase != GamePhase.PreGame)
                         return;
 
                     // Reset s%.
@@ -564,7 +562,7 @@ namespace oomtm450PuckMod_Stats {
                     _sentOutOfDateMessage.Clear();
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_ResetGameState_Patch)} Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(BaseGameMode_OnGameStateChanged_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -710,12 +708,12 @@ namespace oomtm450PuckMod_Stats {
         }
 
         /// <summary>
-        /// Class that patches the UpdatePlayer event from UIScoreboard.
+        /// Class that patches the Update event from PhysicsManager.
         /// </summary>
-        [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.UpdatePlayer))]
-        public class UIScoreboard_UpdatePlayer_Patch {
+        [HarmonyPatch(typeof(PhysicsManager), "Update")]
+        public class PhysicsManager_Update_ClientPatch { // TODO : Check for better function for this.
             [HarmonyPostfix]
-            public static void Postfix(UIScoreboard __instance, Player player) {
+            public static void Postfix() {
                 try {
                     // If this is the server, do not use the patch.
                     if (ServerFunc.IsDedicatedServer())
@@ -728,20 +726,34 @@ namespace oomtm450PuckMod_Stats {
                         DateTime now = DateTime.UtcNow;
                         if (_lastDateTimeAskStartupData + TimeSpan.FromSeconds(1) < now && _askServerForStartupDataCount++ < 10) {
                             _lastDateTimeAskStartupData = now;
-                            NetworkCommunication.SendData(Constants.ASK_SERVER_FOR_STARTUP_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, _clientConfig);
+                            NetworkCommunication.SendData(Constants.ASK_SERVER_FOR_STARTUP_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                     }
                     else if (_askForKick) {
                         _askForKick = false;
-                        NetworkCommunication.SendData(Constants.MOD_NAME + "_kick", "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, _clientConfig);
+                        NetworkCommunication.SendData(Constants.MOD_NAME + "_kick", "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                     }
                     else if (_addServerModVersionOutOfDateMessage) {
                         _addServerModVersionOutOfDateMessage = false;
-                        UIChat.Instance.AddChatMessage($"Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
+                        SystemFunc.AddClientChatMessage($"Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
                     }
 
                     ScoreboardModifications(true);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_ClientPatch)} Postfix().\n{ex}", ClientConfig);
+                }
+            }
+        }
 
+        /// <summary>
+        /// Class that patches the UpdatePlayer event from UIScoreboard.
+        /// </summary>
+        [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.AddPlayer))]
+        public class UIScoreboard_AddPlayer_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(UIScoreboard __instance, Player player) {
+                try {
                     string playerSteamId = player.SteamId.Value.ToString();
                     if (!string.IsNullOrEmpty(playerSteamId) && _stars.Values.Contains(playerSteamId)) {
                         Dictionary<Player, VisualElement> playerVisualElementMap =
@@ -755,7 +767,7 @@ namespace oomtm450PuckMod_Stats {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in UIScoreboard_UpdateServer_Patch Postfix().\n{ex}", _clientConfig);
+                    Logging.LogError($"Error in UIScoreboard_UpdateServer_Patch Postfix().\n{ex}", ClientConfig);
                 }
             }
         }
@@ -1103,18 +1115,18 @@ namespace oomtm450PuckMod_Stats {
         }
 
         /// <summary>
-        /// Class that patches the Server_SetPhase event from GameManager.
+        /// Class that patches the Server_SetGameState event from GameManager.
         /// </summary>
-        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_SetPhase))]
-        public class GameManager_Server_SetPhase_Patch {
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_SetGameState))]
+        public class GameManager_Server_SetGameState_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(GameManager __instance, GamePhase phase, ref int time) {
+            public static bool Prefix(GameManager __instance, GamePhase? phase, int? tick, int? period, int? blueScore, int? redScore, bool? isOvertime) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || !_logic)
+                    if (!ServerFunc.IsDedicatedServer() || !_logic || phase == null)
                         return true;
 
-                    if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver) {
+                    if (phase == GamePhase.FaceOff || phase == GamePhase.Warmup || phase == GamePhase.GameOver || phase == GamePhase.PreGame || phase == GamePhase.PostGame) {
                         ResetPuckWasSavedOrBlockedChecks();
 
                         _puckLastCoordinate = Vector3.zero;
@@ -1358,7 +1370,7 @@ namespace oomtm450PuckMod_Stats {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_SetPhase_Patch)} Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(GameManager_Server_SetGameState_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1366,15 +1378,12 @@ namespace oomtm450PuckMod_Stats {
         }
 
         /// <summary>
-        /// Class that patches WrapPlayerUsername event from UIChat.
+        /// Class that patches GetChatMessagePrefix event from UIChat.
         /// </summary>
-        [HarmonyPatch(typeof(UIChat), nameof(UIChat.WrapPlayerUsername))]
-        public static class UIChat_WrapPlayerUsername_Patch {
-            public static void Postfix(Player player, ref string __result) {
-                if (player == null || !player)
-                    return;
-
-                string steamId = player.SteamId.Value.ToString();
+        [HarmonyPatch(typeof(UIChat), "GetChatMessagePrefix")]
+        public static class UIChat_GetChatMessagePrefix_Patch {
+            public static void Postfix(ChatMessage chatMessage, ref string __result) {
+                string steamId = chatMessage.SteamID.Value.ToString();
                 if (string.IsNullOrEmpty(steamId))
                     return;
 
@@ -1412,7 +1421,7 @@ namespace oomtm450PuckMod_Stats {
                 }
                 else {
                     Logging.Log("Setting client sided config.", ServerConfig, true);
-                    _clientConfig = ClientConfig.ReadConfig();
+                    ClientConfig = ClientConfig.ReadConfig();
                 }
 
                 Logging.Log("Subscribing to events.", ServerConfig, true);
@@ -1628,7 +1637,7 @@ namespace oomtm450PuckMod_Stats {
                 ScoreboardModifications(false);
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(Event_OnClientStopped)}.\n{ex}", _clientConfig);
+                Logging.LogError($"Error in {nameof(Event_OnClientStopped)}.\n{ex}", ClientConfig);
             }
         }
 
@@ -1745,7 +1754,7 @@ namespace oomtm450PuckMod_Stats {
             try {
                 string dataName, dataStr;
                 if (clientId == NetworkManager.ServerClientId) // If client Id is 0, we received data from the server, so we are client-sided.
-                    (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, _clientConfig);
+                    (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, ClientConfig);
                 else
                     (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, ServerConfig);
 
@@ -1914,7 +1923,7 @@ namespace oomtm450PuckMod_Stats {
         }
 
         private static void WriteClientSideFile_SOG() {
-            if (_clientConfig.LogClientSideStats) {
+            if (ClientConfig.LogClientSideStats) {
                 StringBuilder csvContent = new StringBuilder();
                 foreach (var kvp in _sog) {
                     Player player = PlayerManager.Instance.GetPlayerBySteamId(kvp.Key);
@@ -1947,7 +1956,7 @@ namespace oomtm450PuckMod_Stats {
         }
 
         private static void WriteClientSideFile_SavePerc() {
-            if (_clientConfig.LogClientSideStats) {
+            if (ClientConfig.LogClientSideStats) {
                 StringBuilder csvContent = new StringBuilder();
                 foreach (var kvp in _savePerc) {
                     Player player = PlayerManager.Instance.GetPlayerBySteamId(kvp.Key);
@@ -2014,7 +2023,7 @@ namespace oomtm450PuckMod_Stats {
                 }
             }
 
-            foreach (var kvp in SystemFunc.GetPrivateField<Dictionary<Player, VisualElement>>(typeof(UIScoreboard), UIScoreboard.Instance, "playerVisualElementMap")) {
+            foreach (var kvp in SystemFunc.GetPrivateField<Dictionary<Player, VisualElement>>(typeof(UIScoreboard), UIManager.Instance.Scoreboard, "playerVisualElementMap")) {
                 string playerSteamId = kvp.Key.SteamId.Value.ToString();
 
                 if (string.IsNullOrEmpty(playerSteamId))
@@ -2057,9 +2066,9 @@ namespace oomtm450PuckMod_Stats {
                         }
                     }
                     else {
-                        Logging.Log($"Not adding player {kvp.Key.Username.Value}, childCount {kvp.Value.childCount}.", _clientConfig, true);
+                        Logging.Log($"Not adding player {kvp.Key.Username.Value}, childCount {kvp.Value.childCount}.", ClientConfig, true);
                         foreach (var test in kvp.Value.Children())
-                            Logging.Log($"{test.name}", _clientConfig, true);
+                            Logging.Log($"{test.name}", ClientConfig, true);
                     }
                 }
             }

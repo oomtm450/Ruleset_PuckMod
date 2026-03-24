@@ -923,7 +923,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "OnGameStateChanged")]
         public class BaseGameMode_OnGameStateChanged_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(BaseGameMode<BaseGameModeConfig> __instance, GameState oldGameState, GameState newGameState) {
+            public static bool Prefix(GameState oldGameState, GameState newGameState) {
                 try {
                     // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || !Logic || oldGameState.Phase == newGameState.Phase)
@@ -1884,7 +1884,6 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     if (!_hasRegisteredWithNamedMessageHandler || !_serverHasResponded) {
-                        //Logging.Log($"RegisterNamedMessageHandler {Constants.FROM_SERVER_TO_CLIENT}.", ClientConfig);
                         NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Constants.FROM_SERVER_TO_CLIENT, ReceiveData);
                         _hasRegisteredWithNamedMessageHandler = true;
 
@@ -1904,7 +1903,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix().\n{ex}", ClientConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_ClientPatch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
         }
