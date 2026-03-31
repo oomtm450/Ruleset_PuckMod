@@ -41,7 +41,7 @@ namespace Codebase {
         /// <param name="player">Player, player to check.</param>
         /// <returns>Bool, is player playing or not.</returns>
         public static bool IsPlayerPlaying(Player player) {
-            return !(!player || player.Role.Value == PlayerRole.None || !player.IsCharacterFullySpawned || (player.Team.Value != PlayerTeam.Red && player.Team.Value != PlayerTeam.Blue));
+            return !(!player || player.Role == PlayerRole.None || !player.IsCharacterSpawned || (player.Team != PlayerTeam.Red && player.Team != PlayerTeam.Blue));
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace Codebase {
         /// <param name="team">PlayerTeam, team of the goalie.</param>
         /// <returns>Player, goalie found or null.</returns>
         public static Player GetTeamGoalie(PlayerTeam team) {
-            return PlayerManager.Instance.GetPlayersByTeam(team).FirstOrDefault(x => x.Role.Value == PlayerRole.Goalie);
+            return PlayerManager.Instance.GetPlayersByTeam(team).FirstOrDefault(x => x.Role == PlayerRole.Goalie);
         }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace Codebase {
         /// <param name="team">PlayerTeam, opposing team of the goalie.</param>
         /// <returns>Player, goalie found or null.</returns>
         public static Player GetOtherTeamGoalie(PlayerTeam team) {
-            return PlayerManager.Instance.GetPlayersByTeam(TeamFunc.GetOtherTeam(team)).FirstOrDefault(x => x.Role.Value == PlayerRole.Goalie);
+            return PlayerManager.Instance.GetPlayersByTeam(TeamFunc.GetOtherTeam(team)).FirstOrDefault(x => x.Role == PlayerRole.Goalie);
         }
 
         /// <summary>
@@ -103,7 +103,7 @@ namespace Codebase {
         /// <param name="player">Player, player to check.</param>
         /// <returns>Bool, true if the player is a goalie.</returns>
         public static bool IsGoalie(Player player) {
-            return player.Role.Value == PlayerRole.Goalie;
+            return player.Role == PlayerRole.Goalie;
         }
 
         /// <summary>

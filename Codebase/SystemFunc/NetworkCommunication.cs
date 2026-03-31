@@ -130,7 +130,7 @@ namespace Codebase {
 
                 return (dataName, dataStr);
             }
-            catch (Exception ex)  {
+            catch (Exception ex) {
                 Logging.LogError($"Error from cliend Id {clientId} when reading streamed data \"{dataName}\": {ex}", config);
             }
 

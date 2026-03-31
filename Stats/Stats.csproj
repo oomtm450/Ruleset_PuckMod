@@ -68,8 +68,23 @@
     <Reference Include="DOTween">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\DOTween.dll</HintPath>
     </Reference>
-    <Reference Include="DOTween.Modules">
-      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\DOTween.Modules.dll</HintPath>
+    <Reference Include="glTFast">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\glTFast.dll</HintPath>
+    </Reference>
+    <Reference Include="glTFast.Documentation.Examples">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\glTFast.Documentation.Examples.dll</HintPath>
+    </Reference>
+    <Reference Include="glTFast.dots">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\glTFast.dots.dll</HintPath>
+    </Reference>
+    <Reference Include="glTFast.Export">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\glTFast.Export.dll</HintPath>
+    </Reference>
+    <Reference Include="glTFast.Newtonsoft">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\glTFast.Newtonsoft.dll</HintPath>
+    </Reference>
+    <Reference Include="Humanizer">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Humanizer.dll</HintPath>
     </Reference>
     <Reference Include="Linework">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Linework.dll</HintPath>
@@ -77,13 +92,17 @@
     <Reference Include="Microsoft.Bcl.AsyncInterfaces">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
     </Reference>
+    <Reference Include="Mono.Cecil">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Mono.Cecil.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil.Mdb">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Mono.Cecil.Mdb.dll</HintPath>
+    </Reference>
     <Reference Include="Mono.Cecil.Pdb">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Mono.Cecil.Pdb.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Cecil.Rocks">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Mono.Cecil.Rocks.dll</HintPath>
-      <Private>
-      </Private>
     </Reference>
     <Reference Include="Mono.Security">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Mono.Security.dll</HintPath>
@@ -94,6 +113,12 @@
     <Reference Include="MonoMod.Utils">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\MonoMod.Utils.dll</HintPath>
     </Reference>
+    <Reference Include="mscorlib">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\mscorlib.dll</HintPath>
+    </Reference>
+    <Reference Include="netstandard">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\netstandard.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -103,11 +128,20 @@
     <Reference Include="Puck">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Puck.dll</HintPath>
     </Reference>
-    <Reference Include="SingularityGroup.HotReload.Runtime">
-      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\SingularityGroup.HotReload.Runtime.dll</HintPath>
-    </Reference>
     <Reference Include="SingularityGroup.HotReload.Runtime.Public">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\SingularityGroup.HotReload.Runtime.Public.dll</HintPath>
+    </Reference>
+    <Reference Include="Sirenix.OdinInspector.Attributes">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Sirenix.OdinInspector.Attributes.dll</HintPath>
+    </Reference>
+    <Reference Include="Sirenix.Serialization">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Sirenix.Serialization.dll</HintPath>
+    </Reference>
+    <Reference Include="Sirenix.Serialization.Config">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Sirenix.Serialization.Config.dll</HintPath>
+    </Reference>
+    <Reference Include="Sirenix.Utilities">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Sirenix.Utilities.dll</HintPath>
     </Reference>
     <Reference Include="SocketIO.Core">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\SocketIO.Core.dll</HintPath>
@@ -121,14 +155,74 @@
     <Reference Include="SocketIOClient">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\SocketIOClient.dll</HintPath>
     </Reference>
+    <Reference Include="SuperSimpleTcp">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\SuperSimpleTcp.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Buffers">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Collections.Immutable.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ComponentModel.Annotations">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.ComponentModel.Annotations.dll</HintPath>
+    </Reference>
     <Reference Include="System.ComponentModel.Composition">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.ComponentModel.Composition.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Configuration">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Configuration.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Data.DataSetExtensions.dll</HintPath>
     </Reference>
     <Reference Include="System.EnterpriseServices">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.EnterpriseServices.dll</HintPath>
     </Reference>
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Hashing">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.IO.Hashing.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Numerics.Vectors">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reflection.Emit">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Reflection.Emit.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reflection.Emit.ILGeneration">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Reflection.Emit.ILGeneration.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reflection.Emit.Lightweight">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Reflection.Emit.Lightweight.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reflection.TypeExtensions">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Reflection.TypeExtensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Security.dll</HintPath>
+    </Reference>
     <Reference Include="System.ServiceModel.Internals">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.ServiceModel.Internals.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Encodings.Web">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Text.Encodings.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Json">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Transactions">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\System.Transactions.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Burst">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Unity.Burst.dll</HintPath>
@@ -148,14 +242,17 @@
     <Reference Include="Unity.InputSystem.ForUI">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Unity.InputSystem.ForUI.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.InternalAPIEngineBridge.003">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Unity.InternalAPIEngineBridge.003.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.Mathematics">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Unity.Mathematics.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.MemoryProfiler">
-      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Unity.MemoryProfiler.dll</HintPath>
+    <Reference Include="Unity.Multiplayer.Playmode">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Unity.Multiplayer.Playmode.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.Multiplayer.Center.Common">
-      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Unity.Multiplayer.Center.Common.dll</HintPath>
+    <Reference Include="Unity.Multiplayer.Playmode.Common.Runtime">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Unity.Multiplayer.Playmode.Common.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Multiplayer.Tools.Adapters">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Unity.Multiplayer.Tools.Adapters.dll</HintPath>
@@ -262,6 +359,9 @@
     <Reference Include="Unity.TextMeshPro">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Unity.TextMeshPro.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.VectorGraphics">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\Unity.VectorGraphics.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
@@ -331,6 +431,9 @@
     <Reference Include="UnityEngine.HotReloadModule">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\UnityEngine.HotReloadModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.IdentifiersModule">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\UnityEngine.IdentifiersModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.ImageConversionModule">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
     </Reference>
@@ -345,6 +448,9 @@
     </Reference>
     <Reference Include="UnityEngine.InputModule">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\UnityEngine.InputModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.InsightsModule">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\UnityEngine.InsightsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.JSONSerializeModule">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\UnityEngine.JSONSerializeModule.dll</HintPath>
@@ -444,6 +550,9 @@
     </Reference>
     <Reference Include="UnityEngine.UnityConnectModule">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\UnityEngine.UnityConnectModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UnityConsentModule">
+      <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\UnityEngine.UnityConsentModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UnityCurlModule">
       <HintPath>G:\SteamLibrary\steamapps\common\Puck\Puck_Data\Managed\UnityEngine.UnityCurlModule.dll</HintPath>

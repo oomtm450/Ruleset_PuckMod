@@ -15,7 +15,7 @@ namespace oomtm450PuckMod_SoundsPack {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.1DEV";
+        private static readonly string MOD_VERSION = "1.0.2";
 
         /// <summary>
         /// ReadOnlyCollection of string, collection of datanames to not log.
@@ -30,7 +30,7 @@ namespace oomtm450PuckMod_SoundsPack {
         /// <summary>
         /// ServerConfig, config set and sent by the server.
         /// </summary>
-        internal static ServerConfig ServerConfig { get; set; } = new ServerConfig();
+        internal static Configs.ServerConfig ServerConfig { get; set; } = new Configs.ServerConfig();
 
         // Client-side and server-side.
         internal static string ModName { get; set; } = "";
@@ -54,7 +54,7 @@ namespace oomtm450PuckMod_SoundsPack {
         /// <summary>
         /// ClientConfig, config set by the client.
         /// </summary>
-        internal static ClientConfig ClientConfig = new ClientConfig();
+        internal static Configs.ClientConfig ClientConfig = new Configs.ClientConfig();
 
         /// <summary>
         /// DateTime, last time client asked the server for startup data.
@@ -74,12 +74,12 @@ namespace oomtm450PuckMod_SoundsPack {
 
         #region Harmony Patches
         /// <summary>
-        /// Class that patches the UpdatePlayer event from UIScoreboard.
+        /// Class that patches the Update event from PhysicsManager.
         /// </summary>
-        [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.UpdatePlayer))]
-        public class UIScoreboard_UpdatePlayer_Patch {
+        [HarmonyPatch(typeof(PhysicsManager), "Update")]
+        public class PhysicsManager_Update_ClientPatch { // TODO : Check for better function for this.
             [HarmonyPostfix]
-            public static void Postfix(Player player) {
+            public static void Postfix() {
                 try {
                     // If this is the server, do not use the patch.
                     if (ServerFunc.IsDedicatedServer() || string.IsNullOrEmpty(ModName))
@@ -100,7 +100,7 @@ namespace oomtm450PuckMod_SoundsPack {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(UIScoreboard_UpdatePlayer_Patch)} Postfix().\n{ex}", ClientConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_ClientPatch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
         }
@@ -161,20 +161,20 @@ namespace oomtm450PuckMod_SoundsPack {
                     Server_RegisterNamedMessageHandler();
 
                     Logging.Log("Setting server sided config.", ServerConfig, true);
-                    ServerConfig = ServerConfig.ReadConfig();
+                    ServerConfig = Configs.ServerConfig.ReadConfig();
                 }
                 else {
                     Logging.Log("Setting client sided config.", ServerConfig, true);
-                    ClientConfig = ClientConfig.ReadConfig();
+                    ClientConfig = Configs.ClientConfig.ReadConfig();
                 }
 
                 Logging.Log("Subscribing to events.", ServerConfig, true);
 
                 if (ServerFunc.IsDedicatedServer()) {
-                    EventManager.Instance.AddEventListener("Event_OnClientConnected", Event_OnClientConnected);
+                    EventManager.AddEventListener("Event_Everyone_OnClientConnected", Event_Everyone_OnClientConnected);
                 }
                 else {
-                    EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
+                    EventManager.AddEventListener("Event_OnClientStopped", Event_OnClientStopped);
                 }
 
                 _harmonyPatched = true;
@@ -200,11 +200,11 @@ namespace oomtm450PuckMod_SoundsPack {
                 Logging.Log("Unsubscribing from events.", ServerConfig, true);
                 NetworkCommunication.RemoveFromNotLogList(DATA_NAMES_TO_IGNORE);
                 if (ServerFunc.IsDedicatedServer()) {
-                    EventManager.Instance.RemoveEventListener("Event_OnClientConnected", Event_OnClientConnected);
+                    EventManager.RemoveEventListener("Event_OnClientConnected", Event_Everyone_OnClientConnected);
                     //NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Codebase.Constants.SOUNDS_FROM_CLIENT_TO_SERVER);
                 }
                 else {
-                    EventManager.Instance.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
+                    EventManager.RemoveEventListener("Event_OnClientStopped", Event_OnClientStopped);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(ModName + Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT);
                 }
 
@@ -232,7 +232,7 @@ namespace oomtm450PuckMod_SoundsPack {
         /// Used to set server-sided stuff after the game has loaded.
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
-        public static void Event_OnClientConnected(Dictionary<string, object> message) {
+        public static void Event_Everyone_OnClientConnected(Dictionary<string, object> message) {
             if (!ServerFunc.IsDedicatedServer())
                 return;
 
@@ -240,7 +240,7 @@ namespace oomtm450PuckMod_SoundsPack {
                 Server_RegisterNamedMessageHandler();
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(Event_OnClientConnected)}.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_Everyone_OnClientConnected)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -249,21 +249,19 @@ namespace oomtm450PuckMod_SoundsPack {
         /// Used to reset the config so that it doesn't carry over between servers.
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
-        public static void Event_Client_OnClientStopped(Dictionary<string, object> message) {
+        public static void Event_OnClientStopped(Dictionary<string, object> message) {
             if (NetworkManager.Singleton == null || ServerFunc.IsDedicatedServer())
                 return;
 
-            //Logging.Log("Event_Client_OnClientStopped", ClientConfig);
-
             try {
-                ServerConfig = new ServerConfig();
+                ServerConfig = new Configs.ServerConfig();
                 ServerConfig.ModName = ModName;
 
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(Event_Client_OnClientStopped)}.\n{ex}", ClientConfig);
+                Logging.LogError($"Error in {nameof(Event_OnClientStopped)}.\n{ex}", ClientConfig);
             }
         }
         #endregion
