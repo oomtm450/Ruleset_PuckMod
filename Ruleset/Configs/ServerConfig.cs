@@ -67,7 +67,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; set; } = 68;
+        public int MaxTippedMilliseconds { get; set; } = 67;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
@@ -77,7 +77,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; set; } = 1000;
+        public int MaxPossessionMilliseconds { get; set; } = 1250;
 
         /// <summary>
         /// Bool, authorize ref mode to be voted or activated by an admin.
@@ -124,7 +124,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 throw new ArgumentException($"oldConfig has to be typeof {nameof(OldServerConfig)}.", nameof(oldConfig));
 
             OldServerConfig _oldConfig = oldConfig as OldServerConfig;
-            ServerConfig newConfig = new ServerConfig();
+            ServerConfig newConfig = new Configs.ServerConfig();
 
             //if (LogInfo == _oldConfig.LogInfo)
                 //LogInfo = newConfig.LogInfo;
@@ -172,7 +172,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <returns>ServerConfig, parsed config.</returns>
         internal static ServerConfig ReadConfig() {
-            ServerConfig config = new ServerConfig();
+            ServerConfig config = new Configs.ServerConfig();
 
             try {
                 string rootPath = Path.GetFullPath(".");
@@ -195,7 +195,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 Logging.Log($"Wrote server config : {config}", config, true);
 
                 if (config.UseDefaultNumericValues) {
-                    ServerConfig defaultConfig = new ServerConfig {
+                    ServerConfig defaultConfig = new Configs.ServerConfig {
                         LogInfo = config.LogInfo,
                         UseDefaultNumericValues = config.UseDefaultNumericValues,
                         RefMode = config.RefMode,
@@ -226,7 +226,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                         Faceoff = new FaceoffConfig {
                             EnableViolations = config.Faceoff.EnableViolations,
                             FreezePlayersBeforeDrop = config.Faceoff.FreezePlayersBeforeDrop,
-                            ReAdd1SecondAfterFaceoff = config.Faceoff.ReAdd1SecondAfterFaceoff,
                             UseCustomFaceoff = config.Faceoff.UseCustomFaceoff,
                             UseDefaultPuckDropHeight = config.Faceoff.UseDefaultPuckDropHeight,
                         },
@@ -830,12 +829,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool UseCustomFaceoff { get; set; } = true;
 
         /// <summary>
-        /// Bool, the game rounds down the time remaining on every faceoff.
-        /// This readds 1 second on every faceoff so the game doesn't end too quickly.
-        /// </summary>
-        public bool ReAdd1SecondAfterFaceoff { get; set; } = true;
-
-        /// <summary>
         /// Bool, true if the height of the puck drop on faceoffs shouldn't be modified.
         /// </summary>
         public bool UseDefaultPuckDropHeight { get; set; } = false;
@@ -916,7 +909,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <param name="faceoffConfig">FaceoffConfig, config to copy.</param>
         public FaceoffConfig(FaceoffConfig faceoffConfig) {
             UseCustomFaceoff = faceoffConfig.UseCustomFaceoff;
-            ReAdd1SecondAfterFaceoff = faceoffConfig.ReAdd1SecondAfterFaceoff;
             UseDefaultPuckDropHeight = faceoffConfig.UseDefaultPuckDropHeight;
             PuckDropHeight = faceoffConfig.PuckDropHeight;
 
@@ -963,9 +955,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (UseCustomFaceoff == _oldConfig.UseCustomFaceoff)
                 UseCustomFaceoff = newConfig.UseCustomFaceoff;
-
-            if (ReAdd1SecondAfterFaceoff == _oldConfig.ReAdd1SecondAfterFaceoff)
-                ReAdd1SecondAfterFaceoff = newConfig.ReAdd1SecondAfterFaceoff;
 
             if (UseDefaultPuckDropHeight == _oldConfig.UseDefaultPuckDropHeight)
                 UseDefaultPuckDropHeight = newConfig.UseDefaultPuckDropHeight;

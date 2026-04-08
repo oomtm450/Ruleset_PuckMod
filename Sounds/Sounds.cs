@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.2.1";
+        private static readonly string MOD_VERSION = "0.2.2DEV4";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -24,6 +24,7 @@ namespace oomtm450PuckMod_Sounds {
         private static readonly ReadOnlyCollection<string> OLD_MOD_VERSIONS = new ReadOnlyCollection<string>(new List<string> {
             "0.1.0",
             "0.2.0",
+            "0.2.1",
         });
 
         /// <summary>
@@ -39,7 +40,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// ServerConfig, config set and sent by the server.
         /// </summary>
-        internal static ServerConfig ServerConfig { get; set; } = new ServerConfig();
+        internal static Configs.ServerConfig ServerConfig { get; set; } = new Configs.ServerConfig();
 
         /// <summary>
         /// LockDictionary of ulong and string, dictionary of all players clientId and steamId.
@@ -135,26 +136,26 @@ namespace oomtm450PuckMod_Sounds {
 
         #region Harmony Patches
         /// <summary>
-        /// Class that patches the Server_SetPhase event from GameManager.
+        /// Class that patches the OnGameStateChanged event from BaseGameMode.
         /// </summary>
-        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_SetPhase))]
-        public class GameManager_Server_SetPhase_Patch {
+        [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "OnGameStateChanged")]
+        public class BaseGameMode_OnGameStateChanged_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(GamePhase phase, ref int time) {
+            public static bool Prefix(GameState oldGameState, GameState newGameState) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || !_logic)
+                    if (!ServerFunc.IsDedicatedServer() || !_logic || oldGameState.Phase == newGameState.Phase)
                         return true;
 
-                    if (phase == GamePhase.BlueScore && ServerConfig.EnableMusic) {
+                    if (newGameState.Phase == GamePhase.BlueScore && ServerConfig.EnableMusic) {
                         _currentMusicPlaying = Codebase.SoundsSystem.BLUE_GOAL_MUSIC;
                         NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
-                    else if (phase == GamePhase.RedScore && ServerConfig.EnableMusic) {
+                    else if (newGameState.Phase == GamePhase.RedScore && ServerConfig.EnableMusic) {
                         _currentMusicPlaying = Codebase.SoundsSystem.RED_GOAL_MUSIC;
                         NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
-                    else if (phase == GamePhase.PeriodOver && ServerConfig.EnableMusic) {
+                    else if (newGameState.Phase == GamePhase.Intermission && ServerConfig.EnableMusic) {
                         _currentMusicPlaying = Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC;
                         NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
@@ -163,8 +164,8 @@ namespace oomtm450PuckMod_Sounds {
                         if ((string.IsNullOrEmpty(_currentMusicPlaying) || _currentMusicPlaying == Codebase.SoundsSystem.WARMUP_MUSIC) && ServerConfig.EnableMusic) {
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
-                            if (phase == GamePhase.FaceOff) {
-                                if (!_hasPlayedLastMinuteMusic && GameManager.Instance.GameState.Value.Time <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
+                            if (newGameState.Phase == GamePhase.FaceOff || newGameState.Phase == GamePhase.PreGame) { // TODO : Fix pregame.
+                                if (!_hasPlayedLastMinuteMusic && GameManager.Instance.Tick <= 60 && GameManager.Instance.Period == 3) {
                                     _hasPlayedLastMinuteMusic = true;
                                     _currentMusicPlaying = Codebase.SoundsSystem.LAST_MINUTE_MUSIC;
                                 }
@@ -185,12 +186,12 @@ namespace oomtm450PuckMod_Sounds {
                             }
                         }
 
-                        if (phase == GamePhase.GameOver && ServerConfig.EnableMusic) {
+                        if (newGameState.Phase == GamePhase.GameOver && ServerConfig.EnableMusic) {
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.GAMEOVER_MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             _currentMusicPlaying = Codebase.SoundsSystem.GAMEOVER_MUSIC;
                         }
-                        else if (phase == GamePhase.Warmup && ServerConfig.EnableMusic) {
+                        else if (newGameState.Phase == GamePhase.Warmup && ServerConfig.EnableMusic) {
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.WARMUP_MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             _currentMusicPlaying = Codebase.SoundsSystem.WARMUP_MUSIC;
@@ -200,38 +201,38 @@ namespace oomtm450PuckMod_Sounds {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_SetPhase_Patch)} Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(BaseGameMode_OnGameStateChanged_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
             }
 
             [HarmonyPostfix]
-            public static void Postfix(GamePhase phase, int time) {
+            public static void Postfix(GameState oldGameState, GameState newGameState) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || !_logic)
+                    if (!ServerFunc.IsDedicatedServer() || !_logic || oldGameState.Phase == newGameState.Phase)
                         return;
 
-                    if (phase == GamePhase.Playing) {
+                    if (newGameState.Phase == GamePhase.Play) {
                         NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                         _currentMusicPlaying = "";
                         return;
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_SetPhase_Patch)} Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(BaseGameMode_OnGameStateChanged_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
 
         /// <summary>
-        /// Class that patches the Server_ResetGameState event from GameManager.
+        /// Class that patches the OnGameStarted event from StandardGameMode.
         /// </summary>
-        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_ResetGameState))]
-        public class GameManager_Server_ResetGameState_Patch {
+        [HarmonyPatch(typeof(StandardGameMode<StandardGameModeConfig>), "OnGameStarted")]
+        public class StandardGameMode_OnGameStarted_Patch {
             [HarmonyPostfix]
-            public static void Postfix(bool resetPhase) {
+            public static void Postfix() {
                 try {
                     // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer())
@@ -247,7 +248,7 @@ namespace oomtm450PuckMod_Sounds {
                     _sentOutOfDateMessage.Clear();
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(GameManager_Server_ResetGameState_Patch)} Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(StandardGameMode_OnGameStarted_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -284,27 +285,27 @@ namespace oomtm450PuckMod_Sounds {
         }
 
         /// <summary>
-        /// Class that patches the Client_SendClientChatMessage event from UIChat.
+        /// Class that patches the Client_SendChatMessage event from ChatManager.
         /// </summary>
-        [HarmonyPatch(typeof(UIChat), nameof(UIChat.Client_SendClientChatMessage))]
-        public class UIChat_Client_SendClientChatMessage_Patch {
+        [HarmonyPatch(typeof(ChatManager), nameof(ChatManager.Client_SendChatMessage))]
+        public class ChatManager_Client_SendChatMessage_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(string message, bool useTeamChat) {
+            public static bool Prefix(string content, bool isQuickChat, bool isTeamChat) {
                 try {
                     // If this is the server, do not use the patch.
                     if (ServerFunc.IsDedicatedServer())
                         return true;
 
-                    if (message.StartsWith(@"/")) {
-                        message = message.ToLowerInvariant();
+                    if (content.StartsWith(@"/")) {
+                        content = content.ToLowerInvariant();
 
-                        if (message.StartsWith(@"/musicvol")) {
-                            message = message.Replace(@"/musicvol", "").Trim();
+                        if (content.StartsWith(@"/musicvol")) {
+                            content = content.Replace(@"/musicvol", "").Trim();
 
-                            if (string.IsNullOrEmpty(message))
-                                UIChat.Instance.AddChatMessage($"Music volume is currently at {ClientConfig.MusicVolume.ToString(CultureInfo.InvariantCulture)}");
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Music volume is currently at {ClientConfig.MusicVolume.ToString(CultureInfo.InvariantCulture)}");
                             else {
-                                if (float.TryParse(message, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
                                     if (vol > 1f)
                                         vol = 1f;
                                     else if (vol < 0)
@@ -313,26 +314,26 @@ namespace oomtm450PuckMod_Sounds {
                                     ClientConfig.MusicVolume = vol;
                                     ClientConfig.Save();
                                     _soundsSystem?.ChangeMusicVolume(ClientConfig.MusicVolume);
-                                    UIChat.Instance.AddChatMessage($"Adjusted client music volume to {vol.ToString(CultureInfo.InvariantCulture)}");
+                                    SystemFunc.AddClientChatMessage($"Adjusted client music volume to {vol.ToString(CultureInfo.InvariantCulture)}");
                                 }
                             }
                         }
-                        else if (message.StartsWith(@"/warmupmusic")) {
-                            message = message.Replace(@"/warmupmusic", "").Trim();
+                        else if (content.StartsWith(@"/warmupmusic")) {
+                            content = content.Replace(@"/warmupmusic", "").Trim();
 
-                            if (string.IsNullOrEmpty(message))
-                                UIChat.Instance.AddChatMessage($"Warmup music is currently {(ClientConfig.WarmupMusic ? "enabled" : "disabled")}");
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Warmup music is currently {(ClientConfig.WarmupMusic ? "enabled" : "disabled")}");
                             else {
                                 bool? enableWarmupMusic = null;
-                                if (int.TryParse(message, out int warmupMusicValue)) {
+                                if (int.TryParse(content, out int warmupMusicValue)) {
                                     if (warmupMusicValue >= 1)
                                         enableWarmupMusic = true;
                                     else
                                         enableWarmupMusic = false;
                                 }
-                                else if (message == "true")
+                                else if (content == "true")
                                     enableWarmupMusic = true;
-                                else if (message == "false")
+                                else if (content == "false")
                                     enableWarmupMusic = false;
 
                                 if (enableWarmupMusic != null) {
@@ -346,48 +347,48 @@ namespace oomtm450PuckMod_Sounds {
                                     ClientConfig.WarmupMusic = (bool)enableWarmupMusic;
                                     ClientConfig.Save();
                                     if ((bool)enableWarmupMusic)
-                                        UIChat.Instance.AddChatMessage($"Enabled warmup music");
+                                        SystemFunc.AddClientChatMessage($"Enabled warmup music");
                                     else
-                                        UIChat.Instance.AddChatMessage($"Disabled warmup music");
+                                        SystemFunc.AddClientChatMessage($"Disabled warmup music");
                                 }
                             }
                         }
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(UIChat_Client_SendClientChatMessage_Patch)} Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ChatManager_Client_SendChatMessage_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
             }
 
             [HarmonyPostfix]
-            public static void Postfix(string message, bool useTeamChat) {
+            public static void Postfix(string content, bool isQuickChat, bool isTeamChat) {
                 try {
                     // If this is the server, do not use the patch.
                     if (ServerFunc.IsDedicatedServer())
                         return;
 
-                    if (message.StartsWith(@"/")) {
-                        message = message.ToLowerInvariant();
+                    if (content.StartsWith(@"/")) {
+                        content = content.ToLowerInvariant();
 
-                        if (message.StartsWith(@"/help"))
-                            UIChat.Instance.AddChatMessage("Sounds commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n* <b>/warmupmusic</b> - Disable or enable warmup music (false-true)\n");
+                        if (content.StartsWith(@"/help"))
+                            SystemFunc.AddClientChatMessage("Sounds commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n* <b>/warmupmusic</b> - Disable or enable warmup music (false-true)\n");
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(UIChat_Client_SendClientChatMessage_Patch)} Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(ChatManager_Client_SendChatMessage_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
 
         /// <summary>
-        /// Class that patches the UpdatePlayer event from UIScoreboard.
+        /// Class that patches the Update event from PhysicsManager.
         /// </summary>
-        [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.UpdatePlayer))]
-        public class UIScoreboard_UpdatePlayer_Patch {
+        [HarmonyPatch(typeof(PhysicsManager), "Update")]
+        public class PhysicsManager_Update_ClientPatch { // TODO : Check for better function for this.
             [HarmonyPostfix]
-            public static void Postfix(Player player) {
+            public static void Postfix() {
                 try {
                     // If this is the server, do not use the patch.
                     if (ServerFunc.IsDedicatedServer())
@@ -411,7 +412,7 @@ namespace oomtm450PuckMod_Sounds {
                     }
                     else if (_addServerModVersionOutOfDateMessage) {
                         _addServerModVersionOutOfDateMessage = false;
-                        UIChat.Instance.AddChatMessage($"Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
+                        SystemFunc.AddClientChatMessage($"Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
                     }
 
                     if (_extraSoundsToLoad.Count != 0 && _soundsSystem != null) {
@@ -421,7 +422,7 @@ namespace oomtm450PuckMod_Sounds {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(UIScoreboard_UpdatePlayer_Patch)} Postfix().\n{ex}", ClientConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_ClientPatch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
         }
@@ -452,24 +453,24 @@ namespace oomtm450PuckMod_Sounds {
                     Server_RegisterNamedMessageHandler();
 
                     Logging.Log("Setting server sided config.", ServerConfig, true);
-                    ServerConfig = ServerConfig.ReadConfig();
+                    ServerConfig = Configs.ServerConfig.ReadConfig();
                 }
                 else {
                     Logging.Log("Setting client sided config.", ServerConfig, true);
-                    ClientConfig = ClientConfig.ReadConfig();
+                    ClientConfig = Configs.ClientConfig.ReadConfig();
                 }
 
                 Logging.Log("Subscribing to events.", ServerConfig, true);
 
                 if (ServerFunc.IsDedicatedServer()) {
-                    EventManager.Instance.AddEventListener("Event_OnClientConnected", Event_OnClientConnected);
-                    EventManager.Instance.AddEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
-                    EventManager.Instance.AddEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
-                    EventManager.Instance.AddEventListener(Codebase.Constants.SOUNDS_MOD_NAME, Event_OnSoundsTrigger);
+                    EventManager.AddEventListener("Event_Everyone_OnClientConnected", Event_Everyone_OnClientConnected);
+                    EventManager.AddEventListener("Event_Everyone_OnClientDisconnected", Event_Everyone_OnClientDisconnected);
+                    EventManager.AddEventListener("Event_Everyone_OnPlayerGameStateChanged", Event_Everyone_OnPlayerGameStateChanged);
+                    EventManager.AddEventListener(Codebase.Constants.SOUNDS_MOD_NAME, Event_OnSoundsTrigger);
                 }
                 else {
-                    EventManager.Instance.AddEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
-                    EventManager.Instance.AddEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
+                    EventManager.AddEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
+                    EventManager.AddEventListener("Event_OnClientStopped", Event_OnClientStopped);
                 }
 
                 _harmonyPatched = true;
@@ -502,15 +503,15 @@ namespace oomtm450PuckMod_Sounds {
                 Logging.Log("Unsubscribing from events.", ServerConfig, true);
                 NetworkCommunication.RemoveFromNotLogList(DATA_NAMES_TO_IGNORE);
                 if (ServerFunc.IsDedicatedServer()) {
-                    EventManager.Instance.RemoveEventListener("Event_OnClientConnected", Event_OnClientConnected);
-                    EventManager.Instance.RemoveEventListener("Event_OnClientDisconnected", Event_OnClientDisconnected);
-                    EventManager.Instance.RemoveEventListener("Event_OnPlayerRoleChanged", Event_OnPlayerRoleChanged);
-                    EventManager.Instance.RemoveEventListener(Codebase.Constants.SOUNDS_MOD_NAME, Event_OnSoundsTrigger);
+                    EventManager.RemoveEventListener("Event_Everyone_OnClientConnected", Event_Everyone_OnClientConnected);
+                    EventManager.RemoveEventListener("Event_Everyone_OnClientDisconnected", Event_Everyone_OnClientDisconnected);
+                    EventManager.RemoveEventListener("Event_Everyone_OnPlayerGameStateChanged", Event_Everyone_OnPlayerGameStateChanged);
+                    EventManager.RemoveEventListener(Codebase.Constants.SOUNDS_MOD_NAME, Event_OnSoundsTrigger);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
-                    EventManager.Instance.RemoveEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
-                    EventManager.Instance.RemoveEventListener("Event_Client_OnClientStopped", Event_Client_OnClientStopped);
+                    EventManager.RemoveEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
+                    EventManager.RemoveEventListener("Event_OnClientStopped", Event_OnClientStopped);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER_TO_CLIENT);
                 }
 
@@ -628,11 +629,9 @@ namespace oomtm450PuckMod_Sounds {
         /// Used to set server-sided stuff after the game has loaded.
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
-        public static void Event_OnClientConnected(Dictionary<string, object> message) {
+        public static void Event_Everyone_OnClientConnected(Dictionary<string, object> message) {
             if (!ServerFunc.IsDedicatedServer())
                 return;
-
-            //Logging.Log("Event_OnClientConnected", ServerConfig);
 
             try {
                 Server_RegisterNamedMessageHandler();
@@ -648,7 +647,7 @@ namespace oomtm450PuckMod_Sounds {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(Event_OnClientConnected)}.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_Everyone_OnClientConnected)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -657,7 +656,7 @@ namespace oomtm450PuckMod_Sounds {
         /// Used to unset data linked to the player like rule status.
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
-        public static void Event_OnClientDisconnected(Dictionary<string, object> message) {
+        public static void Event_Everyone_OnClientDisconnected(Dictionary<string, object> message) {
             if (!ServerFunc.IsDedicatedServer())
                 return;
 
@@ -677,7 +676,7 @@ namespace oomtm450PuckMod_Sounds {
                 _players_ClientId_SteamId.Remove(clientId);
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(Event_OnClientDisconnected)}.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_Everyone_OnClientDisconnected)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -686,14 +685,14 @@ namespace oomtm450PuckMod_Sounds {
         /// Used to reset the config so that it doesn't carry over between servers.
         /// </summary>
         /// <param name="message">Dictionary of string and object, content of the event.</param>
-        public static void Event_Client_OnClientStopped(Dictionary<string, object> message) {
+        public static void Event_OnClientStopped(Dictionary<string, object> message) {
             if (NetworkManager.Singleton == null || ServerFunc.IsDedicatedServer())
                 return;
 
             //Logging.Log("Event_Client_OnClientStopped", ClientConfig);
 
             try {
-                ServerConfig = new ServerConfig();
+                ServerConfig = new Configs.ServerConfig();
 
                 _serverHasResponded = false;
                 _askServerForStartupDataCount = 0;
@@ -712,11 +711,11 @@ namespace oomtm450PuckMod_Sounds {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(Event_Client_OnClientStopped)}.\n{ex}", ClientConfig);
+                Logging.LogError($"Error in {nameof(Event_OnClientStopped)}.\n{ex}", ClientConfig);
             }
         }
 
-        public static void Event_OnPlayerRoleChanged(Dictionary<string, object> message) {
+        public static void Event_Everyone_OnPlayerGameStateChanged(Dictionary<string, object> message) { // TODO : Optimize by using another function that gets called less often.
             // Use the event to link client Ids to Steam Ids.
             Dictionary<ulong, string> players_ClientId_SteamId_ToChange = new Dictionary<ulong, string>();
             foreach (var kvp in _players_ClientId_SteamId) {
@@ -750,6 +749,7 @@ namespace oomtm450PuckMod_Sounds {
             if (_soundsSystem == null) {
                 GameObject soundsGameObject = new GameObject(Constants.MOD_NAME + "_Sounds");
                 _soundsSystem = soundsGameObject.AddComponent<SoundsSystem>();
+                Logging.Log("SoundsSystem object was created.", ClientConfig);
             }
 
             //_soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns);
@@ -799,7 +799,7 @@ namespace oomtm450PuckMod_Sounds {
                                 break;
 
                             Logging.Log($"Warning client {clientId} mod out of date.", ServerConfig);
-                            UIChat.Instance.Server_SendSystemChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
+                            ChatManager.Instance.Server_BroadcastChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
                             _sentOutOfDateMessage[clientId] = utcNow;
                         }
                         break;
@@ -934,7 +934,7 @@ namespace oomtm450PuckMod_Sounds {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in ReceiveData.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(ReceiveData)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -942,7 +942,7 @@ namespace oomtm450PuckMod_Sounds {
             if (!ServerConfig.EnableMusic)
                 return;
 
-            if (!_hasPlayedLastMinuteMusic && GameManager.Instance.GameState.Value.Time <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
+            if (!_hasPlayedLastMinuteMusic && GameManager.Instance.Tick <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
                 _hasPlayedLastMinuteMusic = true;
                 _currentMusicPlaying = Codebase.SoundsSystem.LAST_MINUTE_MUSIC_DELAYED;
             }
@@ -967,10 +967,10 @@ namespace oomtm450PuckMod_Sounds {
         /// <returns>List of string, all mods assembly's name.</returns>
         private static List<string> GetModsList() {
             List<string> mods = new List<string>();
-            if (ModManagerV2.Instance == null || !ModManagerV2.Instance)
+            if (ModManager.Instance == null || !ModManager.Instance)
                 return mods;
 
-            foreach (Mod mod in ModManagerV2.Instance.Mods) {
+            foreach (Mod mod in ModManager.Instance.Mods) {
                 Assembly modAssembly = SystemFunc.GetPrivateField<Assembly>(typeof(Mod), mod, "assembly");
                 if (modAssembly == null)
                     continue;

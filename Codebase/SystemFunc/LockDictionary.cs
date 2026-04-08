@@ -13,7 +13,7 @@ namespace Codebase {
         #endregion
 
         #region Properties
-        public Dictionary<TKey, TValue>.KeyCollection Keys {get => _dictionary.Keys; }
+        public Dictionary<TKey, TValue>.KeyCollection Keys { get => _dictionary.Keys; }
 
         public Dictionary<TKey, TValue>.ValueCollection Values { get => _dictionary.Values; }
 
