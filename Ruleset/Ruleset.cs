@@ -2,7 +2,6 @@
 using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -296,12 +295,6 @@ namespace oomtm450PuckMod_Ruleset {
         private static int _askServerForStartupDataCount = 0;
 
         // Barrier collider, position 0 -19 0 is realistic.
-
-
-        /// <summary>
-        /// Bool, if true run Referee Mode
-        /// </summary>
-        private static bool _refereeModeEnabled = false;
         #endregion
 
         #region Properties
@@ -951,84 +944,6 @@ namespace oomtm450PuckMod_Ruleset {
                                     _refSignalsBlueTeam?.Change2DRefsScale(_clientConfig.TwoDRefsScale);
                                     _refSignalsRedTeam?.Change2DRefsScale(_clientConfig.TwoDRefsScale);
                                     UIChat.Instance.AddChatMessage($"Adjusted client 2D refs scale to {scale.ToString(CultureInfo.InvariantCulture)}");
-                                }
-                            }
-                        }
-
-                        if(_refereeModeEnabled)
-                        {
-                            if (message.StartsWith(@"/highstick"))
-                            {
-                                message = message.Replace(@"/highstick", "").Trim();
-                                if (string.IsNullOrEmpty(message))
-                                    UIChat.Instance.AddChatMessage("You must specify which team did an highstick violation (Blue, Red)");
-                                else
-                                {
-                                    if (message.IndexOf("Blue", StringComparison.InvariantCultureIgnoreCase) >= 0)
-                                    {
-                                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(PlayerTeam.Blue, false, _puckLastStateBeforeCall[Rule.HighStick]);
-                                        DoFaceoff(RefSignals.GetSignalConstant(true, PlayerTeam.Blue), RefSignals.HIGHSTICK_REF);
-                                    }
-                                    else if (message.IndexOf("Red", StringComparison.InvariantCultureIgnoreCase) >= 0)
-                                    {
-                                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(PlayerTeam.Red, false, _puckLastStateBeforeCall[Rule.HighStick]);
-                                        DoFaceoff(RefSignals.GetSignalConstant(true, PlayerTeam.Red), RefSignals.HIGHSTICK_REF);
-                                    }
-                                    else
-                                    {
-                                        UIChat.Instance.AddChatMessage("You must specify which team did an highstick violation (Blue, Red)");
-                                    }
-                                }
-                            }
-                            else if(message.StartsWith(@"/offside"))
-                            {
-                                message = message.Replace(@"/offside", "").Trim();
-                                if (string.IsNullOrEmpty(message))
-                                    UIChat.Instance.AddChatMessage("You must specify which team did an offside violation (Blue,Red)");
-                                else
-                                {
-                                    var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
-                                    if (message.IndexOf("Blue", StringComparison.InvariantCultureIgnoreCase) >= 0)
-                                    {
-                                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(PlayerTeam.Blue, false, puckLastStateBeforeCallOffside);
-                                        SendChat(Rule.Offside, PlayerTeam.Blue, true);
-                                        DoFaceoff();
-                                    }
-                                    else if (message.IndexOf("Red", StringComparison.InvariantCultureIgnoreCase) >= 0)
-                                    {
-                                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(PlayerTeam.Red, false, puckLastStateBeforeCallOffside);
-                                        SendChat(Rule.Offside, PlayerTeam.Red, true);
-                                        DoFaceoff();
-                                    }
-                                    else
-                                    {
-                                        UIChat.Instance.AddChatMessage("You must specify which team did an highstick violation (Blue, Red)");
-                                    }
-                                }
-                            }
-                            else if(message.StartsWith(@"/icing"))
-                            {
-                                message = message.Replace(@"/icing", "").Trim();
-                                if (string.IsNullOrEmpty(message))
-                                    UIChat.Instance.AddChatMessage("You must specify which team did an icing violation (Blue,Red)");
-                                else
-                                {
-                                    if (message.IndexOf("Blue", StringComparison.InvariantCultureIgnoreCase) >= 0)
-                                    {
-                                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(PlayerTeam.Blue, true, _puckLastStateBeforeCall[Rule.Icing]);
-                                        SendChat(Rule.Icing, PlayerTeam.Blue, true);
-                                        DoFaceoff();
-                                    }
-                                    else if (message.IndexOf("Red", StringComparison.InvariantCultureIgnoreCase) >= 0)
-                                    {
-                                        _nextFaceoffSpot = Faceoff.GetNextFaceoffPosition(PlayerTeam.Red, true, _puckLastStateBeforeCall[Rule.Icing]);
-                                        SendChat(Rule.Icing, PlayerTeam.Red, true);
-                                        DoFaceoff();
-                                    }
-                                    else
-                                    {
-                                        UIChat.Instance.AddChatMessage("You must specify which team did an icing violation (Blue, Red)");
-                                    }
                                 }
                             }
                         }
