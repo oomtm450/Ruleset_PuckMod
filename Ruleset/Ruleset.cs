@@ -2052,7 +2052,7 @@ namespace oomtm450PuckMod_Ruleset {
                 return true;
             }
         }
-            #endregion
+        #endregion
 
         #region Methods/Functions
         private static void ResetGame(bool resetRefSteamIds = true) {
