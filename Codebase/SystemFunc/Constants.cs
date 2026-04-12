@@ -1,6 +1,11 @@
 ﻿namespace Codebase {
     internal static class Constants {
         /// <summary>
+        /// Const string, added current Puck Application.version to check for mod compatibility.
+        /// </summary>
+        internal const string CURRENT_APPLICATION_VERSION = "202";
+
+        /// <summary>
         /// Const string, prefix of all the mod's names.
         /// </summary>
         private const string MODS_PREFIX = "oomtm450_";
@@ -38,12 +43,12 @@
         /// <summary>
         /// Const float, radius of the puck.
         /// </summary>
-        internal const float PUCK_RADIUS = 0.13f;
+        internal const float PUCK_RADIUS = 0.14f;
 
         /// <summary>
         /// Const float, radius of a player.
         /// </summary>
-        internal const float PLAYER_RADIUS = 0.262f;
+        internal const float PLAYER_RADIUS = 0.261f;
 
         /// <summary>
         /// Const float, height of the net's crossbar.
@@ -86,6 +91,11 @@
         public const string TURNOVER = STATS_MOD_NAME + "TURNOVER";
 
         /// <summary>
+        /// Const string, data name for +/-.
+        /// </summary>
+        public const string PLUSMINUS = STATS_MOD_NAME + "PLUSMINUS";
+
+        /// <summary>
         /// Const string, data name for pausing mods.
         /// </summary>
         public const string PAUSE = "pause";
@@ -99,5 +109,15 @@
         /// Const string, data name for telling mods that Ruleset changed phase manually.
         /// </summary>
         public const string CHANGED_PHASE = "chphase";
+
+        /// <summary>
+        /// Const string, data name for telling mods that Ruleset is going to do a faceoff.
+        /// </summary>
+        public const string NEXT_FACEOFF = "nextfaceoff";
+
+        /// <summary>
+        /// Const string, data name for telling Ruleset to do a faceoff now.
+        /// </summary>
+        public const string INSTANT_FACEOFF = "instantfaceoff";
     }
 }

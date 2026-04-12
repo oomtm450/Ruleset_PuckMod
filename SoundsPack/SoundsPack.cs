@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Reflection;
 using Unity.Netcode;
+using UnityEngine;
 
 namespace oomtm450PuckMod_SoundsPack {
     public class SoundsPack : IPuckMod {
@@ -143,6 +144,11 @@ namespace oomtm450PuckMod_SoundsPack {
                 Logging.Log($"Sound pack name is \"{ModName}\".", ServerConfig, true);
 
                 Logging.Log($"Enabling...", ServerConfig, true);
+
+                if (Application.version != Codebase.Constants.CURRENT_APPLICATION_VERSION) {
+                    Logging.Log($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION}. Mod will not be enabled.", ServerConfig);
+                    return false;
+                }
 
                 _harmony = new Harmony(ModName);
                 _harmony.PatchAll();

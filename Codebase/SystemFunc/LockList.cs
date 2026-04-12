@@ -53,6 +53,16 @@ namespace Codebase {
                 return _list.Remove(value);
         }
 
+        public void RemoveAt(int index) {
+            lock (_locker)
+                _list.RemoveAt(index);
+        }
+
+        public int RemoveAll(System.Predicate<T> match) {
+            lock (_locker)
+                return _list.RemoveAll(match);
+        }
+
         public T First() {
             lock (_locker)
                 return _list.First();

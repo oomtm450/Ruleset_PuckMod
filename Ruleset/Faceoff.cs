@@ -10,10 +10,10 @@ namespace oomtm450PuckMod_Ruleset {
         /// Function that returns the next faceoff position.
         /// </summary>
         /// <param name="team">PlayerTeam, team linked to the faceoff being called.</param>
-        /// <param name="isIcing">Bool, was icing called or not.</param>
+        /// <param name="rule">Rule, rule called for the faceoff.</param>
         /// <param name="puckLastState">(Vector3, Zone), puck's last position and zone.</param>
         /// <returns>FaceoffSpot, next faceoff position.</returns>
-        internal static FaceoffSpot GetNextFaceoffPosition(PlayerTeam team, bool isIcing, (Vector3 Position, Zone Zone) puckLastState) {
+        internal static FaceoffSpot GetNextFaceoffPosition(PlayerTeam team, Rule rule, (Vector3 Position, Zone Zone) puckLastState) {
             ushort teamOffset;
             if (team == PlayerTeam.Red)
                 teamOffset = 2;
@@ -21,16 +21,16 @@ namespace oomtm450PuckMod_Ruleset {
                 teamOffset = 0;
 
             if (puckLastState.Position.x < 0) {
-                if (isIcing)
+                if (rule == Rule.Icing)
                     return FaceoffSpot.BlueteamDZoneLeft + teamOffset;
                 else
-                    return SetNextFaceoffPositionFromLastTouch(team, true, puckLastState);
+                    return SetNextFaceoffPositionFromLastTouch(team, true, puckLastState, rule);
             }
             else {
-                if (isIcing)
+                if (rule == Rule.Icing)
                     return FaceoffSpot.BlueteamDZoneRight + teamOffset;
                 else
-                    return SetNextFaceoffPositionFromLastTouch(team, false, puckLastState);
+                    return SetNextFaceoffPositionFromLastTouch(team, false, puckLastState, rule);
             }
         }
 
@@ -40,11 +40,13 @@ namespace oomtm450PuckMod_Ruleset {
         /// <param name="team">PlayerTeam, team linked to the faceoff being called.</param>
         /// <param name="left">Bool, true if the faceoff has to be on the left.</param>
         /// <param name="puckLastState">(Vector3, Zone), puck's last position and zone.</param>
+        /// <param name="rule">Rule, rule called for the faceoff.</param>
         /// <returns>FaceoffSpot, next faceoff position.</returns>
-        private static FaceoffSpot SetNextFaceoffPositionFromLastTouch(PlayerTeam team, bool left, (Vector3 Position, Zone Zone) puckLastState) {
-            Zone puckZone = ZoneFunc.GetZone(puckLastState.Position, puckLastState.Zone, Codebase.Constants.PUCK_RADIUS);
+        private static FaceoffSpot SetNextFaceoffPositionFromLastTouch(PlayerTeam team, bool left, (Vector3 Position, Zone Zone) puckLastState, Rule rule) {
+            Zone puckZone = ZoneFunc.GetZone(puckLastState.Position, puckLastState.Zone, Ruleset.PuckRadius);
+
             if (puckZone == Zone.BlueTeam_BehindGoalLine || puckZone == Zone.BlueTeam_Zone) {
-                if (team == PlayerTeam.Blue) {
+                if (team == PlayerTeam.Blue || rule == Rule.DelayOfGame) {
                     if (left)
                         return FaceoffSpot.BlueteamDZoneLeft;
                     else
@@ -58,7 +60,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
             else if (puckZone == Zone.RedTeam_BehindGoalLine || puckZone == Zone.RedTeam_Zone) {
-                if (team == PlayerTeam.Red) {
+                if (team == PlayerTeam.Red || rule == Rule.DelayOfGame) {
                     if (left)
                         return FaceoffSpot.RedteamDZoneLeft;
                     else

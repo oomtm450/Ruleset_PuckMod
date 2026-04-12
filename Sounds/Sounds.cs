@@ -437,6 +437,11 @@ namespace oomtm450PuckMod_Sounds {
 
                 Logging.Log($"Enabling...", ServerConfig, true);
 
+                if (Application.version != Codebase.Constants.CURRENT_APPLICATION_VERSION) {
+                    Logging.Log($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION}. Mod will not be enabled.", ServerConfig);
+                    return false;
+                }
+
                 _harmony.PatchAll();
 
                 Logging.Log($"Enabled.", ServerConfig, true);
@@ -970,7 +975,7 @@ namespace oomtm450PuckMod_Sounds {
                 if (modAssembly == null)
                     continue;
 
-                mods.Add(modAssembly.GetName().Name);
+                mods.Add(modAssembly.FullName.Substring(0, modAssembly.FullName.IndexOf(',')));
             }
 
             return mods;

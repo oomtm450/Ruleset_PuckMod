@@ -23,6 +23,11 @@ namespace oomtm450PuckMod_Stats.Configs {
         public bool LogInfo { get; set; } = true;
 
         /// <summary>
+        /// Bool, true if the numeric values has to be replaced be the default ones. Make this false to use custom values.
+        /// </summary>
+        public bool UseDefaultNumericValues { get; set; } = true;
+
+        /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie save crease system.
         /// </summary>
         public float GoalieRadius { get; set; } = 0.75f;
@@ -45,12 +50,17 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; set; } = 300;
+        public int MinPossessionMilliseconds { get; set; } = 450;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; set; } = 700;
+        public int MaxPossessionMilliseconds { get; set; } = 1000;
+
+        /// <summary>
+        /// Int, number of milliseconds for a change of possession to the other team be considered a turnover.
+        /// </summary>
+        public int TurnoverThresholdMilliseconds { get; set; } = 500;
 
         /// <summary>
         /// String, name of the mod.
@@ -91,6 +101,9 @@ namespace oomtm450PuckMod_Stats.Configs {
 
             if (MaxPossessionMilliseconds == _oldConfig.MaxPossessionMilliseconds)
                 MaxPossessionMilliseconds = newConfig.MaxPossessionMilliseconds;
+
+            if (TurnoverThresholdMilliseconds == _oldConfig.TurnoverThresholdMilliseconds)
+                TurnoverThresholdMilliseconds = newConfig.TurnoverThresholdMilliseconds;
         }
 
         /// <summary>
@@ -137,6 +150,16 @@ namespace oomtm450PuckMod_Stats.Configs {
                 }
 
                 Logging.Log($"Wrote server config : {config}", config, true);
+
+                if (config.UseDefaultNumericValues) {
+                    ServerConfig defaultConfig = new ServerConfig {
+                        LogInfo = config.LogInfo,
+                        UseDefaultNumericValues = config.UseDefaultNumericValues,
+                        SaveEOGJSON = config.SaveEOGJSON,
+                    };
+
+                    config = defaultConfig;
+                }
             }
             catch (Exception ex) {
                 Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", config);
