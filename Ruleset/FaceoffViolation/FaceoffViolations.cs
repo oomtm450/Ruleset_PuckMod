@@ -9,7 +9,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
     /// </summary>
     internal class FaceOffPlayerUnfreezer : MonoBehaviour {
         private class PlayerTether {
-            internal PlayerBodyV2 PlayerBody { get; set; }
+            internal PlayerBody PlayerBody { get; set; }
             internal Vector3 SpawnPosition { get; set; }
             internal float MaxForwardDistance { get; set; }
             internal float MaxBackwardDistance { get; set; }
@@ -24,23 +24,28 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         internal static HashSet<Player> PenalizedPlayers { get; } = new HashSet<Player>();
 
         private void Awake() {
-            EventManager.Instance.AddEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
+            EventManager.AddEventListener("Event_Everyone_OnGameStateChanged", Event_Everyone_OnGameStateChanged);
         }
 
         private void OnDestroy() {
-            EventManager.Instance?.RemoveEventListener("Event_OnGamePhaseChanged", OnGamePhaseChanged);
+            EventManager.RemoveEventListener("Event_Everyone_OnGameStateChanged", Event_Everyone_OnGameStateChanged);
         }
 
-        private void OnGamePhaseChanged(Dictionary<string, object> message) {
-            _isFaceOffActive = (GamePhase)message["newGamePhase"] == GamePhase.FaceOff;
+        private void Event_Everyone_OnGameStateChanged(Dictionary<string, object> message) { // TODO : Fix tether on custom faceoff or after a violation.
+            GameState oldGameState = (GameState)message["oldGameState"];
+            GameState newGameState = (GameState)message["newGameState"];
+
+            if (oldGameState.Phase == newGameState.Phase)
+                return;
+
+            _isFaceOffActive = newGameState.Phase == GamePhase.FaceOff;
 
             if (_isFaceOffActive) {
                 // Start countdown to freeze players before puck drop
                 if (Ruleset.ServerConfig.Faceoff.FreezePlayersBeforeDrop) {
                     _freezeStartTime = Time.time;
 
-                    GamePhase oldGamePhase = (GamePhase)message["oldGamePhase"];
-                    if (oldGamePhase == GamePhase.Replay || oldGamePhase == GamePhase.PeriodOver)
+                    if (oldGameState.Phase == GamePhase.Replay || oldGameState.Phase == GamePhase.Intermission)
                         _freezeStartTime -= 1f;
                 }
             }
@@ -50,7 +55,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
         }
 
-        internal void RegisterPlayer(PlayerBodyV2 playerBody, FaceoffSpot currentFaceoffSpot) {
+        internal void RegisterPlayer(PlayerBody playerBody, FaceoffSpot currentFaceoffSpot) {
             if (playerBody == null || !playerBody.Player)
                 return;
 
@@ -61,7 +66,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             StartCoroutine(RegisterPlayerDelayed(playerBody, currentFaceoffSpot));
         }
 
-        private System.Collections.IEnumerator RegisterPlayerDelayed(PlayerBodyV2 playerBody, FaceoffSpot currentFaceoffSpot) {
+        private System.Collections.IEnumerator RegisterPlayerDelayed(PlayerBody playerBody, FaceoffSpot currentFaceoffSpot) {
             // Wait for Ruleset mod to finish positioning players
             yield return new WaitForSeconds(0.1f);
 
@@ -72,7 +77,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             _playerTethers.RemoveAll(t => t.PlayerBody == playerBody);
 
             // Get player role and position AFTER ruleset has positioned them
-            PlayerTeam team = playerBody.Player.Team.Value;
+            PlayerTeam team = playerBody.Player.Team;
 
             string positionName = PenaltyModule.GetPlayerPositionForFaceoff(playerBody.Player.PlayerPosition.Name, team, currentFaceoffSpot, Ruleset.GetClaimedPositions(team));
 
@@ -85,10 +90,10 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             PlayerTether tether = new PlayerTether {
                 PlayerBody = playerBody,
                 SpawnPosition = playerBody.transform.position,
-                MaxForwardDistance = GetMaxForwardDistance(positionName, playerBody.Player.Team.Value, currentFaceoffSpot),
-                MaxBackwardDistance = GetMaxBackwardDistance(positionName, playerBody.Player.Team.Value, currentFaceoffSpot),
-                MaxLeftDistance = GetMaxLeftDistance(positionName, playerBody.Player.Team.Value, currentFaceoffSpot),
-                MaxRightDistance = GetMaxRightDistance(positionName, playerBody.Player.Team.Value, currentFaceoffSpot),
+                MaxForwardDistance = GetMaxForwardDistance(positionName, playerBody.Player.Team, currentFaceoffSpot),
+                MaxBackwardDistance = GetMaxBackwardDistance(positionName, playerBody.Player.Team, currentFaceoffSpot),
+                MaxLeftDistance = GetMaxLeftDistance(positionName, playerBody.Player.Team, currentFaceoffSpot),
+                MaxRightDistance = GetMaxRightDistance(positionName, playerBody.Player.Team, currentFaceoffSpot),
             };
 
             if (positionName != "G" && currentFaceoffSpot == FaceoffSpot.Center) {
@@ -250,7 +255,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             Vector3 clampedPos = currentPos;
             bool wasClamped = false;
 
-            float forwardDirection = (tether.PlayerBody.Player.Team.Value == PlayerTeam.Blue) ? -1f : 1f;
+            float forwardDirection = (tether.PlayerBody.Player.Team == PlayerTeam.Blue) ? -1f : 1f;
 
             // Check forward movement (toward opponent goal)
             float forwardDelta = (currentPos.z - spawnPos.z) * forwardDirection;
@@ -266,7 +271,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
 
             float xMovement = spawnPos.x - currentPos.x;
-            if (tether.PlayerBody.Player.Team.Value == PlayerTeam.Blue) {
+            if (tether.PlayerBody.Player.Team == PlayerTeam.Blue) {
                 if (xMovement > 0) { // Check right movement
                     if (Mathf.Abs(xMovement) > tether.MaxRightDistance) {
                         clampedPos.x = spawnPos.x - tether.MaxRightDistance;

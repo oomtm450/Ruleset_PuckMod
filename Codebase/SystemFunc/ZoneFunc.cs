@@ -88,7 +88,7 @@ namespace Codebase {
         internal static Zone GetZone(Vector3 position, Zone oldZone, float radius, bool excludeLines = false) {
             float zMax = position.z + radius;
             float zMin = position.z - radius;
-            
+
             // Red team.
             if (zMax < ICE_Z_POSITIONS[IceElement.RedTeam_GoalLine].Start) {
                 return Zone.RedTeam_BehindGoalLine;

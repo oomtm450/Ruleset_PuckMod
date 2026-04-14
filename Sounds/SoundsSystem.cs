@@ -241,7 +241,7 @@ namespace oomtm450PuckMod_Sounds {
             }
             else {
                 _currentAudioSource = null;
-                audioSource.volume = SettingsManager.Instance.GlobalVolume * SettingsManager.Instance.GameVolume;
+                audioSource.volume = SettingsManager.GlobalVolume * SettingsManager.GameVolume;
             }
 
             if (delay == 0)
@@ -268,7 +268,7 @@ namespace oomtm450PuckMod_Sounds {
             if (_currentAudioSource == null)
                 return;
 
-            _currentAudioSource.volume = SettingsManager.Instance.GlobalVolume * musicVol;
+            _currentAudioSource.volume = SettingsManager.GlobalVolume * musicVol;
         }
 
         internal static string GetRandomSound(IEnumerable<string> soundList, int? seed = null) {
@@ -316,9 +316,9 @@ namespace oomtm450PuckMod_Sounds {
                 if (GameObject.Find("Changing Room"))
                     return;
 
-                GameObject levelGameObj = GameObject.Find("Level");
+                GameObject levelGameObj = GameObject.Find("Level Default");
                 if (!levelGameObj) {
-                    Errors.Add("Cant't find GameObject \"Level\" !");
+                    Errors.Add("Cant't find GameObject \"Level Default\" !");
                     return;
                 }
 
