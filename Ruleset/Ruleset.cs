@@ -953,9 +953,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (PenaltyModule.PenalizedPlayersCountBlueTeam != PenaltyModule.PenalizedPlayersCountRedTeam) {
                             if (newGameState.Phase == GamePhase.BlueScore)
-                                PenaltyModule.RemoveOnePenalty(PlayerTeam.Red);
+                                PenaltyModule.RemoveOnePenalty(PlayerTeam.Red, true);
                             else if (newGameState.Phase == GamePhase.RedScore)
-                                PenaltyModule.RemoveOnePenalty(PlayerTeam.Blue);
+                                PenaltyModule.RemoveOnePenalty(PlayerTeam.Blue, true);
                         }
                     }
                     else if (newGameState.Phase == GamePhase.FaceOff || newGameState.Phase == GamePhase.Warmup || newGameState.Phase == GamePhase.GameOver || newGameState.Phase == GamePhase.PreGame) {

@@ -400,12 +400,28 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        internal static bool RemoveOnePenalty(PlayerTeam penalizedPlayerTeam) {
-            if (penalizedPlayerTeam == PlayerTeam.Blue && PenalizedPlayersInBoxCountBlueTeam == 0)
-                return false;
+        internal static bool RemoveOnePenalty(PlayerTeam penalizedPlayerTeam, bool removePendingPenalty = false) {
+            if (penalizedPlayerTeam == PlayerTeam.Blue) {
+                if (removePendingPenalty) {
+                    if (PenalizedPlayersCountBlueTeam == 0)
+                        return false;
+                }
+                else {
+                    if (PenalizedPlayersInBoxCountBlueTeam == 0)
+                        return false;
+                }
+            }
 
-            if (penalizedPlayerTeam == PlayerTeam.Red && PenalizedPlayersInBoxCountRedTeam == 0)
-                return false;
+            if (penalizedPlayerTeam == PlayerTeam.Red) {
+                if (removePendingPenalty) {
+                    if (PenalizedPlayersCountRedTeam == 0)
+                        return false;
+                }
+                else {
+                    if (PenalizedPlayersInBoxCountRedTeam == 0)
+                        return false;
+                }
+            }
 
             Penalty penaltyToRemove = PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayerTeam).OrderBy(x => x.Timer.MillisecondsLeft).FirstOrDefault();
             if (penaltyToRemove == null || penaltyToRemove.Equals(default(Penalty)))
