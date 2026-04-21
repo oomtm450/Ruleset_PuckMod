@@ -62,6 +62,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, authorize ref mode to be voted or activated by an admin.
         /// </summary>
         public bool RefMode { get; } = true;
+
+        /// <summary>
+        /// Float, default standing player height.
+        /// </summary>
+        public float DefaultPlayerHeight { get; } = 0.0338f; // TODO : Check in new Puck build.
         #endregion
 
         #region Methods/Functions

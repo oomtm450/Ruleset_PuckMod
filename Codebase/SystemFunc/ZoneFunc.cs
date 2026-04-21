@@ -17,7 +17,7 @@ namespace Codebase {
         /// <summary>
         /// ReadOnlyDictionary of IceElement and (double Start, double End), dictionary containing all the start and end Z positions of all the lines on the ice for the zones.
         /// </summary>
-        internal static ReadOnlyDictionary<IceElement, (double Start, double End)> ICE_Z_POSITIONS { get; } = new ReadOnlyDictionary<IceElement, (double, double)>(
+        internal static ReadOnlyDictionary<IceElement, (double Start, double End)> ICE_Z_POSITIONS { get; } = new ReadOnlyDictionary<IceElement, (double, double)>( // TODO : Check in new Puck build.
             new Dictionary<IceElement, (double, double)> {
                 { IceElement.BlueTeam_BlueLine, (13.07, 13.43) },
                 { IceElement.RedTeam_BlueLine, (-13.44, -13.08) },
@@ -34,7 +34,7 @@ namespace Codebase {
         /// <summary>
         /// ReadOnlyDictionary of IceElement and (double Start, double End), dictionary containing all the start and end Z positions of all the lines on the ice for the zones.
         /// </summary>
-        internal static ReadOnlyDictionary<IceElement, (double Start, double End)> ICE_X_POSITIONS { get; } = new ReadOnlyDictionary<IceElement, (double, double)>(
+        internal static ReadOnlyDictionary<IceElement, (double Start, double End)> ICE_X_POSITIONS { get; } = new ReadOnlyDictionary<IceElement, (double, double)>( // TODO : Check in new Puck build.
             new Dictionary<IceElement, (double, double)> {
                 { IceElement.BlueTeam_BluePaint, (-2.5, 2.5) },
                 { IceElement.RedTeam_BluePaint, (-2.5, 2.5) },

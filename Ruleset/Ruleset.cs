@@ -727,7 +727,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsHighStickEnabled(stick.Player.Team) && __instance &&
                         !Codebase.PlayerFunc.IsGoalie(stick.Player) &&
                         Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) != currentPlayerSteamId &&
-                        __instance.Rigidbody.transform.position.y > ServerConfig.HighStick.MaxHeight + (stick.Player.PlayerBody.Rigidbody.transform.position.y < 0 ? 0 : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
+                        __instance.Rigidbody.transform.position.y > ServerConfig.HighStick.MaxHeight + (stick.Player.PlayerBody.Rigidbody.transform.position.y < ServerConfig.DefaultPlayerHeight ? ServerConfig.DefaultPlayerHeight : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
                         if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
                             noHighStickFrames = int.MaxValue;
                             _noHighStickFrames.Add(currentPlayerSteamId, noHighStickFrames);

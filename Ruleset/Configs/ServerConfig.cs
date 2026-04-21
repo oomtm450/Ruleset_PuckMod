@@ -83,6 +83,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, authorize ref mode to be voted or activated by an admin.
         /// </summary>
         public bool RefMode { get; set; } = true;
+
+        /// <summary>
+        /// Float, default standing player height.
+        /// </summary>
+        public float DefaultPlayerHeight { get; set; } = 0.0338f; // TODO : Check in new Puck build.
         #endregion
 
         #region Constructors
@@ -111,6 +116,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             MaxPossessionMilliseconds = serverConfig.MaxPossessionMilliseconds;
 
             RefMode = serverConfig.RefMode;
+
+            DefaultPlayerHeight = serverConfig.DefaultPlayerHeight;
         }
         #endregion
 
@@ -140,6 +147,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (RefMode == _oldConfig.RefMode)
                 RefMode = newConfig.RefMode;
+
+            if (DefaultPlayerHeight == _oldConfig.DefaultPlayerHeight)
+                DefaultPlayerHeight = newConfig.DefaultPlayerHeight;
 
             Offside.UpdateDefaultValues(_oldConfig.Offside);
             Icing.UpdateDefaultValues(_oldConfig.Icing);
