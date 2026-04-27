@@ -9,7 +9,21 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     /// Class containing the configuration from oomtm450_ruleset_clientconfig.json used for this mod.
     /// </summary>
     public class ClientConfig : IConfig {
+        [JsonIgnore]
         private const float RED_TEAM_PENALTY_TIMER_X_OFFSET_DEFAULT = 9f;
+
+        /// <summary>
+        /// String, full path for the config folder.
+        /// </summary>
+        [JsonIgnore]
+        private static readonly string CONFIG_FOLDER_PATH = Path.Combine(Path.GetFullPath("."), "config");
+
+        /// <summary>
+        /// String, full path for the config file.
+        /// </summary>
+        [JsonIgnore]
+        private static readonly string CONFIG_PATH = Path.Combine(CONFIG_FOLDER_PATH, Constants.MOD_NAME + "_clientconfig.json");
+
         /// <summary>
         /// Bool, true if the info logs must be printed.
         /// </summary>
@@ -37,12 +51,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float RedTeamPenaltyTimerXOffset { get; set; } = RED_TEAM_PENALTY_TIMER_X_OFFSET_DEFAULT;
 
         /// <summary>
-        /// String, full path for the config file.
-        /// </summary>
-        [JsonIgnore]
-        private readonly string _configPath = Path.Combine(Path.GetFullPath("."), Constants.MOD_NAME + "_clientconfig.json");
-
-        /// <summary>
         /// Function that serialize the ClientConfig object.
         /// </summary>
         /// <returns>String, serialized ClientConfig.</returns>
@@ -68,8 +76,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             ClientConfig config = new ClientConfig();
 
             try {
-                if (File.Exists(config._configPath)) {
-                    string configFileContent = File.ReadAllText(config._configPath);
+                if (!Directory.Exists(CONFIG_FOLDER_PATH))
+                    Directory.CreateDirectory(CONFIG_FOLDER_PATH);
+
+                if (File.Exists(CONFIG_PATH)) {
+                    string configFileContent = File.ReadAllText(CONFIG_PATH);
                     config = SetConfig(configFileContent);
                     Logging.Log($"Client config read.", config, true);
                 }
@@ -89,13 +100,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         }
 
         internal void Save() {
-            if (string.IsNullOrEmpty(_configPath)) {
-                Logging.LogError($"Can't write the client config file. ({nameof(_configPath)} null or empty)", this);
+            if (string.IsNullOrEmpty(CONFIG_PATH)) {
+                Logging.LogError($"Can't write the client config file. ({nameof(CONFIG_PATH)} null or empty)", this);
                 return;
             }
 
             try {
-                File.WriteAllText(_configPath, ToString());
+                if (!Directory.Exists(CONFIG_FOLDER_PATH))
+                    Directory.CreateDirectory(CONFIG_FOLDER_PATH);
+
+                File.WriteAllText(CONFIG_PATH, ToString());
             }
             catch (Exception ex) {
                 Logging.LogError($"Can't write the client config file. (Permission error ?)\n{ex}", this);

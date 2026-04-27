@@ -14,7 +14,20 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Const string, name used when sending the config data to the client.
         /// </summary>
+        [JsonIgnore]
         public const string CONFIG_DATA_NAME = Constants.MOD_NAME + "_config";
+
+        /// <summary>
+        /// String, full path for the config folder.
+        /// </summary>
+        [JsonIgnore]
+        private static readonly string CONFIG_FOLDER_PATH = Path.Combine(Path.GetFullPath("."), "config");
+
+        /// <summary>
+        /// String, full path for the config file.
+        /// </summary>
+        [JsonIgnore]
+        private static readonly string CONFIG_PATH = Path.Combine(CONFIG_FOLDER_PATH, Constants.MOD_NAME + "_serverconfig.json");
         #endregion
 
         #region Properties
@@ -185,10 +198,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             ServerConfig config = new Configs.ServerConfig();
 
             try {
-                string rootPath = Path.GetFullPath(".");
-                string configPath = Path.Combine(rootPath, Constants.MOD_NAME + "_serverconfig.json");
-                if (File.Exists(configPath)) {
-                    string configFileContent = File.ReadAllText(configPath);
+                if (!Directory.Exists(CONFIG_FOLDER_PATH))
+                    Directory.CreateDirectory(CONFIG_FOLDER_PATH);
+
+                if (File.Exists(CONFIG_PATH)) {
+                    string configFileContent = File.ReadAllText(CONFIG_PATH);
                     config = SetConfig(configFileContent);
                     Logging.Log($"Server config read.", config, true);
                 }
@@ -196,7 +210,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 config.UpdateDefaultValues(new OldServerConfig());
 
                 try {
-                    File.WriteAllText(configPath, config.ToString());
+                    File.WriteAllText(CONFIG_PATH, config.ToString());
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}", config);
