@@ -67,6 +67,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, default standing player height.
         /// </summary>
         public float DefaultPlayerHeight { get; } = 0.0338f; // TODO : Check in new Puck build.
+
+        /// <summary>
+        /// Bool, true the mod has to log all phase changes and stoppages.
+        /// </summary>
+        public bool LogPhaseChangeAndStoppage { get; } = true;
         #endregion
 
         #region Methods/Functions

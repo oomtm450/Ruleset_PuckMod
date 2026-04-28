@@ -1920,6 +1920,16 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer())
                         return;
 
+                    if (phase == null)
+                        return;
+
+                    if (ServerConfig.LogPhaseChangeAndStoppage && tick != null) {
+                        if (phase == GamePhase.Play)
+                            Logging.Log($"Time remaining : {tick}, stoppage off, reason {phase}", ServerConfig);
+                        else
+                            Logging.Log($"Time remaining : {tick}, stoppage on, reason {phase}", ServerConfig);
+                    }
+
                     if (phase != GamePhase.PreGame)
                         return;
 
@@ -1932,7 +1942,7 @@ namespace oomtm450PuckMod_Ruleset {
                         NextFaceoffSpot = FaceoffSpot.Center;
                     }
 
-                    //if (resetPhase) { // TODO
+                    if (phase == GamePhase.PreGame) {
                         _lastStoppageReason = Rule.None;
 
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastIcing.Keys))
@@ -1940,7 +1950,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
                             _icingStaminaDrainPenaltyAmount[key] = 0;
-                    //}
+                    }
 
                     _sentOutOfDateMessage.Clear();
                 }
@@ -2189,6 +2199,9 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             _periodTickRemaining = GameManager.Instance.Tick;
+
+            if (ServerConfig.LogPhaseChangeAndStoppage)
+                Logging.Log($"Time remaining : {_periodTickRemaining}, stoppage on, reason ruleset_faceoff", ServerConfig);
 
             PauseGame();
 
@@ -2691,8 +2704,9 @@ namespace oomtm450PuckMod_Ruleset {
                         _serverHasResponded = true;
                         AddPenaltiesLabel();
 
-                        if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
+                        if (MOD_VERSION == dataStr)
                             break;
+
                         else if (OLD_MOD_VERSIONS.Contains(dataStr)) {
                             _addServerModVersionOutOfDateMessage = true;
                             break;

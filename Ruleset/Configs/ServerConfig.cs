@@ -101,6 +101,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, default standing player height.
         /// </summary>
         public float DefaultPlayerHeight { get; set; } = 0.0338f; // TODO : Check in new Puck build.
+
+        /// <summary>
+        /// Bool, true the mod has to log all phase changes and stoppages.
+        /// </summary>
+        public bool LogPhaseChangeAndStoppage { get; set; } = true;
         #endregion
 
         #region Constructors
@@ -131,6 +136,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             RefMode = serverConfig.RefMode;
 
             DefaultPlayerHeight = serverConfig.DefaultPlayerHeight;
+
+            LogPhaseChangeAndStoppage = serverConfig.LogPhaseChangeAndStoppage;
         }
         #endregion
 
@@ -163,6 +170,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (DefaultPlayerHeight == _oldConfig.DefaultPlayerHeight)
                 DefaultPlayerHeight = newConfig.DefaultPlayerHeight;
+
+            if (LogPhaseChangeAndStoppage == _oldConfig.LogPhaseChangeAndStoppage)
+                LogPhaseChangeAndStoppage = newConfig.LogPhaseChangeAndStoppage;
 
             Offside.UpdateDefaultValues(_oldConfig.Offside);
             Icing.UpdateDefaultValues(_oldConfig.Icing);
@@ -253,6 +263,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                             UseCustomFaceoff = config.Faceoff.UseCustomFaceoff,
                             UseDefaultPuckDropHeight = config.Faceoff.UseDefaultPuckDropHeight,
                         },
+                        LogPhaseChangeAndStoppage = config.LogPhaseChangeAndStoppage,
                     };
 
                     config = defaultConfig;
