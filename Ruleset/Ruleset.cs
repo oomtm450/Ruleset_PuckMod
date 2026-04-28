@@ -335,9 +335,9 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool _serverHasResponded = false;
 
         /// <summary>
-        /// Bool, true if the client asked to be kicked because of versionning problems.
+        /// Bool, true if the client asked to be warned because of versionning problems.
         /// </summary>
-        private static bool _askForKick = false;
+        private static bool _askForModOutOfDateWarning = false;
 
         /// <summary>
         /// Bool, true if the client needs to notify the user that the server is running an out of date version of the mod.
@@ -1893,13 +1893,13 @@ namespace oomtm450PuckMod_Ruleset {
                             NetworkCommunication.SendData(Constants.ASK_SERVER_FOR_STARTUP_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                     }
-                    else if (_askForKick) {
-                        _askForKick = false;
+                    else if (_askForModOutOfDateWarning) {
+                        _askForModOutOfDateWarning = false;
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_kick", "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                     }
                     else if (_addServerModVersionOutOfDateMessage) {
                         _addServerModVersionOutOfDateMessage = false;
-                        SystemChatMessages.Add($"Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
+                        SystemFunc.AddClientChatMessage($"Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
                     }
                 }
                 catch (Exception ex) {
@@ -2712,7 +2712,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
                         }
 
-                        _askForKick = true;
+                        _askForModOutOfDateWarning = true;
                         break;
 
                     case RefSignals.SHOW_SIGNAL_BLUE: // CLIENT-SIDE : Show blue team ref signal in the UI.

@@ -106,9 +106,9 @@ namespace oomtm450PuckMod_Sounds {
         private static bool _serverHasResponded = false;
 
         /// <summary>
-        /// Bool, true if the client asked to be kicked because of versionning problems.
+        /// Bool, true if the client asked to be warned because of versionning problems.
         /// </summary>
-        private static bool _askForKick = false;
+        private static bool _askForModOutOfDateWarning = false;
 
         /// <summary>
         /// Bool, true if the client needs to notify the user that the server is running an out of date version of the mod.
@@ -406,8 +406,8 @@ namespace oomtm450PuckMod_Sounds {
                         else if (_lastDateTimeAskStartupData == DateTime.MinValue)
                             _lastDateTimeAskStartupData = now;
                     }
-                    else if (_askForKick) {
-                        _askForKick = false;
+                    else if (_askForModOutOfDateWarning) {
+                        _askForModOutOfDateWarning = false;
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_kick", "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                     }
                     else if (_addServerModVersionOutOfDateMessage) {
