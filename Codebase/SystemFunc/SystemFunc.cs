@@ -13,7 +13,7 @@ namespace Codebase {
                 return (T)typeContainingField.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(instanceOfType);
         }
 
-        public static void AddClientChatMessage(string message) {
+        public static void AddClientChatMessage(string message) { // TODO : Fix RPC crash.
             ChatMessage chatMsg = new ChatMessage {
                 SteamID = null,
                 Username = null,
