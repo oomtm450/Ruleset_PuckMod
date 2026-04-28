@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -13,7 +12,7 @@ namespace Codebase {
                 return (T)typeContainingField.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(instanceOfType);
         }
 
-        public static void AddClientChatMessage(string message) { // TODO : Fix RPC crash.
+        public static void AddClientChatMessage(string message) {
             ChatMessage chatMsg = new ChatMessage {
                 SteamID = null,
                 Username = null,
@@ -24,7 +23,7 @@ namespace Codebase {
                 IsTeamChat = false,
                 IsSystem = true,
             };
-            EventManager.TriggerEvent("Event_Server_OnChatMessageReceived", new Dictionary<string, object> { { "chatMessage", chatMsg } });
+            ChatManager.Instance.AddChatMessage(chatMsg);
         }
 
         /// <summary>
