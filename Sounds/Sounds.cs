@@ -778,7 +778,7 @@ namespace oomtm450PuckMod_Sounds {
                             break;
                         }
 
-                        _askForKick = true;
+                        _askForModOutOfDateWarning = true;
                         break;
 
                     case Constants.MOD_NAME + "_kick": // SERVER-SIDE : Kick the client that asked to be kicked.
