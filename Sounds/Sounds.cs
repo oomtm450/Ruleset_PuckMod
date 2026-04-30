@@ -582,6 +582,12 @@ namespace oomtm450PuckMod_Sounds {
                                 PlayFaceoffMusic();
                             break;
 
+                        //case Codebase.SoundsSystem.CHANGE_GOAL_SONG_BLUE:
+                            //break;
+
+                        //case Codebase.SoundsSystem.CHANGE_GOAL_SONG_RED:
+                            //break;
+
                         case Codebase.SoundsSystem.STOP_SOUND:
                             if (_soundsSystem == null)
                                 break;
