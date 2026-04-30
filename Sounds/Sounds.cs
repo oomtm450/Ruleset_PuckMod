@@ -391,7 +391,7 @@ namespace oomtm450PuckMod_Sounds {
             public static void Postfix() {
                 try {
                     // If this is the server, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer())
+                    if (ServerFunc.IsDedicatedServer() || NetworkManager.Singleton == null)
                         return;
 
                     if (!_hasRegisteredWithNamedMessageHandler || !_serverHasResponded) {

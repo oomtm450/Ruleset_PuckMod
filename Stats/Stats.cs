@@ -2042,14 +2042,14 @@ namespace oomtm450PuckMod_Stats {
                         sogLabel.style.flexGrow = 1;
                         sogLabel.style.unityTextAlign = TextAnchor.UpperRight;
                         playerContainer.Add(sogLabel);
-                        sogLabel.style.translate = new Vector3(sogLabel.resolvedStyle.translate.x - 250, sogLabel.resolvedStyle.translate.y, sogLabel.resolvedStyle.translate.z);
+                        sogLabel.style.translate = new Vector3(sogLabel.resolvedStyle.translate.x - 210, sogLabel.resolvedStyle.translate.y, sogLabel.resolvedStyle.translate.z);
                         _sogLabels.Add(playerSteamId, sogLabel);
 
                         foreach (VisualElement child in playerContainer.Children()) {
-                            if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
-                                child.style.translate = new Vector3(child.resolvedStyle.translate.x - 90, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
-                            else if (child.name == "PingLabel") // TODO
-                                child.style.translate = new Vector3(child.resolvedStyle.translate.x + 600, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
+                            if (child.name == "Goals" || child.name == "Assists" || child.name == "Points")
+                                child.style.translate = new Vector3(child.resolvedStyle.translate.x - 25, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
+                            else if (child.name == "Ping") // TODO
+                                child.style.translate = new Vector3(child.resolvedStyle.translate.x + 85, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
                         }
 
                         _hasUpdatedUIScoreboard.Add(playerSteamId);
@@ -2066,10 +2066,10 @@ namespace oomtm450PuckMod_Stats {
                         playerContainer.Remove(playerContainer.Children().First(x => x.name == SOG_LABEL));
 
                         foreach (VisualElement child in playerContainer.Children()) {
-                            if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
-                                child.style.translate = new Vector3(child.resolvedStyle.translate.x + 90, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
-                            else if (child.name == "PingLabel") // TODO
-                                child.style.translate = new Vector3(child.resolvedStyle.translate.x - 600, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
+                            if (child.name == "Goals" || child.name == "Assists" || child.name == "Points")
+                                child.style.translate = new Vector3(child.resolvedStyle.translate.x + 25, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
+                            else if (child.name == "Ping") // TODO
+                                child.style.translate = new Vector3(child.resolvedStyle.translate.x - 85, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
                         }
                     }
                     else {

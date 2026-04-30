@@ -82,7 +82,7 @@ namespace oomtm450PuckMod_SoundsPack {
             public static void Postfix() {
                 try {
                     // If this is the server, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer() || string.IsNullOrEmpty(ModName))
+                    if (ServerFunc.IsDedicatedServer() || string.IsNullOrEmpty(ModName) || NetworkManager.Singleton == null)
                         return;
 
                     if (!_hasRegisteredWithNamedMessageHandler || !_serverHasResponded) {
@@ -90,13 +90,11 @@ namespace oomtm450PuckMod_SoundsPack {
                         _hasRegisteredWithNamedMessageHandler = true;
 
                         DateTime now = DateTime.UtcNow;
-                        if (_lastDateTimeAskStartupData != DateTime.MinValue && _lastDateTimeAskStartupData + TimeSpan.FromSeconds(5) < now && _askServerForStartupDataCount++ < 6) {
+                        if (_lastDateTimeAskStartupData + TimeSpan.FromSeconds(5) < now && _askServerForStartupDataCount++ < 6) {
                             _lastDateTimeAskStartupData = now;
                             (string, string) extraSoundsInfo = (ModName, Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "sounds"));
                             NetworkCommunication.SendData(Codebase.Constants.SOUNDS_MOD_NAME + Constants.ASK_SERVER_FOR_STARTUP_DATA, extraSoundsInfo.ToString(), NetworkManager.ServerClientId, Codebase.Constants.SOUNDS_FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
-                        else if (_lastDateTimeAskStartupData ==  DateTime.MinValue)
-                            _lastDateTimeAskStartupData = now;
                     }
                 }
                 catch (Exception ex) {
