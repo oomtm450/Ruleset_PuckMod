@@ -942,6 +942,9 @@ namespace oomtm450PuckMod_Ruleset {
                     Paused = false;
                     _doFaceoff = false;
 
+                    if (newGameState.Phase == GamePhase.BlueScore || newGameState.Phase == GamePhase.RedScore)
+                        _periodTickRemaining = oldGameState.Tick;
+
                     if (newGameState.Phase == GamePhase.Intermission || newGameState.Phase == GamePhase.BlueScore || newGameState.Phase == GamePhase.RedScore) {
                         PenaltyModule.PausePenalties();
 
@@ -1934,7 +1937,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (phase == GamePhase.Play)
                             Logging.Log($"Time remaining : {tick}, stoppage off, reason {phase}, B {GameManager.Instance.GameState.Value.BlueScore} - R {GameManager.Instance.GameState.Value.RedScore}", ServerConfig);
                         else
-                            Logging.Log($"Time remaining : {tick}, stoppage on, reason {phase}, B {GameManager.Instance.GameState.Value.BlueScore} - R {GameManager.Instance.GameState.Value.RedScore}", ServerConfig);
+                            Logging.Log($"Time remaining : {_periodTickRemaining}, stoppage on, reason {phase}, B {GameManager.Instance.GameState.Value.BlueScore} - R {GameManager.Instance.GameState.Value.RedScore}", ServerConfig);
                     }
 
                     if (phase != GamePhase.PreGame)
