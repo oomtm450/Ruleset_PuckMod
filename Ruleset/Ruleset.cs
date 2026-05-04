@@ -112,6 +112,11 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool _barriersLowered = false;
 
         /// <summary>
+        /// Int, duration of a faceoff.
+        /// </summary>
+        private static int _faceoffDuration = 3;
+
+        /// <summary>
         /// LockList of PlayerIcing, positions of the players on the ice for icing logic.
         /// </summary>
         private static readonly LockList<PlayerIcing> _dictPlayersPositionsForIcing = new LockList<PlayerIcing>();
@@ -1204,13 +1209,15 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(StandardGameMode<StandardGameModeConfig>), "OnGameStarted")]
         public class StandardGameMode_OnGameStarted_Patch {
             [HarmonyPrefix]
-            public static bool Prefix() {
+            public static bool Prefix(StandardGameMode<StandardGameModeConfig> __instance) {
                 try {
                     // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer())
                         return true;
 
                     ResetGame(false);
+
+                    _faceoffDuration = __instance.Config.phaseDurationMap[GamePhase.FaceOff];
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(StandardGameMode_OnGameStarted_Patch)} Prefix().\n{ex}", ServerConfig);
@@ -2220,8 +2227,7 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             ChangedPhase = true;
-
-            GameManager.Instance.Server_SetGameState(GamePhase.FaceOff, 3); // TODO : Get actual faceoff tick.
+            GameManager.Instance.Server_SetGameState(GamePhase.FaceOff, _faceoffDuration);
         }
 
         private static bool IsOffside(PlayerTeam team) {
