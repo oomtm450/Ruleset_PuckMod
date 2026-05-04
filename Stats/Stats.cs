@@ -568,6 +568,27 @@ namespace oomtm450PuckMod_Stats {
         }
 
         /// <summary>
+        /// Class that patches the OnGameStateChanged event from BaseGameMode.
+        /// </summary>
+        [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "OnVoteSuccess")]
+        public class BaseGameMode_OnVoteSuccess_Patch {
+            [HarmonyPrefix]
+            public static void Prefix(Vote vote) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return;
+
+                    if (GameManager.Instance.Period >= 3 && vote.Type == VoteType.Start || vote.Type == VoteType.Warmup)
+                        CreateEOGJson(GameManager.Instance.BlueScore, GameManager.Instance.RedScore);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(BaseGameMode_OnVoteSuccess_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+            }
+        }
+
+        /// <summary>
         /// Class that patches the Update event from PhysicsManager.
         /// </summary>
         [HarmonyPatch(typeof(PhysicsManager), "Update")]
@@ -1157,216 +1178,8 @@ namespace oomtm450PuckMod_Stats {
                             watch.Stop();
                         _playersCurrentPuckTouch.Clear();
 
-                        if (phase == GamePhase.GameOver) {
-                            string gwgSteamId = "";
-                            PlayerTeam winningTeam = PlayerTeam.None;
-                            try {
-                                if (__instance.GameState.Value.BlueScore > __instance.GameState.Value.RedScore) {
-                                    winningTeam = PlayerTeam.Blue;
-                                    gwgSteamId = _blueGoals[__instance.GameState.Value.RedScore];
-                                }
-                                else {
-                                    winningTeam = PlayerTeam.Red;
-                                    gwgSteamId = _redGoals[__instance.GameState.Value.BlueScore];
-                                }
-
-                                LogGWG(gwgSteamId);
-                            }
-                            catch (IndexOutOfRangeException) { } // Shootout goal or something, so no GWG.
-                            catch (ArgumentOutOfRangeException) { }
-
-                            Dictionary<string, double> starPoints = new Dictionary<string, double>();
-                            foreach (Player player in PlayerManager.Instance.GetPlayers()) {
-                                if (player == null || !player)
-                                    continue;
-
-                                string steamId = player.SteamId.Value.ToString();
-                                starPoints.Add(steamId, 0);
-
-                                double gwgModifier = gwgSteamId == steamId ? 0.5d : 0;
-                                double teamModifier = winningTeam == player.Team ? 1.1d : 1d;
-
-                                if (PlayerFunc.IsGoalie(player)) {
-                                    if (_savePerc.TryGetValue(steamId, out var saveValues))
-                                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.500d * ((double)saveValues.Saves) * 21d;
-
-                                    if (_sog.TryGetValue(steamId, out int shots))
-                                        starPoints[steamId] += ((double)shots) * 1d;
-
-                                    if (_passes.TryGetValue(steamId, out int passes))
-                                        starPoints[steamId] += ((double)passes) * 2d;
-
-                                    const double GOALIE_GOAL_MODIFIER = 175d;
-                                    const double GOALIE_ASSIST_MODIFIER = 35d;
-
-                                    starPoints[steamId] += GOALIE_GOAL_MODIFIER * gwgModifier;
-                                    starPoints[steamId] += ((double)player.Goals.Value) * GOALIE_GOAL_MODIFIER;
-                                    starPoints[steamId] += ((double)player.Assists.Value) * GOALIE_ASSIST_MODIFIER;
-                                }
-                                else {
-                                    if (_sog.TryGetValue(steamId, out int shots)) {
-                                        starPoints[steamId] += ((double)shots) * 5d;
-                                        starPoints[steamId] += (((double)(player.Goals.Value + 1)) / ((double)shots) - 0.25d) * ((double)shots) * 4d;
-                                    }
-
-                                    if (_passes.TryGetValue(steamId, out int passes))
-                                        starPoints[steamId] += ((double)passes) * 0.5d;
-
-                                    if (_blocks.TryGetValue(steamId, out int blocks))
-                                        starPoints[steamId] += ((double)blocks) * 5d;
-
-                                    const double SKATER_GOAL_MODIFIER = 70d;
-                                    const double SKATER_ASSIST_MODIFIER = 30d;
-
-                                    starPoints[steamId] += SKATER_GOAL_MODIFIER * gwgModifier;
-                                    starPoints[steamId] += ((double)player.Goals.Value) * SKATER_GOAL_MODIFIER;
-                                    starPoints[steamId] += ((double)player.Assists.Value) * SKATER_ASSIST_MODIFIER;
-                                }
-
-                                if (_hits.TryGetValue(steamId, out int hits))
-                                    starPoints[steamId] += ((double)hits) * 0.2d;
-
-                                if (_takeaways.TryGetValue(steamId, out int takeaways))
-                                    starPoints[steamId] += ((double)takeaways) * 0.2d;
-
-                                if (_turnovers.TryGetValue(steamId, out int turnovers))
-                                    starPoints[steamId] -= ((double)turnovers) * 0.2d;
-
-                                if (_plusMinus.TryGetValue(steamId, out int plusMinus))
-                                    starPoints[steamId] += ((double)plusMinus) * 5d;
-
-                                starPoints[steamId] *= teamModifier;
-                            }
-
-                            starPoints = starPoints.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
-
-                            if (starPoints.Count != 0) {
-                                ChatManager.Instance.Server_BroadcastChatMessage("STARS OF THE MATCH");
-                                _stars[1] = starPoints.ElementAt(0).Key;
-                            }
-                            else
-                                _stars[1] = "";
-
-                            if (starPoints.Count > 1)
-                                _stars[2] = starPoints.ElementAt(1).Key;
-                            else
-                                _stars[2] = "";
-
-                            if (starPoints.Count > 2)
-                                _stars[3] = starPoints.ElementAt(2).Key;
-                            else
-                                _stars[3] = "";
-
-                            foreach (KeyValuePair<int, string> star in _stars.OrderByDescending(x => x.Key)) {
-                                if (string.IsNullOrEmpty(star.Value))
-                                    continue;
-
-                                Player player = PlayerManager.Instance.GetPlayerBySteamId(star.Value);
-                                if (player != null && player)
-                                    ChatManager.Instance.Server_BroadcastChatMessage($"The {(star.Key == 1 ? "first" : (star.Key == 2 ? "second" : "third"))} star is... #{player.Number.Value} {player.Username.Value} !");
-
-                                NetworkCommunication.SendDataToAll(STAR, $"{star.Value};{star.Key}", Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                                LogStar(star.Value, star.Key);
-                            }
-
-                            Dictionary<string, string> playersUsername = new Dictionary<string, string>();
-                            foreach ((string steamId, string username) in _playersInfo.Values)
-                                playersUsername.Add(steamId, username);
-
-                            Dictionary<string, (string, int)> sogDict = new Dictionary<string, (string, int)>();
-                            foreach (var kvp in _sog)
-                                sogDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-                            Dictionary<string, (string, int)> passesDict = new Dictionary<string, (string, int)>();
-                            foreach (var kvp in _passes)
-                                passesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-                            Dictionary<string, (string, int)> blocksDict = new Dictionary<string, (string, int)>();
-                            foreach (var kvp in _blocks)
-                                blocksDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-                            Dictionary<string, (string, int)> hitsDict = new Dictionary<string, (string, int)>();
-                            foreach (var kvp in _hits)
-                                hitsDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-                            Dictionary<string, (string, int)> takeawaysDict = new Dictionary<string, (string, int)>();
-                            foreach (var kvp in _takeaways)
-                                takeawaysDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-                            Dictionary<string, (string, int)> turnoversDict = new Dictionary<string, (string, int)>();
-                            foreach (var kvp in _turnovers)
-                                turnoversDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-                            Dictionary<string, (string, (int, int))> savePercDict = new Dictionary<string, (string, (int, int))>();
-                            foreach (var kvp in _savePerc)
-                                savePercDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-                            Dictionary<string, (string, int)> stickSavesDict = new Dictionary<string, (string, int)>();
-                            foreach (var kvp in _stickSaves)
-                                stickSavesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-                            List<string> blueGoalsDict = new List<string>();
-                            foreach (var goalSteamId in _blueGoals)
-                                blueGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
-
-                            List<string> redGoalsDict = new List<string>();
-                            foreach (var goalSteamId in _redGoals)
-                                redGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
-
-                            List<string> blueAssistsDict = new List<string>();
-                            foreach (var assistSteamId in _blueAssists)
-                                blueAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
-
-                            List<string> redAssistsDict = new List<string>();
-                            foreach (var assistSteamId in _redAssists)
-                                redAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
-
-                            Dictionary<int, (string, string)> starsDict = new Dictionary<int, (string, string)>();
-                            foreach (var kvp in _stars)
-                                starsDict.Add(kvp.Key, (kvp.Value, playersUsername.TryGetValue(kvp.Value, out string username) == true ? username : ""));
-
-                            Dictionary<string, (string, int)> plusMinusDict = new Dictionary<string, (string, int)>();
-                            foreach (var kvp in _plusMinus)
-                                plusMinusDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-                            if (sogDict.Count != 0) {
-                                // Log JSON for game stats.
-                                Dictionary<string, object> jsonDict = new Dictionary<string, object> {
-                                    { "sog", sogDict },
-                                    { "passes", passesDict },
-                                    { "blocks", blocksDict },
-                                    { "hits", hitsDict },
-                                    { "takeaways", takeawaysDict },
-                                    { "turnovers", turnoversDict },
-                                    { "saveperc", savePercDict },
-                                    { "sticksaves", stickSavesDict },
-                                    { "bluegoals", blueGoalsDict },
-                                    { "redgoals", redGoalsDict },
-                                    { "blueassists", blueAssistsDict },
-                                    { "redassists", redAssistsDict },
-                                    { "gwg", gwgSteamId + "," + (playersUsername.TryGetValue(gwgSteamId, out string gwgUsername) == true ? gwgUsername : "") },
-                                    { "stars", starsDict },
-                                    { "plusminus", plusMinusDict },
-                                };
-
-                                string jsonContent = JsonConvert.SerializeObject(jsonDict, Formatting.Indented);
-                                Logging.Log("Stats:" + jsonContent, ServerConfig);
-
-                                if (ServerConfig.SaveEOGJSON) {
-                                    try {
-                                        string statsFolderPath = Path.Combine(Path.GetFullPath("."), "stats");
-                                        if (!Directory.Exists(statsFolderPath))
-                                            Directory.CreateDirectory(statsFolderPath);
-                                        string jsonPath = Path.Combine(statsFolderPath, Constants.MOD_NAME + "_" + DateTime.UtcNow.ToString("dd-MM-yyyy_HH-mm-ss") + ".json");
-
-                                        File.WriteAllText(jsonPath, jsonContent);
-                                    }
-                                    catch (Exception ex) {
-                                        Logging.LogError($"Can't write the end of game stats in the stats folder. (Permission error ?)\n{ex}", ServerConfig);
-                                    }
-                                }
-                            }
-                        }
+                        if (phase == GamePhase.GameOver)
+                            CreateEOGJson(__instance.GameState.Value.BlueScore, __instance.GameState.Value.RedScore);
                     }
                 }
                 catch (Exception ex) {
@@ -1690,6 +1503,216 @@ namespace oomtm450PuckMod_Stats {
         #endregion
 
         #region Methods/Functions
+        private static void CreateEOGJson(int blueScore, int redScore) {
+            string gwgSteamId = "";
+            PlayerTeam winningTeam = PlayerTeam.None;
+            try {
+                if (blueScore > redScore) {
+                    winningTeam = PlayerTeam.Blue;
+                    gwgSteamId = _blueGoals[redScore];
+                }
+                else {
+                    winningTeam = PlayerTeam.Red;
+                    gwgSteamId = _redGoals[blueScore];
+                }
+
+                LogGWG(gwgSteamId);
+            }
+            catch (IndexOutOfRangeException) { } // Shootout goal or something, so no GWG.
+            catch (ArgumentOutOfRangeException) { }
+
+            Dictionary<string, double> starPoints = new Dictionary<string, double>();
+            foreach (Player player in PlayerManager.Instance.GetPlayers()) {
+                if (player == null || !player)
+                    continue;
+
+                string steamId = player.SteamId.Value.ToString();
+                starPoints.Add(steamId, 0);
+
+                double gwgModifier = gwgSteamId == steamId ? 0.5d : 0;
+                double teamModifier = winningTeam == player.Team ? 1.1d : 1d;
+
+                if (PlayerFunc.IsGoalie(player)) {
+                    if (_savePerc.TryGetValue(steamId, out var saveValues))
+                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.500d * ((double)saveValues.Saves) * 21d;
+
+                    if (_sog.TryGetValue(steamId, out int shots))
+                        starPoints[steamId] += ((double)shots) * 1d;
+
+                    if (_passes.TryGetValue(steamId, out int passes))
+                        starPoints[steamId] += ((double)passes) * 2d;
+
+                    const double GOALIE_GOAL_MODIFIER = 175d;
+                    const double GOALIE_ASSIST_MODIFIER = 35d;
+
+                    starPoints[steamId] += GOALIE_GOAL_MODIFIER * gwgModifier;
+                    starPoints[steamId] += ((double)player.Goals.Value) * GOALIE_GOAL_MODIFIER;
+                    starPoints[steamId] += ((double)player.Assists.Value) * GOALIE_ASSIST_MODIFIER;
+                }
+                else {
+                    if (_sog.TryGetValue(steamId, out int shots)) {
+                        starPoints[steamId] += ((double)shots) * 5d;
+                        starPoints[steamId] += (((double)(player.Goals.Value + 1)) / ((double)shots) - 0.25d) * ((double)shots) * 4d;
+                    }
+
+                    if (_passes.TryGetValue(steamId, out int passes))
+                        starPoints[steamId] += ((double)passes) * 0.5d;
+
+                    if (_blocks.TryGetValue(steamId, out int blocks))
+                        starPoints[steamId] += ((double)blocks) * 5d;
+
+                    const double SKATER_GOAL_MODIFIER = 70d;
+                    const double SKATER_ASSIST_MODIFIER = 30d;
+
+                    starPoints[steamId] += SKATER_GOAL_MODIFIER * gwgModifier;
+                    starPoints[steamId] += ((double)player.Goals.Value) * SKATER_GOAL_MODIFIER;
+                    starPoints[steamId] += ((double)player.Assists.Value) * SKATER_ASSIST_MODIFIER;
+                }
+
+                if (_hits.TryGetValue(steamId, out int hits))
+                    starPoints[steamId] += ((double)hits) * 0.2d;
+
+                if (_takeaways.TryGetValue(steamId, out int takeaways))
+                    starPoints[steamId] += ((double)takeaways) * 0.2d;
+
+                if (_turnovers.TryGetValue(steamId, out int turnovers))
+                    starPoints[steamId] -= ((double)turnovers) * 0.2d;
+
+                if (_plusMinus.TryGetValue(steamId, out int plusMinus))
+                    starPoints[steamId] += ((double)plusMinus) * 5d;
+
+                starPoints[steamId] *= teamModifier;
+            }
+
+            starPoints = starPoints.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
+
+            if (starPoints.Count != 0) {
+                ChatManager.Instance.Server_BroadcastChatMessage("STARS OF THE MATCH");
+                _stars[1] = starPoints.ElementAt(0).Key;
+            }
+            else
+                _stars[1] = "";
+
+            if (starPoints.Count > 1)
+                _stars[2] = starPoints.ElementAt(1).Key;
+            else
+                _stars[2] = "";
+
+            if (starPoints.Count > 2)
+                _stars[3] = starPoints.ElementAt(2).Key;
+            else
+                _stars[3] = "";
+
+            foreach (KeyValuePair<int, string> star in _stars.OrderByDescending(x => x.Key)) {
+                if (string.IsNullOrEmpty(star.Value))
+                    continue;
+
+                Player player = PlayerManager.Instance.GetPlayerBySteamId(star.Value);
+                if (player != null && player)
+                    ChatManager.Instance.Server_BroadcastChatMessage($"The {(star.Key == 1 ? "first" : (star.Key == 2 ? "second" : "third"))} star is... #{player.Number.Value} {player.Username.Value} !");
+
+                NetworkCommunication.SendDataToAll(STAR, $"{star.Value};{star.Key}", Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                LogStar(star.Value, star.Key);
+            }
+
+            Dictionary<string, string> playersUsername = new Dictionary<string, string>();
+            foreach ((string steamId, string username) in _playersInfo.Values)
+                playersUsername.Add(steamId, username);
+
+            Dictionary<string, (string, int)> sogDict = new Dictionary<string, (string, int)>();
+            foreach (var kvp in _sog)
+                sogDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+            Dictionary<string, (string, int)> passesDict = new Dictionary<string, (string, int)>();
+            foreach (var kvp in _passes)
+                passesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+            Dictionary<string, (string, int)> blocksDict = new Dictionary<string, (string, int)>();
+            foreach (var kvp in _blocks)
+                blocksDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+            Dictionary<string, (string, int)> hitsDict = new Dictionary<string, (string, int)>();
+            foreach (var kvp in _hits)
+                hitsDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+            Dictionary<string, (string, int)> takeawaysDict = new Dictionary<string, (string, int)>();
+            foreach (var kvp in _takeaways)
+                takeawaysDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+            Dictionary<string, (string, int)> turnoversDict = new Dictionary<string, (string, int)>();
+            foreach (var kvp in _turnovers)
+                turnoversDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+            Dictionary<string, (string, (int, int))> savePercDict = new Dictionary<string, (string, (int, int))>();
+            foreach (var kvp in _savePerc)
+                savePercDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+            Dictionary<string, (string, int)> stickSavesDict = new Dictionary<string, (string, int)>();
+            foreach (var kvp in _stickSaves)
+                stickSavesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+            List<string> blueGoalsDict = new List<string>();
+            foreach (var goalSteamId in _blueGoals)
+                blueGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
+
+            List<string> redGoalsDict = new List<string>();
+            foreach (var goalSteamId in _redGoals)
+                redGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
+
+            List<string> blueAssistsDict = new List<string>();
+            foreach (var assistSteamId in _blueAssists)
+                blueAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
+
+            List<string> redAssistsDict = new List<string>();
+            foreach (var assistSteamId in _redAssists)
+                redAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
+
+            Dictionary<int, (string, string)> starsDict = new Dictionary<int, (string, string)>();
+            foreach (var kvp in _stars)
+                starsDict.Add(kvp.Key, (kvp.Value, playersUsername.TryGetValue(kvp.Value, out string username) == true ? username : ""));
+
+            Dictionary<string, (string, int)> plusMinusDict = new Dictionary<string, (string, int)>();
+            foreach (var kvp in _plusMinus)
+                plusMinusDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+            if (sogDict.Count != 0) {
+                // Log JSON for game stats.
+                Dictionary<string, object> jsonDict = new Dictionary<string, object> {
+                    { "sog", sogDict },
+                    { "passes", passesDict },
+                    { "blocks", blocksDict },
+                    { "hits", hitsDict },
+                    { "takeaways", takeawaysDict },
+                    { "turnovers", turnoversDict },
+                    { "saveperc", savePercDict },
+                    { "sticksaves", stickSavesDict },
+                    { "bluegoals", blueGoalsDict },
+                    { "redgoals", redGoalsDict },
+                    { "blueassists", blueAssistsDict },
+                    { "redassists", redAssistsDict },
+                    { "gwg", gwgSteamId + "," + (playersUsername.TryGetValue(gwgSteamId, out string gwgUsername) == true ? gwgUsername : "") },
+                    { "stars", starsDict },
+                    { "plusminus", plusMinusDict },
+                };
+
+                string jsonContent = JsonConvert.SerializeObject(jsonDict, Formatting.Indented);
+                Logging.Log("Stats:" + jsonContent, ServerConfig);
+
+                if (ServerConfig.SaveEOGJSON) {
+                    try {
+                        string statsFolderPath = Path.Combine(Path.GetFullPath("."), "stats");
+                        if (!Directory.Exists(statsFolderPath))
+                            Directory.CreateDirectory(statsFolderPath);
+                        string jsonPath = Path.Combine(statsFolderPath, Constants.MOD_NAME + "_" + DateTime.UtcNow.ToString("dd-MM-yyyy_HH-mm-ss") + ".json");
+
+                        File.WriteAllText(jsonPath, jsonContent);
+                    }
+                    catch (Exception ex) {
+                        Logging.LogError($"Can't write the end of game stats in the stats folder. (Permission error ?)\n{ex}", ServerConfig);
+                    }
+                }
+            }
+        }
         /// <summary>
         /// Method that processes a hit by a player.
         /// </summary>
