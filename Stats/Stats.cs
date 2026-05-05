@@ -1510,13 +1510,13 @@ namespace oomtm450PuckMod_Stats {
                 if (blueScore > redScore) {
                     winningTeam = PlayerTeam.Blue;
                     gwgSteamId = _blueGoals[redScore];
+                    LogGWG(gwgSteamId);
                 }
-                else {
+                else if (redScore > blueScore) {
                     winningTeam = PlayerTeam.Red;
                     gwgSteamId = _redGoals[blueScore];
+                    LogGWG(gwgSteamId);
                 }
-
-                LogGWG(gwgSteamId);
             }
             catch (IndexOutOfRangeException) { } // Shootout goal or something, so no GWG.
             catch (ArgumentOutOfRangeException) { }
