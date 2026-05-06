@@ -2415,6 +2415,10 @@ namespace oomtm450PuckMod_Ruleset {
                 switch (messageKvp.Key) {
                     case Codebase.Constants.PAUSE:
                         _paused = bool.Parse(value);
+                        if (_paused)
+                            PenaltyModule.PausePenalties();
+                        else
+                            PenaltyModule.UnpausePenalties();
                         break;
 
                     case Codebase.Constants.LOGIC:
