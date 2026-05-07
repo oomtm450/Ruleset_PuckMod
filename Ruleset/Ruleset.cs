@@ -1935,9 +1935,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (ServerConfig.LogPhaseChangeAndStoppage && tick != null) {
                         if (phase == GamePhase.Play)
-                            Logging.Log($"Time remaining : {tick}, stoppage off, reason {phase}, B {GameManager.Instance.GameState.Value.BlueScore} - R {GameManager.Instance.GameState.Value.RedScore}", ServerConfig);
+                            Logging.Log($"Time remaining : {tick}, stoppage off, reason {phase}, B {GameManager.Instance.GameState.Value.BlueScore} - R {GameManager.Instance.GameState.Value.RedScore}, P{GameManager.Instance.Period}", ServerConfig);
                         else
-                            Logging.Log($"Time remaining : {_periodTickRemaining}, stoppage on, reason {phase}, B {GameManager.Instance.GameState.Value.BlueScore} - R {GameManager.Instance.GameState.Value.RedScore}", ServerConfig);
+                            Logging.Log($"Time remaining : {_periodTickRemaining}, stoppage on, reason {phase}, B {GameManager.Instance.GameState.Value.BlueScore} - R {GameManager.Instance.GameState.Value.RedScore}, P{GameManager.Instance.Period}", ServerConfig);
                     }
 
                     if (phase != GamePhase.PreGame)
@@ -2211,7 +2211,7 @@ namespace oomtm450PuckMod_Ruleset {
             _periodTickRemaining = GameManager.Instance.Tick;
 
             if (ServerConfig.LogPhaseChangeAndStoppage)
-                Logging.Log($"Time remaining : {_periodTickRemaining}, stoppage on, reason ruleset_faceoff, B {GameManager.Instance.GameState.Value.BlueScore} - R {GameManager.Instance.GameState.Value.RedScore}", ServerConfig);
+                Logging.Log($"Time remaining : {_periodTickRemaining}, stoppage on, reason ruleset_faceoff, B {GameManager.Instance.GameState.Value.BlueScore} - R {GameManager.Instance.GameState.Value.RedScore}, P{GameManager.Instance.Period}", ServerConfig);
 
             PauseGame();
 
