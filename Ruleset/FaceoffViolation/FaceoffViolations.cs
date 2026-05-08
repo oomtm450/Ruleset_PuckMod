@@ -42,12 +42,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             if (_isFaceOffActive) {
                 // Start countdown to freeze players before puck drop
-                if (Ruleset.ServerConfig.Faceoff.FreezePlayersBeforeDrop) {
+                if (Ruleset.ServerConfig.Faceoff.FreezePlayersBeforeDrop)
                     _freezeStartTime = Time.time;
 
-                    if (oldGameState.Phase == GamePhase.Replay || oldGameState.Phase == GamePhase.Intermission)
-                        _freezeStartTime -= 1f;
-                }
+                if (oldGameState.Phase == GamePhase.Play)
+                    _freezeStartTime -= 1f;
             }
             else {
                 _playerTethers.Clear();
@@ -224,7 +223,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 return;
 
             // Continuously freeze players during faceoff if enabled (game will unfreeze when transitioning to Playing)
-            if (_freezeStartTime > 0) {
+            if (_freezeStartTime != float.MinValue) {
                 float timeInFaceoff = Time.time - _freezeStartTime;
                 // Start freezing after specified time before drop
                 if (timeInFaceoff >= Ruleset.ServerConfig.Faceoff.FreezeBeforeDropTime)
