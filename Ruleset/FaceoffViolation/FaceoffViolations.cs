@@ -45,8 +45,14 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 if (Ruleset.ServerConfig.Faceoff.FreezePlayersBeforeDrop)
                     _freezeStartTime = Time.time;
 
-                if (oldGameState.Phase == GamePhase.Play)
-                    _freezeStartTime -= 1f;
+                if (oldGameState.Phase == GamePhase.Play || oldGameState.Phase == GamePhase.Intermission) { // Fix for tether since B312 doesn't respawn players in these cases.
+                    foreach (Player player in PlayerManager.Instance.GetSpawnedPlayers()) {
+                        Dictionary<string, object> onPlayerBodySpawnedMessage = new Dictionary<string, object> {
+                            { "playerBody", player.PlayerBody },
+                        };
+                        Ruleset.Event_Everyone_OnPlayerBodySpawned(onPlayerBodySpawnedMessage);
+                    }
+                }
             }
             else {
                 _playerTethers.Clear();

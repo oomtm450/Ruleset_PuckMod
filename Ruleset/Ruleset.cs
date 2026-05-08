@@ -2674,7 +2674,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private void Event_Everyone_OnPlayerBodySpawned(Dictionary<string, object> message) {
+        internal static void Event_Everyone_OnPlayerBodySpawned(Dictionary<string, object> message) {
             if (!ServerFunc.IsDedicatedServer())
                 return;
 
