@@ -1933,11 +1933,6 @@ namespace oomtm450PuckMod_Ruleset {
                     if (phase == null)
                         return;
 
-                    Dictionary<string, object> message = new Dictionary<string, object> {
-                        { "newGamePhase", phase },
-                    };
-                    EventManager.TriggerEvent("Ruleset_OnGamePhaseChanged", message);
-
                     if (ServerConfig.LogPhaseChangeAndStoppage && tick != null) {
                         if (phase == GamePhase.Play)
                             Logging.Log($"Time remaining : {tick}, stoppage off, reason {phase}, B {GameManager.Instance.GameState.Value.BlueScore} - R {GameManager.Instance.GameState.Value.RedScore}, P{GameManager.Instance.Period}", ServerConfig);
