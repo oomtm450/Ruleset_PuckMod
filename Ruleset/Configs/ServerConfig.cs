@@ -906,7 +906,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, number of seconds to freeze players before faceoff ends.
         /// </summary>
-        public float FreezeBeforeDropTime { get; set; } = 3f;
+        public float FreezeBeforeDropTime { get; set; } = 2f;
 
         // Center position settings
         public float CenterMaxForward { get; set; } = 0;      // Centers can't move forward at all
