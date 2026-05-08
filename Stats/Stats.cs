@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.3DEV4";
+        private static readonly string MOD_VERSION = "0.7.3DEV5";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -2070,8 +2070,8 @@ namespace oomtm450PuckMod_Stats {
 
                         foreach (VisualElement child in playerContainer.Children()) {
                             if (child.name == "Goals" || child.name == "Assists" || child.name == "Points")
-                                child.style.translate = new Vector3(child.resolvedStyle.translate.x - 25, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
-                            else if (child.name == "Ping") // TODO
+                                child.style.translate = new Vector3(child.resolvedStyle.translate.x - 15, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
+                            else if (child.name == "Ping")
                                 child.style.translate = new Vector3(child.resolvedStyle.translate.x + 85, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
                         }
 
@@ -2090,8 +2090,8 @@ namespace oomtm450PuckMod_Stats {
 
                         foreach (VisualElement child in playerContainer.Children()) {
                             if (child.name == "Goals" || child.name == "Assists" || child.name == "Points")
-                                child.style.translate = new Vector3(child.resolvedStyle.translate.x + 25, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
-                            else if (child.name == "Ping") // TODO
+                                child.style.translate = new Vector3(child.resolvedStyle.translate.x + 15, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
+                            else if (child.name == "Ping")
                                 child.style.translate = new Vector3(child.resolvedStyle.translate.x - 85, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
                         }
                     }
