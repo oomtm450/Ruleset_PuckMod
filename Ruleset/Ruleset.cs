@@ -3294,7 +3294,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void AddPenaltiesLabel() {
+        private static void AddPenaltiesLabel() { // TODO : Fix in B312.
             try {
                 if (_penaltiesLabelBlue != null)
                     return;
@@ -3372,8 +3372,6 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!string.IsNullOrEmpty(penaltyTimersTextRedTeam))
                     penaltyTimersTextRedTeam = penaltyTimersTextRedTeam.Remove(penaltyTimersTextRedTeam.Length - 1);
                 _penaltiesLabelRed.text = penaltyTimersTextRedTeam;
-
-                //UIHUD.Instance.Show();
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(PenaltiesLabelTimerCallback)}.\n{ex}", ClientConfig);
