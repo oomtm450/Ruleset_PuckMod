@@ -23,7 +23,7 @@ namespace oomtm450PuckMod_Ruleset {
     /// <summary>
     /// Class containing the main code for the Ruleset patch.
     /// </summary>
-    public class Ruleset : IPuckMod {
+    public class Ruleset : IPuckPlugin {
         #region Constants
         /// <summary>
         /// Const string, version of the mod.

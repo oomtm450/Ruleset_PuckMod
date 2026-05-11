@@ -11,7 +11,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace oomtm450PuckMod_Sounds {
-    public class Sounds : IPuckMod {
+    public class Sounds : IPuckPlugin {
         #region Constants
         /// <summary>
         /// Const string, version of the mod.

@@ -15,7 +15,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace oomtm450PuckMod_Stats {
-    public class Stats : IPuckMod {
+    public class Stats : IPuckPlugin {
         #region Constants
         /// <summary>
         /// Const string, version of the mod.

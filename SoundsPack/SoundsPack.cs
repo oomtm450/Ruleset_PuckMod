@@ -10,7 +10,7 @@ using Unity.Netcode;
 using UnityEngine;
 
 namespace oomtm450PuckMod_SoundsPack {
-    public class SoundsPack : IPuckMod {
+    public class SoundsPack : IPuckPlugin {
         #region Constants
         /// <summary>
         /// Const string, version of the mod.
