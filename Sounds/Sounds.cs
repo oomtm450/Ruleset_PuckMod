@@ -568,7 +568,10 @@ namespace oomtm450PuckMod_Sounds {
         public static void Event_OnSoundsTrigger(Dictionary<string, object> message) {
             try {
                 foreach (KeyValuePair<string, object> kvp in message) {
-                    string value = (string)kvp.Value;
+                    if (string.IsNullOrEmpty(kvp.Key))
+                        continue;
+
+                    string value = kvp.Value.ToString();
                     if (!NetworkCommunication.GetDataNamesToIgnore().Contains(kvp.Key))
                         Logging.Log($"Received data {kvp.Key}. Content : {value}", ServerConfig);
 
@@ -610,7 +613,7 @@ namespace oomtm450PuckMod_Sounds {
         public static void Event_OnRulesetTrigger(Dictionary<string, object> message) {
             try {
                 foreach (KeyValuePair<string, object> kvp in message) {
-                    string value = (string)kvp.Value;
+                    string value = kvp.Value.ToString();
                     if (!NetworkCommunication.GetDataNamesToIgnore().Contains(kvp.Key))
                         Logging.Log($"Received data {kvp.Key}. Content : {value}", ServerConfig);
 

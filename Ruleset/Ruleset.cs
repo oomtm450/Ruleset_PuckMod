@@ -2409,60 +2409,65 @@ namespace oomtm450PuckMod_Ruleset {
             string key = "";
             string value = "";
             try {
-                KeyValuePair<string, object> messageKvp = message.ElementAt(0);
-                value = (string)messageKvp.Value;
-                key = messageKvp.Key;
-                if (!NetworkCommunication.GetDataNamesToIgnore().Contains(key))
-                    Logging.Log($"Received data {key}. Content : {value}", ServerConfig);
+                foreach (KeyValuePair<string, object> messageKvp in message) {
+                    if (string.IsNullOrEmpty(messageKvp.Key))
+                        continue;
 
-                switch (key) {
-                    case Codebase.Constants.PAUSE:
-                        _paused = bool.Parse(value);
-                        if (_paused)
-                            PenaltyModule.PausePenalties();
-                        else
-                            PenaltyModule.UnpausePenalties();
-                        break;
+                    key = messageKvp.Key;
+                    value = messageKvp.Value.ToString();
+                    
+                    if (!NetworkCommunication.GetDataNamesToIgnore().Contains(key))
+                        Logging.Log($"Received data {key}. Content : {value}", ServerConfig);
 
-                    case Codebase.Constants.LOGIC:
-                        Logic = bool.Parse(value);
-                        break;
-
-                    case "dive":
-                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Play)
+                    switch (key) {
+                        case Codebase.Constants.PAUSE:
+                            _paused = bool.Parse(value);
+                            if (_paused)
+                                PenaltyModule.PausePenalties();
+                            else
+                                PenaltyModule.UnpausePenalties();
                             break;
 
-                        KeyValuePair<string, object> extraMessageKvp = message.ElementAt(1);
-                        if (extraMessageKvp.Key != "duration")
+                        case Codebase.Constants.LOGIC:
+                            Logic = bool.Parse(value);
                             break;
 
-                        int divingValue = int.Parse((string)extraMessageKvp.Value);
+                        case "dive":
+                            if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Play)
+                                break;
 
-                        DateTime getUpTime;
-                        if (divingValue == int.MinValue)
-                            getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(2750d);
-                        else if (divingValue == int.MaxValue)
-                            getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(60000d);
-                        else
-                            getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(divingValue);
+                            KeyValuePair<string, object> extraMessageKvp = message.ElementAt(1);
+                            if (extraMessageKvp.Key != "duration")
+                                break;
 
-                        _dives.AddOrUpdate(value, getUpTime);
+                            int divingValue = int.Parse((string)extraMessageKvp.Value);
 
-                        if (!Logic)
+                            DateTime getUpTime;
+                            if (divingValue == int.MinValue)
+                                getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(2750d);
+                            else if (divingValue == int.MaxValue)
+                                getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(60000d);
+                            else
+                                getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(divingValue);
+
+                            _dives.AddOrUpdate(value, getUpTime);
+
+                            if (!Logic)
+                                break;
+
+                            if (_playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds < ServerConfig.Penalty.EmbellishmentMillisecondsThreshold && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds > 50 && new System.Random().Next(0, 2) == 0) { // TODO : Config random.
+                                Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(value);
+                                if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned && !Codebase.PlayerFunc.IsGoalie(penalizedPlayer))
+                                    PenaltyModule.GivePenalty(PenaltyType.Embellishment, penalizedPlayer);
+                            }
+
                             break;
 
-                        if (_playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds < ServerConfig.Penalty.EmbellishmentMillisecondsThreshold && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds > 50 && new System.Random().Next(0, 2) == 0) { // TODO : Config random.
-                            Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(value);
-                            if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned && !Codebase.PlayerFunc.IsGoalie(penalizedPlayer))
-                                PenaltyModule.GivePenalty(PenaltyType.Embellishment, penalizedPlayer);
-                        }
-
-                        break;
-
-                    case Codebase.Constants.INSTANT_FACEOFF:
-                        NextFaceoffSpot = (FaceoffSpot)ushort.Parse(value);
-                        DoFaceoff("", "", 0, 0, false);
-                        break;
+                        case Codebase.Constants.INSTANT_FACEOFF:
+                            NextFaceoffSpot = (FaceoffSpot)ushort.Parse(value);
+                            DoFaceoff("", "", 0, 0, false);
+                            break;
+                    }
                 }
             }
             catch (Exception ex) {
