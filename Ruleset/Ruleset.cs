@@ -2406,13 +2406,16 @@ namespace oomtm450PuckMod_Ruleset {
 
         #region Events
         public static void Event_OnRulesetTrigger(Dictionary<string, object> message) {
+            string key = "";
+            string value = "";
             try {
                 KeyValuePair<string, object> messageKvp = message.ElementAt(0);
-                string value = (string)messageKvp.Value;
-                if (!NetworkCommunication.GetDataNamesToIgnore().Contains(messageKvp.Key))
-                    Logging.Log($"Received data {messageKvp.Key}. Content : {value}", ServerConfig);
+                value = (string)messageKvp.Value;
+                key = messageKvp.Key;
+                if (!NetworkCommunication.GetDataNamesToIgnore().Contains(key))
+                    Logging.Log($"Received data {key}. Content : {value}", ServerConfig);
 
-                switch (messageKvp.Key) {
+                switch (key) {
                     case Codebase.Constants.PAUSE:
                         _paused = bool.Parse(value);
                         if (_paused)
@@ -2463,7 +2466,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(Event_OnRulesetTrigger)}.\n{ex}", ServerConfig);
+                Logging.LogError($"Error in {nameof(Event_OnRulesetTrigger)}.\nKey : \"{key}\", Value : \"{value}\".\n{ex}", ServerConfig);
             }
         }
 
