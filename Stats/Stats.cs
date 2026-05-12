@@ -1482,6 +1482,7 @@ namespace oomtm450PuckMod_Stats {
                     return;
 
                 _playersTeam.AddOrUpdate(playerSteamId, newPlayerGameState.Team);
+                _playersTeamToRemoveAfterGame.Remove(playerSteamId);
             }
 
             if (oldPlayerGameState.Role == newPlayerGameState.Role)
@@ -1498,6 +1499,12 @@ namespace oomtm450PuckMod_Stats {
 
             foreach (var kvp in playersInfo_ToChange) {
                 if (!string.IsNullOrEmpty(kvp.Value.SteamId)) {
+                    if (_playersInfo.Select(x => x.Value.SteamId).Contains(kvp.Value.SteamId)) {
+                        ulong oldClientId = _playersInfo.Where(x => x.Value.SteamId == kvp.Value.SteamId).First().Key;
+                        _playersInfo.Remove(oldClientId);
+                        _playersInfoToRemoveAfterGame.Remove(oldClientId);
+                    }
+
                     _playersInfo[kvp.Key] = kvp.Value;
                     Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value.SteamId} ({kvp.Value.Username}).", ServerConfig);
                 }
