@@ -262,6 +262,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                             FreezePlayersBeforeDrop = config.Faceoff.FreezePlayersBeforeDrop,
                             UseCustomFaceoff = config.Faceoff.UseCustomFaceoff,
                             UseDefaultPuckDropHeight = config.Faceoff.UseDefaultPuckDropHeight,
+                            ResetPlayersOnFaceoff = config.Faceoff.ResetPlayersOnFaceoff,
                         },
                         LogPhaseChangeAndStoppage = config.LogPhaseChangeAndStoppage,
                     };
@@ -932,6 +933,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float GoalieMaxLeft { get; set; } = 2f;
         public float GoalieMaxRight { get; set; } = 2f;
 
+        /// <summary>
+        /// Bool, reset some values on faceoff, like stamina.
+        /// </summary>
+        public bool ResetPlayersOnFaceoff { get; set; } = true;
+
         #region Constructors
         /// <summary>
         /// Default constructor of ServerConfig.
@@ -974,6 +980,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             GoalieMaxBackward = faceoffConfig.GoalieMaxBackward;
             GoalieMaxLeft = faceoffConfig.GoalieMaxLeft;
             GoalieMaxRight = faceoffConfig.GoalieMaxRight;
+
+            ResetPlayersOnFaceoff = faceoffConfig.ResetPlayersOnFaceoff;
         }
         #endregion
 
@@ -1044,6 +1052,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 GoalieMaxLeft = newConfig.GoalieMaxLeft;
             if (GoalieMaxRight == _oldConfig.GoalieMaxRight)
                 GoalieMaxRight = newConfig.GoalieMaxRight;
+
+            if (ResetPlayersOnFaceoff == _oldConfig.ResetPlayersOnFaceoff)
+                ResetPlayersOnFaceoff = newConfig.ResetPlayersOnFaceoff;
         }
     }
 }

@@ -2231,6 +2231,14 @@ namespace oomtm450PuckMod_Ruleset {
 
             ChangedPhase = true;
             GameManager.Instance.Server_SetGameState(GamePhase.FaceOff, _faceoffDuration);
+
+            if (ServerConfig.Faceoff.ResetPlayersOnFaceoff) {
+                foreach (Player player in PlayerManager.Instance.GetSpawnedPlayers()) {
+                    player.PlayerBody.Stamina.Value = 1f;
+                    player.PlayerBody.OnStandUp();
+                    player.PlayerBody.Speed.Value = 0;
+                }
+            }
         }
 
         private static bool IsOffside(PlayerTeam team) {

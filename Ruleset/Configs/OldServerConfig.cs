@@ -454,6 +454,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float GoalieMaxLeft { get; } = 2f;
         public float GoalieMaxRight { get; } = 2f;
 
+        public bool ResetPlayersOnFaceoff { get; } = true;
+
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
         /// </summary>
