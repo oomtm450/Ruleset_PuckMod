@@ -175,6 +175,15 @@ namespace oomtm450PuckMod_Stats {
         /// </summary>
         private static readonly LockDictionary<ulong, (string SteamId, string Username)> _playersInfo = new LockDictionary<ulong, (string, string)>();
 
+        private static readonly LockList<ulong> _playersInfoToRemoveAfterGame = new LockList<ulong>();
+
+        /// <summary>
+        /// LockDictionary of ulong and string, dictionary of all players steamId and PlayerTeam.
+        /// </summary>
+        private static readonly LockDictionary<string, PlayerTeam> _playersTeam = new LockDictionary<string, PlayerTeam>();
+
+        private static readonly LockList<string> _playersTeamToRemoveAfterGame = new LockList<string>();
+
         /// <summary>
         /// LockDictionary of ulong and DateTime, last time a mod out of date message was sent to a client (ulong clientId).
         /// </summary>
@@ -1417,7 +1426,8 @@ namespace oomtm450PuckMod_Stats {
                 _playersCurrentPuckTouch.Remove(clientSteamId);
                 _lastTimeOnCollisionStayOrExitWasCalled.Remove(clientSteamId);
 
-                _playersInfo.Remove(clientId);
+                _playersInfoToRemoveAfterGame.Add(clientId);
+                _playersTeamToRemoveAfterGame.Add(clientSteamId);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(Event_Everyone_OnClientDisconnected)}.\n{ex}", ServerConfig);
@@ -1460,11 +1470,21 @@ namespace oomtm450PuckMod_Stats {
             }
         }
 
-        public static void Event_Everyone_OnPlayerGameStateChanged(Dictionary<string, object> message) { // TODO : Optimize by using another function that gets called less often.
-            PlayerGameState newGameState = (PlayerGameState)message["newGameState"];
-            PlayerGameState oldGameState = (PlayerGameState)message["oldGameState"];
+        public static void Event_Everyone_OnPlayerGameStateChanged(Dictionary<string, object> message) {
+            PlayerGameState newPlayerGameState = (PlayerGameState)message["newGameState"];
+            PlayerGameState oldPlayerGameState = (PlayerGameState)message["oldGameState"];
 
-            if (oldGameState.Role == newGameState.Role)
+            Player player = (Player)message["player"];
+            string playerSteamId = player.SteamId.Value.ToString();
+
+            if (newPlayerGameState.Team == PlayerTeam.Blue || newPlayerGameState.Team == PlayerTeam.Red) {
+                if (string.IsNullOrEmpty(playerSteamId))
+                    return;
+
+                _playersTeam.AddOrUpdate(playerSteamId, newPlayerGameState.Team);
+            }
+
+            if (oldPlayerGameState.Role == newPlayerGameState.Role)
                 return;
 
             // Use the event to link client Ids to Steam Ids.
@@ -1483,14 +1503,10 @@ namespace oomtm450PuckMod_Stats {
                 }
             }
 
-            Player player = (Player)message["player"];
-
-            string playerSteamId = player.SteamId.Value.ToString();
-
             if (string.IsNullOrEmpty(playerSteamId))
                 return;
 
-            if (newGameState.Role != PlayerRole.Goalie) {
+            if (newPlayerGameState.Role != PlayerRole.Goalie) {
                 if (!_sog.TryGetValue(playerSteamId, out int _))
                     _sog.Add(playerSteamId, 0);
 
@@ -1681,6 +1697,8 @@ namespace oomtm450PuckMod_Stats {
             if (sogDict.Count != 0) {
                 // Log JSON for game stats.
                 Dictionary<string, object> jsonDict = new Dictionary<string, object> {
+                    { "steamIds", playersUsername },
+                    { "teams", _playersTeam },
                     { "sog", sogDict },
                     { "passes", passesDict },
                     { "blocks", blocksDict },
@@ -1715,6 +1733,14 @@ namespace oomtm450PuckMod_Stats {
                     }
                 }
             }
+
+            foreach (ulong clientId in _playersInfoToRemoveAfterGame)
+                _playersInfo.Remove(clientId);
+            _playersInfoToRemoveAfterGame.Clear();
+
+            foreach (string steamId in _playersTeamToRemoveAfterGame)
+                _playersTeam.Remove(steamId);
+            _playersTeamToRemoveAfterGame.Clear();
         }
         /// <summary>
         /// Method that processes a hit by a player.
