@@ -973,11 +973,9 @@ namespace oomtm450PuckMod_Sounds {
         /// <returns>List of string, all mods assembly's name.</returns>
         private static List<string> GetModsList() {
             List<string> mods = new List<string>();
-            if (ModManager.Instance == null || !ModManager.Instance)
-                return mods;
 
-            foreach (Mod mod in ModManager.Instance.Mods) {
-                Assembly modAssembly = SystemFunc.GetPrivateField<Assembly>(typeof(Mod), mod, "assembly");
+            foreach (Mod mod in ModManager.EnabledMods) {
+                Assembly modAssembly = SystemFunc.GetPrivateField<Assembly>(typeof(BasePlugin<BasePluginState>), mod, "assembly");
                 if (modAssembly == null)
                     continue;
 

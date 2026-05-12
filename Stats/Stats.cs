@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.3DEV5";
+        private static readonly string MOD_VERSION = "0.7.3";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -1767,11 +1767,11 @@ namespace oomtm450PuckMod_Stats {
         }
 
         private static void CheckForRulesetMod() {
-            if (ModManager.Instance == null || ModManager.Instance.EnabledModIds == null || (_rulesetModEnabled != null && (bool)_rulesetModEnabled))
+            if (ModManager.EnabledMods == null || (_rulesetModEnabled != null && (bool)_rulesetModEnabled))
                 return;
 
-            _rulesetModEnabled = ModManager.Instance.EnabledModIds.Contains(3501446576) ||
-                                 ModManager.Instance.EnabledModIds.Contains(3500559233);
+            _rulesetModEnabled = ModManager.EnabledMods.Select(x => x.Id).Contains("3501446576") ||
+                                 ModManager.EnabledMods.Select(x => x.Id).Contains("3500559233");
             Logging.Log($"Ruleset mod is enabled ? : {_rulesetModEnabled}.", ServerConfig, true);
         }
 
