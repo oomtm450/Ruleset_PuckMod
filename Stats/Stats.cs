@@ -1471,59 +1471,64 @@ namespace oomtm450PuckMod_Stats {
         }
 
         public static void Event_Everyone_OnPlayerGameStateChanged(Dictionary<string, object> message) {
-            PlayerGameState newPlayerGameState = (PlayerGameState)message["newGameState"];
-            PlayerGameState oldPlayerGameState = (PlayerGameState)message["oldGameState"];
+            try {
+                PlayerGameState newPlayerGameState = (PlayerGameState)message["newGameState"];
+                PlayerGameState oldPlayerGameState = (PlayerGameState)message["oldGameState"];
 
-            Player player = (Player)message["player"];
-            string playerSteamId = player.SteamId.Value.ToString();
+                Player player = (Player)message["player"];
+                string playerSteamId = player.SteamId.Value.ToString();
 
-            if (newPlayerGameState.Team == PlayerTeam.Blue || newPlayerGameState.Team == PlayerTeam.Red) {
+                if (newPlayerGameState.Team == PlayerTeam.Blue || newPlayerGameState.Team == PlayerTeam.Red) {
+                    if (string.IsNullOrEmpty(playerSteamId))
+                        return;
+
+                    _playersTeam.AddOrUpdate(playerSteamId, newPlayerGameState.Team);
+                    _playersTeamToRemoveAfterGame.Remove(playerSteamId);
+                }
+
+                if (oldPlayerGameState.Role == newPlayerGameState.Role)
+                    return;
+
+                // Use the event to link client Ids to Steam Ids.
+                Dictionary<ulong, (string SteamId, string Username)> playersInfo_ToChange = new Dictionary<ulong, (string, string)>();
+                foreach (var kvp in _playersInfo) {
+                    if (string.IsNullOrEmpty(kvp.Value.SteamId)) {
+                        Player _player = PlayerManager.Instance.GetPlayerByClientId(kvp.Key);
+                        playersInfo_ToChange.Add(kvp.Key, (_player.SteamId.Value.ToString(), _player.Username.Value.ToString()));
+                    }
+                }
+
+                foreach (var kvp in playersInfo_ToChange) {
+                    if (!string.IsNullOrEmpty(kvp.Value.SteamId)) {
+                        if (_playersInfo.Select(x => x.Value.SteamId).Contains(kvp.Value.SteamId)) {
+                            ulong oldClientId = _playersInfo.Where(x => x.Value.SteamId == kvp.Value.SteamId).First().Key;
+                            _playersInfo.Remove(oldClientId);
+                            _playersInfoToRemoveAfterGame.Remove(oldClientId);
+                        }
+
+                        _playersInfo[kvp.Key] = kvp.Value;
+                        Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value.SteamId} ({kvp.Value.Username}).", ServerConfig);
+                    }
+                }
+
                 if (string.IsNullOrEmpty(playerSteamId))
                     return;
 
-                _playersTeam.AddOrUpdate(playerSteamId, newPlayerGameState.Team);
-                _playersTeamToRemoveAfterGame.Remove(playerSteamId);
-            }
+                if (newPlayerGameState.Role != PlayerRole.Goalie) {
+                    if (!_sog.TryGetValue(playerSteamId, out int _))
+                        _sog.Add(playerSteamId, 0);
 
-            if (oldPlayerGameState.Role == newPlayerGameState.Role)
-                return;
+                    NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + playerSteamId, _sog[playerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                }
+                else {
+                    if (!_savePerc.TryGetValue(playerSteamId, out var _))
+                        _savePerc.Add(playerSteamId, (0, 0));
 
-            // Use the event to link client Ids to Steam Ids.
-            Dictionary<ulong, (string SteamId, string Username)> playersInfo_ToChange = new Dictionary<ulong, (string, string)>();
-            foreach (var kvp in _playersInfo) {
-                if (string.IsNullOrEmpty(kvp.Value.SteamId)) {
-                    Player _player = PlayerManager.Instance.GetPlayerByClientId(kvp.Key);
-                    playersInfo_ToChange.Add(kvp.Key, (_player.SteamId.Value.ToString(), _player.Username.Value.ToString()));
+                    NetworkCommunication.SendDataToAll(Codebase.Constants.SAVEPERC + playerSteamId, _savePerc[playerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                 }
             }
-
-            foreach (var kvp in playersInfo_ToChange) {
-                if (!string.IsNullOrEmpty(kvp.Value.SteamId)) {
-                    if (_playersInfo.Select(x => x.Value.SteamId).Contains(kvp.Value.SteamId)) {
-                        ulong oldClientId = _playersInfo.Where(x => x.Value.SteamId == kvp.Value.SteamId).First().Key;
-                        _playersInfo.Remove(oldClientId);
-                        _playersInfoToRemoveAfterGame.Remove(oldClientId);
-                    }
-
-                    _playersInfo[kvp.Key] = kvp.Value;
-                    Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value.SteamId} ({kvp.Value.Username}).", ServerConfig);
-                }
-            }
-
-            if (string.IsNullOrEmpty(playerSteamId))
-                return;
-
-            if (newPlayerGameState.Role != PlayerRole.Goalie) {
-                if (!_sog.TryGetValue(playerSteamId, out int _))
-                    _sog.Add(playerSteamId, 0);
-
-                NetworkCommunication.SendDataToAll(Codebase.Constants.SOG + playerSteamId, _sog[playerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-            }
-            else {
-                if (!_savePerc.TryGetValue(playerSteamId, out var _))
-                    _savePerc.Add(playerSteamId, (0, 0));
-
-                NetworkCommunication.SendDataToAll(Codebase.Constants.SAVEPERC + playerSteamId, _savePerc[playerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(Event_Everyone_OnPlayerGameStateChanged)}.\n{ex}", ServerConfig);
             }
         }
         #endregion
