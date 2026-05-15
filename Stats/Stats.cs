@@ -1491,11 +1491,20 @@ namespace oomtm450PuckMod_Stats {
 
                 // Use the event to link client Ids to Steam Ids.
                 Dictionary<ulong, (string SteamId, string Username)> playersInfo_ToChange = new Dictionary<ulong, (string, string)>();
+                List<ulong> playersInfo_ToRemove = new List<ulong>();
                 foreach (var kvp in _playersInfo) {
                     if (string.IsNullOrEmpty(kvp.Value.SteamId)) {
                         Player _player = PlayerManager.Instance.GetPlayerByClientId(kvp.Key);
-                        playersInfo_ToChange.Add(kvp.Key, (_player.SteamId.Value.ToString(), _player.Username.Value.ToString()));
+                        if (_player == null)
+                            playersInfo_ToRemove.Add(kvp.Key);
+                        else
+                            playersInfo_ToChange.Add(kvp.Key, (_player.SteamId.Value.ToString(), _player.Username.Value.ToString()));
                     }
+                }
+
+                foreach (ulong clientId in playersInfo_ToRemove) {
+                    _playersInfo.Remove(clientId);
+                    _playersInfoToRemoveAfterGame.Remove(clientId);
                 }
 
                 foreach (var kvp in playersInfo_ToChange) {
