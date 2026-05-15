@@ -1472,10 +1472,14 @@ namespace oomtm450PuckMod_Stats {
 
         public static void Event_Everyone_OnPlayerGameStateChanged(Dictionary<string, object> message) {
             try {
+                Player player = (Player)message["player"];
+
+                if (player == null || !player)
+                    return;
+
                 PlayerGameState newPlayerGameState = (PlayerGameState)message["newGameState"];
                 PlayerGameState oldPlayerGameState = (PlayerGameState)message["oldGameState"];
 
-                Player player = (Player)message["player"];
                 string playerSteamId = player.SteamId.Value.ToString();
 
                 if (newPlayerGameState.Team == PlayerTeam.Blue || newPlayerGameState.Team == PlayerTeam.Red) {
