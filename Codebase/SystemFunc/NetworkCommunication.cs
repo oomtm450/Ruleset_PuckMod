@@ -83,6 +83,15 @@ namespace Codebase {
         public static void SendDataToAll(string dataName, string dataStr, string listener, IConfig config,
             NetworkDelivery networkDelivery = NetworkDelivery.ReliableFragmentedSequenced) {
             try {
+                if (NetworkManager.Singleton == null) {
+                    Logging.LogError($"NetworkManager.Singleton is null.", config);
+                    return;
+                }
+                if (NetworkManager.Singleton.CustomMessagingManager == null) {
+                    Logging.LogError($"NetworkManager.Singleton.CustomMessagingManager is null.", config);
+                    return;
+                }
+
                 byte[] data = Encoding.UTF8.GetBytes(dataStr);
 
                 int size = Encoding.UTF8.GetByteCount(dataName) + sizeof(ulong) + data.Length;
