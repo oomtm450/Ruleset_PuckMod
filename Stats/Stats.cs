@@ -2105,6 +2105,8 @@ namespace oomtm450PuckMod_Stats {
 
             foreach (var kvp in SystemFunc.GetPrivateField<Dictionary<Player, VisualElement>>(typeof(UIScoreboard), UIManager.Instance.Scoreboard, "playerVisualElementMap")) {
                 string playerSteamId = kvp.Key.SteamId.Value.ToString();
+                int usernameCharCountLabelOffset = (kvp.Key.Username.Value.ToString().Length - 6) * 5;
+                int usernameCharCountLabelOffsetForPing = kvp.Key.Username.Value.ToString().Length * 4;
 
                 if (string.IsNullOrEmpty(playerSteamId))
                     continue;
@@ -2119,14 +2121,14 @@ namespace oomtm450PuckMod_Stats {
                         sogLabel.style.flexGrow = 1;
                         sogLabel.style.unityTextAlign = TextAnchor.UpperRight;
                         playerContainer.Add(sogLabel);
-                        sogLabel.style.translate = new Vector3(sogLabel.resolvedStyle.translate.x - 210, sogLabel.resolvedStyle.translate.y, sogLabel.resolvedStyle.translate.z);
+                        sogLabel.style.translate = new Vector3(sogLabel.resolvedStyle.translate.x - 208, sogLabel.resolvedStyle.translate.y, sogLabel.resolvedStyle.translate.z);
                         _sogLabels.Add(playerSteamId, sogLabel);
 
                         foreach (VisualElement child in playerContainer.Children()) {
                             if (child.name == "Goals" || child.name == "Assists" || child.name == "Points")
-                                child.style.translate = new Vector3(child.resolvedStyle.translate.x - 15, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
+                                child.style.translate = new Vector3(child.resolvedStyle.translate.x - usernameCharCountLabelOffset, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
                             else if (child.name == "Ping")
-                                child.style.translate = new Vector3(child.resolvedStyle.translate.x + 85, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
+                                child.style.translate = new Vector3(child.resolvedStyle.translate.x + 120 - usernameCharCountLabelOffsetForPing, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
                         }
 
                         _hasUpdatedUIScoreboard.Add(playerSteamId);
@@ -2144,9 +2146,9 @@ namespace oomtm450PuckMod_Stats {
 
                         foreach (VisualElement child in playerContainer.Children()) {
                             if (child.name == "Goals" || child.name == "Assists" || child.name == "Points")
-                                child.style.translate = new Vector3(child.resolvedStyle.translate.x + 15, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
+                                child.style.translate = new Vector3(child.resolvedStyle.translate.x + usernameCharCountLabelOffset, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
                             else if (child.name == "Ping")
-                                child.style.translate = new Vector3(child.resolvedStyle.translate.x - 85, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
+                                child.style.translate = new Vector3(child.resolvedStyle.translate.x - 120 + usernameCharCountLabelOffsetForPing, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
                         }
                     }
                     else {
