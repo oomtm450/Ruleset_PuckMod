@@ -141,7 +141,7 @@ namespace oomtm450PuckMod_Ruleset {
             foreach (PlayerTeam key in new List<PlayerTeam>(PenaltyBenchPositionIsOccupied.Keys))
                 PenaltyBenchPositionIsOccupied[key] = new LockDictionary<int, bool>(PENALTY_BENCH_POSITION_DEFAULT);
 
-            NetworkCommunication.SendDataToAll("removeallpen", "1", Constants.FROM_SERVER_TO_CLIENT, Ruleset.ServerConfig);
+            Ruleset.DataToSendToAll.Add(new List<string> { "removeallpen", "1", Constants.FROM_SERVER_TO_CLIENT, });
         }
 
         internal static bool GivePenalty(PenaltyType penaltyType, Player penalizedPlayer, string receivingPlayerSteamId = "", Player referee = null) {
@@ -255,7 +255,7 @@ namespace oomtm450PuckMod_Ruleset {
             Ruleset.SystemChatMessages.Add(message);
             Logging.Log(message, Ruleset.ServerConfig);
             // TODO : Get actual ref signal.
-            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, penalizedPlayer.Team), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, Ruleset.ServerConfig);
+            Ruleset.DataToSendToAll.Add(new List<string> { RefSignals.GetSignalConstant(true, penalizedPlayer.Team), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, });
 
             if (PenaltyToBeCalled.Values.All(x => x))
                 Ruleset.CallPenalty(PlayerTeam.None);
@@ -346,7 +346,7 @@ namespace oomtm450PuckMod_Ruleset {
             foreach (PlayerTeam key in new List<PlayerTeam>(PenaltyBenchPositionIsOccupied.Keys))
                 PenaltyBenchPositionIsOccupied[key] = new LockDictionary<int, bool>(PENALTY_BENCH_POSITION_DEFAULT);
 
-            NetworkCommunication.SendDataToAll("penpause", "1", Constants.FROM_SERVER_TO_CLIENT, Ruleset.ServerConfig);
+            Ruleset.DataToSendToAll.Add(new List<string> { "penpause", "1", Constants.FROM_SERVER_TO_CLIENT, });
         }
 
         internal static void UnpausePenalties() {
@@ -362,12 +362,12 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             if (string.IsNullOrEmpty(penaltyUIMsg)) {
-                NetworkCommunication.SendDataToAll("removeallpen", "1", Constants.FROM_SERVER_TO_CLIENT, Ruleset.ServerConfig);
+                Ruleset.DataToSendToAll.Add(new List<string> { "removeallpen", "1", Constants.FROM_SERVER_TO_CLIENT, });
                 return;
             }
 
             penaltyUIMsg = penaltyUIMsg.Remove(penaltyUIMsg.Length - 1);
-            NetworkCommunication.SendDataToAll("penunpause", penaltyUIMsg, Constants.FROM_SERVER_TO_CLIENT, Ruleset.ServerConfig);
+            Ruleset.DataToSendToAll.Add(new List<string> { "penunpause", penaltyUIMsg, Constants.FROM_SERVER_TO_CLIENT, });
         }
 
         internal static void UnpenalizePlayer(Player penalizedPlayer, PlayerTeam penalizedPlayerTeam, string penalizedPlayerPosition) {
@@ -583,6 +583,9 @@ namespace oomtm450PuckMod_Ruleset {
 
         private void PenaltyTimer_Elapsed() {
             try {
+                if (!PenaltyModule.PenalizedPlayers.ContainsKey(SteamId))
+                    return;
+
                 Penalty penaltyToRemove = null;
                 // Remove elapsed penalty.
                 foreach (Penalty penalty in PenaltyModule.PenalizedPlayers[SteamId]) {
@@ -591,6 +594,9 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
                     }
                 }
+
+                if (penaltyToRemove == null)
+                    return;
 
                 PenaltyModule.PenalizedPlayers[SteamId].Remove(penaltyToRemove);
 

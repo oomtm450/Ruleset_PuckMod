@@ -430,6 +430,11 @@ namespace oomtm450PuckMod_Ruleset {
         internal static LockList<string> SystemChatMessages { get; } = new LockList<string>();
 
         /// <summary>
+        /// LockList of list of string, system data to send to all next frame.
+        /// </summary>
+        internal static LockList<List<string>> DataToSendToAll { get; } = new LockList<List<string>>();
+
+        /// <summary>
         /// Bool, true if the mod's logic has to be runned.
         /// </summary>
         internal static bool Logic { get; set; } = true;
@@ -1407,6 +1412,14 @@ namespace oomtm450PuckMod_Ruleset {
 
                     foreach (string message in systemChatMessages)
                         ChatManager.Instance.Server_BroadcastChatMessage(message);
+                }
+
+                if (DataToSendToAll.Count != 0) {
+                    List<List<string>> dataToSendToAll = new List<List<string>>(DataToSendToAll);
+                    DataToSendToAll.Clear();
+
+                    foreach (List<string> data in dataToSendToAll)
+                        NetworkCommunication.SendDataToAll(data[0], data[1], data[2], ServerConfig);
                 }
 
                 if (GameManager.Instance.Phase != GamePhase.Play || !Logic)
