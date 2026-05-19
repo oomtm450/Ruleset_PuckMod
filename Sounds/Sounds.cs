@@ -144,24 +144,24 @@ namespace oomtm450PuckMod_Sounds {
             public static bool Prefix(GameState oldGameState, GameState newGameState) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || !_logic || oldGameState.Phase == newGameState.Phase)
+                    if (!ServerFunc.IsDedicatedServer() || !_logic || oldGameState.Phase == newGameState.Phase || !ServerConfig.EnableMusic)
                         return true;
 
-                    if (newGameState.Phase == GamePhase.BlueScore && ServerConfig.EnableMusic) {
+                    if (newGameState.Phase == GamePhase.BlueScore) {
                         _currentMusicPlaying = Codebase.SoundsSystem.BLUE_GOAL_MUSIC;
                         NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
-                    else if (newGameState.Phase == GamePhase.RedScore && ServerConfig.EnableMusic) {
+                    else if (newGameState.Phase == GamePhase.RedScore) {
                         _currentMusicPlaying = Codebase.SoundsSystem.RED_GOAL_MUSIC;
                         NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
-                    else if (newGameState.Phase == GamePhase.Intermission && ServerConfig.EnableMusic) {
+                    else if (newGameState.Phase == GamePhase.Intermission) {
                         _currentMusicPlaying = Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC;
                         NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
 
                     if (!_changedPhase) {
-                        if ((string.IsNullOrEmpty(_currentMusicPlaying) || _currentMusicPlaying == Codebase.SoundsSystem.WARMUP_MUSIC) && ServerConfig.EnableMusic) {
+                        if (string.IsNullOrEmpty(_currentMusicPlaying) || _currentMusicPlaying == Codebase.SoundsSystem.WARMUP_MUSIC) {
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
                             if (newGameState.Phase == GamePhase.FaceOff || newGameState.Phase == GamePhase.PreGame) { // TODO : Fix pregame.
@@ -186,12 +186,12 @@ namespace oomtm450PuckMod_Sounds {
                             }
                         }
 
-                        if (newGameState.Phase == GamePhase.GameOver && ServerConfig.EnableMusic) {
+                        if (newGameState.Phase == GamePhase.GameOver) {
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.GAMEOVER_MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             _currentMusicPlaying = Codebase.SoundsSystem.GAMEOVER_MUSIC;
                         }
-                        else if (newGameState.Phase == GamePhase.Warmup && ServerConfig.EnableMusic) {
+                        else if (newGameState.Phase == GamePhase.Warmup) {
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.WARMUP_MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             _currentMusicPlaying = Codebase.SoundsSystem.WARMUP_MUSIC;
