@@ -607,7 +607,7 @@ namespace oomtm450PuckMod_Ruleset {
                             __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight) || _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == playerSteamId) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
                             if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
-                                ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
+                                ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam), __instance);
 
                             _lastPlayerOnPuckSteamId[stick.Player.Team] = playerSteamId;
                             _playersOnPuckDateTime.AddOrUpdate(playerSteamId, (stick.Player.Team, now));
@@ -705,7 +705,7 @@ namespace oomtm450PuckMod_Ruleset {
                             __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight) || _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
                             if (!Codebase.PlayerFunc.IsGoalie(stick.Player))
-                                ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam));
+                                ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam), __instance);
 
                             _lastPlayerOnPuckSteamId[stick.Player.Team] = currentPlayerSteamId;
                             _playersOnPuckDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team, now));
@@ -2362,9 +2362,9 @@ namespace oomtm450PuckMod_Ruleset {
                 return ServerConfig.GInt.RedTeam;
         }
 
-        private static void ResetGoalAndAssistAttribution(PlayerTeam team) {
+        private static void ResetGoalAndAssistAttribution(PlayerTeam team, Puck puck = null) {
             try {
-                NetworkList<NetworkObjectCollision> buffer = GetPuckBuffer() ?? throw new NullReferenceException("Buffer field is null !!!");
+                NetworkList<NetworkObjectCollision> buffer = GetPuckBuffer(puck) ?? throw new NullReferenceException("Buffer field is null !!!");
 
                 List<NetworkObjectCollision> collisionToRemove = new List<NetworkObjectCollision>();
                 foreach (NetworkObjectCollision collision in buffer) {
