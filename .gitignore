@@ -15,8 +15,5 @@
 /SoundsPack/.vs
 /SoundsPack/bin/Release
 /SoundsPack/obj/Release
-/DonorSoundsPack/.vs
-/DonorSoundsPack/bin/Release
-/DonorSoundsPack/obj/Release
 /Codebase/Codebase.projitems
 *.user

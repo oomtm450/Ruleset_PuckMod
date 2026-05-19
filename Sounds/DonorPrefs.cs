@@ -15,19 +15,14 @@ namespace oomtm450PuckMod_Sounds {
     internal static class DonorPrefs {
         #region Fields
         /// <summary>
-        /// Object, lock to guard the cached dictionaries from concurrent reads and reloads.
+        /// LockDictionary of string and string, cached map of steamId to donor's chosen song id.
         /// </summary>
-        private static readonly object _lock = new object();
+        private static LockDictionary<string, string> _songs = new LockDictionary<string, string>();
 
         /// <summary>
-        /// Dictionary of string and string, cached map of steamId to donor's chosen song id.
+        /// LockDictionary of string and string, cached map of steamId to donor's chosen horn id.
         /// </summary>
-        private static Dictionary<string, string> _songs = new Dictionary<string, string>();
-
-        /// <summary>
-        /// Dictionary of string and string, cached map of steamId to donor's chosen horn id.
-        /// </summary>
-        private static Dictionary<string, string> _horns = new Dictionary<string, string>();
+        private static LockDictionary<string, string> _horns = new LockDictionary<string, string>();
 
         /// <summary>
         /// DateTime, last mtime we successfully read from the prefs file. Used to skip parses.
@@ -53,9 +48,7 @@ namespace oomtm450PuckMod_Sounds {
                 return "";
 
             RefreshIfStale();
-            lock (_lock) {
-                return _songs.TryGetValue(steamId, out string v) ? (v ?? "") : "";
-            }
+            return _songs.TryGetValue(steamId, out string v) ? (v ?? "") : "";
         }
 
         /// <summary>
@@ -68,9 +61,7 @@ namespace oomtm450PuckMod_Sounds {
                 return "";
 
             RefreshIfStale();
-            lock (_lock) {
-                return _horns.TryGetValue(steamId, out string v) ? (v ?? "") : "";
-            }
+            return _horns.TryGetValue(steamId, out string v) ? (v ?? "") : "";
         }
 
         /// <summary>
@@ -84,18 +75,16 @@ namespace oomtm450PuckMod_Sounds {
                     return;
 
                 DateTime mtime = File.GetLastWriteTimeUtc(path);
-                lock (_lock) {
-                    if (mtime <= _lastReadUtc)
-                        return;
+                if (mtime <= _lastReadUtc)
+                    return;
 
-                    string json = File.ReadAllText(path);
-                    UserDataDto parsed = JsonConvert.DeserializeObject<UserDataDto>(json);
-                    if (parsed != null) {
-                        _songs = parsed.GoalSongs ?? new Dictionary<string, string>();
-                        _horns = parsed.GoalHorns ?? new Dictionary<string, string>();
-                    }
-                    _lastReadUtc = mtime;
+                string json = File.ReadAllText(path);
+                UserDataDto parsed = JsonConvert.DeserializeObject<UserDataDto>(json);
+                if (parsed != null) {
+                    _songs = new LockDictionary<string, string>(parsed.GoalSongs ?? new Dictionary<string, string>());
+                    _horns = new LockDictionary<string, string>(parsed.GoalHorns ?? new Dictionary<string, string>());
                 }
+                _lastReadUtc = mtime;
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(RefreshIfStale)}.\n{ex}", Sounds.ServerConfig);

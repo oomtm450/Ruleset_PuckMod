@@ -12,8 +12,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sounds", "Sounds\Sounds.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoundsPack", "SoundsPack\SoundsPack.csproj", "{68116444-B178-47F0-A1FF-4363521E5344}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DonorSoundsPack", "DonorSoundsPack\DonorSoundsPack.csproj", "{F31F5C78-3762-4EC1-B198-2DA57FBF8451}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,10 +34,6 @@ Global
 		{68116444-B178-47F0-A1FF-4363521E5344}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{68116444-B178-47F0-A1FF-4363521E5344}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{68116444-B178-47F0-A1FF-4363521E5344}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F31F5C78-3762-4EC1-B198-2DA57FBF8451}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F31F5C78-3762-4EC1-B198-2DA57FBF8451}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F31F5C78-3762-4EC1-B198-2DA57FBF8451}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F31F5C78-3762-4EC1-B198-2DA57FBF8451}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -52,7 +46,6 @@ Global
 		Codebase\Codebase.projitems*{68116444-b178-47f0-a1ff-4363521e5344}*SharedItemsImports = 4
 		Codebase\Codebase.projitems*{7556f9de-37f9-4070-a289-4e1ec63d3c24}*SharedItemsImports = 4
 		Codebase\Codebase.projitems*{e3770437-bae2-41ce-ac40-31f0b03bba12}*SharedItemsImports = 4
-		Codebase\Codebase.projitems*{f31f5c78-3762-4ec1-b198-2da57fbf8451}*SharedItemsImports = 4
 		Codebase\Codebase.projitems*{fe5b60dd-5a85-cd62-8047-1c686e2fe7c5}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal
