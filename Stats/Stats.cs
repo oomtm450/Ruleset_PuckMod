@@ -1499,7 +1499,7 @@ namespace oomtm450PuckMod_Stats {
                 foreach (var kvp in _playersInfo) {
                     if (string.IsNullOrEmpty(kvp.Value.SteamId)) {
                         Player _player = PlayerManager.Instance.GetPlayerByClientId(kvp.Key);
-                        if (_player == null)
+                        if (_player == null || string.IsNullOrEmpty(_player.SteamId.Value.ToString()))
                             playersInfo_ToRemove.Add(kvp.Key);
                         else
                             playersInfo_ToChange.Add(kvp.Key, (_player.SteamId.Value.ToString(), _player.Username.Value.ToString()));
@@ -1660,8 +1660,15 @@ namespace oomtm450PuckMod_Stats {
             }
 
             Dictionary<string, string> playersUsername = new Dictionary<string, string>();
-            foreach ((string steamId, string username) in _playersInfo.Values)
-                playersUsername.Add(steamId, username);
+            foreach (var kvp in _playersInfo) {
+                try {
+                    if (!string.IsNullOrEmpty(kvp.Value.SteamId))
+                        playersUsername.Add(kvp.Value.SteamId, kvp.Value.Username);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"{nameof(playersUsername)} field in {nameof(CreateEOGJson)} already has the steamId {kvp.Value.SteamId}. ({kvp.Key} {kvp.Value.Username})\n{ex}", ServerConfig);
+                }
+            }
 
             Dictionary<string, (string, int)> sogDict = new Dictionary<string, (string, int)>();
             foreach (var kvp in _sog)
