@@ -42,8 +42,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             if (_isFaceOffActive) {
                 // Start countdown to freeze players before puck drop
-                if (Ruleset.ServerConfig.Faceoff.FreezePlayersBeforeDrop)
-                    _freezeStartTime = Time.time;
+                _freezeStartTime = Time.time;
 
                 if (oldGameState.Phase == GamePhase.Play || oldGameState.Phase == GamePhase.Intermission) { // Fix for tether since B312 doesn't respawn players in these cases.
                     foreach (Player player in PlayerManager.Instance.GetSpawnedPlayers()) {

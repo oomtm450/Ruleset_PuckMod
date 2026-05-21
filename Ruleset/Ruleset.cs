@@ -3622,12 +3622,14 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     EventManager.AddEventListener("Event_Everyone_OnPlayerBodySpawned", Event_Everyone_OnPlayerBodySpawned);
 
-                    if (ServerConfig.Faceoff.EnableViolations) {
+                    if (ServerConfig.Faceoff.FreezePlayersBeforeDrop) {
                         // Create player unfreezer/tether system
                         GameObject playerUnfreezerObj = new GameObject("FaceOffPlayerUnfreezer");
                         _playerUnfreezer = playerUnfreezerObj.AddComponent<FaceOffPlayerUnfreezer>();
                         UnityEngine.Object.DontDestroyOnLoad(playerUnfreezerObj);
+                    }
 
+                    if (ServerConfig.Faceoff.EnableViolations) {
                         // Create puck validator
                         GameObject puckValidatorObj = new GameObject("FaceOffPuckValidator");
                         _puckValidator = puckValidatorObj.AddComponent<FaceOffPuckValidator>();
