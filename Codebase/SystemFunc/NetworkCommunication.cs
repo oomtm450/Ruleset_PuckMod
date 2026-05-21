@@ -57,8 +57,8 @@ namespace Codebase {
                 int size = Encoding.UTF8.GetByteCount(dataName) + sizeof(ulong) + data.Length;
 
                 FastBufferWriter writer = new FastBufferWriter(size, Allocator.TempJob);
-                writer.WriteValue(dataName);
-                writer.WriteBytes(data);
+                writer.WriteValue(dataName); // TODO : Test WriteValueSafe.
+                writer.WriteBytes(data); // TODO : Test WriteBytesSafe.
 
                 NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage(listener, clientId, writer, networkDelivery);
 
@@ -97,8 +97,8 @@ namespace Codebase {
                 int size = Encoding.UTF8.GetByteCount(dataName) + sizeof(ulong) + data.Length;
 
                 FastBufferWriter writer = new FastBufferWriter(size, Allocator.TempJob);
-                writer.WriteValue(dataName);
-                writer.WriteBytes(data);
+                writer.WriteValue(dataName); // TODO : Test WriteValueSafe.
+                writer.WriteBytes(data); // TODO : Test WriteBytesSafe.
 
                 NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll(listener, writer, networkDelivery);
 
@@ -128,7 +128,7 @@ namespace Codebase {
                 int totalLength = length + sizeof(ulong) + Encoding.UTF8.GetByteCount(dataName);
                 byte[] data = new byte[length];
                 for (int i = 0; i < length; i++)
-                    reader.ReadByte(out data[i]);
+                    reader.ReadByte(out data[i]); // TODO : Test ReadByteSafe.
 
                 string dataStr = Encoding.UTF8.GetString(data).Trim();
 
