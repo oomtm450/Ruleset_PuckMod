@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.2.2DEV4";
+        private static readonly string MOD_VERSION = "0.2.2";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -394,12 +394,10 @@ namespace oomtm450PuckMod_Sounds {
                         _hasRegisteredWithNamedMessageHandler = true;
 
                         DateTime now = DateTime.UtcNow;
-                        if (_lastDateTimeAskStartupData != DateTime.MinValue && _lastDateTimeAskStartupData + TimeSpan.FromSeconds(5) < now && _askServerForStartupDataCount++ < 6) {
+                        if (_lastDateTimeAskStartupData + TimeSpan.FromSeconds(5) < now && _askServerForStartupDataCount++ < 12) {
                             _lastDateTimeAskStartupData = now;
                             NetworkCommunication.SendData(Constants.ASK_SERVER_FOR_STARTUP_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
-                        else if (_lastDateTimeAskStartupData == DateTime.MinValue)
-                            _lastDateTimeAskStartupData = now;
                     }
                     else if (_askForModOutOfDateWarning) {
                         _askForModOutOfDateWarning = false;
