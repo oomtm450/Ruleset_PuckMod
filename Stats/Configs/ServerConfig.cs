@@ -13,7 +13,20 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// <summary>
         /// Const string, name used when sending the config data to the client.
         /// </summary>
+        [JsonIgnore]
         public const string CONFIG_DATA_NAME = Constants.MOD_NAME + "_config";
+
+        /// <summary>
+        /// String, full path for the config folder.
+        /// </summary>
+        [JsonIgnore]
+        private static readonly string CONFIG_FOLDER_PATH = Path.Combine(Path.GetFullPath("."), "config");
+
+        /// <summary>
+        /// String, full path for the config file.
+        /// </summary>
+        [JsonIgnore]
+        private static readonly string CONFIG_PATH = Path.Combine(CONFIG_FOLDER_PATH, Constants.MOD_NAME + "_serverconfig.json");
         #endregion
 
         #region Properties
@@ -45,17 +58,17 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; set; } = 91;
+        public int MaxTippedMilliseconds { get; set; } = 67;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; set; } = 450;
+        public int MinPossessionMilliseconds { get; set; } = 350;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; set; } = 1000;
+        public int MaxPossessionMilliseconds { get; set; } = 1250;
 
         /// <summary>
         /// Int, number of milliseconds for a change of possession to the other team be considered a turnover.
@@ -82,7 +95,7 @@ namespace oomtm450PuckMod_Stats.Configs {
             ServerConfig newConfig = new ServerConfig();
 
             //if (LogInfo == _oldConfig.LogInfo)
-                //LogInfo = newConfig.LogInfo;
+            //LogInfo = newConfig.LogInfo;
 
             if (GoalieRadius == _oldConfig.GoalieRadius)
                 GoalieRadius = newConfig.GoalieRadius;
@@ -132,10 +145,11 @@ namespace oomtm450PuckMod_Stats.Configs {
             ServerConfig config = new ServerConfig();
 
             try {
-                string rootPath = Path.GetFullPath(".");
-                string configPath = Path.Combine(rootPath, Constants.MOD_NAME + "_serverconfig.json");
-                if (File.Exists(configPath)) {
-                    string configFileContent = File.ReadAllText(configPath);
+                if (!Directory.Exists(CONFIG_FOLDER_PATH))
+                    Directory.CreateDirectory(CONFIG_FOLDER_PATH);
+
+                if (File.Exists(CONFIG_PATH)) {
+                    string configFileContent = File.ReadAllText(CONFIG_PATH);
                     config = SetConfig(configFileContent);
                     Logging.Log($"Server config read.", config, true);
                 }
@@ -143,7 +157,7 @@ namespace oomtm450PuckMod_Stats.Configs {
                 config.UpdateDefaultValues(new OldServerConfig());
 
                 try {
-                    File.WriteAllText(configPath, config.ToString());
+                    File.WriteAllText(CONFIG_PATH, config.ToString());
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}", config);

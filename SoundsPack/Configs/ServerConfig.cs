@@ -9,6 +9,20 @@ namespace oomtm450PuckMod_SoundsPack.Configs {
     /// Class containing the configuration from oomtm450_sounds_serverconfig.json used for this mod.
     /// </summary>
     public class ServerConfig : IConfig, ISubConfig {
+        #region Constants
+        /// <summary>
+        /// String, full path for the config folder.
+        /// </summary>
+        [JsonIgnore]
+        private static readonly string CONFIG_FOLDER_PATH = Path.Combine(Path.GetFullPath("."), "config");
+
+        /// <summary>
+        /// String, full path for the config file.
+        /// </summary>
+        [JsonIgnore]
+        private static readonly string CONFIG_PATH = Path.Combine(CONFIG_FOLDER_PATH, Constants.MOD_NAME + "_serverconfig.json");
+        #endregion
+
         #region Properties
         /// <summary>
         /// Bool, true if the info logs must be printed.
@@ -66,10 +80,11 @@ namespace oomtm450PuckMod_SoundsPack.Configs {
             };
 
             try {
-                string rootPath = Path.GetFullPath(".");
-                string configPath = Path.Combine(rootPath, SoundsPack.ModName + "_serverconfig.json");
-                if (File.Exists(configPath)) {
-                    string configFileContent = File.ReadAllText(configPath);
+                if (!Directory.Exists(CONFIG_FOLDER_PATH))
+                    Directory.CreateDirectory(CONFIG_FOLDER_PATH);
+
+                if (File.Exists(CONFIG_PATH)) {
+                    string configFileContent = File.ReadAllText(CONFIG_PATH);
                     config = SetConfig(configFileContent);
                     config.ModName = SoundsPack.ModName;
                     Logging.Log($"Server config read.", config, true);
@@ -78,7 +93,7 @@ namespace oomtm450PuckMod_SoundsPack.Configs {
                 config.UpdateDefaultValues(new OldServerConfig());
 
                 try {
-                    File.WriteAllText(configPath, config.ToString());
+                    File.WriteAllText(CONFIG_PATH, config.ToString());
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}", config);

@@ -46,7 +46,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; } = 70; // TODO : Change after release.
+        public int MaxTippedMilliseconds { get; } = 68; // TODO : Change after release.
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
@@ -56,12 +56,22 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; } = 900;
+        public int MaxPossessionMilliseconds { get; } = 1000; // TODO : Change after release.
 
         /// <summary>
         /// Bool, authorize ref mode to be voted or activated by an admin.
         /// </summary>
         public bool RefMode { get; } = true;
+
+        /// <summary>
+        /// Float, default standing player height.
+        /// </summary>
+        public float DefaultPlayerHeight { get; } = 0.0338f; // TODO : Check in new Puck build.
+
+        /// <summary>
+        /// Bool, true the mod has to log all phase changes and stoppages.
+        /// </summary>
+        public bool LogPhaseChangeAndStoppage { get; } = true;
         #endregion
 
         #region Methods/Functions
@@ -156,7 +166,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, embellishment can be called after this number of milliseconds after the player gets up.
         /// </summary>
-        public int EmbellishmentMillisecondsThreshold { get; } = 3500; // TODO : Change after release.
+        public int EmbellishmentMillisecondsThreshold { get; } = 3250;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -376,12 +386,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool UseCustomFaceoff { get; } = true;
 
         /// <summary>
-        /// Bool, the game rounds down the time remaining on every faceoff.
-        /// This readds 1 second on every faceoff so the game doesn't end too quickly.
-        /// </summary>
-        public bool ReAdd1SecondAfterFaceoff { get; } = true;
-
-        /// <summary>
         /// Bool, true if the height of the puck drop on faceoffs shouldn't be modified.
         /// </summary>
         public bool UseDefaultPuckDropHeight { get; } = false;
@@ -449,6 +453,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float GoalieMaxBackward { get; } = 2f;    // Backward wall
         public float GoalieMaxLeft { get; } = 2f;
         public float GoalieMaxRight { get; } = 2f;
+
+        public bool ResetPlayersOnFaceoff { get; } = true;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.

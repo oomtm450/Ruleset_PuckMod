@@ -14,7 +14,20 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Const string, name used when sending the config data to the client.
         /// </summary>
+        [JsonIgnore]
         public const string CONFIG_DATA_NAME = Constants.MOD_NAME + "_config";
+
+        /// <summary>
+        /// String, full path for the config folder.
+        /// </summary>
+        [JsonIgnore]
+        private static readonly string CONFIG_FOLDER_PATH = Path.Combine(Path.GetFullPath("."), "config");
+
+        /// <summary>
+        /// String, full path for the config file.
+        /// </summary>
+        [JsonIgnore]
+        private static readonly string CONFIG_PATH = Path.Combine(CONFIG_FOLDER_PATH, Constants.MOD_NAME + "_serverconfig.json");
         #endregion
 
         #region Properties
@@ -67,7 +80,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; set; } = 68;
+        public int MaxTippedMilliseconds { get; set; } = 67;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
@@ -77,12 +90,22 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; set; } = 1000;
+        public int MaxPossessionMilliseconds { get; set; } = 1250;
 
         /// <summary>
         /// Bool, authorize ref mode to be voted or activated by an admin.
         /// </summary>
         public bool RefMode { get; set; } = true;
+
+        /// <summary>
+        /// Float, default standing player height.
+        /// </summary>
+        public float DefaultPlayerHeight { get; set; } = 0.0338f; // TODO : Check in new Puck build.
+
+        /// <summary>
+        /// Bool, true the mod has to log all phase changes and stoppages.
+        /// </summary>
+        public bool LogPhaseChangeAndStoppage { get; set; } = true;
         #endregion
 
         #region Constructors
@@ -111,6 +134,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             MaxPossessionMilliseconds = serverConfig.MaxPossessionMilliseconds;
 
             RefMode = serverConfig.RefMode;
+
+            DefaultPlayerHeight = serverConfig.DefaultPlayerHeight;
+
+            LogPhaseChangeAndStoppage = serverConfig.LogPhaseChangeAndStoppage;
         }
         #endregion
 
@@ -124,7 +151,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 throw new ArgumentException($"oldConfig has to be typeof {nameof(OldServerConfig)}.", nameof(oldConfig));
 
             OldServerConfig _oldConfig = oldConfig as OldServerConfig;
-            ServerConfig newConfig = new ServerConfig();
+            ServerConfig newConfig = new Configs.ServerConfig();
 
             //if (LogInfo == _oldConfig.LogInfo)
                 //LogInfo = newConfig.LogInfo;
@@ -140,6 +167,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (RefMode == _oldConfig.RefMode)
                 RefMode = newConfig.RefMode;
+
+            if (DefaultPlayerHeight == _oldConfig.DefaultPlayerHeight)
+                DefaultPlayerHeight = newConfig.DefaultPlayerHeight;
+
+            if (LogPhaseChangeAndStoppage == _oldConfig.LogPhaseChangeAndStoppage)
+                LogPhaseChangeAndStoppage = newConfig.LogPhaseChangeAndStoppage;
 
             Offside.UpdateDefaultValues(_oldConfig.Offside);
             Icing.UpdateDefaultValues(_oldConfig.Icing);
@@ -172,13 +205,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <returns>ServerConfig, parsed config.</returns>
         internal static ServerConfig ReadConfig() {
-            ServerConfig config = new ServerConfig();
+            ServerConfig config = new Configs.ServerConfig();
 
             try {
-                string rootPath = Path.GetFullPath(".");
-                string configPath = Path.Combine(rootPath, Constants.MOD_NAME + "_serverconfig.json");
-                if (File.Exists(configPath)) {
-                    string configFileContent = File.ReadAllText(configPath);
+                if (!Directory.Exists(CONFIG_FOLDER_PATH))
+                    Directory.CreateDirectory(CONFIG_FOLDER_PATH);
+
+                if (File.Exists(CONFIG_PATH)) {
+                    string configFileContent = File.ReadAllText(CONFIG_PATH);
                     config = SetConfig(configFileContent);
                     Logging.Log($"Server config read.", config, true);
                 }
@@ -186,7 +220,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 config.UpdateDefaultValues(new OldServerConfig());
 
                 try {
-                    File.WriteAllText(configPath, config.ToString());
+                    File.WriteAllText(CONFIG_PATH, config.ToString());
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}", config);
@@ -195,7 +229,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 Logging.Log($"Wrote server config : {config}", config, true);
 
                 if (config.UseDefaultNumericValues) {
-                    ServerConfig defaultConfig = new ServerConfig {
+                    ServerConfig defaultConfig = new Configs.ServerConfig {
                         LogInfo = config.LogInfo,
                         UseDefaultNumericValues = config.UseDefaultNumericValues,
                         RefMode = config.RefMode,
@@ -226,10 +260,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                         Faceoff = new FaceoffConfig {
                             EnableViolations = config.Faceoff.EnableViolations,
                             FreezePlayersBeforeDrop = config.Faceoff.FreezePlayersBeforeDrop,
-                            ReAdd1SecondAfterFaceoff = config.Faceoff.ReAdd1SecondAfterFaceoff,
                             UseCustomFaceoff = config.Faceoff.UseCustomFaceoff,
                             UseDefaultPuckDropHeight = config.Faceoff.UseDefaultPuckDropHeight,
+                            ResetPlayersOnFaceoff = config.Faceoff.ResetPlayersOnFaceoff,
                         },
+                        LogPhaseChangeAndStoppage = config.LogPhaseChangeAndStoppage,
                     };
 
                     config = defaultConfig;
@@ -830,12 +865,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool UseCustomFaceoff { get; set; } = true;
 
         /// <summary>
-        /// Bool, the game rounds down the time remaining on every faceoff.
-        /// This readds 1 second on every faceoff so the game doesn't end too quickly.
-        /// </summary>
-        public bool ReAdd1SecondAfterFaceoff { get; set; } = true;
-
-        /// <summary>
         /// Bool, true if the height of the puck drop on faceoffs shouldn't be modified.
         /// </summary>
         public bool UseDefaultPuckDropHeight { get; set; } = false;
@@ -878,7 +907,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, number of seconds to freeze players before faceoff ends.
         /// </summary>
-        public float FreezeBeforeDropTime { get; set; } = 3f;
+        public float FreezeBeforeDropTime { get; set; } = 2f;
 
         // Center position settings
         public float CenterMaxForward { get; set; } = 0;      // Centers can't move forward at all
@@ -904,6 +933,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float GoalieMaxLeft { get; set; } = 2f;
         public float GoalieMaxRight { get; set; } = 2f;
 
+        /// <summary>
+        /// Bool, reset some values on faceoff, like stamina.
+        /// </summary>
+        public bool ResetPlayersOnFaceoff { get; set; } = true;
+
         #region Constructors
         /// <summary>
         /// Default constructor of ServerConfig.
@@ -916,7 +950,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <param name="faceoffConfig">FaceoffConfig, config to copy.</param>
         public FaceoffConfig(FaceoffConfig faceoffConfig) {
             UseCustomFaceoff = faceoffConfig.UseCustomFaceoff;
-            ReAdd1SecondAfterFaceoff = faceoffConfig.ReAdd1SecondAfterFaceoff;
             UseDefaultPuckDropHeight = faceoffConfig.UseDefaultPuckDropHeight;
             PuckDropHeight = faceoffConfig.PuckDropHeight;
 
@@ -947,6 +980,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             GoalieMaxBackward = faceoffConfig.GoalieMaxBackward;
             GoalieMaxLeft = faceoffConfig.GoalieMaxLeft;
             GoalieMaxRight = faceoffConfig.GoalieMaxRight;
+
+            ResetPlayersOnFaceoff = faceoffConfig.ResetPlayersOnFaceoff;
         }
         #endregion
 
@@ -963,9 +998,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (UseCustomFaceoff == _oldConfig.UseCustomFaceoff)
                 UseCustomFaceoff = newConfig.UseCustomFaceoff;
-
-            if (ReAdd1SecondAfterFaceoff == _oldConfig.ReAdd1SecondAfterFaceoff)
-                ReAdd1SecondAfterFaceoff = newConfig.ReAdd1SecondAfterFaceoff;
 
             if (UseDefaultPuckDropHeight == _oldConfig.UseDefaultPuckDropHeight)
                 UseDefaultPuckDropHeight = newConfig.UseDefaultPuckDropHeight;
@@ -1020,6 +1052,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 GoalieMaxLeft = newConfig.GoalieMaxLeft;
             if (GoalieMaxRight == _oldConfig.GoalieMaxRight)
                 GoalieMaxRight = newConfig.GoalieMaxRight;
+
+            if (ResetPlayersOnFaceoff == _oldConfig.ResetPlayersOnFaceoff)
+                ResetPlayersOnFaceoff = newConfig.ResetPlayersOnFaceoff;
         }
     }
 }

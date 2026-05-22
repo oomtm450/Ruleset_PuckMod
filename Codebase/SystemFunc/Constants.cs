@@ -3,7 +3,7 @@
         /// <summary>
         /// Const string, added current Puck Application.version to check for mod compatibility.
         /// </summary>
-        internal const string CURRENT_APPLICATION_VERSION = "202";
+        internal const string CURRENT_APPLICATION_VERSION = "323";
 
         /// <summary>
         /// Const string, prefix of all the mod's names.
@@ -48,7 +48,7 @@
         /// <summary>
         /// Const float, radius of a player.
         /// </summary>
-        internal const float PLAYER_RADIUS = 0.261f;
+        internal const float PLAYER_RADIUS = 0.2605f;
 
         /// <summary>
         /// Const float, height of the net's crossbar.

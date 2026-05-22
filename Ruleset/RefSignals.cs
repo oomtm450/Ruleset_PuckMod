@@ -141,15 +141,15 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        internal void ShowSignal(string signal) {
+        internal void ShowSignal(string signal) { // TODO : Remove PlaySelectSound when this is enabled.
             _images[signal].enabled = true;
         }
 
-        internal void StopSignal(string signal) {
+        internal void StopSignal(string signal) { // TODO : Remove PlaySelectSound when this is disabled.
             _images[signal].enabled = false;
         }
 
-        internal void StopAllSignals() {
+        internal void StopAllSignals() { // TODO : Remove PlaySelectSound when this is disabled.
             foreach (Image image in _images.Values)
                 image.enabled = false;
         }
