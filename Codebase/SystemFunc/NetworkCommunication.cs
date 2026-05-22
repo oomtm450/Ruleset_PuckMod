@@ -54,11 +54,11 @@ namespace Codebase {
             try {
                 byte[] data = Encoding.UTF8.GetBytes(dataStr);
 
-                int size = Encoding.UTF8.GetByteCount(dataName) + sizeof(ulong) + data.Length;
+                int size = FastBufferWriter.GetWriteSize(dataName) + sizeof(ulong) + FastBufferWriter.GetWriteSize(data);
 
                 FastBufferWriter writer = new FastBufferWriter(size, Allocator.TempJob);
-                writer.WriteValue(dataName); // TODO : Test WriteValueSafe.
-                writer.WriteBytes(data); // TODO : Test WriteBytesSafe.
+                writer.WriteValueSafe(dataName);
+                writer.WriteBytesSafe(data);
 
                 NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage(listener, clientId, writer, networkDelivery);
 
@@ -94,11 +94,11 @@ namespace Codebase {
 
                 byte[] data = Encoding.UTF8.GetBytes(dataStr);
 
-                int size = Encoding.UTF8.GetByteCount(dataName) + sizeof(ulong) + data.Length;
+                int size = FastBufferWriter.GetWriteSize(dataName) + sizeof(ulong) + FastBufferWriter.GetWriteSize(data);
 
                 FastBufferWriter writer = new FastBufferWriter(size, Allocator.TempJob);
-                writer.WriteValue(dataName); // TODO : Test WriteValueSafe.
-                writer.WriteBytes(data); // TODO : Test WriteBytesSafe.
+                writer.WriteValueSafe(dataName);
+                writer.WriteBytesSafe(data);
 
                 NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll(listener, writer, networkDelivery);
 
@@ -125,10 +125,10 @@ namespace Codebase {
                 reader.ReadValue(out dataName);
 
                 int length = reader.Length - reader.Position;
-                int totalLength = length + sizeof(ulong) + Encoding.UTF8.GetByteCount(dataName);
+                int totalLength = length + sizeof(ulong) + FastBufferWriter.GetWriteSize(dataName);
                 byte[] data = new byte[length];
                 for (int i = 0; i < length; i++)
-                    reader.ReadByte(out data[i]); // TODO : Test ReadByteSafe.
+                    reader.ReadByteSafe(out data[i]);
 
                 string dataStr = Encoding.UTF8.GetString(data).Trim();
 
