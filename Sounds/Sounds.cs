@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.2.2a";
+        private static readonly string MOD_VERSION = "0.2.3";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -26,6 +26,7 @@ namespace oomtm450PuckMod_Sounds {
             "0.2.0",
             "0.2.1",
             "0.2.2",
+            "0.2.2a",
         });
 
         /// <summary>
@@ -223,16 +224,16 @@ namespace oomtm450PuckMod_Sounds {
         }
 
         /// <summary>
-        /// Class that patches the OnGameStarted event from StandardGameMode.
+        /// Class that patches the OnPreGameTimedOut event from StandardGameMode.
         /// </summary>
-        [HarmonyPatch(typeof(StandardGameMode<StandardGameModeConfig>), "OnGameStarted")]
-        public class StandardGameMode_OnGameStarted_Patch {
-            [HarmonyPostfix]
-            public static void Postfix() {
+        [HarmonyPatch(typeof(StandardGameMode<StandardGameModeConfig>), "OnPreGameTimedOut")]
+        public class StandardGameMode_OnPreGameTimedOut_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix() {
                 try {
                     // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer())
-                        return;
+                        return true;
 
                     // Reset music.
                     NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
@@ -244,8 +245,10 @@ namespace oomtm450PuckMod_Sounds {
                     _sentOutOfDateMessage.Clear();
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(StandardGameMode_OnGameStarted_Patch)} Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(StandardGameMode_OnPreGameTimedOut_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
+
+                return true;
             }
         }
 

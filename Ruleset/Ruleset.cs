@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.4a";
+        private static readonly string MOD_VERSION = "1.0.5";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -73,6 +73,7 @@ namespace oomtm450PuckMod_Ruleset {
             "1.0.2",
             "1.0.3",
             "1.0.4",
+            "1.0.4a",
         });
 
         /// <summary>
@@ -1213,10 +1214,10 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /// <summary>
-        /// Class that patches the OnGameStarted event from StandardGameMode.
+        /// Class that patches the OnPreGameTimedOut event from StandardGameMode.
         /// </summary>
-        [HarmonyPatch(typeof(StandardGameMode<StandardGameModeConfig>), "OnGameStarted")]
-        public class StandardGameMode_OnGameStarted_Patch {
+        [HarmonyPatch(typeof(StandardGameMode<StandardGameModeConfig>), "OnPreGameTimedOut")]
+        public class StandardGameMode_OnPreGameTimedOut_Patch {
             [HarmonyPrefix]
             public static bool Prefix(StandardGameMode<StandardGameModeConfig> __instance) {
                 try {
@@ -1229,7 +1230,7 @@ namespace oomtm450PuckMod_Ruleset {
                     _faceoffDuration = __instance.Config.phaseDurationMap[GamePhase.FaceOff];
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(StandardGameMode_OnGameStarted_Patch)} Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(StandardGameMode_OnPreGameTimedOut_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;

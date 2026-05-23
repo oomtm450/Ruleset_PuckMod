@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.3a";
+        private static readonly string MOD_VERSION = "0.7.4";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -41,6 +41,7 @@ namespace oomtm450PuckMod_Stats {
             "0.7.1",
             "0.7.2",
             "0.7.3",
+            "0.7.4",
         });
 
         /// <summary>
@@ -482,7 +483,7 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix(GameState oldGameState, GameState newGameState) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || oldGameState.Phase == newGameState.Phase || newGameState.Phase != GamePhase.PreGame)
+                    if (!ServerFunc.IsDedicatedServer() || oldGameState.Phase == newGameState.Phase || (newGameState.Phase != GamePhase.PreGame && newGameState.Phase != GamePhase.Warmup))
                         return;
 
                     // Reset s%.
@@ -580,20 +581,20 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Class that patches the OnGameStateChanged event from BaseGameMode.
         /// </summary>
-        [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "OnVoteSuccess")]
-        public class BaseGameMode_OnVoteSuccess_Patch {
+        [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "OnVoteRemoved")]
+        public class BaseGameMode_OnVoteRemoved_Patch {
             [HarmonyPrefix]
             public static void Prefix(Vote vote) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer())
+                    if (!ServerFunc.IsDedicatedServer() || !vote.Passed)
                         return;
 
-                    if (GameManager.Instance.Period >= 3 && vote.Type == VoteType.Start || vote.Type == VoteType.Warmup)
+                    if (GameManager.Instance.Period >= 3 && (vote.Name == "start" || vote.Name == "warmup"))
                         CreateEOGJson(GameManager.Instance.BlueScore, GameManager.Instance.RedScore);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(BaseGameMode_OnVoteSuccess_Patch)} Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(BaseGameMode_OnVoteRemoved_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
             }
         }
