@@ -2078,6 +2078,36 @@ namespace oomtm450PuckMod_Ruleset {
                 return true;
             }
         }
+
+        /// <summary>
+        /// Class that patches the PlaySelectSound method from UIManager.
+        /// </summary>
+        [HarmonyPatch(typeof(UIManager), nameof(UIManager.PlaySelectSound))]
+        public class UIManager_PlaySelectSound_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix() {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer() || _refSignalsBlueTeam == null || _refSignalsRedTeam == null)
+                        return true;
+
+                    if (_refSignalsBlueTeam.WasJustShownOrHidden) {
+                        _refSignalsBlueTeam.WasJustShownOrHidden = false;
+                        return false;
+                    }
+
+                    if (_refSignalsRedTeam.WasJustShownOrHidden) {
+                        _refSignalsRedTeam.WasJustShownOrHidden = false;
+                        return false;
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(UIManager_PlaySelectSound_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
         #endregion
 
         #region Methods/Functions
