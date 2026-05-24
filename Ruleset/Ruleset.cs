@@ -2080,10 +2080,10 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /// <summary>
-        /// Class that patches the PlaySelectSound method from UIManager.
+        /// Class that patches the PlayNotificationSound method from UIManager.
         /// </summary>
-        [HarmonyPatch(typeof(UIManager), nameof(UIManager.PlaySelectSound))]
-        public class UIManager_PlaySelectSound_Patch {
+        [HarmonyPatch(typeof(UIManager), nameof(UIManager.PlayNotificationSound))]
+        public class UIManager_PlayNotificationSound_Patch {
             [HarmonyPrefix]
             public static bool Prefix() {
                 try {
@@ -2102,7 +2102,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(UIManager_PlaySelectSound_Patch)} Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(UIManager_PlayNotificationSound_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
