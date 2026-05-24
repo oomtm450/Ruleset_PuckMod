@@ -50,6 +50,11 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// Bool, true if Stats mod has to log all stats event, like passes and shots.
         /// </summary>
         public bool LogStats { get; } = false;
+
+        /// <summary>
+        /// Float, maximum height for the puck to be touched on faceoff.
+        /// </summary>
+        public float PuckIceContactHeight { get; } = 0.205f;
         #endregion
 
         #region Methods/Functions

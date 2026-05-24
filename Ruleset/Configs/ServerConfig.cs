@@ -361,6 +361,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, embellishment can be called after this number of milliseconds after the player gets up.
         /// </summary>
         public int EmbellishmentMillisecondsThreshold { get; set; } = 3250;
+        /// <summary>
+        /// Int, chance for an embellishment to be called. (2 is equal to 50%. 1 / 50 * 100 = 2)
+        /// </summary>
+        public int EmbellishmentChancePercInverse { get; set; } = 2;
         #endregion
 
         #region Constructors
@@ -469,6 +473,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (EmbellishmentMillisecondsThreshold == _oldConfig.EmbellishmentMillisecondsThreshold)
                 EmbellishmentMillisecondsThreshold = newConfig.EmbellishmentMillisecondsThreshold;
+
+            if (EmbellishmentChancePercInverse == _oldConfig.EmbellishmentChancePercInverse)
+                EmbellishmentChancePercInverse = newConfig.EmbellishmentChancePercInverse;
         }
     }
 

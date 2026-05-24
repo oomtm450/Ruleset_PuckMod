@@ -993,7 +993,7 @@ namespace oomtm450PuckMod_Stats {
                     _lastTeamOnPuckTipIncluded = player.Team;
 
                     if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                        __instance.Rigidbody.transform.position.y, 0.205f)) { // TODO : Config 0.205f.
+                        __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight)) {
                         //_lastTeamOnPuck = player.Team;
                         _lastPlayerOnPuckSteamId[player.Team] = (playerSteamId, DateTime.UtcNow);
                     }
@@ -1039,7 +1039,7 @@ namespace oomtm450PuckMod_Stats {
                     _lastTeamOnPuckTipIncluded = stick.Player.Team;
 
                     if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                        __instance.Rigidbody.transform.position.y, 0.205f)) { // TODO : Config 0.205f.
+                        __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight)) {
                         //_lastTeamOnPuck = stick.Player.Team;
                         _lastPlayerOnPuckSteamId[stick.Player.Team] = (playerSteamId, DateTime.UtcNow);
                     }
@@ -1854,7 +1854,7 @@ namespace oomtm450PuckMod_Stats {
                 switch (dataName) {
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
                         _serverHasResponded = true;
-                        if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
+                        if (MOD_VERSION == dataStr)
                             break;
                         else if (OLD_MOD_VERSIONS.Contains(dataStr)) {
                             _addServerModVersionOutOfDateMessage = true;
