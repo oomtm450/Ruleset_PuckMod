@@ -590,7 +590,7 @@ namespace oomtm450PuckMod_Stats {
                     if (!ServerFunc.IsDedicatedServer() || !vote.Passed)
                         return;
 
-                    if (GameManager.Instance.Period >= 3 && (vote.Name == "start" || vote.Name == "warmup"))
+                    if (GameManager.Instance.Period >= 3 && (vote.Name == "start" || vote.Name == "warmup" || vote.Name == "forfeit"))
                         CreateEOGJson(GameManager.Instance.BlueScore, GameManager.Instance.RedScore);
                 }
                 catch (Exception ex) {
