@@ -45,6 +45,11 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// Int, number of milliseconds for a change of possession to the other team be considered a turnover.
         /// </summary>
         public int TurnoverThresholdMilliseconds { get; } = 500;
+
+        /// <summary>
+        /// Bool, true if Stats mod has to log all stats event, like passes and shots.
+        /// </summary>
+        public bool LogStats { get; } = false;
         #endregion
 
         #region Methods/Functions

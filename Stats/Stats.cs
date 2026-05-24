@@ -2246,7 +2246,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="saves">Int, number of saves.</param>
         /// <param name="sog">Int, number of shots on goal on the goalie.</param>
         private static void LogSavePerc(string goaliePlayerSteamId, int saves, int sog) {
-            Logging.Log($"playerSteamId:{goaliePlayerSteamId},saveperc:{GetGoalieSavePerc(saves, sog)},saves:{saves},sog:{sog}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{goaliePlayerSteamId},saveperc:{GetGoalieSavePerc(saves, sog)},saves:{saves},sog:{sog}", ServerConfig);
         }
 
         /// <summary>
@@ -2255,7 +2256,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="stickSaves">Int, number of stick saves.</param>
         private static void LogStickSave(string playerSteamId, int stickSaves) {
-            Logging.Log($"playerSteamId:{playerSteamId},sticksv:{stickSaves}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},sticksv:{stickSaves}", ServerConfig);
         }
 
         /// <summary>
@@ -2264,7 +2266,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="sog">Int, number of shots on goal.</param>
         private static void LogSOG(string playerSteamId, int sog) {
-            Logging.Log($"playerSteamId:{playerSteamId},sog:{sog}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},sog:{sog}", ServerConfig);
         }
 
         /// <summary>
@@ -2273,7 +2276,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="block">Int, number of blocked shots.</param>
         private static void LogBlock(string playerSteamId, int block) {
-            Logging.Log($"playerSteamId:{playerSteamId},block:{block}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},block:{block}", ServerConfig);
         }
 
         /// <summary>
@@ -2282,7 +2286,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="hit">Int, number of hits.</param>
         private static void LogHit(string playerSteamId, int hit) {
-            Logging.Log($"playerSteamId:{playerSteamId},hit:{hit}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},hit:{hit}", ServerConfig);
         }
 
         /// <summary>
@@ -2291,7 +2296,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="takeaway">Int, number of takeaways.</param>
         private static void LogTakeaways(string playerSteamId, int takeaway) {
-            Logging.Log($"playerSteamId:{playerSteamId},takeaway:{takeaway}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},takeaway:{takeaway}", ServerConfig);
         }
 
         /// <summary>
@@ -2300,7 +2306,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="turnover">Int, number of turnovers.</param>
         private static void LogTurnovers(string playerSteamId, int turnover) {
-            Logging.Log($"playerSteamId:{playerSteamId},turnover:{turnover}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},turnover:{turnover}", ServerConfig);
         }
 
         /// <summary>
@@ -2309,7 +2316,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="pass">Int, number of passes.</param>
         private static void LogPass(string playerSteamId, int pass) {
-            Logging.Log($"playerSteamId:{playerSteamId},pass:{pass}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},pass:{pass}", ServerConfig);
         }
 
         /// <summary>
@@ -2317,7 +2325,8 @@ namespace oomtm450PuckMod_Stats {
         /// </summary>
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         private static void LogGWG(string playerSteamId) {
-            Logging.Log($"playerSteamId:{playerSteamId},gwg:1", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},gwg:1", ServerConfig);
         }
 
         /// <summary>
@@ -2326,7 +2335,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="starIndex">Int, star number of the player (1 is first star, etc.).</param>
         private static void LogStar(string playerSteamId, int starIndex) {
-            Logging.Log($"playerSteamId:{playerSteamId},star:{starIndex}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},star:{starIndex}", ServerConfig);
         }
 
         /// <summary>
@@ -2335,7 +2345,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="plusminus">Int, +/-.</param>
         private static void LogPlusMinus(string playerSteamId, int plusminus) {
-            Logging.Log($"playerSteamId:{playerSteamId},plusminus:{plusminus}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},plusminus:{plusminus}", ServerConfig);
         }
 
         private static string GetGoalieSavePerc(int saves, int shots) {
