@@ -2108,6 +2108,26 @@ namespace oomtm450PuckMod_Ruleset {
                 return true;
             }
         }
+
+        /// <summary>
+        /// Class that patches the Initialize method from UIHUD.
+        /// </summary>
+        [HarmonyPatch(typeof(UIHUD), nameof(UIHUD.Initialize))]
+        public class UIHUD_Initialize_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(UIHUD __instance, VisualElement rootVisualElement) {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return;
+
+                    AddPenaltiesLabel(__instance, rootVisualElement);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(UIHUD_Initialize_Patch)} Postfix().\n{ex}", ServerConfig);
+                }
+            }
+        }
         #endregion
 
         #region Methods/Functions
@@ -2776,7 +2796,6 @@ namespace oomtm450PuckMod_Ruleset {
                 switch (dataName) {
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
                         _serverHasResponded = true;
-                        AddPenaltiesLabel();
 
                         if (MOD_VERSION == dataStr)
                             break;
@@ -3355,14 +3374,14 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void AddPenaltiesLabel() {
+        private static void AddPenaltiesLabel(UIHUD uiHUD, VisualElement rootVisualElement) {
             try {
                 if (_penaltiesLabelBlue != null)
                     return;
 
-                Label speedLabel = SystemFunc.GetPrivateField<Label>(typeof(UIHUD), UIManager.Instance.Hud, "speedLabel");
+                Label speedLabel = SystemFunc.GetPrivateField<Label>(typeof(UIHUD), uiHUD, "speedLabel");
 
-                VisualElement container = SystemFunc.GetPrivateField<VisualElement>(typeof(UIHUD), UIManager.Instance.Hud, "view");
+                VisualElement container = rootVisualElement.Query<VisualElement>("HUDView");
 
                 _penaltiesLabelBlue = new Label {
                     name = "PenaltiesLabelBlue",
