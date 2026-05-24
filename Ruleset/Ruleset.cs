@@ -2121,7 +2121,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (ServerFunc.IsDedicatedServer())
                         return;
 
-                    AddPenaltiesLabel(__instance, rootVisualElement);
+                    AddPenaltiesLabel(__instance);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(UIHUD_Initialize_Patch)} Postfix().\n{ex}", ServerConfig);
@@ -3374,23 +3374,25 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void AddPenaltiesLabel(UIHUD uiHUD, VisualElement rootVisualElement) {
+        private static void AddPenaltiesLabel(UIHUD uiHUD) {
             try {
                 if (_penaltiesLabelBlue != null)
                     return;
 
                 Label speedLabel = SystemFunc.GetPrivateField<Label>(typeof(UIHUD), uiHUD, "speedLabel");
 
-                VisualElement container = rootVisualElement.Query<VisualElement>("HUDView");
+                VisualElement container = uiHUD.View;
 
                 _penaltiesLabelBlue = new Label {
                     name = "PenaltiesLabelBlue",
+                    visible = true,
                 };
                 SetPenaltiesLabel(_penaltiesLabelBlue, speedLabel, true);
                 container.Add(_penaltiesLabelBlue);
 
                 _penaltiesLabelRed = new Label {
                     name = "PenaltiesLabelRed",
+                    visible = true,
                 };
                 SetPenaltiesLabel(_penaltiesLabelRed, speedLabel, false);
                 container.Add(_penaltiesLabelRed);
