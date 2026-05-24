@@ -3325,14 +3325,14 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void AddPenaltiesLabel() { // TODO : Fix in B312.
+        private static void AddPenaltiesLabel() {
             try {
                 if (_penaltiesLabelBlue != null)
                     return;
 
                 Label speedLabel = SystemFunc.GetPrivateField<Label>(typeof(UIHUD), UIManager.Instance.Hud, "speedLabel");
 
-                VisualElement container = SystemFunc.GetPrivateField<VisualElement>(typeof(UIHUD), UIManager.Instance.Hud, "HUDView");
+                VisualElement container = SystemFunc.GetPrivateField<VisualElement>(typeof(UIHUD), UIManager.Instance.Hud, "view");
 
                 _penaltiesLabelBlue = new Label {
                     name = "PenaltiesLabelBlue",
