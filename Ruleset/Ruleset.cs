@@ -374,6 +374,11 @@ namespace oomtm450PuckMod_Ruleset {
         internal static Configs.ClientConfig ClientConfig { get; set; } = new Configs.ClientConfig();
 
         /// <summary>
+        /// LockList of Penalty, list of penalty timers that have elapsed and need to be removed.
+        /// </summary>
+        internal static LockList<Penalty> PenaltyTimersElapsed { get; } = new LockList<Penalty>();
+
+        /// <summary>
         /// FaceoffSpot, property of _nextFaceoffSpot.
         /// </summary>
         internal static FaceoffSpot NextFaceoffSpot {
@@ -1408,20 +1413,33 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null)
                     return;
 
-                if (SystemChatMessages.Count != 0) {
-                    List<string> systemChatMessages = new List<string>(SystemChatMessages);
-                    SystemChatMessages.Clear();
+                try {
+                    if (SystemChatMessages.Count != 0) {
+                        List<string> systemChatMessages = new List<string>(SystemChatMessages);
+                        SystemChatMessages.Clear();
 
-                    foreach (string message in systemChatMessages)
-                        ChatManager.Instance.Server_BroadcastChatMessage(message);
+                        foreach (string message in systemChatMessages)
+                            ChatManager.Instance.Server_BroadcastChatMessage(message);
+                    }
+
+                    if (DataToSendToAll.Count != 0) {
+                        List<List<string>> dataToSendToAll = new List<List<string>>(DataToSendToAll);
+                        DataToSendToAll.Clear();
+
+                        foreach (List<string> data in dataToSendToAll)
+                            NetworkCommunication.SendDataToAll(data[0], data[1], data[2], ServerConfig);
+                    }
+
+                    if (PenaltyTimersElapsed.Count != 0) {
+                        List<Penalty> penaltyTimersElapsed = new List<Penalty>(PenaltyTimersElapsed);
+                        PenaltyTimersElapsed.Clear();
+
+                        foreach (Penalty penaltyToRemove in penaltyTimersElapsed)
+                            Penalty.PenaltyTimer_Action(penaltyToRemove);
+                    }
                 }
-
-                if (DataToSendToAll.Count != 0) {
-                    List<List<string>> dataToSendToAll = new List<List<string>>(DataToSendToAll);
-                    DataToSendToAll.Clear();
-
-                    foreach (List<string> data in dataToSendToAll)
-                        NetworkCommunication.SendDataToAll(data[0], data[1], data[2], ServerConfig);
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix() 0.\n{ex}", ServerConfig);
                 }
 
                 if (GameManager.Instance.Phase != GamePhase.Play || !Logic)

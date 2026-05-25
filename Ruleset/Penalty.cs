@@ -141,6 +141,8 @@ namespace oomtm450PuckMod_Ruleset {
             foreach (PlayerTeam key in new List<PlayerTeam>(PenaltyBenchPositionIsOccupied.Keys))
                 PenaltyBenchPositionIsOccupied[key] = new LockDictionary<int, bool>(PENALTY_BENCH_POSITION_DEFAULT);
 
+            Ruleset.PenaltyTimersElapsed.Clear();
+
             Ruleset.DataToSendToAll.Add(new List<string> { "removeallpen", "1", Constants.FROM_SERVER_TO_CLIENT, });
         }
 
@@ -586,29 +588,29 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!PenaltyModule.PenalizedPlayers.ContainsKey(SteamId))
                     return;
 
-                Penalty penaltyToRemove = null;
-                // Remove elapsed penalty.
-                foreach (Penalty penalty in PenaltyModule.PenalizedPlayers[SteamId]) {
-                    if (penalty.Timer.TimerEnded()) {
-                        penaltyToRemove = penalty;
-                        break;
-                    }
-                }
+                Ruleset.PenaltyTimersElapsed.Add(this);
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(PenaltyTimer_Elapsed)}.\n{ex}", Ruleset.ServerConfig);
+            }
+        }
 
+        internal static void PenaltyTimer_Action(Penalty penaltyToRemove) {
+            try {
                 if (penaltyToRemove == null)
                     return;
 
-                PenaltyModule.PenalizedPlayers[SteamId].Remove(penaltyToRemove);
+                PenaltyModule.PenalizedPlayers[penaltyToRemove.SteamId].Remove(penaltyToRemove);
 
-                string penaltyOverMsg = $"PENALTY #{PlayerNumber} {PlayerUsername} OVER";
+                string penaltyOverMsg = $"PENALTY #{penaltyToRemove.PlayerNumber} {penaltyToRemove.PlayerUsername} OVER";
                 Ruleset.SystemChatMessages.Add(penaltyOverMsg);
                 Logging.Log(penaltyOverMsg, Ruleset.ServerConfig);
 
                 // Unpenalize player if no more penalties or start the next one.
-                if (PenaltyModule.PenalizedPlayers[SteamId].Count == 0)
-                    PenaltyModule.UnpenalizePlayer(PlayerManager.Instance.GetPlayerBySteamId(SteamId), Team, Position);
+                if (PenaltyModule.PenalizedPlayers[penaltyToRemove.SteamId].Count == 0)
+                    PenaltyModule.UnpenalizePlayer(PlayerManager.Instance.GetPlayerBySteamId(penaltyToRemove.SteamId), penaltyToRemove.Team, penaltyToRemove.Position);
                 else {
-                    Penalty firstPenalty = PenaltyModule.PenalizedPlayers[SteamId].First();
+                    Penalty firstPenalty = PenaltyModule.PenalizedPlayers[penaltyToRemove.SteamId].First();
                     firstPenalty.CurrentPenalty = true;
                 }
 
@@ -617,7 +619,7 @@ namespace oomtm450PuckMod_Ruleset {
                     PenaltyModule.PausePenalties();
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(PenaltyTimer_Elapsed)}.\n{ex}", Ruleset.ServerConfig);
+                Logging.LogError($"Error in {nameof(PenaltyTimer_Action)}.\n{ex}", Ruleset.ServerConfig);
             }
         }
     }
