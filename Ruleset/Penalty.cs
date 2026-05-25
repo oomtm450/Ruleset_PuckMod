@@ -9,7 +9,7 @@ namespace oomtm450PuckMod_Ruleset {
     internal static class PenaltyModule {
         #region Constants
         internal const string GIVE_PENALTY_DATANAME = Constants.MOD_NAME + "pen";
-        internal const string REMOVE_ALL_PENALTIES_DATANAME = Constants.MOD_NAME + "removeallpen";
+        internal const string REMOVE_ALL_PENALTIES_REFMODE_DATANAME = Constants.MOD_NAME + "refremoveallpen";
         internal const string REMOVE_PENALTY_DATANAME = Constants.MOD_NAME + "removepen";
 
         private static readonly Vector3 BLUE_PENALTY_BOX_POSITION = new Vector3(26f, 0.9f, 1.5f); // TODO : Config.
