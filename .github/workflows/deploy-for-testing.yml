@@ -5,12 +5,14 @@ on:
 
 jobs:
   build-and-upload:
-    runs-on: windows-latest   # Fresh GitHub-hosted Windows runner (free tier)
+    runs-on: windows-latest
     if: github.ref_type == 'branch' && startsWith(github.ref_name, 'test')
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1   # Only the latest commit is enough
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -21,7 +23,7 @@ jobs:
       - name: Build entire solution
         run: msbuild oomtm450PuckMod_Ruleset.sln /p:Configuration=Release /p:Platform="Any CPU"
 
-      - name: Prepare workshop content folder (create only if missing)
+      - name: Prepare workshop content folder
         shell: bash
         run: |
           TARGET_DIR="workshop_content/Ruleset"
@@ -38,14 +40,15 @@ jobs:
           cp ./Ruleset/bin/Release/net4.8/oomtm450PuckMod_Ruleset.dll workshop_content/Ruleset/ 2>/dev/null || true
           echo "Copied DLL to workshop folder"
 
-      - name: Create workshop.vdf with PR title as changenote
+      - name: Create workshop.vdf with last commit message as changenote
         shell: bash
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
+          # Get the commit message of the most recent commit (the one that triggered the workflow)
+          COMMIT_MSG=$(git log -1 --format=%s)
           # Escape double quotes and backslashes for VDF format
-          ESCAPED_TITLE=$(echo "$PR_TITLE" | sed 's/\\/\\\\/g; s/"/\\"/g')
+          ESCAPED_MSG=$(echo "$COMMIT_MSG" | sed 's/\\/\\\\/g; s/"/\\"/g')
           # Truncate to 900 characters (Steam Workshop limit)
-          ESCAPED_TITLE=$(echo "$ESCAPED_TITLE" | cut -c1-900)
+          ESCAPED_MSG=$(echo "$ESCAPED_MSG" | cut -c1-900)
           
           cat > workshop.vdf << EOF
           "workshopitem"
@@ -53,10 +56,10 @@ jobs:
             "appid"            "${{ secrets.STEAM_APP_ID }}"
             "publishedfileid"  "${{ secrets.WORKSHOP_ITEM_ID }}"
             "contentfolder"    "./workshop_content"
-            "changenote"       "$ESCAPED_TITLE"
+            "changenote"       "$ESCAPED_MSG"
           }
           EOF
-          echo "Created workshop.vdf with changenote: $PR_TITLE"
+          echo "Created workshop.vdf with changenote: $COMMIT_MSG"
 
       - name: Setup SteamCMD
         uses: RageAgainstThePixel/setup-steamcmd@v1
