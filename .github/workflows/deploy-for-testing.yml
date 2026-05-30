@@ -1,14 +1,13 @@
 name: Build and Upload to Steam Workshop
 
 on:
-  pull_request:
-    branches:
-      - test*            # Matches test, test-build1, test-feature, etc.
+  create:
 
 jobs:
   build-and-upload:
     runs-on: windows-latest   # Fresh GitHub-hosted Windows runner (free tier)
-
+    if: github.ref_type == 'branch' && startsWith(github.ref_name, 'test')
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,10 +16,10 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Restore NuGet packages
-        run: nuget restore YourSolution.sln
+        run: nuget restore oomtm450PuckMod_Ruleset.sln
 
       - name: Build entire solution
-        run: msbuild YourSolution.sln /p:Configuration=Release /p:Platform="Any CPU"
+        run: msbuild oomtm450PuckMod_Ruleset.sln /p:Configuration=Release /p:Platform="Any CPU"
 
       - name: Prepare workshop content folder (create only if missing)
         shell: bash
@@ -37,7 +36,7 @@ jobs:
         shell: bash
         run: |
           cp ./Ruleset/bin/Release/net4.8/oomtm450PuckMod_Ruleset.dll workshop_content/Ruleset/ 2>/dev/null || true
-          echo "Copied DLLs to workshop folder"
+          echo "Copied DLL to workshop folder"
 
       - name: Create workshop.vdf with PR title as changenote
         shell: bash
