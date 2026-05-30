@@ -80,12 +80,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; set; } = 67;
+        public int MaxTippedMilliseconds { get; set; } = 68;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; set; } = 350;
+        public int MinPossessionMilliseconds { get; set; } = 333;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
