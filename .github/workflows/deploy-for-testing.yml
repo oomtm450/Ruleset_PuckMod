@@ -1,0 +1,72 @@
+name: Build and Upload to Steam Workshop
+
+on:
+  pull_request:
+    branches:
+      - test*            # Matches test, test-build1, test-feature, etc.
+
+jobs:
+  build-and-upload:
+    runs-on: windows-latest   # Fresh GitHub-hosted Windows runner (free tier)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore NuGet packages
+        run: nuget restore YourSolution.sln
+
+      - name: Build entire solution
+        run: msbuild YourSolution.sln /p:Configuration=Release /p:Platform="Any CPU"
+
+      - name: Prepare workshop content folder (create only if missing)
+        shell: bash
+        run: |
+          TARGET_DIR="workshop_content/Ruleset"
+          if [ ! -d "$TARGET_DIR" ]; then
+            mkdir -p "$TARGET_DIR"
+            echo "Created $TARGET_DIR"
+          else
+            echo "$TARGET_DIR already exists, using existing folder"
+          fi
+
+      - name: Copy all DLLs from build output to workshop folder
+        shell: bash
+        run: |
+          cp ./Ruleset/bin/Release/net4.8/oomtm450PuckMod_Ruleset.dll workshop_content/Ruleset/ 2>/dev/null || true
+          echo "Copied DLLs to workshop folder"
+
+      - name: Create workshop.vdf with PR title as changenote
+        shell: bash
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          # Escape double quotes and backslashes for VDF format
+          ESCAPED_TITLE=$(echo "$PR_TITLE" | sed 's/\\/\\\\/g; s/"/\\"/g')
+          # Truncate to 900 characters (Steam Workshop limit)
+          ESCAPED_TITLE=$(echo "$ESCAPED_TITLE" | cut -c1-900)
+          
+          cat > workshop.vdf << EOF
+          "workshopitem"
+          {
+            "appid"            "${{ secrets.STEAM_APP_ID }}"
+            "publishedfileid"  "${{ secrets.WORKSHOP_ITEM_ID }}"
+            "contentfolder"    "./workshop_content"
+            "changenote"       "$ESCAPED_TITLE"
+          }
+          EOF
+          echo "Created workshop.vdf with changenote: $PR_TITLE"
+
+      - name: Setup SteamCMD
+        uses: RageAgainstThePixel/setup-steamcmd@v1
+
+      - name: Upload to Steam Workshop
+        uses: RageAgainstThePixel/upload-steam@v1
+        with:
+          username: ${{ secrets.STEAM_USERNAME }}
+          configVdf: ${{ secrets.STEAM_CONFIG_VDF }}
+          app_id: ${{ secrets.STEAM_APP_ID }}
+          workshop_item_id: ${{ secrets.WORKSHOP_ITEM_ID }}
+          content_root: "./workshop_content"
