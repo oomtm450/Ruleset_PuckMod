@@ -47,6 +47,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         #region Properties
         internal List<string> Errors { get; } = new List<string>();
+
+        internal bool WasJustShownOrHidden { get; set; } = false;
         #endregion
 
         #region Methods/Functions
@@ -142,14 +144,17 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal void ShowSignal(string signal) { // TODO : Remove PlaySelectSound when this is enabled.
+            WasJustShownOrHidden = true;
             _images[signal].enabled = true;
         }
 
         internal void StopSignal(string signal) { // TODO : Remove PlaySelectSound when this is disabled.
+            WasJustShownOrHidden = true;
             _images[signal].enabled = false;
         }
 
         internal void StopAllSignals() { // TODO : Remove PlaySelectSound when this is disabled.
+            WasJustShownOrHidden = true;
             foreach (Image image in _images.Values)
                 image.enabled = false;
         }

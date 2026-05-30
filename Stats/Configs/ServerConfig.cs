@@ -76,6 +76,16 @@ namespace oomtm450PuckMod_Stats.Configs {
         public int TurnoverThresholdMilliseconds { get; set; } = 500;
 
         /// <summary>
+        /// Bool, true if Stats mod has to log all stats event, like passes and shots.
+        /// </summary>
+        public bool LogStats { get; set; } = false;
+
+        /// <summary>
+        /// Float, maximum height for the puck to be touched on faceoff.
+        /// </summary>
+        public float PuckIceContactHeight { get; set; } = 0.205f;
+
+        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]
@@ -117,6 +127,12 @@ namespace oomtm450PuckMod_Stats.Configs {
 
             if (TurnoverThresholdMilliseconds == _oldConfig.TurnoverThresholdMilliseconds)
                 TurnoverThresholdMilliseconds = newConfig.TurnoverThresholdMilliseconds;
+
+            if (LogStats == _oldConfig.LogStats)
+                LogStats = newConfig.LogStats;
+
+            if (PuckIceContactHeight == _oldConfig.PuckIceContactHeight)
+                PuckIceContactHeight = newConfig.PuckIceContactHeight;
         }
 
         /// <summary>
@@ -170,6 +186,7 @@ namespace oomtm450PuckMod_Stats.Configs {
                         LogInfo = config.LogInfo,
                         UseDefaultNumericValues = config.UseDefaultNumericValues,
                         SaveEOGJSON = config.SaveEOGJSON,
+                        LogStats = config.LogStats,
                     };
 
                     config = defaultConfig;

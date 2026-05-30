@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.4a";
+        private static readonly string MOD_VERSION = "1.0.5";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -73,6 +73,7 @@ namespace oomtm450PuckMod_Ruleset {
             "1.0.2",
             "1.0.3",
             "1.0.4",
+            "1.0.4a",
         });
 
         /// <summary>
@@ -371,6 +372,11 @@ namespace oomtm450PuckMod_Ruleset {
         /// ClientConfig, config set by the client.
         /// </summary>
         internal static Configs.ClientConfig ClientConfig { get; set; } = new Configs.ClientConfig();
+
+        /// <summary>
+        /// LockList of Penalty, list of penalty timers that have elapsed and need to be removed.
+        /// </summary>
+        internal static LockList<Penalty> PenaltyTimersElapsed { get; } = new LockList<Penalty>();
 
         /// <summary>
         /// FaceoffSpot, property of _nextFaceoffSpot.
@@ -1213,10 +1219,10 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /// <summary>
-        /// Class that patches the OnGameStarted event from StandardGameMode.
+        /// Class that patches the OnPreGameTimedOut event from StandardGameMode.
         /// </summary>
-        [HarmonyPatch(typeof(StandardGameMode<StandardGameModeConfig>), "OnGameStarted")]
-        public class StandardGameMode_OnGameStarted_Patch {
+        [HarmonyPatch(typeof(StandardGameMode<StandardGameModeConfig>), "OnPreGameTimedOut")]
+        public class StandardGameMode_OnPreGameTimedOut_Patch {
             [HarmonyPrefix]
             public static bool Prefix(StandardGameMode<StandardGameModeConfig> __instance) {
                 try {
@@ -1229,7 +1235,7 @@ namespace oomtm450PuckMod_Ruleset {
                     _faceoffDuration = __instance.Config.phaseDurationMap[GamePhase.FaceOff];
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(StandardGameMode_OnGameStarted_Patch)} Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(StandardGameMode_OnPreGameTimedOut_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1351,7 +1357,7 @@ namespace oomtm450PuckMod_Ruleset {
                             NetworkCommunication.SendData(PenaltyModule.GIVE_PENALTY_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                         else if (content.StartsWith(@"/removeallpen")) {
-                            NetworkCommunication.SendData(PenaltyModule.REMOVE_ALL_PENALTIES_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            NetworkCommunication.SendData(PenaltyModule.REMOVE_ALL_PENALTIES_REFMODE_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
                         else if (content.StartsWith(@"/removepen")) {
                             content = content.Replace(@"/removepen", "").Trim().ToLower();
@@ -1407,20 +1413,33 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null)
                     return;
 
-                if (SystemChatMessages.Count != 0) {
-                    List<string> systemChatMessages = new List<string>(SystemChatMessages);
-                    SystemChatMessages.Clear();
+                try {
+                    if (SystemChatMessages.Count != 0) {
+                        List<string> systemChatMessages = new List<string>(SystemChatMessages);
+                        SystemChatMessages.Clear();
 
-                    foreach (string message in systemChatMessages)
-                        ChatManager.Instance.Server_BroadcastChatMessage(message);
+                        foreach (string message in systemChatMessages)
+                            ChatManager.Instance.Server_BroadcastChatMessage(message);
+                    }
+
+                    if (DataToSendToAll.Count != 0) {
+                        List<List<string>> dataToSendToAll = new List<List<string>>(DataToSendToAll);
+                        DataToSendToAll.Clear();
+
+                        foreach (List<string> data in dataToSendToAll)
+                            NetworkCommunication.SendDataToAll(data[0], data[1], data[2], ServerConfig);
+                    }
+
+                    if (PenaltyTimersElapsed.Count != 0) {
+                        List<Penalty> penaltyTimersElapsed = new List<Penalty>(PenaltyTimersElapsed);
+                        PenaltyTimersElapsed.Clear();
+
+                        foreach (Penalty penaltyToRemove in penaltyTimersElapsed)
+                            Penalty.PenaltyTimer_Action(penaltyToRemove);
+                    }
                 }
-
-                if (DataToSendToAll.Count != 0) {
-                    List<List<string>> dataToSendToAll = new List<List<string>>(DataToSendToAll);
-                    DataToSendToAll.Clear();
-
-                    foreach (List<string> data in dataToSendToAll)
-                        NetworkCommunication.SendDataToAll(data[0], data[1], data[2], ServerConfig);
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix() 0.\n{ex}", ServerConfig);
                 }
 
                 if (GameManager.Instance.Phase != GamePhase.Play || !Logic)
@@ -2077,6 +2096,56 @@ namespace oomtm450PuckMod_Ruleset {
                 return true;
             }
         }
+
+        /// <summary>
+        /// Class that patches the PlayNotificationSound method from UIManager.
+        /// </summary>
+        [HarmonyPatch(typeof(UIManager), nameof(UIManager.PlayNotificationSound))]
+        public class UIManager_PlayNotificationSound_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix() {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer() || _refSignalsBlueTeam == null || _refSignalsRedTeam == null)
+                        return true;
+
+                    if (_refSignalsBlueTeam.WasJustShownOrHidden) {
+                        _refSignalsBlueTeam.WasJustShownOrHidden = false;
+                        return false;
+                    }
+
+                    if (_refSignalsRedTeam.WasJustShownOrHidden) {
+                        _refSignalsRedTeam.WasJustShownOrHidden = false;
+                        return false;
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(UIManager_PlayNotificationSound_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Initialize method from UIHUD.
+        /// </summary>
+        [HarmonyPatch(typeof(UIHUD), nameof(UIHUD.Initialize))]
+        public class UIHUD_Initialize_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(UIHUD __instance, VisualElement rootVisualElement) {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (ServerFunc.IsDedicatedServer())
+                        return;
+
+                    AddPenaltiesLabel(__instance);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(UIHUD_Initialize_Patch)} Postfix().\n{ex}", ServerConfig);
+                }
+            }
+        }
         #endregion
 
         #region Methods/Functions
@@ -2477,7 +2546,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (!Logic)
                                 break;
 
-                            if (_playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds < ServerConfig.Penalty.EmbellishmentMillisecondsThreshold && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds > 50 && new System.Random().Next(0, 2) == 0) { // TODO : Config random.
+                            if (_playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds < ServerConfig.Penalty.EmbellishmentMillisecondsThreshold && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds > 50 && new System.Random().Next(0, ServerConfig.Penalty.EmbellishmentChancePercInverse) == 0) {
                                 Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(value);
                                 if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned && !Codebase.PlayerFunc.IsGoalie(penalizedPlayer))
                                     PenaltyModule.GivePenalty(PenaltyType.Embellishment, penalizedPlayer);
@@ -2745,7 +2814,6 @@ namespace oomtm450PuckMod_Ruleset {
                 switch (dataName) {
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
                         _serverHasResponded = true;
-                        AddPenaltiesLabel();
 
                         if (MOD_VERSION == dataStr)
                             break;
@@ -3160,7 +3228,7 @@ namespace oomtm450PuckMod_Ruleset {
                         PenaltyModule.GivePenalty(penaltyType, penPlayer, steamIdReceivingPlayer, gintPenReferee);
                         break;
 
-                    case PenaltyModule.REMOVE_ALL_PENALTIES_DATANAME: // SERVER-SIDE : Remove all penalties.
+                    case PenaltyModule.REMOVE_ALL_PENALTIES_REFMODE_DATANAME: // SERVER-SIDE : Remove all penalties.
                         Player removeAllPenReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
                         if (removeAllPenReferee == null || !removeAllPenReferee)
                             break;
@@ -3324,23 +3392,25 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void AddPenaltiesLabel() { // TODO : Fix in B312.
+        private static void AddPenaltiesLabel(UIHUD uiHUD) {
             try {
                 if (_penaltiesLabelBlue != null)
                     return;
 
-                Label speedLabel = SystemFunc.GetPrivateField<Label>(typeof(UIHUD), UIManager.Instance.Hud, "speedLabel");
+                Label speedLabel = SystemFunc.GetPrivateField<Label>(typeof(UIHUD), uiHUD, "speedLabel");
 
-                VisualElement container = SystemFunc.GetPrivateField<VisualElement>(typeof(UIHUD), UIManager.Instance.Hud, "HUDView");
+                VisualElement container = uiHUD.View;
 
                 _penaltiesLabelBlue = new Label {
                     name = "PenaltiesLabelBlue",
+                    visible = true,
                 };
                 SetPenaltiesLabel(_penaltiesLabelBlue, speedLabel, true);
                 container.Add(_penaltiesLabelBlue);
 
                 _penaltiesLabelRed = new Label {
                     name = "PenaltiesLabelRed",
+                    visible = true,
                 };
                 SetPenaltiesLabel(_penaltiesLabelRed, speedLabel, false);
                 container.Add(_penaltiesLabelRed);
