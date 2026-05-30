@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.3a";
+        private static readonly string MOD_VERSION = "0.7.4";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -41,6 +41,7 @@ namespace oomtm450PuckMod_Stats {
             "0.7.1",
             "0.7.2",
             "0.7.3",
+            "0.7.3a",
         });
 
         /// <summary>
@@ -482,7 +483,7 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix(GameState oldGameState, GameState newGameState) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || oldGameState.Phase == newGameState.Phase || newGameState.Phase != GamePhase.PreGame)
+                    if (!ServerFunc.IsDedicatedServer() || oldGameState.Phase == newGameState.Phase || (newGameState.Phase != GamePhase.PreGame && newGameState.Phase != GamePhase.Warmup))
                         return;
 
                     // Reset s%.
@@ -580,20 +581,20 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Class that patches the OnGameStateChanged event from BaseGameMode.
         /// </summary>
-        [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "OnVoteSuccess")]
-        public class BaseGameMode_OnVoteSuccess_Patch {
+        [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "OnVoteRemoved")]
+        public class BaseGameMode_OnVoteRemoved_Patch {
             [HarmonyPrefix]
             public static void Prefix(Vote vote) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer())
+                    if (!ServerFunc.IsDedicatedServer() || !vote.Passed)
                         return;
 
-                    if (GameManager.Instance.Period >= 3 && vote.Type == VoteType.Start || vote.Type == VoteType.Warmup)
+                    if (GameManager.Instance.Period >= 3 && (vote.Name == "start" || vote.Name == "warmup" || vote.Name == "forfeit"))
                         CreateEOGJson(GameManager.Instance.BlueScore, GameManager.Instance.RedScore);
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(BaseGameMode_OnVoteSuccess_Patch)} Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(BaseGameMode_OnVoteRemoved_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
             }
         }
@@ -992,7 +993,7 @@ namespace oomtm450PuckMod_Stats {
                     _lastTeamOnPuckTipIncluded = player.Team;
 
                     if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                        __instance.Rigidbody.transform.position.y, 0.205f)) { // TODO : Config 0.205f.
+                        __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight)) {
                         //_lastTeamOnPuck = player.Team;
                         _lastPlayerOnPuckSteamId[player.Team] = (playerSteamId, DateTime.UtcNow);
                     }
@@ -1038,7 +1039,7 @@ namespace oomtm450PuckMod_Stats {
                     _lastTeamOnPuckTipIncluded = stick.Player.Team;
 
                     if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                        __instance.Rigidbody.transform.position.y, 0.205f)) { // TODO : Config 0.205f.
+                        __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight)) {
                         //_lastTeamOnPuck = stick.Player.Team;
                         _lastPlayerOnPuckSteamId[stick.Player.Team] = (playerSteamId, DateTime.UtcNow);
                     }
@@ -1853,7 +1854,7 @@ namespace oomtm450PuckMod_Stats {
                 switch (dataName) {
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
                         _serverHasResponded = true;
-                        if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
+                        if (MOD_VERSION == dataStr)
                             break;
                         else if (OLD_MOD_VERSIONS.Contains(dataStr)) {
                             _addServerModVersionOutOfDateMessage = true;
@@ -2245,7 +2246,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="saves">Int, number of saves.</param>
         /// <param name="sog">Int, number of shots on goal on the goalie.</param>
         private static void LogSavePerc(string goaliePlayerSteamId, int saves, int sog) {
-            Logging.Log($"playerSteamId:{goaliePlayerSteamId},saveperc:{GetGoalieSavePerc(saves, sog)},saves:{saves},sog:{sog}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{goaliePlayerSteamId},saveperc:{GetGoalieSavePerc(saves, sog)},saves:{saves},sog:{sog}", ServerConfig);
         }
 
         /// <summary>
@@ -2254,7 +2256,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="stickSaves">Int, number of stick saves.</param>
         private static void LogStickSave(string playerSteamId, int stickSaves) {
-            Logging.Log($"playerSteamId:{playerSteamId},sticksv:{stickSaves}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},sticksv:{stickSaves}", ServerConfig);
         }
 
         /// <summary>
@@ -2263,7 +2266,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="sog">Int, number of shots on goal.</param>
         private static void LogSOG(string playerSteamId, int sog) {
-            Logging.Log($"playerSteamId:{playerSteamId},sog:{sog}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},sog:{sog}", ServerConfig);
         }
 
         /// <summary>
@@ -2272,7 +2276,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="block">Int, number of blocked shots.</param>
         private static void LogBlock(string playerSteamId, int block) {
-            Logging.Log($"playerSteamId:{playerSteamId},block:{block}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},block:{block}", ServerConfig);
         }
 
         /// <summary>
@@ -2281,7 +2286,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="hit">Int, number of hits.</param>
         private static void LogHit(string playerSteamId, int hit) {
-            Logging.Log($"playerSteamId:{playerSteamId},hit:{hit}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},hit:{hit}", ServerConfig);
         }
 
         /// <summary>
@@ -2290,7 +2296,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="takeaway">Int, number of takeaways.</param>
         private static void LogTakeaways(string playerSteamId, int takeaway) {
-            Logging.Log($"playerSteamId:{playerSteamId},takeaway:{takeaway}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},takeaway:{takeaway}", ServerConfig);
         }
 
         /// <summary>
@@ -2299,7 +2306,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="turnover">Int, number of turnovers.</param>
         private static void LogTurnovers(string playerSteamId, int turnover) {
-            Logging.Log($"playerSteamId:{playerSteamId},turnover:{turnover}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},turnover:{turnover}", ServerConfig);
         }
 
         /// <summary>
@@ -2308,7 +2316,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="pass">Int, number of passes.</param>
         private static void LogPass(string playerSteamId, int pass) {
-            Logging.Log($"playerSteamId:{playerSteamId},pass:{pass}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},pass:{pass}", ServerConfig);
         }
 
         /// <summary>
@@ -2316,7 +2325,8 @@ namespace oomtm450PuckMod_Stats {
         /// </summary>
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         private static void LogGWG(string playerSteamId) {
-            Logging.Log($"playerSteamId:{playerSteamId},gwg:1", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},gwg:1", ServerConfig);
         }
 
         /// <summary>
@@ -2325,7 +2335,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="starIndex">Int, star number of the player (1 is first star, etc.).</param>
         private static void LogStar(string playerSteamId, int starIndex) {
-            Logging.Log($"playerSteamId:{playerSteamId},star:{starIndex}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},star:{starIndex}", ServerConfig);
         }
 
         /// <summary>
@@ -2334,7 +2345,8 @@ namespace oomtm450PuckMod_Stats {
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         /// <param name="plusminus">Int, +/-.</param>
         private static void LogPlusMinus(string playerSteamId, int plusminus) {
-            Logging.Log($"playerSteamId:{playerSteamId},plusminus:{plusminus}", ServerConfig);
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},plusminus:{plusminus}", ServerConfig);
         }
 
         private static string GetGoalieSavePerc(int saves, int shots) {
