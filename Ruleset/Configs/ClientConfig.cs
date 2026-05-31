@@ -10,7 +10,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     /// </summary>
     public class ClientConfig : IConfig {
         [JsonIgnore]
-        private const float RED_TEAM_PENALTY_TIMER_X_OFFSET_DEFAULT = 5f;
+        private const float RED_TEAM_PENALTY_TIMER_X_OFFSET_DEFAULT = 8f;
 
         /// <summary>
         /// String, full path for the config folder.

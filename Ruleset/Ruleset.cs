@@ -3457,11 +3457,11 @@ namespace oomtm450PuckMod_Ruleset {
             penaltiesLabel.style.unityTextOutlineWidth = referenceLabel.resolvedStyle.unityTextOutlineWidth;
             penaltiesLabel.style.textShadow = new StyleTextShadow(StyleKeyword.Auto);
 
-            penaltiesLabel.style.top = new Length(96.75f, LengthUnit.Percent);
+            penaltiesLabel.style.top = new Length(96.8f, LengthUnit.Percent);
             if (!blue)
                 penaltiesLabel.style.marginLeft = new Length(100f - ClientConfig.RedTeamPenaltyTimerXOffset, LengthUnit.Percent);
             else
-                penaltiesLabel.style.marginLeft = new Length(6f, LengthUnit.Percent);
+                penaltiesLabel.style.marginLeft = new Length(6.5f, LengthUnit.Percent);
         }
 
         private static void PenaltiesLabelTimerCallback(object stateInfo) {
