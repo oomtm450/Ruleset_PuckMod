@@ -335,6 +335,7 @@ namespace oomtm450PuckMod_Ruleset {
                 penaltyBoxPosition = new Vector3(RED_PENALTY_BOX_POSITION.x, RED_PENALTY_BOX_POSITION.y, RED_PENALTY_BOX_POSITION.z - zOffset);
 
             player.PlayerBody.Server_Teleport(penaltyBoxPosition, PENALTY_ROTATION);
+            Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = player, Position = penaltyBoxPosition, Rotation = PENALTY_ROTATION, });
         }
 
         internal static void PausePenalties() {
@@ -391,10 +392,14 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned) {
-                if (penalizedPlayerTeam == PlayerTeam.Blue)
+                if (penalizedPlayerTeam == PlayerTeam.Blue) {
                     penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
-                else
+                    Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = penalizedPlayer, Position = INFRONT_BLUE_PENALTY_BOX_POSITION, Rotation = PENALTY_ROTATION, });
+                }
+                else {
                     penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_RED_PENALTY_BOX_POSITION, PENALTY_ROTATION);
+                    Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = penalizedPlayer, Position = INFRONT_RED_PENALTY_BOX_POSITION, Rotation = PENALTY_ROTATION, });
+                }
 
                 penalizedPlayer.PlayerBody.Server_Unfreeze();
                 Ruleset.SystemChatMessages.Add($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED");

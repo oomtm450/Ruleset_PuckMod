@@ -443,6 +443,11 @@ namespace oomtm450PuckMod_Ruleset {
         internal static LockList<List<string>> DataToSendToAll { get; } = new LockList<List<string>>();
 
         /// <summary>
+        /// LockList of PlayerWithCoordinate, players to teleport next frame.
+        /// </summary>
+        internal static LockList<PlayerWithCoordinate> PlayersToTeleport { get; } = new LockList<PlayerWithCoordinate>();
+
+        /// <summary>
         /// Bool, true if the mod's logic has to be runned.
         /// </summary>
         internal static bool Logic { get; set; } = true;
@@ -1431,6 +1436,14 @@ namespace oomtm450PuckMod_Ruleset {
                             NetworkCommunication.SendDataToAll(data[0], data[1], data[2], ServerConfig);
                     }
 
+                    if (PlayersToTeleport.Count != 0) {
+                        List<PlayerWithCoordinate> playersToTeleport = new List<PlayerWithCoordinate>(PlayersToTeleport);
+                        PlayersToTeleport.Clear();
+
+                        foreach (PlayerWithCoordinate playerToTeleport in playersToTeleport)
+                            playerToTeleport.Player.PlayerBody?.Server_Teleport(playerToTeleport.Position, playerToTeleport.Rotation);
+                    }
+
                     if (PenaltyTimersElapsed.Count != 0) {
                         List<Penalty> penaltyTimersElapsed = new List<Penalty>(PenaltyTimersElapsed);
                         PenaltyTimersElapsed.Clear();
@@ -1979,8 +1992,10 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (NextFaceoffSpot != FaceoffSpot.Center && Logic) {
                         foreach (Player player in PlayerManager.Instance.GetPlayers()) {
-                            if (player.PlayerPosition && player.PlayerBody)
+                            if (player.PlayerPosition && player.PlayerBody) {
                                 player.PlayerBody.Server_Teleport(player.PlayerPosition.transform.position, player.PlayerPosition.transform.rotation);
+                                PlayersToTeleport.Add(new PlayerWithCoordinate { Player = player, Position = player.PlayerPosition.transform.position, Rotation = player.PlayerPosition.transform.rotation, });
+                            }
                         }
 
                         NextFaceoffSpot = FaceoffSpot.Center;
@@ -3979,6 +3994,14 @@ namespace oomtm450PuckMod_Ruleset {
             Delta = delta;
             AnyPlayersBehindHashmarks = anyPlayersBehindHashmarks;
         }
+    }
+
+    internal class PlayerWithCoordinate {
+        internal Player Player { get; set; }
+
+        internal Vector3 Position { get; set; }
+
+        internal Quaternion Rotation { get; set; }
     }
 
     public static class EnumExtensions {
