@@ -842,8 +842,9 @@ namespace oomtm450PuckMod_Ruleset {
                             hasLastPlayerDived = true;
                         else
                             hasLastPlayerDived = false;
+                        Logging.Log($"hasLastPlayerDived {hasLastPlayerDived}", ServerConfig, true); // TODO : Remove debug log.
 
-                        if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping || lastPlayerHit.PlayerBody.IsSideways) {
+                        if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping || lastPlayerHit.PlayerBody.IsSideways || lastPlayerHit.PlayerBody.HasSlipped) {
                             if (!_playersLastSlipDateTime.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitSlipTime) || (now - lastPlayerHitSlipTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceOnSamePlayerMillisecondsThreshold)
                                 hasLastPlayerBeenHit = !hasLastPlayerDived;
                         }
@@ -854,8 +855,9 @@ namespace oomtm450PuckMod_Ruleset {
                             hasOtherPlayerDived = true;
                         else
                             hasOtherPlayerDived = false;
+                        Logging.Log($"hasOtherPlayerDived {hasOtherPlayerDived}", ServerConfig, true); // TODO : Remove debug log.
 
-                        if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping || playerBody.Player.PlayerBody.IsSideways) {
+                        if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping || playerBody.Player.PlayerBody.IsSideways || playerBody.Player.PlayerBody.HasSlipped) {
                             if (!_playersLastSlipDateTime.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitSlipTime) || (now - otherPlayerHitSlipTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceOnSamePlayerMillisecondsThreshold)
                                 hasOtherPlayerBeenHit = !hasOtherPlayerDived;
                         }
