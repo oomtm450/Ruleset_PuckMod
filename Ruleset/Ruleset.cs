@@ -87,6 +87,8 @@ namespace oomtm450PuckMod_Ruleset {
             RefSignals.STOP_SIGNAL_BLUE,
             RefSignals.STOP_SIGNAL_RED,
             RefSignals.STOP_SIGNAL,
+            "dive",
+            "duration",
         });
 
         private static Dictionary<PlayerTeam, Dictionary<string, Quaternion>> POSITION_ROTATION_ON_FACEOFF = null;
