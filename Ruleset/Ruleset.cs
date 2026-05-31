@@ -999,7 +999,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                         // Reset puck coordinates.
                         _puckLastCoordinate = Vector3.zero;
-                        _puckZCoordinateDifference = 0;
 
                         // Reset players zone.
                         _playersZone.Clear();
@@ -1502,7 +1501,6 @@ namespace oomtm450PuckMod_Ruleset {
                     if (players.Count == 0 || puck == null || !puck || Paused)
                         return;
 
-                    _puckZCoordinateDifference = (puck.Rigidbody.transform.position.z - _puckLastCoordinate.z) / 240 * ServerManager.Instance.ServerConfig.tickRate;
                     _puckLastCoordinate = new Vector3(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.y, puck.Rigidbody.transform.position.z);
                 }
                 catch (Exception ex) {
