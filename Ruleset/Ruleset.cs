@@ -18,6 +18,7 @@ using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
+using static UnityEngine.Rendering.DebugUI;
 
 namespace oomtm450PuckMod_Ruleset {
     /// <summary>
@@ -320,6 +321,8 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly LockDictionary<string, bool> _playersHasBlockedFromChangingTeams = new LockDictionary<string, bool>();
 
         private static readonly LockDictionary<string, DateTime> _playersLastSlipDateTime = new LockDictionary<string, DateTime>();
+
+        private static readonly LockDictionary<string, (string, DateTime)> _playersLastDivedIntoTime = new LockDictionary<string, (string, DateTime)>();
 
         // Client-side.
         private static Label _penaltiesLabelBlue = null;
@@ -837,33 +840,32 @@ namespace oomtm450PuckMod_Ruleset {
                         string lastPlayerHitSteamId = lastPlayerHit.SteamId.Value.ToString();
 
                         bool hasLastPlayerDived;
-                        Logging.Log($"Does _dives contains key {lastPlayerHitSteamId} ? {_dives.TryGetValue(lastPlayerHitSteamId, out _)}", ServerConfig, true); // TODO : Remove debug log.
                         if (_dives.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitDateTime) && lastPlayerHitDateTime > now)
                             hasLastPlayerDived = true;
                         else
                             hasLastPlayerDived = false;
-                        Logging.Log($"hasLastPlayerDived {hasLastPlayerDived}", ServerConfig, true); // TODO : Remove debug log.
+
+                        bool hasOtherPlayerDived;
+                        if (_dives.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > now)
+                            hasOtherPlayerDived = true;
+                        else
+                            hasOtherPlayerDived = false;
 
                         if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping || lastPlayerHit.PlayerBody.IsSideways || lastPlayerHit.PlayerBody.HasSlipped) {
                             if (!_playersLastSlipDateTime.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitSlipTime) || (now - lastPlayerHitSlipTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceOnSamePlayerMillisecondsThreshold)
                                 hasLastPlayerBeenHit = !hasLastPlayerDived;
                         }
-
-                        bool hasOtherPlayerDived;
-                        Logging.Log($"Does _dives contains key {currentPlayerSteamId} ? {_dives.TryGetValue(currentPlayerSteamId, out _)}", ServerConfig, true); // TODO : Remove debug log.
-                        if (_dives.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > now)
-                            hasOtherPlayerDived = true;
-                        else
-                            hasOtherPlayerDived = false;
-                        Logging.Log($"hasOtherPlayerDived {hasOtherPlayerDived}", ServerConfig, true); // TODO : Remove debug log.
+                        else if (hasOtherPlayerDived)
+                            _playersLastDivedIntoTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
 
                         if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping || playerBody.Player.PlayerBody.IsSideways || playerBody.Player.PlayerBody.HasSlipped) {
                             if (!_playersLastSlipDateTime.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitSlipTime) || (now - otherPlayerHitSlipTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceOnSamePlayerMillisecondsThreshold)
                                 hasOtherPlayerBeenHit = !hasOtherPlayerDived;
                         }
+                        else if (hasLastPlayerDived)
+                            _playersLastDivedIntoTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
 
                         if (hasLastPlayerBeenHit) {
-                            Logging.Log($"hasLastPlayerBeenHit true, hasOtherPlayerDived {hasOtherPlayerDived}", ServerConfig, true); // TODO : Remove debug log.
                             if (hasOtherPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
                             else if (playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum) { // If the other person jumped.
@@ -875,7 +877,6 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         if (hasOtherPlayerBeenHit) {
-                            Logging.Log($"hasOtherPlayerBeenHit true, hasLastPlayerDived {hasLastPlayerDived}", ServerConfig, true); // TODO : Remove debug log.
                             if (hasLastPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, lastPlayerHit, currentPlayerSteamId);
                             else if (lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum) { // If the other person jumped.
@@ -1083,6 +1084,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (newGameState.Phase == GamePhase.FaceOff) {
                         _playersLastSlipDateTime.Clear();
+                        _playersLastDivedIntoTime.Clear();
 
                         if (!ServerConfig.Faceoff.UseCustomFaceoff) {
                             PenaltyModule.TeleportPlayers();
@@ -1118,6 +1120,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                     else if (newGameState.Phase == GamePhase.Play || newGameState.Phase == GamePhase.BlueScore || newGameState.Phase == GamePhase.RedScore || newGameState.Phase == GamePhase.Intermission) {
                         _playersLastSlipDateTime.Clear();
+                        _playersLastDivedIntoTime.Clear();
                         PenaltyModule.TeleportPlayers();
                     }
                 }
@@ -1570,8 +1573,17 @@ namespace oomtm450PuckMod_Ruleset {
 
                         string playerSteamId = player.SteamId.Value.ToString();
 
-                        if (player.PlayerBody.IsSlipping || player.PlayerBody.HasSlipped)
-                            _playersLastSlipDateTime.AddOrUpdate(playerSteamId, DateTime.UtcNow);
+                        if (player.PlayerBody.HasFallen || player.PlayerBody.HasSlipped || player.PlayerBody.IsSlipping || player.PlayerBody.IsSideways || player.PlayerBody.HasSlipped) {
+                            DateTime now = DateTime.UtcNow;
+                            if (player.PlayerBody.IsSlipping || player.PlayerBody.HasSlipped)
+                                _playersLastSlipDateTime.AddOrUpdate(playerSteamId, now);
+
+                            if (_playersLastDivedIntoTime.TryGetValue(playerSteamId, out var playerLastDivedIntoTime) && playerLastDivedIntoTime.Item2 + TimeSpan.FromMilliseconds(500) > now) {
+                                Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerLastDivedIntoTime.Item1);
+                                if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned)
+                                    PenaltyModule.GivePenalty(PenaltyType.Tripping, penalizedPlayer);
+                            }
+                        }
 
                         if (!_isOffside.TryGetValue(playerSteamId, out _))
                             _isOffside.Add(playerSteamId, (player.Team, false));
@@ -2192,6 +2204,7 @@ namespace oomtm450PuckMod_Ruleset {
             PenaltyModule.ResetPenalties();
             _playersHasBlockedFromChangingTeams.Clear();
             _playersLastSlipDateTime.Clear();
+            _playersLastDivedIntoTime.Clear();
         }
 
         private static bool IsAdmin(ulong clientId) {
@@ -2564,8 +2577,6 @@ namespace oomtm450PuckMod_Ruleset {
                                 getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(60000d);
                             else
                                 getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(divingValue);
-
-                            Logging.Log($"{value} dived and getup time is set at {getUpTime}", ServerConfig, true); // TODO : Remove debug logs.
 
                             _dives.AddOrUpdate(value, getUpTime);
 
