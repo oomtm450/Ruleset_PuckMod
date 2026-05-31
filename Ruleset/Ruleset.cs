@@ -1581,7 +1581,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (_playersLastDivedIntoTime.TryGetValue(playerSteamId, out var playerLastDivedIntoTime) && playerLastDivedIntoTime.Item2 + TimeSpan.FromMilliseconds(500) > now) {
                                 Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerLastDivedIntoTime.Item1);
                                 if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned)
-                                    PenaltyModule.GivePenalty(PenaltyType.Tripping, penalizedPlayer);
+                                    PenaltyModule.GivePenalty(PenaltyType.Tripping, penalizedPlayer, playerSteamId);
                             }
                         }
 
