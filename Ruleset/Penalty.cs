@@ -160,7 +160,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             List<Player> teamPlayers = PlayerManager.Instance.GetPlayersByTeam(penalizedPlayer.Team).Where(x => !Codebase.PlayerFunc.IsGoalie(x)).ToList();
 
-            if (teamPlayers.Count < 2)
+            if (teamPlayers.Count < Ruleset.ServerConfig.Penalty.MaximumPenaltyImmunedPlayersCountPerTeam)
                 return false;
 
             string penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
@@ -178,7 +178,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             if ((penalizedPlayer.Team == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
                 (penalizedPlayer.Team == PlayerTeam.Red && PenalizedPlayersCountRedTeam == Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
-                (teamPlayers.Count(x => !PenalizedPlayers.TryGetValue(x.SteamId.Value.ToString(), out LockList<Penalty> penalties) || penalties.Count == 0) < 2)) {
+                (teamPlayers.Count(x => !PenalizedPlayers.TryGetValue(x.SteamId.Value.ToString(), out LockList<Penalty> penalties) || penalties.Count == 0) < Ruleset.ServerConfig.Penalty.MaximumPenaltyImmunedPlayersCountPerTeam)) {
                 bool unpenalizeOnePlayer = false;
                 if (penalizedPlayer.Team == PlayerTeam.Blue) {
                     if (PenalizedPlayersCountBlueTeam != 0)

@@ -292,6 +292,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, max number of penalized players per team.
         /// </summary>
         public int MaxPenalizedPlayersPerTeam { get; set; } = 2;
+        /// <summary>
+        /// Int, maximum number of players per team where penalties don't count.
+        /// </summary>
+        public int MaximumPenaltyImmunedPlayersCountPerTeam { get; set; } = 2;
 
         /// <summary>
         /// Bool, true if player interference is enabled.
@@ -420,6 +424,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (MaxPenalizedPlayersPerTeam == _oldConfig.MaxPenalizedPlayersPerTeam)
                 MaxPenalizedPlayersPerTeam = newConfig.MaxPenalizedPlayersPerTeam;
+
+            if (MaximumPenaltyImmunedPlayersCountPerTeam == _oldConfig.MaximumPenaltyImmunedPlayersCountPerTeam)
+                MaximumPenaltyImmunedPlayersCountPerTeam = newConfig.MaximumPenaltyImmunedPlayersCountPerTeam;
 
 
             if (Interference == _oldConfig.Interference)
