@@ -835,6 +835,7 @@ namespace oomtm450PuckMod_Ruleset {
                         string lastPlayerHitSteamId = lastPlayerHit.SteamId.Value.ToString();
 
                         bool hasLastPlayerDived;
+                        Logging.Log($"Does _dives contains key {lastPlayerHitSteamId} ? {_dives.TryGetValue(lastPlayerHitSteamId, out _)}", ServerConfig, true); // TODO : Remove debug log.
                         if (_dives.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitDateTime) && lastPlayerHitDateTime > now)
                             hasLastPlayerDived = true;
                         else
@@ -846,6 +847,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         bool hasOtherPlayerDived;
+                        Logging.Log($"Does _dives contains key {currentPlayerSteamId} ? {_dives.TryGetValue(currentPlayerSteamId, out _)}", ServerConfig, true); // TODO : Remove debug log.
                         if (_dives.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > now)
                             hasOtherPlayerDived = true;
                         else
@@ -2559,7 +2561,7 @@ namespace oomtm450PuckMod_Ruleset {
                             else
                                 getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(divingValue);
 
-                            Logging.Log($"Someone dived and getup time is set at {getUpTime}", ServerConfig, true); // TODO : Remove debug logs.
+                            Logging.Log($"{value} dived and getup time is set at {getUpTime}", ServerConfig, true); // TODO : Remove debug logs.
 
                             _dives.AddOrUpdate(value, getUpTime);
 
