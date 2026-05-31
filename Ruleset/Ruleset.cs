@@ -2682,8 +2682,6 @@ namespace oomtm450PuckMod_Ruleset {
                             continue;
 
                         for (int j = 0; j < levelManagerChild.childCount; j++) {
-                            // Barrier Collider, position 0 -19.05 0
-                            // Front Collider, Back Collider, Left Collider, Right Collider, 0 4.9 0
                             Transform rinkChild = levelManagerChild.GetChild(j);
                             if (rinkChild.gameObject.name == "Front Collider" || rinkChild.gameObject.name == "Back Collider" ||
                                 rinkChild.gameObject.name == "Left Collider" || rinkChild.gameObject.name == "Right Collider") {
