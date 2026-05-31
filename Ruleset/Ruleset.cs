@@ -315,8 +315,6 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static Vector3 _puckLastCoordinate = Vector3.zero;
 
-        private static float _puckZCoordinateDifference = 0;
-
         private static readonly LockDictionary<string, bool> _playersHasBlockedFromChangingTeams = new LockDictionary<string, bool>();
 
         private static readonly LockDictionary<string, DateTime> _playersLastSlipDateTime = new LockDictionary<string, DateTime>();
