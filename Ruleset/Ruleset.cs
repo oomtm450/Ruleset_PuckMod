@@ -18,7 +18,6 @@ using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
-using static UnityEngine.Rendering.DebugUI;
 
 namespace oomtm450PuckMod_Ruleset {
     /// <summary>
@@ -29,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.6DEV";
+        private static readonly string MOD_VERSION = "1.0.6";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
