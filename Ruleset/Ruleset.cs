@@ -2165,26 +2165,6 @@ namespace oomtm450PuckMod_Ruleset {
                 return true;
             }
         }
-
-        /// <summary>
-        /// Class that patches the Initialize method from UIHUD.
-        /// </summary>
-        [HarmonyPatch(typeof(UIHUD), nameof(UIHUD.Initialize))]
-        public class UIHUD_Initialize_Patch {
-            [HarmonyPostfix]
-            public static void Postfix(UIHUD __instance, VisualElement rootVisualElement) {
-                try {
-                    // If this is the server, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer())
-                        return;
-
-                    AddPenaltiesLabel(__instance);
-                }
-                catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(UIHUD_Initialize_Patch)} Postfix().\n{ex}", ServerConfig);
-                }
-            }
-        }
         #endregion
 
         #region Methods/Functions
@@ -3478,9 +3458,11 @@ namespace oomtm450PuckMod_Ruleset {
             penaltiesLabel.style.unityTextOutlineWidth = referenceLabel.resolvedStyle.unityTextOutlineWidth;
             penaltiesLabel.style.textShadow = new StyleTextShadow(StyleKeyword.Auto);
 
-            penaltiesLabel.style.bottom = new Length(3.5f, LengthUnit.Percent);
+            penaltiesLabel.style.top = new Length(96.75f, LengthUnit.Percent);
             if (!blue)
                 penaltiesLabel.style.marginLeft = new Length(100f - ClientConfig.RedTeamPenaltyTimerXOffset, LengthUnit.Percent);
+            else
+                penaltiesLabel.style.marginLeft = new Length(6f, LengthUnit.Percent);
         }
 
         private static void PenaltiesLabelTimerCallback(object stateInfo) {
@@ -3718,6 +3700,8 @@ namespace oomtm450PuckMod_Ruleset {
                 else {
                     Logging.Log("Setting client sided config.", ServerConfig, true);
                     ClientConfig = Configs.ClientConfig.ReadConfig();
+
+                    AddPenaltiesLabel(UIManager.Instance.Hud);
 
                     //_getStickLocation = new InputAction(binding: "<keyboard>/#(o)");
                     //_getStickLocation.Enable();
