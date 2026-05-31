@@ -3275,8 +3275,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!IsAdmin(removeAllPenRefereeSteamId) && !_currentRefsSteamId.Contains(removeAllPenRefereeSteamId))
                             break;
 
-                        while (PenaltyModule.RemoveOnePenalty(PlayerTeam.Blue));
-                        while (PenaltyModule.RemoveOnePenalty(PlayerTeam.Red));
+                        PenaltyModule.RemoveAllPenalties();
                         break;
 
                     case PenaltyModule.REMOVE_PENALTY_DATANAME: // SERVER-SIDE : Remove one penalty.

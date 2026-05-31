@@ -200,7 +200,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (_playerToUnpenalize.Equals(default(Player)))
                     return false;
 
-                RemoveOnePenalty(_playerToUnpenalize.Team); // TODO : Remove penalty after stoppage.
+                RemoveOnePenalty(_playerToUnpenalize.Team);
             }
 
             // If goalie has a penalty, take another player.
@@ -404,6 +404,19 @@ namespace oomtm450PuckMod_Ruleset {
                 penalizedPlayer.PlayerBody.Server_Unfreeze();
                 Ruleset.SystemChatMessages.Add($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED");
                 Logging.Log($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED", Ruleset.ServerConfig);
+            }
+        }
+
+        internal static void RemoveAllPenalties() {
+            List<Penalty> penaltiesToRemove = PenalizedPlayers.SelectMany(x => x.Value).ToList();
+            if (penaltiesToRemove.Count == 0)
+                return;
+            foreach (Penalty penaltyToRemove in penaltiesToRemove) {
+                if (penaltyToRemove == null || penaltyToRemove.Equals(default(Penalty)))
+                    continue;
+
+                penaltyToRemove.Timer.Pause();
+                penaltyToRemove.Timer.TimerCallback(null);
             }
         }
 
