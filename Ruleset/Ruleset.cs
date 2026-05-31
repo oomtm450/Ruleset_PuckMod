@@ -857,6 +857,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         if (hasLastPlayerBeenHit) {
+                            Logging.Log($"hasLastPlayerBeenHit true, hasOtherPlayerDived {hasOtherPlayerDived}", ServerConfig, true); // TODO : Remove debug log.
                             if (hasOtherPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
                             else if (playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum) { // If the other person jumped.
@@ -868,6 +869,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         if (hasOtherPlayerBeenHit) {
+                            Logging.Log($"hasOtherPlayerBeenHit true, hasLastPlayerDived {hasLastPlayerDived}", ServerConfig, true); // TODO : Remove debug log.
                             if (hasLastPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, lastPlayerHit, currentPlayerSteamId);
                             else if (lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum) { // If the other person jumped.
@@ -2556,6 +2558,8 @@ namespace oomtm450PuckMod_Ruleset {
                                 getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(60000d);
                             else
                                 getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(divingValue);
+
+                            Logging.Log($"Someone dived and getup time is set at {getUpTime}", ServerConfig, true); // TODO : Remove debug logs.
 
                             _dives.AddOrUpdate(value, getUpTime);
 
