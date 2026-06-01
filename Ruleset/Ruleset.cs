@@ -3466,7 +3466,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void PenaltiesLabelTimerCallback(object stateInfo) {
             try {
-                if (Paused)
+                if (Paused || _penaltiesLabelBlue == null)
                     return;
 
                 List<(string PlayerIdentity, PausableTimer Timer)> penaltyTimers = new List<(string, PausableTimer)>(_penaltyTimers);
