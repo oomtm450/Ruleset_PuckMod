@@ -978,7 +978,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (newGameState.Phase == GamePhase.BlueScore || newGameState.Phase == GamePhase.RedScore)
                         _periodTickRemaining = oldGameState.Tick;
 
-                    if (newGameState.Phase == GamePhase.Intermission || newGameState.Phase == GamePhase.BlueScore || newGameState.Phase == GamePhase.RedScore) {
+                    if (newGameState.Phase == GamePhase.Intermission || newGameState.Phase == GamePhase.BlueScore || newGameState.Phase == GamePhase.RedScore || newGameState.Phase == GamePhase.Replay) {
                         PenaltyModule.PausePenalties();
 
                         NextFaceoffSpot = FaceoffSpot.Center;
