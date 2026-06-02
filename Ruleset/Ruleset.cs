@@ -2567,7 +2567,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (!Logic)
                                 break;
 
-                            if (_playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds < ServerConfig.Penalty.EmbellishmentMillisecondsThreshold && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds > 50 && new System.Random().Next(0, ServerConfig.Penalty.EmbellishmentChancePercInverse) == 0) {
+                            if (divingValue != int.MinValue && _playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds < ServerConfig.Penalty.EmbellishmentMillisecondsThreshold && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds > 50 && new System.Random().Next(0, ServerConfig.Penalty.EmbellishmentChancePercInverse) == 0) {
                                 Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(value);
                                 if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned && !Codebase.PlayerFunc.IsGoalie(penalizedPlayer))
                                     PenaltyModule.GivePenalty(PenaltyType.Embellishment, penalizedPlayer);
