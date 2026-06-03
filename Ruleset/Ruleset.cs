@@ -321,6 +321,7 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly LockDictionary<string, (string, DateTime)> _playersLastDivedIntoTime = new LockDictionary<string, (string, DateTime)>();
 
         private static float _arenaScaleX = 1f;
+        private static float _arenaScaleY = 1f;
         private static float _arenaScaleZ = 1f;
 
         private static float _arenaOffsetX = 0;
@@ -2674,31 +2675,7 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             try {
-                if (!_barriersLowered && ServerConfig.Penalty.DelayOfGame) {
-                    GameObject levelObj = GameObject.Find("Level Default");
-                    for (int i = 0; i < levelObj.transform.childCount; i++) {
-                        Transform levelManagerChild = levelObj.transform.GetChild(i);
-                        if (levelManagerChild.gameObject.name != "Rink")
-                            continue;
-
-                        for (int j = 0; j < levelManagerChild.childCount; j++) {
-                            Transform rinkChild = levelManagerChild.GetChild(j);
-                            if (rinkChild.gameObject.name == "Front Collider" || rinkChild.gameObject.name == "Back Collider" ||
-                                rinkChild.gameObject.name == "Left Collider" || rinkChild.gameObject.name == "Right Collider") {
-                                rinkChild.position = new Vector3(rinkChild.position.x, 4.9f, rinkChild.position.z);
-                                continue;
-                            }
-
-                            if (rinkChild.gameObject.name == "Barrier Collider") {
-                                rinkChild.position = new Vector3(rinkChild.position.x, -19.05f, rinkChild.position.z);
-                                continue;
-                            }
-                        }
-
-                        _barriersLowered = true;
-                        break;
-                    }
-                }
+                LowerBarriers(_arenaScaleY, _arenaOffsetY);
 
                 if (POSITION_ROTATION_ON_FACEOFF == null) {
                     Dictionary<PlayerPosition, VisualElement> playerPositions = SystemFunc.GetPrivateField<Dictionary<PlayerPosition, VisualElement>>(typeof(UIPositionSelect), UIManager.Instance.PositionSelect, "playerPositionVisualElementMap");
@@ -2810,12 +2787,14 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void Event_CompetitiveAdjustments_OnArenaSync(Dictionary<string, object> message) { // TODO : Add this to Stats too.
+        private static void Event_CompetitiveAdjustments_OnArenaSync(Dictionary<string, object> message) {
             if (!ServerFunc.IsDedicatedServer())
                 return;
 
             try {
+                Logging.Log("Event_CompetitiveAdjustments_OnArenaSync !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
                 PenaltyModule.ResetCoordinates();
+                _barriersLowered = false;
 
                 ZoneFunc.ICE_X_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(new Dictionary<IceElement, (double, double)>(ZoneFunc.ICE_X_POSITIONS_DEFAULT));
                 ZoneFunc.ICE_Z_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(new Dictionary<IceElement, (double, double)>(ZoneFunc.ICE_Z_POSITIONS_DEFAULT));
@@ -2843,7 +2822,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         case "ArenaScaleZ":
                             double arenaScaleY = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
-                            // TODO : Adjust new barriers for delay of game.
+                            _arenaScaleY = (float)arenaScaleY;
                             break;
 
                         case "ArenaScaleY":
@@ -2890,7 +2869,6 @@ namespace oomtm450PuckMod_Ruleset {
                         case "ArenaOffsetY":
                             double arenaOffsetY = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
                             _arenaOffsetY = (float)arenaOffsetY;
-                            // TODO : Adjust new barriers for delay of game.
                             break;
 
                         case "ArenaOffsetZ":
@@ -2911,6 +2889,8 @@ namespace oomtm450PuckMod_Ruleset {
                             PenaltyModule.OffsetZCoordinates(_arenaOffsetZ);
                             break;
                     }
+
+                    LowerBarriers(_arenaScaleY, _arenaOffsetY);
                 }
             }
             catch (Exception ex) {
@@ -3515,6 +3495,73 @@ namespace oomtm450PuckMod_Ruleset {
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(ReceiveData)}.\n{ex}", ServerConfig);
+            }
+        }
+
+        private static void LowerBarriers(float arenaScaleY, float arenaOffsetY) {
+            if (_barriersLowered || !ServerConfig.Penalty.DelayOfGame)
+                return;
+
+            GameObject levelObj = GameObject.Find("Level Default");
+            for (int i = 0; i < levelObj.transform.childCount; i++) {
+                Transform levelManagerChild = levelObj.transform.GetChild(i);
+                if (levelManagerChild.gameObject.name != "Rink")
+                    continue;
+
+                for (int j = 0; j < levelManagerChild.childCount; j++) {
+                    Transform rinkChild = levelManagerChild.GetChild(j);
+                    if (rinkChild.gameObject.name == "Front Collider" || rinkChild.gameObject.name == "Back Collider" ||
+                        rinkChild.gameObject.name == "Left Collider" || rinkChild.gameObject.name == "Right Collider") {
+                        rinkChild.position = new Vector3(rinkChild.position.x, (4.9f * arenaScaleY) + arenaOffsetY, rinkChild.position.z);
+                        continue;
+                    }
+
+                    if (rinkChild.gameObject.name == "Barrier Collider") {
+                        rinkChild.position = new Vector3(rinkChild.position.x, (-19.05f * arenaScaleY) + arenaOffsetY, rinkChild.position.z);
+                        continue;
+                    }
+                }
+
+                /*// Custom CompAdjust rink barriers lowering.
+                for (int j = 0; j < levelManagerChild.childCount; j++) {
+                    Transform rinkChild = levelManagerChild.GetChild(j);
+
+                    if (rinkChild.gameObject.name != "CustomArenaAndColliders")
+                        continue;
+
+                    Logging.Log("Found CustomArenaAndColliders !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+                    for (int k = 0; k < rinkChild.childCount; k++) {
+                        Transform customArenaAndCollidersChild = rinkChild.GetChild(k);
+
+                        if (customArenaAndCollidersChild.gameObject.name != "Colliders")
+                            continue;
+
+                        Logging.Log("Found Colliders !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+
+                        Collider[] colliders = customArenaAndCollidersChild.GetComponentsInChildren<Collider>();
+                        for (int l = 0; l < colliders.Length; l++) {
+                            Transform collidersChild = colliders[l].transform;
+
+                            if (collidersChild.gameObject.name.ToLower().Contains("front") || collidersChild.gameObject.name.ToLower().Contains("back") ||
+                                collidersChild.gameObject.name.ToLower().Contains("left") || collidersChild.gameObject.name.ToLower().Contains("right")) {
+                                collidersChild.position = new Vector3(collidersChild.position.x, (4.9f * arenaScaleY) + arenaOffsetY, collidersChild.position.z);
+                                Logging.Log("Found a collider !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+                                continue;
+                            }
+
+                            if (collidersChild.gameObject.name.ToLower().Contains("barrier")) {
+                                collidersChild.position = new Vector3(collidersChild.position.x, (-19.05f * arenaScaleY) + arenaOffsetY, collidersChild.position.z);
+                                Logging.Log("Found a barrier  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    break;
+                }*/
+
+                _barriersLowered = true;
+                break;
             }
         }
 

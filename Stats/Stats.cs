@@ -175,6 +175,14 @@ namespace oomtm450PuckMod_Stats {
 
         private static float _puckZCoordinateDifference = 0;
 
+        private static float _arenaScaleX = 1f;
+        private static float _arenaScaleY = 1f;
+        private static float _arenaScaleZ = 1f;
+
+        private static float _arenaOffsetX = 0;
+        private static float _arenaOffsetY = 0;
+        private static float _arenaOffsetZ = 0;
+
         /// <summary>
         /// LockDictionary of ulong and string, dictionary of all players clientId, steamId and username.
         /// </summary>
@@ -1042,7 +1050,7 @@ namespace oomtm450PuckMod_Stats {
                     _lastTeamOnPuckTipIncluded = stick.Player.Team;
 
                     if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                        __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight)) {
+                        __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight + _arenaOffsetY)) {
                         //_lastTeamOnPuck = stick.Player.Team;
                         _lastPlayerOnPuckSteamId[stick.Player.Team] = (playerSteamId, DateTime.UtcNow);
                     }
@@ -1262,6 +1270,7 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.AddEventListener(nameof(Event_Everyone_OnPlayerGameStateChanged), Event_Everyone_OnPlayerGameStateChanged);
                     EventManager.AddEventListener(Codebase.Constants.STATS_MOD_NAME, Event_OnStatsTrigger);
                     EventManager.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
+                    EventManager.AddEventListener("Event_CompetitiveAdjustments_OnArenaSync", Event_CompetitiveAdjustments_OnArenaSync);
                 }
                 else {
                     EventManager.AddEventListener(nameof(Event_OnClientStopped), Event_OnClientStopped);
@@ -1296,6 +1305,7 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.RemoveEventListener("Event_Everyone_OnPlayerGameStateChanged", Event_Everyone_OnPlayerGameStateChanged);
                     EventManager.RemoveEventListener(Codebase.Constants.STATS_MOD_NAME, Event_OnStatsTrigger);
                     EventManager.RemoveEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
+                    EventManager.RemoveEventListener("Event_CompetitiveAdjustments_OnArenaSync", Event_CompetitiveAdjustments_OnArenaSync);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
@@ -1327,6 +1337,102 @@ namespace oomtm450PuckMod_Stats {
         #endregion
 
         #region Events
+        private static void Event_CompetitiveAdjustments_OnArenaSync(Dictionary<string, object> message) {
+            if (!ServerFunc.IsDedicatedServer())
+                return;
+
+            try {
+                ZoneFunc.ICE_X_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(new Dictionary<IceElement, (double, double)>(ZoneFunc.ICE_X_POSITIONS_DEFAULT));
+                ZoneFunc.ICE_Z_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(new Dictionary<IceElement, (double, double)>(ZoneFunc.ICE_Z_POSITIONS_DEFAULT));
+
+                // Do the scaling first.
+                foreach (KeyValuePair<string, object> kvp in message) {
+                    switch (kvp.Key) {
+                        case "ArenaScaleX":
+                            double arenaScaleX = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            _arenaScaleX = (float)arenaScaleX;
+                            if (arenaScaleX == 1)
+                                break;
+
+                            Dictionary<IceElement, (double Start, double End)> newIceXPositions = new Dictionary<IceElement, (double, double)>(ZoneFunc.ICE_X_POSITIONS);
+
+                            // Ice X coordinates.
+                            List<IceElement> xIceElements = new List<IceElement>(newIceXPositions.Keys);
+                            foreach (IceElement iceElement in xIceElements)
+                                newIceXPositions[iceElement] = (newIceXPositions[iceElement].Start * arenaScaleX, newIceXPositions[iceElement].End * arenaScaleX);
+
+                            ZoneFunc.ICE_X_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(newIceXPositions);
+                            break;
+
+                        case "ArenaScaleZ":
+                            double arenaScaleY = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            _arenaScaleY = (float)arenaScaleY;
+                            break;
+
+                        case "ArenaScaleY":
+                            double arenaScaleZ = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            _arenaScaleZ = (float)arenaScaleZ;
+                            if (arenaScaleZ == 1)
+                                break;
+
+                            Dictionary<IceElement, (double Start, double End)> newIceZPositions = new Dictionary<IceElement, (double, double)>(ZoneFunc.ICE_Z_POSITIONS);
+
+                            // Ice Z coordinates.
+                            List<IceElement> zIceElements = new List<IceElement>(newIceZPositions.Keys);
+                            foreach (IceElement iceElement in zIceElements)
+                                newIceZPositions[iceElement] = (newIceZPositions[iceElement].Start * arenaScaleZ, newIceZPositions[iceElement].End * arenaScaleZ);
+
+                            ZoneFunc.ICE_Z_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(newIceZPositions);
+                            break;
+                    }
+                }
+
+                // Offset after scaling to not scale the offset.
+                foreach (KeyValuePair<string, object> kvp in message) {
+                    switch (kvp.Key) {
+                        case "ArenaOffsetX":
+                            double arenaOffsetX = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            _arenaOffsetX = (float)arenaOffsetX;
+                            if (arenaOffsetX == 0)
+                                break;
+
+                            Dictionary<IceElement, (double Start, double End)> newIceXPositions = new Dictionary<IceElement, (double, double)>(ZoneFunc.ICE_X_POSITIONS);
+
+                            // Ice X coordinates.
+                            List<IceElement> xIceElements = new List<IceElement>(newIceXPositions.Keys);
+                            foreach (IceElement iceElement in xIceElements)
+                                newIceXPositions[iceElement] = (newIceXPositions[iceElement].Start + arenaOffsetX, newIceXPositions[iceElement].End + arenaOffsetX);
+
+                            ZoneFunc.ICE_X_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(newIceXPositions);
+                            break;
+
+                        case "ArenaOffsetY":
+                            double arenaOffsetY = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            _arenaOffsetY = (float)arenaOffsetY;
+                            break;
+
+                        case "ArenaOffsetZ":
+                            double arenaOffsetZ = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            if (arenaOffsetZ == 0)
+                                break;
+
+                            Dictionary<IceElement, (double Start, double End)> newIceZPositions = new Dictionary<IceElement, (double, double)>(ZoneFunc.ICE_Z_POSITIONS);
+
+                            // Ice X coordinates.
+                            List<IceElement> zIceElements = new List<IceElement>(newIceZPositions.Keys);
+                            foreach (IceElement iceElement in zIceElements)
+                                newIceZPositions[iceElement] = (newIceZPositions[iceElement].Start + arenaOffsetZ, newIceZPositions[iceElement].End + arenaOffsetZ);
+
+                            ZoneFunc.ICE_Z_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(newIceZPositions);
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(Event_CompetitiveAdjustments_OnArenaSync)}.\n{ex}", ServerConfig);
+            }
+        }
+
         public static void Event_OnStatsTrigger(Dictionary<string, object> message) {
             try {
                 foreach (KeyValuePair<string, object> kvp in message) {
