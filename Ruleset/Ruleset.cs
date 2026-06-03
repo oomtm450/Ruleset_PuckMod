@@ -314,13 +314,18 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly LockList<string> _permaRefsSteamId = new LockList<string>();
 
-        private static Vector3 _puckLastCoordinate = Vector3.zero;
-
         private static readonly LockDictionary<string, bool> _playersHasBlockedFromChangingTeams = new LockDictionary<string, bool>();
 
         private static readonly LockDictionary<string, DateTime> _playersLastSlipDateTime = new LockDictionary<string, DateTime>();
 
         private static readonly LockDictionary<string, (string, DateTime)> _playersLastDivedIntoTime = new LockDictionary<string, (string, DateTime)>();
+
+        private static float _arenaScaleX = 1f;
+        private static float _arenaScaleZ = 1f;
+
+        private static float _arenaOffsetX = 0;
+        private static float _arenaOffsetY = 0;
+        private static float _arenaOffsetZ = 0;
 
         // Client-side.
         private static Label _penaltiesLabelBlue = null;
@@ -544,7 +549,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // High stick logic.
                     if (IsHighStick(stick.Player.Team)) {
                         Puck puck = PuckManager.Instance.GetPuck();
-                        if (puck && puck.Rigidbody.transform.position.y < PuckRadius) {
+                        if (puck && puck.Rigidbody.transform.position.y < PuckRadius + _arenaOffsetY) {
                             NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team, Rule.HighStick, _puckLastStateBeforeCall[Rule.HighStick]);
 
                             _isHighStickActiveTimers.TryGetValue(stick.Player.Team, out Timer highStickTimer);
@@ -615,14 +620,14 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!_noHighStickFrames.TryGetValue(playerSteamId, out int _))
                         _noHighStickFrames.Add(playerSteamId, int.MaxValue);
 
-                    if (__instance && __instance.Rigidbody.transform.position.y <= ServerConfig.HighStick.MaxHeight + stick.Player.PlayerBody.Rigidbody.transform.position.y)
+                    if (__instance && __instance.Rigidbody.transform.position.y <= ServerConfig.HighStick.MaxHeight + _arenaOffsetY + stick.Player.PlayerBody.Rigidbody.transform.position.y)
                         _noHighStickFrames[playerSteamId] = 0;
 
                     var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
 
                     if (__instance) {
                         if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight) || _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == playerSteamId) {
+                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight + _arenaOffsetY) || _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == playerSteamId) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
                             if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && playerHasPossession)
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam), __instance);
@@ -721,7 +726,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (__instance) {
                         if (!PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight) || _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId) {
+                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight + _arenaOffsetY) || _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
                             if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && playerHasPossession)
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam), __instance);
@@ -756,7 +761,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsHighStickEnabled(stick.Player.Team) && __instance &&
                         !Codebase.PlayerFunc.IsGoalie(stick.Player) &&
                         !playerHasPossession &&
-                        __instance.Rigidbody.transform.position.y > ServerConfig.HighStick.MaxHeight + (stick.Player.PlayerBody.Rigidbody.transform.position.y < ServerConfig.DefaultPlayerHeight ? ServerConfig.DefaultPlayerHeight : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
+                        __instance.Rigidbody.transform.position.y > ServerConfig.HighStick.MaxHeight + _arenaOffsetY + (stick.Player.PlayerBody.Rigidbody.transform.position.y < ServerConfig.DefaultPlayerHeight ? ServerConfig.DefaultPlayerHeight : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
                         if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
                             noHighStickFrames = int.MaxValue;
                             _noHighStickFrames.Add(currentPlayerSteamId, noHighStickFrames);
@@ -869,7 +874,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (hasLastPlayerBeenHit) {
                             if (hasOtherPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
-                            else if (playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum) { // If the other person jumped.
+                            else if (playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + _arenaOffsetY) { // If the other person jumped.
                                 if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var lastTouchDateTimePlayerHit) || (now - lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
                                     if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var lastTouchDateTimeOtherPlayerHit) || (now - lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000)
                                         PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
@@ -880,7 +885,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (hasOtherPlayerBeenHit) {
                             if (hasLastPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, lastPlayerHit, currentPlayerSteamId);
-                            else if (lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum) { // If the other person jumped.
+                            else if (lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + _arenaOffsetY) { // If the other person jumped.
                                 if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var lastTouchDateTimeOtherPlayerHit) || (now - lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
                                     if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var lastTouchDateTimePlayerHit) || (now - lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000)
                                         PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
@@ -1003,9 +1008,6 @@ namespace oomtm450PuckMod_Ruleset {
                         if (newGameState.Phase == GamePhase.GameOver || newGameState.Phase == GamePhase.Warmup || newGameState.Phase == GamePhase.PreGame)
                             ResetGame();
 
-                        // Reset puck coordinates.
-                        _puckLastCoordinate = Vector3.zero;
-
                         // Reset players zone.
                         _playersZone.Clear();
 
@@ -1096,7 +1098,7 @@ namespace oomtm450PuckMod_Ruleset {
                             return;
                         }
 
-                        Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
+                        Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ);
 
                         List<string> claimedPositionsBlue = GetClaimedPositions(PlayerTeam.Blue);
                         List<string> claimedPositionsRed = GetClaimedPositions(PlayerTeam.Red);
@@ -1147,12 +1149,12 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || isReplay || !ServerConfig.Faceoff.UseCustomFaceoff || (GameManager.Instance.Phase != GamePhase.Play && GameManager.Instance.Phase != GamePhase.FaceOff) || !Logic)
                         return true;
 
-                    Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot);
+                    Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ);
 
                     if (ServerConfig.Faceoff.UseDefaultPuckDropHeight)
                         position = new Vector3(dot.x, position.y, dot.z);
                     else
-                        position = new Vector3(dot.x, ServerConfig.Faceoff.PuckDropHeight, dot.z);
+                        position = new Vector3(dot.x, ServerConfig.Faceoff.PuckDropHeight + _arenaOffsetY, dot.z);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(PuckManager_Server_SpawnPuck_Patch)} Prefix().\n{ex}", ServerConfig);
@@ -1506,8 +1508,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (players.Count == 0 || puck == null || !puck || Paused)
                         return;
-
-                    _puckLastCoordinate = new Vector3(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.y, puck.Rigidbody.transform.position.z);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix() 1.\n{ex}", ServerConfig);
@@ -1915,7 +1915,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!PenaltyModule.PenalizedPlayers.TryGetValue(playerSteamId, out LockList<Penalty> penalties) || penalties.Count == 0) {
                         string newFaceoffPosition = PenaltyModule.GetPlayerPositionForFaceoff(__instance.PlayerPosition.Name, __instance.Team, NextFaceoffSpot, GetClaimedPositions(__instance.Team));
                         PlayerFunc.TeleportOnFaceoff(
-                            __instance, Faceoff.GetFaceoffDot(NextFaceoffSpot), NextFaceoffSpot,
+                            __instance, Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ), NextFaceoffSpot,
                             newFaceoffPosition,
                             POSITION_ROTATION_ON_FACEOFF[__instance.Team][newFaceoffPosition]);
                     }
@@ -2411,7 +2411,7 @@ namespace oomtm450PuckMod_Ruleset {
                     List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
                     List<string> otherTeamPlayersSteamId = _playersZone.Where(x => x.Value.Team == otherTeam && x.Value.Zone == otherTeamZones[0]).Select(x => x.Key).ToList();
 
-                    if (otherTeamPlayersSteamId.Count != 0 && puck.Rigidbody.transform.position.y < ServerConfig.Icing.DeferredMaxHeight) {
+                    if (otherTeamPlayersSteamId.Count != 0 && puck.Rigidbody.transform.position.y < ServerConfig.Icing.DeferredMaxHeight + _arenaOffsetY) {
                         foreach (string playerSteamId in otherTeamPlayersSteamId) {
                             Player player = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
                             if (player == null || !player || !player.IsCharacterSpawned)
@@ -2807,6 +2807,114 @@ namespace oomtm450PuckMod_Ruleset {
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(Event_Everyone_OnPlayerBodySpawned)}.\n{ex}", ServerConfig);
+            }
+        }
+
+        private static void Event_CompetitiveAdjustments_OnArenaSync(Dictionary<string, object> message) { // TODO : Add this to Stats too.
+            if (!ServerFunc.IsDedicatedServer())
+                return;
+
+            try {
+                PenaltyModule.ResetCoordinates();
+
+                ZoneFunc.ICE_X_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(new Dictionary<IceElement, (double, double)>(ZoneFunc.ICE_X_POSITIONS_DEFAULT));
+                ZoneFunc.ICE_Z_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(new Dictionary<IceElement, (double, double)>(ZoneFunc.ICE_Z_POSITIONS_DEFAULT));
+
+                // Do the scaling first.
+                foreach (KeyValuePair<string, object> kvp in message) {
+                    switch (kvp.Key) {
+                        case "ArenaScaleX":
+                            double arenaScaleX = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            _arenaScaleX = (float)arenaScaleX;
+                            if (arenaScaleX == 1)
+                                break;
+
+                            Dictionary<IceElement, (double Start, double End)> newIceXPositions = new Dictionary<IceElement, (double, double)>(ZoneFunc.ICE_X_POSITIONS);
+
+                            // Ice X coordinates.
+                            List<IceElement> xIceElements = new List<IceElement>(newIceXPositions.Keys);
+                            foreach (IceElement iceElement in xIceElements)
+                                newIceXPositions[iceElement] = (newIceXPositions[iceElement].Start * arenaScaleX, newIceXPositions[iceElement].End * arenaScaleX);
+
+                            ZoneFunc.ICE_X_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(newIceXPositions);
+
+                            PenaltyModule.ScaleXCoordinates(_arenaScaleX);
+                            break;
+
+                        case "ArenaScaleZ":
+                            double arenaScaleY = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            // TODO : Adjust new barriers for delay of game.
+                            break;
+
+                        case "ArenaScaleY":
+                            double arenaScaleZ = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            _arenaScaleZ = (float)arenaScaleZ;
+                            if (arenaScaleZ == 1)
+                                break;
+
+                            Dictionary<IceElement, (double Start, double End)> newIceZPositions = new Dictionary<IceElement, (double, double)>(ZoneFunc.ICE_Z_POSITIONS);
+
+                            // Ice Z coordinates.
+                            List<IceElement> zIceElements = new List<IceElement>(newIceZPositions.Keys);
+                            foreach (IceElement iceElement in zIceElements)
+                                newIceZPositions[iceElement] = (newIceZPositions[iceElement].Start * arenaScaleZ, newIceZPositions[iceElement].End * arenaScaleZ);
+
+                            ZoneFunc.ICE_Z_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(newIceZPositions);
+
+                            PenaltyModule.ScaleZCoordinates(_arenaScaleZ);
+                            break;
+                    }
+                }
+
+                // Offset after scaling to not scale the offset.
+                foreach (KeyValuePair<string, object> kvp in message) {
+                    switch (kvp.Key) {
+                        case "ArenaOffsetX":
+                            double arenaOffsetX = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            _arenaOffsetX = (float)arenaOffsetX;
+                            if (arenaOffsetX == 0)
+                                break;
+
+                            Dictionary<IceElement, (double Start, double End)> newIceXPositions = new Dictionary<IceElement, (double, double)>(ZoneFunc.ICE_X_POSITIONS);
+
+                            // Ice X coordinates.
+                            List<IceElement> xIceElements = new List<IceElement>(newIceXPositions.Keys);
+                            foreach (IceElement iceElement in xIceElements)
+                                newIceXPositions[iceElement] = (newIceXPositions[iceElement].Start + arenaOffsetX, newIceXPositions[iceElement].End + arenaOffsetX);
+
+                            ZoneFunc.ICE_X_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(newIceXPositions);
+
+                            PenaltyModule.OffsetXCoordinates(_arenaOffsetX);
+                            break;
+
+                        case "ArenaOffsetY":
+                            double arenaOffsetY = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            _arenaOffsetY = (float)arenaOffsetY;
+                            // TODO : Adjust new barriers for delay of game.
+                            break;
+
+                        case "ArenaOffsetZ":
+                            double arenaOffsetZ = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            _arenaOffsetZ = (float)arenaOffsetZ;
+                            if (arenaOffsetZ == 0)
+                                break;
+
+                            Dictionary<IceElement, (double Start, double End)> newIceZPositions = new Dictionary<IceElement, (double, double)>(ZoneFunc.ICE_Z_POSITIONS);
+
+                            // Ice X coordinates.
+                            List<IceElement> zIceElements = new List<IceElement>(newIceZPositions.Keys);
+                            foreach (IceElement iceElement in zIceElements)
+                                newIceZPositions[iceElement] = (newIceZPositions[iceElement].Start + arenaOffsetZ, newIceZPositions[iceElement].End + arenaOffsetZ);
+
+                            ZoneFunc.ICE_Z_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(newIceZPositions);
+
+                            PenaltyModule.OffsetZCoordinates(_arenaOffsetZ);
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(Event_CompetitiveAdjustments_OnArenaSync)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -3695,6 +3803,8 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.Log("Setting server sided config.", ServerConfig, true);
                     ServerConfig = Configs.ServerConfig.ReadConfig();
                     ServerConfigBackup = null;
+
+                    PenaltyModule.ResetCoordinates();
                 }
                 else {
                     Logging.Log("Setting client sided config.", ServerConfig, true);
@@ -3714,6 +3824,7 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.AddEventListener("Event_Everyone_OnPlayerGameStateChanged", Event_Everyone_OnPlayerGameStateChanged);
                     EventManager.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     EventManager.AddEventListener("Event_Everyone_OnPlayerBodySpawned", Event_Everyone_OnPlayerBodySpawned);
+                    EventManager.AddEventListener("Event_CompetitiveAdjustments_OnArenaSync", Event_CompetitiveAdjustments_OnArenaSync);
 
                     if (ServerConfig.Faceoff.FreezePlayersBeforeDrop) {
                         // Create player unfreezer/tether system
@@ -3775,6 +3886,7 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.RemoveEventListener("Event_Everyone_OnPlayerGameStateChanged", Event_Everyone_OnPlayerGameStateChanged);
                     EventManager.RemoveEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     EventManager.RemoveEventListener("Event_Everyone_OnPlayerBodySpawned", Event_Everyone_OnPlayerBodySpawned);
+                    EventManager.RemoveEventListener("Event_CompetitiveAdjustments_OnArenaSync", Event_CompetitiveAdjustments_OnArenaSync);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
