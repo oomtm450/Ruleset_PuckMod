@@ -383,7 +383,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             // If goalie has a penalty, take another player.
-            if (Codebase.PlayerFunc.IsGoalie(penalizedPlayer)) {
+            if (Codebase.PlayerFunc.IsGoalie(penalizedPlayer) || penalizedPlayer.PlayerPosition.Name == Codebase.PlayerFunc.GOALIE_POSITION) {
                 List<Player> possiblePlayersToPenalize = new List<Player>();
                 foreach (Player teamPlayer in teamPlayers) {
                     if (!PenalizedPlayers.TryGetValue(penalizedPlayer.SteamId.Value.ToString(), out LockList<Penalty> __penaltyList))
