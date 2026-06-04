@@ -517,7 +517,7 @@ namespace oomtm450PuckMod_Ruleset {
             Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = player, Position = penaltyBoxPosition, Rotation = PENALTY_ROTATION, });
         }
 
-        internal static void PausePenalties() {
+        internal static void PausePenalties() { // TODO : Fix how we're going into the list. (Also penalties not being paused on faceoff)
             foreach (LockList<Penalty> penalties in PenalizedPlayers.Values) {
                 foreach (Penalty penalty in penalties) {
                     if (penalty.CurrentPenalty)
