@@ -3606,7 +3606,7 @@ namespace oomtm450PuckMod_Ruleset {
             penaltiesLabel.style.unityFontDefinition = referenceLabel.resolvedStyle.unityFontDefinition;
             penaltiesLabel.style.unityFontStyleAndWeight = referenceLabel.resolvedStyle.unityFontStyleAndWeight;
             penaltiesLabel.style.position = referenceLabel.resolvedStyle.position;
-            penaltiesLabel.style.alignItems = Align.FlexEnd;
+            penaltiesLabel.style.justifyContent = Justify.FlexEnd;
             penaltiesLabel.style.flexDirection = FlexDirection.Column;
             penaltiesLabel.style.backgroundColor = referenceLabel.resolvedStyle.backgroundColor;
             penaltiesLabel.style.unityTextOutlineColor = referenceLabel.resolvedStyle.unityTextOutlineColor;
