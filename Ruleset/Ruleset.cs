@@ -3607,12 +3607,13 @@ namespace oomtm450PuckMod_Ruleset {
             penaltiesLabel.style.unityFontStyleAndWeight = referenceLabel.resolvedStyle.unityFontStyleAndWeight;
             penaltiesLabel.style.position = referenceLabel.resolvedStyle.position;
             penaltiesLabel.style.alignItems = Align.FlexEnd;
+            penaltiesLabel.style.flexDirection = FlexDirection.Column;
             penaltiesLabel.style.backgroundColor = referenceLabel.resolvedStyle.backgroundColor;
             penaltiesLabel.style.unityTextOutlineColor = referenceLabel.resolvedStyle.unityTextOutlineColor;
             penaltiesLabel.style.unityTextOutlineWidth = referenceLabel.resolvedStyle.unityTextOutlineWidth;
             penaltiesLabel.style.textShadow = new StyleTextShadow(StyleKeyword.Auto);
 
-            penaltiesLabel.style.top = new Length(97f, LengthUnit.Percent);
+            penaltiesLabel.style.top = new Length(95f, LengthUnit.Percent);
             if (!blue)
                 penaltiesLabel.style.marginLeft = new Length(100f - ClientConfig.RedTeamPenaltyTimerXOffset, LengthUnit.Percent);
             else
