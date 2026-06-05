@@ -2591,8 +2591,10 @@ namespace oomtm450PuckMod_Ruleset {
                             _paused = bool.Parse(value);
                             if (_paused)
                                 PenaltyModule.PausePenalties();
-                            else
-                                PenaltyModule.UnpausePenalties();
+                            else {
+                                if (GameManager.Instance.GameState.Value.Phase == GamePhase.Play)
+                                    PenaltyModule.UnpausePenalties();
+                            }
                             break;
 
                         case Codebase.Constants.LOGIC:
