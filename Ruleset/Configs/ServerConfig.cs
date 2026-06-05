@@ -256,6 +256,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                             DelayOfGame = config.Penalty.DelayOfGame,
                             FaceoffViolation = config.Penalty.FaceoffViolation,
                             Embellishment = config.Penalty.Embellishment,
+                            Roughing = config.Penalty.Roughing,
                         },
                         Faceoff = new FaceoffConfig {
                             EnableViolations = config.Faceoff.EnableViolations,
@@ -369,6 +370,23 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, chance for an embellishment to be called. (2 is equal to 50%. 1 / 50 * 100 = 2)
         /// </summary>
         public int EmbellishmentChancePercInverse { get; set; } = 2;
+
+        /// <summary>
+        /// Bool, true if roughing penalty is enabled. (Embellishment revenge call, can't be called if Embellishment is off)
+        /// </summary>
+        public bool Roughing { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a roughing penalty in milliseconds.
+        /// </summary>
+        public int RoughingTime { get; set; } = 30000;
+        /// <summary>
+        /// Int, roughing can be called after this number of milliseconds after the player gets up.
+        /// </summary>
+        public int RoughingMillisecondsThreshold { get; set; } = 6500;
+        /// <summary>
+        /// Int, chance for an roughing to be called. (1 is equal to 100%. 1 / 100 * 100 = 1)
+        /// </summary>
+        public int RoughingChancePercInverse { get; set; } = 1;
         #endregion
 
         #region Constructors
@@ -405,6 +423,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             Embellishment = penaltyConfig.Embellishment;
             EmbellishmentTime = penaltyConfig.EmbellishmentTime;
             EmbellishmentMillisecondsThreshold = penaltyConfig.EmbellishmentMillisecondsThreshold;
+            EmbellishmentChancePercInverse = penaltyConfig.EmbellishmentChancePercInverse;
+
+            Roughing = penaltyConfig.Roughing;
+            RoughingTime = penaltyConfig.RoughingTime;
+            RoughingMillisecondsThreshold = penaltyConfig.RoughingMillisecondsThreshold;
+            RoughingChancePercInverse = penaltyConfig.RoughingChancePercInverse;
         }
         #endregion
 
@@ -483,6 +507,19 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (EmbellishmentChancePercInverse == _oldConfig.EmbellishmentChancePercInverse)
                 EmbellishmentChancePercInverse = newConfig.EmbellishmentChancePercInverse;
+
+
+            if (Roughing == _oldConfig.Roughing)
+                Roughing = newConfig.Roughing;
+
+            if (RoughingTime == _oldConfig.RoughingTime)
+                RoughingTime = newConfig.RoughingTime;
+
+            if (RoughingMillisecondsThreshold == _oldConfig.RoughingMillisecondsThreshold)
+                RoughingMillisecondsThreshold = newConfig.RoughingMillisecondsThreshold;
+
+            if (RoughingChancePercInverse == _oldConfig.RoughingChancePercInverse)
+                RoughingChancePercInverse = newConfig.RoughingChancePercInverse;
         }
     }
 

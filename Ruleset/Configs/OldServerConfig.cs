@@ -177,6 +177,23 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public int EmbellishmentChancePercInverse { get; } = 2;
 
         /// <summary>
+        /// Bool, true if roughing penalty is enabled. (Embellishment revenge call, can't be called if Embellishment is off)
+        /// </summary>
+        public bool Roughing { get; } = true;
+        /// <summary>
+        /// Int, time in the box for a roughing penalty in milliseconds.
+        /// </summary>
+        public int RoughingTime { get; } = 30000;
+        /// <summary>
+        /// Int, roughing can be called after this number of milliseconds after the player gets up.
+        /// </summary>
+        public int RoughingMillisecondsThreshold { get; } = 6500;
+        /// <summary>
+        /// Int, chance for an roughing to be called. (1 is equal to 100%. 1 / 100 * 100 = 1)
+        /// </summary>
+        public int RoughingChancePercInverse { get; } = 1;
+
+        /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
         /// </summary>
         /// <param name="oldConfig">ISubConfig, config with old values.</param>

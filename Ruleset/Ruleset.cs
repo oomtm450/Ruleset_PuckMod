@@ -18,7 +18,6 @@ using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
-using static UnityEngine.Rendering.DebugUI.Table;
 
 namespace oomtm450PuckMod_Ruleset {
     /// <summary>
@@ -319,6 +318,8 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly LockDictionary<string, DateTime> _playersLastSlipDateTime = new LockDictionary<string, DateTime>();
 
         private static readonly LockDictionary<string, (string, DateTime)> _playersLastDivedIntoTime = new LockDictionary<string, (string, DateTime)>();
+
+        private static readonly LockDictionary<string, (string, DateTime)> _playersWasLastHitDateTime = new LockDictionary<string, (string, DateTime)>();
 
         private static float _arenaScaleX = 1f;
         private static float _arenaScaleY = 1f;
@@ -875,10 +876,15 @@ namespace oomtm450PuckMod_Ruleset {
                         if (hasLastPlayerBeenHit) {
                             if (hasOtherPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
-                            else if (playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + _arenaOffsetY) { // If the other person jumped.
-                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var lastTouchDateTimePlayerHit) || (now - lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
-                                    if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var lastTouchDateTimeOtherPlayerHit) || (now - lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000)
-                                        PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
+                            else {
+                                // Register player hit.
+                                _playersWasLastHitDateTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
+
+                                if (playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + _arenaOffsetY) { // If the other person jumped.
+                                    if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var lastTouchDateTimePlayerHit) || (now - lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
+                                        if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var lastTouchDateTimeOtherPlayerHit) || (now - lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000)
+                                            PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
+                                    }
                                 }
                             }
                         }
@@ -886,10 +892,15 @@ namespace oomtm450PuckMod_Ruleset {
                         if (hasOtherPlayerBeenHit) {
                             if (hasLastPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, lastPlayerHit, currentPlayerSteamId);
-                            else if (lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + _arenaOffsetY) { // If the other person jumped.
-                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var lastTouchDateTimeOtherPlayerHit) || (now - lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
-                                    if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var lastTouchDateTimePlayerHit) || (now - lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000)
-                                        PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
+                            else {
+                                // Register player hit.
+                                _playersWasLastHitDateTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
+
+                                if (lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + _arenaOffsetY) { // If the other person jumped.
+                                    if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var lastTouchDateTimeOtherPlayerHit) || (now - lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
+                                        if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var lastTouchDateTimePlayerHit) || (now - lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000)
+                                            PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
+                                    }
                                 }
                             }
                         }
@@ -1093,6 +1104,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (newGameState.Phase == GamePhase.FaceOff) {
                         _playersLastSlipDateTime.Clear();
                         _playersLastDivedIntoTime.Clear();
+                        _playersWasLastHitDateTime.Clear();
 
                         if (!ServerConfig.Faceoff.UseCustomFaceoff) {
                             PenaltyModule.TeleportPlayers();
@@ -1129,6 +1141,7 @@ namespace oomtm450PuckMod_Ruleset {
                     else if (newGameState.Phase == GamePhase.Play || newGameState.Phase == GamePhase.BlueScore || newGameState.Phase == GamePhase.RedScore || newGameState.Phase == GamePhase.Intermission) {
                         _playersLastSlipDateTime.Clear();
                         _playersLastDivedIntoTime.Clear();
+                        _playersWasLastHitDateTime.Clear();
                         PenaltyModule.TeleportPlayers();
                     }
                 }
@@ -2190,6 +2203,7 @@ namespace oomtm450PuckMod_Ruleset {
             _playersHasBlockedFromChangingTeams.Clear();
             _playersLastSlipDateTime.Clear();
             _playersLastDivedIntoTime.Clear();
+            _playersWasLastHitDateTime.Clear();
         }
 
         private static bool IsAdmin(ulong clientId) {
@@ -2555,23 +2569,32 @@ namespace oomtm450PuckMod_Ruleset {
 
                             int divingValue = int.Parse((string)extraMessageKvp.Value);
 
+                            DateTime now = DateTime.UtcNow;
+
                             DateTime getUpTime;
                             if (divingValue == int.MinValue)
-                                getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(2750d);
+                                getUpTime = now + TimeSpan.FromMilliseconds(2750d);
                             else if (divingValue == int.MaxValue)
-                                getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(60000d);
+                                getUpTime = now + TimeSpan.FromMilliseconds(60000d);
                             else
-                                getUpTime = DateTime.UtcNow + TimeSpan.FromMilliseconds(divingValue);
+                                getUpTime = now + TimeSpan.FromMilliseconds(divingValue);
 
                             _dives.AddOrUpdate(value, getUpTime);
 
                             if (!Logic)
                                 break;
 
-                            if (divingValue != int.MinValue && _playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds < ServerConfig.Penalty.EmbellishmentMillisecondsThreshold && (DateTime.UtcNow - playerLastSlipTime).TotalMilliseconds > 50 && new System.Random().Next(0, ServerConfig.Penalty.EmbellishmentChancePercInverse) == 0) {
+                            if (divingValue != int.MinValue && _playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (now - playerLastSlipTime).TotalMilliseconds < ServerConfig.Penalty.EmbellishmentMillisecondsThreshold && (now - playerLastSlipTime).TotalMilliseconds > 50 && new System.Random().Next(0, ServerConfig.Penalty.EmbellishmentChancePercInverse) == 0) {
                                 Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(value);
-                                if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned && !Codebase.PlayerFunc.IsGoalie(penalizedPlayer))
+                                if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned && !Codebase.PlayerFunc.IsGoalie(penalizedPlayer)) {
                                     PenaltyModule.GivePenalty(PenaltyType.Embellishment, penalizedPlayer);
+
+                                    if (_playersWasLastHitDateTime.TryGetValue(value, out var playerWasHitBy) && (now - playerWasHitBy.Item2).TotalMilliseconds < ServerConfig.Penalty.RoughingMillisecondsThreshold && new System.Random().Next(0, ServerConfig.Penalty.RoughingChancePercInverse) == 0) {
+                                        Player roughingPenalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerWasHitBy.Item1);
+                                        if (roughingPenalizedPlayer != null && roughingPenalizedPlayer && roughingPenalizedPlayer.IsCharacterSpawned && !Codebase.PlayerFunc.IsGoalie(roughingPenalizedPlayer))
+                                            PenaltyModule.GivePenalty(PenaltyType.Roughing, roughingPenalizedPlayer);
+                                    }
+                                }
                             }
 
                             break;

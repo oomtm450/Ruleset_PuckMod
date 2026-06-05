@@ -733,6 +733,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                 case PenaltyType.Embellishment:
                     return Ruleset.ServerConfig.Penalty.EmbellishmentTime;
+
+                case PenaltyType.Roughing:
+                    return Ruleset.ServerConfig.Penalty.RoughingTime;
             }
 
             return 45000;
@@ -831,5 +834,6 @@ namespace oomtm450PuckMod_Ruleset {
         Embellishment,
         [Description("Faceoff violation"), Category("ToString")]
         FaceoffViolation,
+        Roughing,
     }
 }
