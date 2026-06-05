@@ -319,7 +319,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly LockDictionary<string, (string, DateTime)> _playersLastDivedIntoTime = new LockDictionary<string, (string, DateTime)>();
 
-        private static readonly LockDictionary<string, (string, DateTime)> _playersWasLastHitDateTime = new LockDictionary<string, (string, DateTime)>();
+        private static readonly LockDictionary<string, (string, DateTime)> _playersWasLastHitWithoutPuckDateTime = new LockDictionary<string, (string, DateTime)>();
 
         private static float _arenaScaleX = 1f;
         private static float _arenaScaleY = 1f;
@@ -877,13 +877,14 @@ namespace oomtm450PuckMod_Ruleset {
                             if (hasOtherPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
                             else {
-                                // Register player hit.
-                                _playersWasLastHitDateTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
+                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var lastTouchDateTimePlayerHit) || (now - lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
+                                    if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var lastTouchDateTimeOtherPlayerHit) || (now - lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000) {
+                                        // Register player hit.
+                                        _playersWasLastHitWithoutPuckDateTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
 
-                                if (playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + _arenaOffsetY) { // If the other person jumped.
-                                    if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var lastTouchDateTimePlayerHit) || (now - lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
-                                        if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var lastTouchDateTimeOtherPlayerHit) || (now - lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000)
+                                        if (playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + _arenaOffsetY) { // If the other person jumped.
                                             PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
+                                        }
                                     }
                                 }
                             }
@@ -893,13 +894,14 @@ namespace oomtm450PuckMod_Ruleset {
                             if (hasLastPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, lastPlayerHit, currentPlayerSteamId);
                             else {
-                                // Register player hit.
-                                _playersWasLastHitDateTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
+                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var lastTouchDateTimeOtherPlayerHit) || (now - lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
+                                    if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var lastTouchDateTimePlayerHit) || (now - lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000) {
+                                        // Register player hit.
+                                        _playersWasLastHitWithoutPuckDateTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
 
-                                if (lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + _arenaOffsetY) { // If the other person jumped.
-                                    if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var lastTouchDateTimeOtherPlayerHit) || (now - lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
-                                        if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var lastTouchDateTimePlayerHit) || (now - lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000)
+                                        if (lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + _arenaOffsetY) { // If the other person jumped.
                                             PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
+                                        }
                                     }
                                 }
                             }
@@ -985,11 +987,12 @@ namespace oomtm450PuckMod_Ruleset {
                         return true;
 
                     if (Paused) {
-                        UnpauseGame();
+                        UnpauseGame(newGameState.Phase);
                         ChangedPhase = false;
                     }
+                    else
+                        Paused = false;
 
-                    Paused = false;
                     _doFaceoff = false;
 
                     if (newGameState.Phase == GamePhase.BlueScore || newGameState.Phase == GamePhase.RedScore)
@@ -1019,6 +1022,8 @@ namespace oomtm450PuckMod_Ruleset {
                     else if (newGameState.Phase == GamePhase.FaceOff || newGameState.Phase == GamePhase.Warmup || newGameState.Phase == GamePhase.GameOver || newGameState.Phase == GamePhase.PreGame) {
                         if (newGameState.Phase == GamePhase.GameOver || newGameState.Phase == GamePhase.Warmup || newGameState.Phase == GamePhase.PreGame)
                             ResetGame();
+
+                        PenaltyModule.PausePenalties();
 
                         // Reset players zone.
                         _playersZone.Clear();
@@ -1071,9 +1076,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                         PenaltyModule.StartPenalties();
                     }
-                    else if (newGameState.Phase == GamePhase.Play) {
-                        PenaltyModule.UnpausePenalties();
-                    }
 
                     if (!ChangedPhase)
                         return true;
@@ -1104,7 +1106,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (newGameState.Phase == GamePhase.FaceOff) {
                         _playersLastSlipDateTime.Clear();
                         _playersLastDivedIntoTime.Clear();
-                        _playersWasLastHitDateTime.Clear();
+                        _playersWasLastHitWithoutPuckDateTime.Clear();
 
                         if (!ServerConfig.Faceoff.UseCustomFaceoff) {
                             PenaltyModule.TeleportPlayers();
@@ -1141,7 +1143,7 @@ namespace oomtm450PuckMod_Ruleset {
                     else if (newGameState.Phase == GamePhase.Play || newGameState.Phase == GamePhase.BlueScore || newGameState.Phase == GamePhase.RedScore || newGameState.Phase == GamePhase.Intermission) {
                         _playersLastSlipDateTime.Clear();
                         _playersLastDivedIntoTime.Clear();
-                        _playersWasLastHitDateTime.Clear();
+                        _playersWasLastHitWithoutPuckDateTime.Clear();
                         PenaltyModule.TeleportPlayers();
                     }
                 }
@@ -2165,10 +2167,12 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (_refSignalsBlueTeam.WasJustShownOrHidden) {
                         _refSignalsBlueTeam.WasJustShownOrHidden = false;
+                        _refSignalsRedTeam.WasJustShownOrHidden = false;
                         return false;
                     }
 
                     if (_refSignalsRedTeam.WasJustShownOrHidden) {
+                        _refSignalsBlueTeam.WasJustShownOrHidden = false;
                         _refSignalsRedTeam.WasJustShownOrHidden = false;
                         return false;
                     }
@@ -2178,6 +2182,46 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_StopTicking event from GameManager.
+        /// </summary>
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_StopTicking))]
+        public class GameManager_Server_StopTicking_Patch {
+            [HarmonyPostfix]
+            public static void Postfix() {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return;
+
+                    PauseGame(false);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(GameManager_Server_StopTicking_Patch)} Postfix().\n{ex}", ClientConfig);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_StartTicking event from GameManager.
+        /// </summary>
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_StartTicking))]
+        public class GameManager_Server_StartTicking_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(GameManager __instance) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return;
+
+                    UnpauseGame(__instance.GameState.Value.Phase, false);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(GameManager_Server_StartTicking_Patch)} Postfix().\n{ex}", ClientConfig);
+                }
             }
         }
         #endregion
@@ -2203,7 +2247,7 @@ namespace oomtm450PuckMod_Ruleset {
             _playersHasBlockedFromChangingTeams.Clear();
             _playersLastSlipDateTime.Clear();
             _playersLastDivedIntoTime.Clear();
-            _playersWasLastHitDateTime.Clear();
+            _playersWasLastHitWithoutPuckDateTime.Clear();
         }
 
         private static bool IsAdmin(ulong clientId) {
@@ -2307,9 +2351,6 @@ namespace oomtm450PuckMod_Ruleset {
             ResetIcings();
             ResetHighSticks();
 
-            Paused = true;
-            PenaltyModule.PausePenalties();
-
             NetworkCommunication.SendDataToAll(SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(SoundsSystem.WHISTLE),
                 Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT, ServerConfig);
 
@@ -2342,9 +2383,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void PostDoFaceoff() {
             _doFaceoff = false;
-            Paused = false;
 
-            UnpauseGame();
+            UnpauseGame(GameManager.Instance.GameState.Value.Phase);
             if (GameManager.Instance.GameState.Value.Phase != GamePhase.Play)
                 return;
 
@@ -2589,7 +2629,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned && !Codebase.PlayerFunc.IsGoalie(penalizedPlayer)) {
                                     PenaltyModule.GivePenalty(PenaltyType.Embellishment, penalizedPlayer);
 
-                                    if (_playersWasLastHitDateTime.TryGetValue(value, out var playerWasHitBy) && (now - playerWasHitBy.Item2).TotalMilliseconds < ServerConfig.Penalty.RoughingMillisecondsThreshold && new System.Random().Next(0, ServerConfig.Penalty.RoughingChancePercInverse) == 0) {
+                                    if (_playersWasLastHitWithoutPuckDateTime.TryGetValue(value, out var playerWasHitBy) && (now - playerWasHitBy.Item2).TotalMilliseconds < ServerConfig.Penalty.RoughingMillisecondsThreshold && new System.Random().Next(0, ServerConfig.Penalty.RoughingChancePercInverse) == 0) {
                                         Player roughingPenalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerWasHitBy.Item1);
                                         if (roughingPenalizedPlayer != null && roughingPenalizedPlayer && roughingPenalizedPlayer.IsCharacterSpawned && !Codebase.PlayerFunc.IsGoalie(roughingPenalizedPlayer))
                                             PenaltyModule.GivePenalty(PenaltyType.Roughing, roughingPenalizedPlayer);
@@ -4033,12 +4073,22 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        internal static void PauseGame() {
-            GameManager.Instance.Server_StopTicking();
+        internal static void PauseGame(bool callStopTicking = true) {
+            Paused = true;
+            PenaltyModule.PausePenalties();
+
+            if (callStopTicking)
+                GameManager.Instance.Server_StopTicking();
         }
 
-        internal static void UnpauseGame() {
-            GameManager.Instance.Server_StartTicking();
+        internal static void UnpauseGame(GamePhase gamePhase, bool callStartTicking = true) {
+            Paused = false;
+
+            if (callStartTicking)
+                GameManager.Instance.Server_StartTicking();
+
+            if (gamePhase == GamePhase.Play)
+                PenaltyModule.UnpausePenalties();
         }
 
         internal static List<string> GetClaimedPositions(PlayerTeam team) {
