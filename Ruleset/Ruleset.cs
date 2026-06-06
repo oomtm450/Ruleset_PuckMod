@@ -2858,7 +2858,7 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             try {
-                Logging.Log("Event_CompetitiveAdjustments_OnArenaSync !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+                //Logging.Log("Event_CompetitiveAdjustments_OnArenaSync !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
                 PenaltyModule.ResetCoordinates();
                 _barriersLowered = false;
 
