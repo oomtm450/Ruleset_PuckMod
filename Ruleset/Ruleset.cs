@@ -2626,7 +2626,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                             _dives.AddOrUpdate(value, getUpTime);
 
-                            if (!Logic)
+                            if (!Logic || GameManager.Instance.Phase != GamePhase.Play)
                                 break;
 
                             if (divingValue != int.MinValue && _playersLastSlipDateTime.TryGetValue(value, out DateTime playerLastSlipTime) && (now - playerLastSlipTime).TotalMilliseconds < ServerConfig.Penalty.EmbellishmentMillisecondsThreshold && (now - playerLastSlipTime).TotalMilliseconds > 50 && new System.Random().Next(0, ServerConfig.Penalty.EmbellishmentChancePercInverse) == 0) {
