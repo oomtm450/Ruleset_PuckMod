@@ -99,6 +99,8 @@ namespace oomtm450PuckMod_Ruleset {
         private const string TOGGLE_DEFERRED_ICING_DATANAME = Constants.MOD_NAME + "toggledeficing";
         private const string TOGGLE_OFFSIDE_DATANAME = Constants.MOD_NAME + "toggleoff";
         private const string TOGGLE_GINTERFERENCE_DATANAME = Constants.MOD_NAME + "togglegint";
+
+        private const int MAX_PENALTY_TIMER_LABELS = 6;
         #endregion
 
         #region Fields
@@ -3679,7 +3681,7 @@ namespace oomtm450PuckMod_Ruleset {
             penaltiesLabel.style.unityTextOutlineWidth = referenceLabel.resolvedStyle.unityTextOutlineWidth;
             penaltiesLabel.style.textShadow = new StyleTextShadow(StyleKeyword.Auto);
 
-            penaltiesLabel.style.top = new Length(94f, LengthUnit.Percent);
+            penaltiesLabel.style.top = new Length(100 - (MAX_PENALTY_TIMER_LABELS * 3), LengthUnit.Percent);
             if (!blue)
                 penaltiesLabel.style.marginLeft = new Length(100f - ClientConfig.RedTeamPenaltyTimerXOffset, LengthUnit.Percent);
             else
@@ -3695,24 +3697,36 @@ namespace oomtm450PuckMod_Ruleset {
 
                 // Blue team.
                 string penaltyTimersTextBlueTeam = "";
-                foreach (var timer in penaltyTimers.Where(x => x.PlayerIdentity.StartsWith("B"))) {
+                var bluePenaltyTimers = penaltyTimers.Where(x => x.PlayerIdentity.StartsWith("B"));
+                foreach (var timer in bluePenaltyTimers) {
                     TimeSpan ts = TimeSpan.FromMilliseconds(timer.Timer.MillisecondsLeft);
                     penaltyTimersTextBlueTeam += $"{timer.PlayerIdentity.Remove(0, 2)} {string.Format("{0}:{1:00}", (int)ts.TotalMinutes, ts.Seconds)}\n";
                 }
 
                 if (!string.IsNullOrEmpty(penaltyTimersTextBlueTeam))
                     penaltyTimersTextBlueTeam = penaltyTimersTextBlueTeam.Remove(penaltyTimersTextBlueTeam.Length - 1);
+
+                for (int i = 0; i < MAX_PENALTY_TIMER_LABELS - bluePenaltyTimers.Count(); i++) {
+                    penaltyTimersTextBlueTeam = "\n" + penaltyTimersTextBlueTeam;
+                }
+
                 _penaltiesLabelBlue.text = penaltyTimersTextBlueTeam;
 
                 // Red team.
                 string penaltyTimersTextRedTeam = "";
-                foreach (var timer in penaltyTimers.Where(x => x.PlayerIdentity.StartsWith("R"))) {
+                var redPenaltyTimers = penaltyTimers.Where(x => x.PlayerIdentity.StartsWith("R"));
+                foreach (var timer in redPenaltyTimers) {
                     TimeSpan ts = TimeSpan.FromMilliseconds(timer.Timer.MillisecondsLeft);
                     penaltyTimersTextRedTeam += $"{timer.PlayerIdentity.Remove(0, 2)} {string.Format("{0}:{1:00}", (int)ts.TotalMinutes, ts.Seconds)}\n";
                 }
 
                 if (!string.IsNullOrEmpty(penaltyTimersTextRedTeam))
                     penaltyTimersTextRedTeam = penaltyTimersTextRedTeam.Remove(penaltyTimersTextRedTeam.Length - 1);
+
+                for (int i = 0; i < MAX_PENALTY_TIMER_LABELS - redPenaltyTimers.Count(); i++) {
+                    penaltyTimersTextRedTeam = "\n" + penaltyTimersTextRedTeam;
+                }
+
                 _penaltiesLabelRed.text = penaltyTimersTextRedTeam;
             }
             catch (Exception ex) {
