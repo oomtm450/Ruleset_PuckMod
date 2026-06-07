@@ -498,77 +498,31 @@ namespace oomtm450PuckMod_Stats {
                         return;
 
                     // Reset s%.
-                    List<Player> players = PlayerManager.Instance.GetPlayers();
-                    foreach (string key in new List<string>(_savePerc.Keys)) {
-                        if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
-                            _savePerc[key] = (0, 0);
-                        else
-                            _savePerc.Remove(key);
-                    }
+                    _savePerc.Clear();
 
                     // Reset SOG.
-                    foreach (string key in new List<string>(_sog.Keys)) {
-                        if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
-                            _sog[key] = 0;
-                        else
-                            _sog.Remove(key);
-                    }
+                    _sog.Clear();
 
                     // Reset stick saves.
-                    foreach (string key in new List<string>(_stickSaves.Keys)) {
-                        if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
-                            _stickSaves[key] = 0;
-                        else
-                            _stickSaves.Remove(key);
-                    }
+                    _stickSaves.Clear();
 
                     // Reset blocked shots.
-                    foreach (string key in new List<string>(_blocks.Keys)) {
-                        if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
-                            _blocks[key] = 0;
-                        else
-                            _blocks.Remove(key);
-                    }
+                    _blocks.Clear();
 
                     // Reset hits.
-                    foreach (string key in new List<string>(_hits.Keys)) {
-                        if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
-                            _hits[key] = 0;
-                        else
-                            _hits.Remove(key);
-                    }
+                    _hits.Clear();
 
                     // Reset takeaways.
-                    foreach (string key in new List<string>(_takeaways.Keys)) {
-                        if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
-                            _takeaways[key] = 0;
-                        else
-                            _takeaways.Remove(key);
-                    }
+                    _takeaways.Clear();
 
                     // Reset turnovers.
-                    foreach (string key in new List<string>(_turnovers.Keys)) {
-                        if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
-                            _turnovers[key] = 0;
-                        else
-                            _turnovers.Remove(key);
-                    }
+                    _turnovers.Clear();
 
                     // Reset passes.
-                    foreach (string key in new List<string>(_passes.Keys)) {
-                        if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
-                            _passes[key] = 0;
-                        else
-                            _passes.Remove(key);
-                    }
+                    _passes.Clear();
 
                     // Reset +/-.
-                    foreach (string key in new List<string>(_plusMinus.Keys)) {
-                        if (players.FirstOrDefault(x => x.SteamId.Value.ToString() == key) != null)
-                            _plusMinus[key] = 0;
-                        else
-                            _plusMinus.Remove(key);
-                    }
+                    _plusMinus.Clear();
 
                     // Reset goal and assists trackers.
                     _blueGoals.Clear();
