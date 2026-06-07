@@ -2385,8 +2385,8 @@ namespace oomtm450PuckMod_Ruleset {
         private static void PostDoFaceoff() {
             _doFaceoff = false;
 
-            UnpauseGame(GameManager.Instance.GameState.Value.Phase);
-            if (GameManager.Instance.GameState.Value.Phase != GamePhase.Play)
+            UnpauseGame(GameManager.Instance.Phase);
+            if (GameManager.Instance.Phase != GamePhase.Play)
                 return;
 
             ChangedPhase = true;
@@ -2593,7 +2593,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (_paused)
                                 PenaltyModule.PausePenalties();
                             else {
-                                if (GameManager.Instance.GameState.Value.Phase == GamePhase.Play)
+                                if (GameManager.Instance.Phase == GamePhase.Play)
                                     PenaltyModule.UnpausePenalties();
                             }
                             break;
@@ -2603,7 +2603,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         case "dive":
-                            if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Play)
+                            if (Paused || GameManager.Instance.Phase != GamePhase.Play)
                                 break;
 
                             KeyValuePair<string, object> extraMessageKvp = message.ElementAt(1);
@@ -2841,7 +2841,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 // Prevent the default freeze behavior during faceoffs.
-                if (GameManager.Instance.GameState.Value.Phase == GamePhase.FaceOff) {
+                if (GameManager.Instance.Phase == GamePhase.FaceOff) {
                     PlayerBody playerBody = (PlayerBody)message["playerBody"];
                     if (PenaltyModule.PenalizedPlayers.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out LockList<Penalty> penalties) && penalties.Count != 0)
                         return;
@@ -3116,7 +3116,7 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RefSignals.OFFSIDE_LINESMAN: // SERVER-SIDE : Call an offside.
-                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Play)
+                        if (Paused || GameManager.Instance.Phase != GamePhase.Play)
                             break;
 
                         Player offsideReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
@@ -3135,7 +3135,7 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RefSignals.HIGHSTICK_LINESMAN: // SERVER-SIDE : Call a high stick stoppage.
-                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Play)
+                        if (Paused || GameManager.Instance.Phase != GamePhase.Play)
                             break;
 
                         Player highStickReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
@@ -3154,7 +3154,7 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case RefSignals.ICING_LINESMAN: // SERVER-SIDE : Call an icing.
-                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Play)
+                        if (Paused || GameManager.Instance.Phase != GamePhase.Play)
                             break;
 
                         Player icingReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
@@ -3173,7 +3173,7 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case "gs" + RefSignals.INTERFERENCE_REF: // SERVER-SIDE : Call a goalie interference stoppage. // TODO : Constant.
-                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Play)
+                        if (Paused || GameManager.Instance.Phase != GamePhase.Play)
                             break;
 
                         Player gintReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
@@ -3341,7 +3341,7 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case PenaltyModule.GIVE_PENALTY_DATANAME: // SERVER-SIDE : Give penalty.
-                        if (Paused || GameManager.Instance.GameState.Value.Phase != GamePhase.Play)
+                        if (Paused || GameManager.Instance.Phase != GamePhase.Play)
                             break;
 
                         Player gintPenReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
