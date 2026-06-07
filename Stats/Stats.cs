@@ -1600,6 +1600,14 @@ namespace oomtm450PuckMod_Stats {
                     _playersTeam.AddOrUpdate(playerSteamId, newPlayerGameState.Team);
                     _playersTeamToRemoveAfterGame.Remove(playerSteamId);
                 }
+                else if (GameManager.Instance.Phase == GamePhase.PreGame || GameManager.Instance.Phase == GamePhase.Warmup || GameManager.Instance.Phase == GamePhase.PostGame || GameManager.Instance.Phase == GamePhase.GameOver) {
+                    if (string.IsNullOrEmpty(playerSteamId))
+                        return;
+
+                    _playersTeam.Remove(playerSteamId);
+                    _playersTeamToRemoveAfterGame.Remove(playerSteamId);
+                    return;
+                }
 
                 if (oldPlayerGameState.Role == newPlayerGameState.Role)
                     return;
