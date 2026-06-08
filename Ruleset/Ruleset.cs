@@ -3681,7 +3681,7 @@ namespace oomtm450PuckMod_Ruleset {
             penaltiesLabel.style.unityTextOutlineWidth = referenceLabel.resolvedStyle.unityTextOutlineWidth;
             penaltiesLabel.style.textShadow = new StyleTextShadow(StyleKeyword.Auto);
 
-            penaltiesLabel.style.top = new Length(99.5f - (MAX_PENALTY_TIMER_LABELS * 3), LengthUnit.Percent);
+            penaltiesLabel.style.top = new Length(99f - (MAX_PENALTY_TIMER_LABELS * 3), LengthUnit.Percent);
             if (!blue)
                 penaltiesLabel.style.marginLeft = new Length(100f - ClientConfig.RedTeamPenaltyTimerXOffset, LengthUnit.Percent);
             else
