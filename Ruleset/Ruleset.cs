@@ -1025,8 +1025,8 @@ namespace oomtm450PuckMod_Ruleset {
                     else if (newGameState.Phase == GamePhase.FaceOff || newGameState.Phase == GamePhase.Warmup || newGameState.Phase == GamePhase.GameOver || newGameState.Phase == GamePhase.PreGame) {
                         if (newGameState.Phase == GamePhase.GameOver || newGameState.Phase == GamePhase.Warmup || newGameState.Phase == GamePhase.PreGame)
                             ResetGame();
-
-                        PenaltyModule.PausePenalties();
+                        else
+                            PenaltyModule.PausePenalties();
 
                         // Reset players zone.
                         _playersZone.Clear();
