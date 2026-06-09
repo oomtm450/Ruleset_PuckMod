@@ -307,6 +307,10 @@ namespace oomtm450PuckMod_Ruleset {
             return false;
         }
 
+        private static List<Penalty> GetAllPenalties() {
+            return new List<Penalty>(PenalizedPlayers.SelectMany(x => x.Value));
+        }
+
         internal static void ResetPenalties() {
             PenalizedPlayers.Clear();
             PenalizedPlayersCountBlueTeam = 0;
@@ -323,6 +327,8 @@ namespace oomtm450PuckMod_Ruleset {
             Ruleset.PenaltyTimersElapsed.Clear();
 
             Ruleset.DataToSendToAll.Add(new List<string> { "removeallpen", "1", Constants.FROM_SERVER_TO_CLIENT, });
+
+            UnpausePenalties();
         }
 
         internal static bool GivePenalty(PenaltyType penaltyType, Player penalizedPlayer, string receivingPlayerSteamId = "", Player referee = null) {
@@ -519,12 +525,10 @@ namespace oomtm450PuckMod_Ruleset {
             Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = player, Position = penaltyBoxPosition, Rotation = PENALTY_ROTATION, });
         }
 
-        internal static void PausePenalties() { // TODO : Fix how we're going into the list. (Also penalties not being paused on faceoff)
-            foreach (LockList<Penalty> penalties in PenalizedPlayers.Values) {
-                foreach (Penalty penalty in penalties) {
-                    if (penalty.CurrentPenalty)
-                        penalty.Timer.Pause();
-                }
+        internal static void PausePenalties() {
+            foreach (Penalty penalty in GetAllPenalties()) {
+                if (penalty.CurrentPenalty)
+                    penalty.Timer.Pause();
             }
 
             foreach (PlayerTeam key in new List<PlayerTeam>(PenaltyBenchPositionIsOccupied.Keys))
@@ -535,7 +539,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static void UnpausePenalties() {
             string penaltyUIMsg = "";
-            foreach (Penalty penalty in new List<Penalty>(PenalizedPlayers.SelectMany(x => x.Value))) {
+            foreach (Penalty penalty in GetAllPenalties()) {
                 if (penalty.Timer.TimerEnded())
                     continue;
 
