@@ -336,6 +336,8 @@ namespace oomtm450PuckMod_Ruleset {
                 return false;
             if (!Ruleset.ServerConfig.Penalty.Embellishment && penaltyType == PenaltyType.Embellishment)
                 return false;
+            if (!Ruleset.ServerConfig.Penalty.Roughing && penaltyType == PenaltyType.Roughing)
+                return false;
 
             List<Player> teamPlayers = PlayerManager.Instance.GetPlayersByTeam(penalizedPlayer.Team).Where(x => !Codebase.PlayerFunc.IsGoalie(x)).ToList();
 
