@@ -2635,9 +2635,11 @@ namespace oomtm450PuckMod_Ruleset {
                                     PenaltyModule.GivePenalty(PenaltyType.Embellishment, penalizedPlayer);
 
                                     if (_playersWasLastHitWithoutPuckDateTime.TryGetValue(value, out var playerWasHitBy) && (now - playerWasHitBy.Item2).TotalMilliseconds < ServerConfig.Penalty.RoughingMillisecondsThreshold && new System.Random().Next(0, ServerConfig.Penalty.RoughingChancePercInverse) == 0) {
-                                        Player roughingPenalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerWasHitBy.Item1);
-                                        if (roughingPenalizedPlayer != null && roughingPenalizedPlayer && roughingPenalizedPlayer.IsCharacterSpawned && !Codebase.PlayerFunc.IsGoalie(roughingPenalizedPlayer))
-                                            PenaltyModule.GivePenalty(PenaltyType.Roughing, roughingPenalizedPlayer);
+                                        if (!PenaltyModule.PenalizedPlayers.TryGetValue(playerWasHitBy.Item1, out LockList<Penalty> penaltyList) || penaltyList.Count != 0) {
+                                            Player roughingPenalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerWasHitBy.Item1);
+                                            if (roughingPenalizedPlayer != null && roughingPenalizedPlayer && roughingPenalizedPlayer.IsCharacterSpawned && !Codebase.PlayerFunc.IsGoalie(roughingPenalizedPlayer))
+                                                PenaltyModule.GivePenalty(PenaltyType.Roughing, roughingPenalizedPlayer);
+                                        }
                                     }
                                 }
                             }
