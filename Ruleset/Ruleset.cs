@@ -3725,7 +3725,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!string.IsNullOrEmpty(penaltyTimersTextRedTeam))
                     penaltyTimersTextRedTeam = penaltyTimersTextRedTeam.Remove(penaltyTimersTextRedTeam.Length - 1);
 
-                for (int i = 0; i < MAX_PENALTY_TIMER_LABELS - redPenaltyTimers.Count(); i++) {
+                for (int i = 0; i < MAX_PENALTY_TIMER_LABELS - redPenaltyTimers.Count() - bluePenaltyTimers.Count(); i++) {
                     penaltyTimersTextRedTeam = "\n" + penaltyTimersTextRedTeam;
                 }
 
