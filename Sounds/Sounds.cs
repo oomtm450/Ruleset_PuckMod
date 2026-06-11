@@ -175,7 +175,7 @@ namespace oomtm450PuckMod_Sounds {
                         else if (string.IsNullOrEmpty(_currentMusicPlaying) || _currentMusicPlaying == Codebase.SoundsSystem.WARMUP_MUSIC) {
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
-                            if (newGameState.Phase == GamePhase.FaceOff || newGameState.Phase == GamePhase.PreGame) { // TODO : Fix pregame.
+                            if (newGameState.Phase == GamePhase.FaceOff) {
                                 if (!_hasPlayedLastMinuteMusic && GameManager.Instance.Tick <= 60 && GameManager.Instance.Period == 3) {
                                     _hasPlayedLastMinuteMusic = true;
                                     _currentMusicPlaying = Codebase.SoundsSystem.LAST_MINUTE_MUSIC;
@@ -777,7 +777,7 @@ namespace oomtm450PuckMod_Sounds {
                 switch (dataName) {
                     case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
                         _serverHasResponded = true;
-                        if (MOD_VERSION == dataStr) // TODO : Maybe add a chat message and a 3-5 sec wait.
+                        if (MOD_VERSION == dataStr)
                             break;
                         else if (OLD_MOD_VERSIONS.Contains(dataStr)) {
                             _addServerModVersionOutOfDateMessage = true;

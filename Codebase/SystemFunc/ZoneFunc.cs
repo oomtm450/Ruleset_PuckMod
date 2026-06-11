@@ -15,9 +15,9 @@ namespace Codebase {
         internal const Zone DEFAULT_ZONE = Zone.BlueTeam_Center;
 
         /// <summary>
-        /// ReadOnlyDictionary of IceElement and (double Start, double End), dictionary containing all the start and end Z positions of all the lines on the ice for the zones.
+        /// ReadOnlyDictionary of IceElement and (double Start, double End), dictionary containing all the start and end Z default positions of all the lines on the ice for the zones.
         /// </summary>
-        internal static ReadOnlyDictionary<IceElement, (double Start, double End)> ICE_Z_POSITIONS { get; } = new ReadOnlyDictionary<IceElement, (double, double)>( // TODO : Check in new Puck build.
+        internal static ReadOnlyDictionary<IceElement, (double Start, double End)> ICE_Z_POSITIONS_DEFAULT { get; } = new ReadOnlyDictionary<IceElement, (double, double)>(
             new Dictionary<IceElement, (double, double)> {
                 { IceElement.BlueTeam_BlueLine, (13.07, 13.43) },
                 { IceElement.RedTeam_BlueLine, (-13.44, -13.08) },
@@ -34,11 +34,25 @@ namespace Codebase {
         /// <summary>
         /// ReadOnlyDictionary of IceElement and (double Start, double End), dictionary containing all the start and end Z positions of all the lines on the ice for the zones.
         /// </summary>
-        internal static ReadOnlyDictionary<IceElement, (double Start, double End)> ICE_X_POSITIONS { get; } = new ReadOnlyDictionary<IceElement, (double, double)>( // TODO : Check in new Puck build.
+        internal static ReadOnlyDictionary<IceElement, (double Start, double End)> ICE_Z_POSITIONS { get; set; } = new ReadOnlyDictionary<IceElement, (double, double)>(
+            ICE_Z_POSITIONS_DEFAULT
+        );
+
+        /// <summary>
+        /// ReadOnlyDictionary of IceElement and (double Start, double End), dictionary containing all the start and end X default positions of all the lines on the ice for the zones.
+        /// </summary>
+        internal static ReadOnlyDictionary<IceElement, (double Start, double End)> ICE_X_POSITIONS_DEFAULT { get; } = new ReadOnlyDictionary<IceElement, (double, double)>(
             new Dictionary<IceElement, (double, double)> {
                 { IceElement.BlueTeam_BluePaint, (-2.5, 2.5) },
                 { IceElement.RedTeam_BluePaint, (-2.5, 2.5) },
             }
+        );
+
+        /// <summary>
+        /// ReadOnlyDictionary of IceElement and (double Start, double End), dictionary containing all the start and end X positions of all the lines on the ice for the zones.
+        /// </summary>
+        internal static ReadOnlyDictionary<IceElement, (double Start, double End)> ICE_X_POSITIONS { get; set; } = new ReadOnlyDictionary<IceElement, (double, double)>(
+            ICE_X_POSITIONS_DEFAULT
         );
 
         /// <summary>

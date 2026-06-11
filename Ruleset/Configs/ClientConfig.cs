@@ -10,7 +10,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     /// </summary>
     public class ClientConfig : IConfig {
         [JsonIgnore]
-        private const float RED_TEAM_PENALTY_TIMER_X_OFFSET_DEFAULT = 9f;
+        private const float RED_TEAM_PENALTY_TIMER_X_OFFSET_DEFAULT = 8f;
 
         /// <summary>
         /// String, full path for the config folder.
@@ -34,6 +34,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         [JsonIgnore]
         public string ModName { get; } = Constants.MOD_NAME;
+
+        /// <summary>
+        /// Bool, true if the numeric values has to be replaced be the default ones. Make this false to use custom values.
+        /// </summary>
+        public bool UseDefaultNumericValues { get; set; } = true;
 
         /// <summary>
         /// Bool, true if the refs has to be team color coded.
@@ -91,6 +96,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                     config.RedTeamPenaltyTimerXOffset = 100f;
 
                 config.Save();
+
+                if (config.UseDefaultNumericValues) {
+                    ClientConfig defaultConfig = new Configs.ClientConfig {
+                        LogInfo = config.LogInfo,
+                        UseDefaultNumericValues = config.UseDefaultNumericValues,
+                        TeamColor2DRefs = config.TeamColor2DRefs,
+                    };
+
+                    config = defaultConfig;
+                }
             }
             catch (Exception ex) {
                 Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", config);

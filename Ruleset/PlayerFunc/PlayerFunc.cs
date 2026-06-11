@@ -117,7 +117,9 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
 
-                    player.PlayerBody.Server_Teleport(new Vector3(player.PlayerBody.transform.position.x + xOffset, player.PlayerBody.transform.position.y, player.PlayerBody.transform.position.z + zOffset), rotation);
+                    Vector3 teleportPosition = new Vector3(player.PlayerBody.transform.position.x + xOffset, player.PlayerBody.transform.position.y, player.PlayerBody.transform.position.z + zOffset);
+                    player.PlayerBody.Server_Teleport(teleportPosition, rotation);
+                    Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = player, Position = teleportPosition, Rotation = rotation, });
                     break;
             }
 
@@ -136,7 +138,9 @@ namespace oomtm450PuckMod_Ruleset {
                         zOffset *= 0.8f;
                 }
 
-                player.PlayerBody.Server_Teleport(new Vector3(faceoffDot.x + xOffset, faceoffDot.y, faceoffDot.z + zOffset), rotation);
+                Vector3 teleportPosition = new Vector3(faceoffDot.x + xOffset, faceoffDot.y, faceoffDot.z + zOffset);
+                player.PlayerBody.Server_Teleport(teleportPosition, rotation);
+                Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = player, Position = teleportPosition, Rotation = rotation, });
             }
 
             player.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.None;

@@ -143,20 +143,30 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        internal void ShowSignal(string signal) { // TODO : Remove PlaySelectSound when this is enabled.
+        internal void ShowSignal(string signal) {
+            if (_images[signal].enabled)
+                return;
+
             WasJustShownOrHidden = true;
             _images[signal].enabled = true;
         }
 
-        internal void StopSignal(string signal) { // TODO : Remove PlaySelectSound when this is disabled.
+        internal void StopSignal(string signal) {
+            if (!_images[signal].enabled)
+                return;
+
             WasJustShownOrHidden = true;
             _images[signal].enabled = false;
         }
 
-        internal void StopAllSignals() { // TODO : Remove PlaySelectSound when this is disabled.
-            WasJustShownOrHidden = true;
-            foreach (Image image in _images.Values)
+        internal void StopAllSignals() {
+            foreach (Image image in _images.Values) {
+                if (!image.enabled)
+                    continue;
+
+                WasJustShownOrHidden = true;
                 image.enabled = false;
+            }
         }
 
         internal void Change2DRefsScale(float scale) {
