@@ -1527,8 +1527,6 @@ namespace oomtm450PuckMod_Stats {
                 _redGoals.Clear();
                 _redAssists.Clear();
                 _plusMinus.Clear();
-                _sog.Clear();
-                _savePerc.Clear();
 
                 ScoreboardModifications(false);
             }
