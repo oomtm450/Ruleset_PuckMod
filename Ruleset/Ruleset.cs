@@ -4088,7 +4088,7 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.Log($"Sent data \"{Codebase.Constants.SOG}\" to {Codebase.Constants.STATS_MOD_NAME}.", ServerConfig);
             }
             catch (Exception ex) {
-                Logging.LogError(ex.ToString(), ServerConfig);
+                Logging.LogError($"Error in {nameof(SendSOGDuringGoal)}.\n{ex}", ServerConfig);
             }
         }
 
