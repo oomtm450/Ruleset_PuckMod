@@ -45,6 +45,7 @@
     <Compile Include="Configs\OldServerConfig.cs" />
     <Compile Include="Configs\ServerConfig.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="DonorPrefs.cs" />
     <Compile Include="Sounds.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SoundsSystem.cs" />

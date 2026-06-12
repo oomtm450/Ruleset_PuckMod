@@ -33,8 +33,11 @@
         #endregion
 
         #region Methods/Functions
-        internal static string FormatSoundStrForCommunication(string sound) {
-            return sound + $";{new System.Random().Next(0, 100000)}";
+        internal static string FormatSoundStrForCommunication(string sound, string chosenClipName = "") {
+            string payload = sound + $";{new System.Random().Next(0, 100000)}";
+            if (!string.IsNullOrEmpty(chosenClipName))
+                payload += $";{chosenClipName}";
+            return payload;
         }
         #endregion
     }

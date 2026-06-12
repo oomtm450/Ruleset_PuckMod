@@ -356,8 +356,53 @@ namespace oomtm450PuckMod_Sounds {
             }
         }
 
-        internal static string FormatSoundStrForCommunication(string sound) {
-            return sound + $";{new System.Random().Next(0, 100000)}";
+        internal static string FormatSoundStrForCommunication(string sound, string chosenClipName = "") {
+            string payload = sound + $";{new System.Random().Next(0, 100000)}";
+            if (!string.IsNullOrEmpty(chosenClipName))
+                payload += $";{chosenClipName}";
+            return payload;
+        }
+
+        /// <summary>
+        /// Method that swaps the goal horn AudioSource clip to a donor's chosen horn for the next fire.
+        /// The "Blue Goal" GameObject is the goal Blue defends, so it fires when Red scores — i.e.
+        /// the scoring team and the firing AudioSource are CROSSED. No-op if the clip isn't loaded
+        /// locally (client didn't subscribe to the donor pack), in which case the default scene-load
+        /// clip plays unchanged.
+        /// </summary>
+        /// <param name="clipName">String, exact AudioClip name to swap in.</param>
+        /// <param name="scoringTeam">PlayerTeam, team that just scored.</param>
+        internal void SetGoalHornForNext(string clipName, PlayerTeam scoringTeam) {
+            try {
+                if (string.IsNullOrEmpty(clipName))
+                    return;
+
+                AudioClip clip = _audioClips.FirstOrDefault(x => x.name == clipName);
+                if (clip == null)
+                    return;
+
+                GameObject levelGameObj = GameObject.Find("Level Default");
+                if (!levelGameObj)
+                    return;
+
+                Transform soundsTransform = levelGameObj.transform.Find("Sounds");
+                if (!soundsTransform)
+                    return;
+
+                string targetGoalName = scoringTeam == PlayerTeam.Blue ? "Red Goal" : "Blue Goal";
+                Transform goalTransform = soundsTransform.Find(targetGoalName);
+                if (!goalTransform)
+                    return;
+
+                AudioSource audioSource = goalTransform.GetComponent<AudioSource>();
+                if (audioSource == null)
+                    return;
+
+                audioSource.clip = clip;
+            }
+            catch (Exception ex) {
+                Errors.Add(ex.ToString());
+            }
         }
 
         private void ReorderAllLists() {
