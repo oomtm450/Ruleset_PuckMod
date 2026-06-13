@@ -2939,6 +2939,10 @@ namespace oomtm450PuckMod_Ruleset {
                         case "ArenaOffsetY":
                             double arenaOffsetY = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
                             _arenaOffsetY = (float)arenaOffsetY;
+                            if (arenaOffsetY == 0)
+                                break;
+
+                            PenaltyModule.OffsetYCoordinates(_arenaOffsetX);
                             break;
 
                         case "ArenaOffsetZ":
