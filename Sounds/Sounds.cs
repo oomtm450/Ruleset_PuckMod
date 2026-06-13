@@ -316,6 +316,8 @@ namespace oomtm450PuckMod_Sounds {
                                     SystemFunc.AddClientChatMessage($"Adjusted client music volume to {vol.ToString(CultureInfo.InvariantCulture)}");
                                 }
                             }
+
+                            return false;
                         }
                         else if (content.StartsWith(@"/warmupmusic")) {
                             content = content.Replace(@"/warmupmusic", "").Trim();
@@ -351,6 +353,8 @@ namespace oomtm450PuckMod_Sounds {
                                         SystemFunc.AddClientChatMessage($"Disabled warmup music");
                                 }
                             }
+
+                            return false;
                         }
                     }
                 }
