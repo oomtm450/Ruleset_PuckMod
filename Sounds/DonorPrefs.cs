@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace oomtm450PuckMod_Sounds {
     /// <summary>
@@ -81,8 +82,8 @@ namespace oomtm450PuckMod_Sounds {
                 string json = File.ReadAllText(path);
                 UserDataDto parsed = JsonConvert.DeserializeObject<UserDataDto>(json);
                 if (parsed != null) {
-                    _songs = new LockDictionary<string, string>(parsed.GoalSongs ?? new Dictionary<string, string>());
-                    _horns = new LockDictionary<string, string>(parsed.GoalHorns ?? new Dictionary<string, string>());
+                    _songs = new LockDictionary<string, string>(parsed.GoalSongs.Where(x => !string.IsNullOrEmpty(x.Value) && x.Value != "null").ToDictionary(x => x.Key, x => x.Value) ?? new Dictionary<string, string>());
+                    _horns = new LockDictionary<string, string>(parsed.GoalHorns.Where(x => !string.IsNullOrEmpty(x.Value) && x.Value != "null").ToDictionary(x => x.Key, x => x.Value) ?? new Dictionary<string, string>());
                 }
                 _lastReadUtc = mtime;
             }

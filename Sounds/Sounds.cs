@@ -169,14 +169,12 @@ namespace oomtm450PuckMod_Sounds {
                     if (newGameState.Phase == GamePhase.BlueScore) {
                         _currentMusicPlaying = Codebase.SoundsSystem.BLUE_GOAL_MUSIC;
                         string donorSong = DonorPrefs.GetSong(_lastGoalScorerSteamId);
-                        string fullSongClipName = string.IsNullOrEmpty(donorSong) ? "" : donorSong + "_" + Codebase.SoundsSystem.BLUE_GOAL_MUSIC;
-                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying, fullSongClipName), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying, donorSong), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
                     else if (newGameState.Phase == GamePhase.RedScore) {
                         _currentMusicPlaying = Codebase.SoundsSystem.RED_GOAL_MUSIC;
                         string donorSong = DonorPrefs.GetSong(_lastGoalScorerSteamId);
-                        string fullSongClipName = string.IsNullOrEmpty(donorSong) ? "" : donorSong + "_" + Codebase.SoundsSystem.RED_GOAL_MUSIC;
-                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying, fullSongClipName), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying, donorSong), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
                     else if (newGameState.Phase == GamePhase.Intermission) {
                         _currentMusicPlaying = Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC;
@@ -302,8 +300,10 @@ namespace oomtm450PuckMod_Sounds {
                     // Empty hornId means non-donor or no horn picked — skip the message entirely; the
                     // scene-load default horn stays in place (donor-gate behavior).
                     string donorHorn = DonorPrefs.GetHorn(_lastGoalScorerSteamId);
-                    if (string.IsNullOrEmpty(donorHorn))
+                    if (string.IsNullOrEmpty(donorHorn)) {
+                        NetworkCommunication.SendDataToAll(Constants.RESET_GOAL_HORN, "1", Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                         return true;
+                    }
 
                     string fullClipName = $"{donorHorn};{(byTeam == PlayerTeam.Blue ? "B" : "R")}";
                     NetworkCommunication.SendDataToAll(Constants.SET_GOAL_HORN, fullClipName, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
@@ -825,8 +825,6 @@ namespace oomtm450PuckMod_Sounds {
                 _soundsSystem = soundsGameObject.AddComponent<SoundsSystem>();
                 Logging.Log("SoundsSystem object was created.", ClientConfig);
             }
-
-            //_soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns);
         }
 
         /// <summary>
@@ -906,6 +904,13 @@ namespace oomtm450PuckMod_Sounds {
 
                         PlayerTeam scoringTeam = setHornDataStrSplitted[1] == "B" ? PlayerTeam.Blue : PlayerTeam.Red;
                         _soundsSystem.SetGoalHornForNext(setHornDataStrSplitted[0], scoringTeam);
+                        break;
+
+                    case Constants.RESET_GOAL_HORN: // CLIENT-SIDE : Swap goal horn AudioSource clip for defaults horn.
+                        if (_soundsSystem == null || !ClientConfig.CustomGoalHorns)
+                            break;
+
+                        _soundsSystem.SetGoalHorns();
                         break;
 
                     case Codebase.SoundsSystem.PLAY_SOUND: // CLIENT-SIDE : Play sound.

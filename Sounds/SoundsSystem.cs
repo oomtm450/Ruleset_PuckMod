@@ -311,7 +311,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Method that sets the custom goal horns.
         /// </summary>
-        private void SetGoalHorns() {
+        internal void SetGoalHorns() {
             try {
                 if (GameObject.Find("Changing Room"))
                     return;
