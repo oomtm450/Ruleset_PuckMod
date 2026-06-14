@@ -77,6 +77,13 @@ namespace oomtm450PuckMod_Sounds {
 
         private static bool _hasPlayedSecondFaceoffMusic = false;
 
+        /// <summary>
+        /// String, steamId of the last goal scorer, captured in BaseGameMode_ScoreGoal_Patch.
+        /// Used by the phase patch to look up the donor's chosen song and by the
+        /// SET_GOAL_HORN dispatch. Cleared on GamePhase.Play and on OnGameStarted.
+        /// </summary>
+        private static string _lastGoalScorerSteamId = "";
+
         // Client-side and server-side.
         /// <summary>
         /// Harmony, harmony instance to patch the Puck's code.
@@ -153,11 +160,15 @@ namespace oomtm450PuckMod_Sounds {
 
                     if (newGameState.Phase == GamePhase.BlueScore) {
                         _currentMusicPlaying = Codebase.SoundsSystem.BLUE_GOAL_MUSIC;
-                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                        string donorSong = DonorPrefs.GetSong(_lastGoalScorerSteamId);
+                        string fullSongClipName = string.IsNullOrEmpty(donorSong) ? "" : donorSong + "_" + Codebase.SoundsSystem.BLUE_GOAL_MUSIC;
+                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying, fullSongClipName), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
                     else if (newGameState.Phase == GamePhase.RedScore) {
                         _currentMusicPlaying = Codebase.SoundsSystem.RED_GOAL_MUSIC;
-                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                        string donorSong = DonorPrefs.GetSong(_lastGoalScorerSteamId);
+                        string fullSongClipName = string.IsNullOrEmpty(donorSong) ? "" : donorSong + "_" + Codebase.SoundsSystem.RED_GOAL_MUSIC;
+                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying, fullSongClipName), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
                     else if (newGameState.Phase == GamePhase.Intermission) {
                         _currentMusicPlaying = Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC;
@@ -216,6 +227,7 @@ namespace oomtm450PuckMod_Sounds {
                     if (newGameState.Phase == GamePhase.Play) {
                         NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                         _currentMusicPlaying = "";
+                        _lastGoalScorerSteamId = "";
                         return;
                     }
                 }
@@ -243,6 +255,7 @@ namespace oomtm450PuckMod_Sounds {
                     _hasPlayedLastMinuteMusic = false;
                     _hasPlayedFirstFaceoffMusic = false;
                     _hasPlayedSecondFaceoffMusic = false;
+                    _lastGoalScorerSteamId = "";
 
                     _sentOutOfDateMessage.Clear();
                 }
@@ -251,6 +264,48 @@ namespace oomtm450PuckMod_Sounds {
                 }
 
                 return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the ScoreGoal event from BaseGameMode.
+        /// </summary>
+        [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "ScoreGoal")]
+        public class BaseGameMode_ScoreGoal_Patch {
+            // Prefix (not Postfix) because the original ScoreGoal fires both the goal-horn
+            // RPC (SynchronizedAudio.Server_PlayRpc) and the BlueScore/RedScore phase change
+            // (which our OnGameStateChanged Prefix reads to emit the music PLAY_SOUND).
+            // Both happen inside the original method body, so a Postfix is too late — the
+            // horn RPC and music send would race the SET_GOAL_HORN dispatch on the wire.
+            //
+            // Priority.Low so we run after Stats/Ruleset's default-priority Prefixes that
+            // reassign goalPlayer (ref) for own-goal cases — we see the post-attribution value.
+            [HarmonyPrefix]
+            [HarmonyPriority(Priority.Low)]
+            public static void Prefix(PlayerTeam byTeam, Player goalPlayer, Player assistPlayer, Player secondAssistPlayer, Puck puck) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer() || !_logic)
+                        return;
+
+                    _lastGoalScorerSteamId = goalPlayer != null ? goalPlayer.SteamId.Value.ToString() : "";
+
+                    // Donor horn swap: send to all clients NOW, before the game's internal horn RPC fires.
+                    // Empty hornId means non-donor or no horn picked — skip the message entirely; the
+                    // scene-load default horn stays in place (donor-gate behavior).
+                    string donorHorn = DonorPrefs.GetHorn(_lastGoalScorerSteamId);
+                    if (!string.IsNullOrEmpty(donorHorn)) {
+                        string hornSuffix = byTeam == PlayerTeam.Blue
+                            ? Codebase.SoundsSystem.BLUEGOALHORN
+                            : Codebase.SoundsSystem.REDGOALHORN;
+                        string fullClipName = donorHorn + "_" + hornSuffix;
+                        string teamTag = byTeam == PlayerTeam.Blue ? "Blue" : "Red";
+                        NetworkCommunication.SendDataToAll(Constants.SET_GOAL_HORN, fullClipName + ";" + teamTag, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                    }
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
             }
         }
 
@@ -834,6 +889,20 @@ namespace oomtm450PuckMod_Sounds {
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                         break;
 
+                    case Constants.SET_GOAL_HORN: // CLIENT-SIDE : Swap goal horn AudioSource clip for donor's chosen horn.
+                        if (_soundsSystem == null)
+                            break;
+                        if (!ClientConfig.CustomGoalHorns)
+                            break;
+
+                        string[] setHornDataStrSplitted = dataStr.Split(';');
+                        if (setHornDataStrSplitted.Length < 2)
+                            break;
+
+                        PlayerTeam scoringTeam = setHornDataStrSplitted[1] == "Blue" ? PlayerTeam.Blue : PlayerTeam.Red;
+                        _soundsSystem.SetGoalHornForNext(setHornDataStrSplitted[0], scoringTeam);
+                        break;
+
                     case Codebase.SoundsSystem.PLAY_SOUND: // CLIENT-SIDE : Play sound.
                         if (_soundsSystem == null)
                             break;
@@ -861,11 +930,17 @@ namespace oomtm450PuckMod_Sounds {
                             delay = 1f;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.BLUE_GOAL_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BlueGoalMusicList, seed);
+                            string chosen = playSoundDataStrSplitted.Length >= 3 ? playSoundDataStrSplitted[2] : "";
+                            _currentMusicPlaying = !string.IsNullOrEmpty(chosen) && _soundsSystem.BlueGoalMusicList.Contains(chosen)
+                                ? chosen
+                                : SoundsSystem.GetRandomSound(_soundsSystem.BlueGoalMusicList, seed);
                             _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 2.25f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.RED_GOAL_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.RedGoalMusicList, seed);
+                            string chosen = playSoundDataStrSplitted.Length >= 3 ? playSoundDataStrSplitted[2] : "";
+                            _currentMusicPlaying = !string.IsNullOrEmpty(chosen) && _soundsSystem.RedGoalMusicList.Contains(chosen)
+                                ? chosen
+                                : SoundsSystem.GetRandomSound(_soundsSystem.RedGoalMusicList, seed);
                             _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 2.25f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC) {
