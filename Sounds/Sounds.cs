@@ -290,11 +290,11 @@ namespace oomtm450PuckMod_Sounds {
             // reassign goalPlayer (ref) for own-goal cases — we see the post-attribution value.
             [HarmonyPrefix]
             [HarmonyPriority(Priority.Low)]
-            public static void Prefix(PlayerTeam byTeam, Player goalPlayer, Player assistPlayer, Player secondAssistPlayer, Puck puck) {
+            public static bool Prefix(PlayerTeam byTeam, Player goalPlayer, Player assistPlayer, Player secondAssistPlayer, Puck puck) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || !_logic)
-                        return;
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
 
                     _lastGoalScorerSteamId = goalPlayer != null ? goalPlayer.SteamId.Value.ToString() : "";
 
@@ -302,18 +302,17 @@ namespace oomtm450PuckMod_Sounds {
                     // Empty hornId means non-donor or no horn picked — skip the message entirely; the
                     // scene-load default horn stays in place (donor-gate behavior).
                     string donorHorn = DonorPrefs.GetHorn(_lastGoalScorerSteamId);
-                    if (!string.IsNullOrEmpty(donorHorn)) {
-                        string hornSuffix = byTeam == PlayerTeam.Blue
-                            ? Codebase.SoundsSystem.BLUEGOALHORN
-                            : Codebase.SoundsSystem.REDGOALHORN;
-                        string fullClipName = donorHorn + "_" + hornSuffix;
-                        string teamTag = byTeam == PlayerTeam.Blue ? "Blue" : "Red";
-                        NetworkCommunication.SendDataToAll(Constants.SET_GOAL_HORN, fullClipName + ";" + teamTag, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                    }
+                    if (string.IsNullOrEmpty(donorHorn))
+                        return true;
+
+                    string fullClipName = $"{donorHorn};{(byTeam == PlayerTeam.Blue ? "B" : "R")}";
+                    NetworkCommunication.SendDataToAll(Constants.SET_GOAL_HORN, fullClipName, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
+
+                return true;
             }
         }
 
@@ -898,16 +897,14 @@ namespace oomtm450PuckMod_Sounds {
                         break;
 
                     case Constants.SET_GOAL_HORN: // CLIENT-SIDE : Swap goal horn AudioSource clip for donor's chosen horn.
-                        if (_soundsSystem == null)
-                            break;
-                        if (!ClientConfig.CustomGoalHorns)
+                        if (_soundsSystem == null || !ClientConfig.CustomGoalHorns)
                             break;
 
                         string[] setHornDataStrSplitted = dataStr.Split(';');
-                        if (setHornDataStrSplitted.Length < 2)
+                        if (setHornDataStrSplitted.Length != 2)
                             break;
 
-                        PlayerTeam scoringTeam = setHornDataStrSplitted[1] == "Blue" ? PlayerTeam.Blue : PlayerTeam.Red;
+                        PlayerTeam scoringTeam = setHornDataStrSplitted[1] == "B" ? PlayerTeam.Blue : PlayerTeam.Red;
                         _soundsSystem.SetGoalHornForNext(setHornDataStrSplitted[0], scoringTeam);
                         break;
 
@@ -921,74 +918,97 @@ namespace oomtm450PuckMod_Sounds {
                         }
 
                         int? seed = null;
+                        string chosenSound = "";
                         string[] playSoundDataStrSplitted = dataStr.Split(';');
 
                         if (int.TryParse(playSoundDataStrSplitted[1], out int _seed))
                             seed = _seed;
+                        else
+                            _currentMusicPlaying = chosenSound = playSoundDataStrSplitted[1];
 
                         bool isFaceoffMusic = false;
                         float delay = 0;
                         if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FACEOFF_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FaceoffMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FaceoffMusicList, seed);
+
                             isFaceoffMusic = true;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FACEOFF_MUSIC_DELAYED) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FaceoffMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FaceoffMusicList, seed);
+
                             isFaceoffMusic = true;
                             delay = 1f;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.BLUE_GOAL_MUSIC) {
-                            string chosen = playSoundDataStrSplitted.Length >= 3 ? playSoundDataStrSplitted[2] : "";
-                            _currentMusicPlaying = !string.IsNullOrEmpty(chosen) && _soundsSystem.BlueGoalMusicList.Contains(chosen)
-                                ? chosen
-                                : SoundsSystem.GetRandomSound(_soundsSystem.BlueGoalMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BlueGoalMusicList, seed);
+
                             _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 2.25f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.RED_GOAL_MUSIC) {
-                            string chosen = playSoundDataStrSplitted.Length >= 3 ? playSoundDataStrSplitted[2] : "";
-                            _currentMusicPlaying = !string.IsNullOrEmpty(chosen) && _soundsSystem.RedGoalMusicList.Contains(chosen)
-                                ? chosen
-                                : SoundsSystem.GetRandomSound(_soundsSystem.RedGoalMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.RedGoalMusicList, seed);
+
                             _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 2.25f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BetweenPeriodsMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BetweenPeriodsMusicList, seed);
+
                             _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 1.5f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.WARMUP_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.WarmupMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.WarmupMusicList, seed);
+
                             if (ClientConfig.WarmupMusic)
                                 _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0, true);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.LAST_MINUTE_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.LastMinuteMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.LastMinuteMusicList, seed);
+
                             isFaceoffMusic = true;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FirstFaceoffMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FirstFaceoffMusicList, seed);
+
                             isFaceoffMusic = true;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.SecondFaceoffMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.SecondFaceoffMusicList, seed);
+
                             isFaceoffMusic = true;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.LAST_MINUTE_MUSIC_DELAYED) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.LastMinuteMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.LastMinuteMusicList, seed);
+
                             isFaceoffMusic = true;
                             delay = 1f;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC_DELAYED) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FirstFaceoffMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FirstFaceoffMusicList, seed);
+
                             isFaceoffMusic = true;
                             delay = 1f;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC_DELAYED) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.SecondFaceoffMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.SecondFaceoffMusicList, seed);
+
                             isFaceoffMusic = true;
                             delay = 1f;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.GAMEOVER_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.GameOverMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.GameOverMusicList, seed);
+
                             _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0.5f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.WHISTLE)

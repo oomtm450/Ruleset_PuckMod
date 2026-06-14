@@ -357,10 +357,11 @@ namespace oomtm450PuckMod_Sounds {
         }
 
         internal static string FormatSoundStrForCommunication(string sound, string chosenClipName = "") {
-            string payload = sound + $";{new System.Random().Next(0, 100000)}";
             if (!string.IsNullOrEmpty(chosenClipName))
-                payload += $";{chosenClipName}";
-            return payload;
+                sound += $";{chosenClipName}";
+            else
+                sound += $";{new System.Random().Next(0, 100000)}";
+            return sound;
         }
 
         /// <summary>
