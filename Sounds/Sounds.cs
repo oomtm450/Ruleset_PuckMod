@@ -71,16 +71,24 @@ namespace oomtm450PuckMod_Sounds {
         /// </summary>
         private static bool _changedPhase = false;
 
+        /// <summary>
+        /// Bool, true if the last minute music has played in the current game.
+        /// </summary>
         private static bool _hasPlayedLastMinuteMusic = false;
 
+        /// <summary>
+        /// Bool, true if the first faceoff music has played in the current game.
+        /// </summary>
         private static bool _hasPlayedFirstFaceoffMusic = false;
 
+        /// <summary>
+        /// Bool, true if the second faceoff music has played in the current game.
+        /// </summary>
         private static bool _hasPlayedSecondFaceoffMusic = false;
 
         /// <summary>
-        /// String, steamId of the last goal scorer, captured in BaseGameMode_ScoreGoal_Patch.
-        /// Used by the phase patch to look up the donor's chosen song and by the
-        /// SET_GOAL_HORN dispatch. Cleared on GamePhase.Play and on OnGameStarted.
+        /// String, steamId of the last goal scorer.
+        /// Used by the phase patch to look up the donor's chosen song and by the SET_GOAL_HORN dispatch. Cleared on GamePhase.Play and on OnGameStarted.
         /// </summary>
         private static string _lastGoalScorerSteamId = "";
 
