@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.6a";
+        private static readonly string MOD_VERSION = "1.0.6b";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -76,6 +76,7 @@ namespace oomtm450PuckMod_Ruleset {
             "1.0.4a",
             "1.0.5",
             "1.0.6",
+            "1.0.6a",
         });
 
         /// <summary>
@@ -1319,88 +1320,118 @@ namespace oomtm450PuckMod_Ruleset {
                                     SystemFunc.AddClientChatMessage($"Adjusted client 2D refs scale to {scale.ToString(CultureInfo.InvariantCulture)}");
                                 }
                             }
+
+                            return false;
                         }
-                        else if (content.StartsWith(@"/offblue"))
+                        else if (content.StartsWith(@"/offblue")) {
                             NetworkCommunication.SendData(RefSignals.OFFSIDE_LINESMAN, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
-                        else if (content.StartsWith(@"/offred"))
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/offred")) {
                             NetworkCommunication.SendData(RefSignals.OFFSIDE_LINESMAN, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
-                        else if (content.StartsWith(@"/icblue"))
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/icblue")) {
                             NetworkCommunication.SendData(RefSignals.ICING_LINESMAN, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
-                        else if (content.StartsWith(@"/icred"))
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/icred")) {
                             NetworkCommunication.SendData(RefSignals.ICING_LINESMAN, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
-                        else if (content.StartsWith(@"/hsblue"))
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/hsblue")) {
                             NetworkCommunication.SendData(RefSignals.HIGHSTICK_LINESMAN, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
-                        else if (content.StartsWith(@"/hsred"))
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/hsred")) {
                             NetworkCommunication.SendData(RefSignals.HIGHSTICK_LINESMAN, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
-                        else if (content.StartsWith(@"/gintblue"))
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/gintblue")) {
                             NetworkCommunication.SendData("gs" + RefSignals.INTERFERENCE_REF, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
-                        else if (content.StartsWith(@"/gintred"))
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/gintred")) {
                             NetworkCommunication.SendData("gs" + RefSignals.INTERFERENCE_REF, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
+                        }
                         else if (content.StartsWith(@"/rule")) {
                             content = content.Replace(@"/rule", "").Replace("true", "1").Replace("false", "0").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
                             NetworkCommunication.SendData(Constants.MOD_NAME + "rule", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
                         }
                         else if (content.StartsWith(@"/refmode")) {
                             content = content.Replace(@"/refmode", "").Replace("true", "1").Replace("false", "0").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
                             NetworkCommunication.SendData(Constants.MOD_NAME + "refmode", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
                         }
                         else if (content.StartsWith(@"/togglehighstick")) {
                             content = content.Replace(@"/togglehighstick", "").ToLower().Replace("blue", "b").Replace("red", "r").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
                             NetworkCommunication.SendData(TOGGLE_HIGHSTICK_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
                         }
                         else if (content.StartsWith(@"/toggleoffside")) {
                             content = content.Replace(@"/toggleoffside", "").ToLower().Replace("blue", "b").Replace("red", "r").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
                             NetworkCommunication.SendData(TOGGLE_OFFSIDE_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
                         }
                         else if (content.StartsWith(@"/toggleicing")) {
                             content = content.Replace(@"/toggleicing", "").ToLower().Replace("blue", "b").Replace("red", "r").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
                             NetworkCommunication.SendData(TOGGLE_ICING_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
                         }
                         else if (content.StartsWith(@"/toggledeferredicing")) {
                             NetworkCommunication.SendData(TOGGLE_DEFERRED_ICING_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
                         }
                         else if (content.StartsWith(@"/togglegint")) {
                             content = content.Replace(@"/togglegint", "").ToLower().Replace("blue", "b").Replace("red", "r").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
                             NetworkCommunication.SendData(TOGGLE_GINTERFERENCE_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
                         }
                         else if (content.StartsWith(@"/addrefsteamid")) {
                             content = content.Replace(@"/addrefsteamid", "").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
                             NetworkCommunication.SendData(Constants.MOD_NAME + "addrefsteamid", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
                         }
                         else if (content.StartsWith(@"/removerefsteamid")) {
                             content = content.Replace(@"/removerefsteamid", "").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
                             NetworkCommunication.SendData(Constants.MOD_NAME + "removerefsteamid", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
                         }
                         else if (content.StartsWith(@"/addpermrefsteamid")) {
                             content = content.Replace(@"/addpermrefsteamid", "").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
                             NetworkCommunication.SendData(Constants.MOD_NAME + "addpermrefsteamid", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
                         }
                         else if (content.StartsWith(@"/pen")) {
                             content = content.Replace(@"/pen", "").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
                             NetworkCommunication.SendData(PenaltyModule.GIVE_PENALTY_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
                         }
                         else if (content.StartsWith(@"/removeallpen")) {
                             NetworkCommunication.SendData(PenaltyModule.REMOVE_ALL_PENALTIES_REFMODE_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
                         }
                         else if (content.StartsWith(@"/removepen")) {
                             content = content.Replace(@"/removepen", "").Trim().ToLower();
@@ -1415,6 +1446,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 return true;
                             
                             NetworkCommunication.SendData(PenaltyModule.REMOVE_PENALTY_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
                         }
                     }
                 }
@@ -2939,6 +2971,10 @@ namespace oomtm450PuckMod_Ruleset {
                         case "ArenaOffsetY":
                             double arenaOffsetY = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
                             _arenaOffsetY = (float)arenaOffsetY;
+                            if (arenaOffsetY == 0)
+                                break;
+
+                            PenaltyModule.OffsetYCoordinates(_arenaOffsetX);
                             break;
 
                         case "ArenaOffsetZ":
@@ -4088,7 +4124,7 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.Log($"Sent data \"{Codebase.Constants.SOG}\" to {Codebase.Constants.STATS_MOD_NAME}.", ServerConfig);
             }
             catch (Exception ex) {
-                Logging.LogError(ex.ToString(), ServerConfig);
+                Logging.LogError($"Error in {nameof(SendSOGDuringGoal)}.\n{ex}", ServerConfig);
             }
         }
 
