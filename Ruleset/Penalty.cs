@@ -346,6 +346,8 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void ResetPenalties() {
+            RemoveAllPenalties();
+
             PenalizedPlayers.Clear();
             PenalizedPlayersCountBlueTeam = 0;
             PenalizedPlayersInBoxCountBlueTeam = 0;
@@ -394,7 +396,7 @@ namespace oomtm450PuckMod_Ruleset {
                 return false;
 
             DateTime now = DateTime.UtcNow;
-            if (!string.IsNullOrEmpty(receivingPlayerSteamId) && PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayer.Team && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000))
+            if (!string.IsNullOrEmpty(receivingPlayerSteamId) && GetAllPenalties().Where(x => x.Team == penalizedPlayer.Team && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000))
                 return false;
 
             if ((penalizedPlayer.Team == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
@@ -627,7 +629,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void RemoveAllPenalties() {
-            List<Penalty> penaltiesToRemove = PenalizedPlayers.SelectMany(x => x.Value).ToList();
+            List<Penalty> penaltiesToRemove = GetAllPenalties();
             if (penaltiesToRemove.Count == 0)
                 return;
             foreach (Penalty penaltyToRemove in penaltiesToRemove) {
@@ -662,7 +664,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
 
-            Penalty penaltyToRemove = PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayerTeam).OrderBy(x => x.Timer.MillisecondsLeft).FirstOrDefault();
+            Penalty penaltyToRemove = GetAllPenalties().Where(x => x.Team == penalizedPlayerTeam).OrderBy(x => x.Timer.MillisecondsLeft).FirstOrDefault();
             if (penaltyToRemove == null || penaltyToRemove.Equals(default(Penalty)))
                 return false;
 
