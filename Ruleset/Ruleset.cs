@@ -1674,7 +1674,7 @@ namespace oomtm450PuckMod_Ruleset {
                             _isOffside[playerSteamId] = (player.Team, false);
 
                         // Deferred icing logic.
-                        if (!Codebase.PlayerFunc.IsGoalie(player)) {
+                        if (ServerConfig.Icing.Deferred && !Codebase.PlayerFunc.IsGoalie(player)) {
                             bool isPlayerBehindBlueTeamHashmarks = false, isPlayerBehindRedTeamHashmarks = false, considerForIcing = false;
                             if (ZoneFunc.IsBehindHashmarks(otherTeam, player.PlayerBody.transform.position, Codebase.Constants.PLAYER_RADIUS)) {
                                 if (otherTeam == PlayerTeam.Blue)
@@ -1682,8 +1682,10 @@ namespace oomtm450PuckMod_Ruleset {
                                 else
                                     isPlayerBehindRedTeamHashmarks = true;
 
-                                if (IsIcing(player.Team) && AreBothNegativeOrPositive(player.PlayerBody.transform.position.x, puck.Rigidbody.transform.position.x))
+                                if (IsIcing(player.Team) /*&& AreBothNegativeOrPositive(player.PlayerBody.transform.position.x, puck.Rigidbody.transform.position.x)*/) {
                                     considerForIcing = true;
+                                    NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(player.Team, Rule.Icing, _puckLastStateBeforeCall[Rule.Icing]);
+                                }
                             }
                             else if (ZoneFunc.IsBehindHashmarks(player.Team, player.PlayerBody.transform.position, Codebase.Constants.PLAYER_RADIUS)) {
                                 if (player.Team == PlayerTeam.Blue)
@@ -1691,16 +1693,16 @@ namespace oomtm450PuckMod_Ruleset {
                                 else
                                     isPlayerBehindRedTeamHashmarks = true;
 
-                                if (IsIcing(otherTeam) && AreBothNegativeOrPositive(player.PlayerBody.transform.position.x, puck.Rigidbody.transform.position.x)) {
+                                if (IsIcing(otherTeam) /*&& AreBothNegativeOrPositive(player.PlayerBody.transform.position.x, puck.Rigidbody.transform.position.x)*/) {
                                     considerForIcing = true;
                                     NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(otherTeam, Rule.Icing, _puckLastStateBeforeCall[Rule.Icing]);
                                 }
                             }
 
                             _dictPlayersPositionsForIcing.Add(new PlayerIcing {
-                                Player = player,
-                                X = Math.Abs(player.PlayerBody.transform.position.x),
-                                Z = Math.Abs(player.PlayerBody.transform.position.z),
+                                Team = player.Team,
+                                X = player.PlayerBody.transform.position.x,
+                                Z = player.PlayerBody.transform.position.z,
                                 IsBehindBlueTeamHashmarks = isPlayerBehindBlueTeamHashmarks,
                                 IsBehindRedTeamHashmarks = isPlayerBehindRedTeamHashmarks,
                                 ConsiderForIcing = considerForIcing,
@@ -1727,68 +1729,95 @@ namespace oomtm450PuckMod_Ruleset {
                         puckTeamZone = PlayerTeam.Red;
 
                     // Deferred icing logic.
-                    if (ServerConfig.Icing.Deferred && _dictPlayersPositionsForIcing.Any(x => x.ConsiderForIcing && (puckTeamZone == PlayerTeam.Blue ? x.IsBehindBlueTeamHashmarks : x.IsBehindRedTeamHashmarks))) {
-                        PlayerIcing closestPlayerToEndBoardBlueTeam;
-                        PlayerIcing closestPlayerToEndBoardRedTeam;
+                    List<PlayerIcing> dictPlayersPositionsForIcing = new List<PlayerIcing>(_dictPlayersPositionsForIcing);
+                    if (dictPlayersPositionsForIcing.Any(x => x.ConsiderForIcing)) {
+                        PlayerTeam closestPlayerToPuckTeam = PlayerTeam.None;
 
-                        if (puckTeamZone == PlayerTeam.Blue) {
-                            closestPlayerToEndBoardBlueTeam = _dictPlayersPositionsForIcing.Where(x => x.ConsiderForIcing && x.Player.Team == PlayerTeam.Blue && x.IsBehindBlueTeamHashmarks).OrderByDescending(x => x.Z).FirstOrDefault();
-                            closestPlayerToEndBoardRedTeam = _dictPlayersPositionsForIcing.Where(x => x.ConsiderForIcing && x.Player.Team == PlayerTeam.Red && x.IsBehindBlueTeamHashmarks).OrderByDescending(x => x.Z).FirstOrDefault();
-                        }
-                        else {
-                            closestPlayerToEndBoardBlueTeam = _dictPlayersPositionsForIcing.Where(x => x.ConsiderForIcing && x.Player.Team == PlayerTeam.Blue && x.IsBehindRedTeamHashmarks).OrderByDescending(x => x.Z).FirstOrDefault();
-                            closestPlayerToEndBoardRedTeam = _dictPlayersPositionsForIcing.Where(x => x.ConsiderForIcing && x.Player.Team == PlayerTeam.Red && x.IsBehindRedTeamHashmarks).OrderByDescending(x => x.Z).FirstOrDefault();
-                        }
+                        if (puckTeamZone == PlayerTeam.Blue)
+                            dictPlayersPositionsForIcing = dictPlayersPositionsForIcing.Where(x => x.Z > ZoneFunc.ICE_Z_POSITIONS[IceElement.CenterLine].End).ToList();
+                        else
+                            dictPlayersPositionsForIcing = dictPlayersPositionsForIcing.Where(x => x.Z < ZoneFunc.ICE_Z_POSITIONS[IceElement.CenterLine].Start).ToList();
 
-                        Player closestPlayerToEndBoard = null;
+                        float puckXCoordinate = puck.Rigidbody.transform.position.x;
+                        float puckZCoordinate = puck.Rigidbody.transform.position.z;
 
-                        if (closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam == null)
-                            closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Player;
-                        else if (closestPlayerToEndBoardRedTeam != null && closestPlayerToEndBoardBlueTeam == null)
-                            closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Player;
-                        else if (closestPlayerToEndBoardBlueTeam != null && closestPlayerToEndBoardRedTeam != null) {
-                            if (Math.Abs(closestPlayerToEndBoardBlueTeam.Z - closestPlayerToEndBoardRedTeam.Z) < 8f) { // Check distance with x and z coordinates.
-                                float puckXCoordinate = Math.Abs(puck.Rigidbody.transform.position.x);
-                                float puckZCoordinate = Math.Abs(puck.Rigidbody.transform.position.z);
+                        float blueTeamPlayerDistanceToPuck = float.MaxValue;
 
-                                double blueTeamPlayerDistanceToPuck = GetDistance(puckXCoordinate, puckZCoordinate, closestPlayerToEndBoardBlueTeam.X, closestPlayerToEndBoardBlueTeam.Z);
-                                double redTeamPlayerDistanceToPuck = GetDistance(puckXCoordinate, puckZCoordinate, closestPlayerToEndBoardRedTeam.X, closestPlayerToEndBoardRedTeam.Z);
+                        float redTeamPlayerDistanceToPuck = float.MaxValue;
 
-                                if (blueTeamPlayerDistanceToPuck < redTeamPlayerDistanceToPuck && closestPlayerToEndBoardBlueTeam.IsBehindHashmarks)
-                                    closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Player;
-                                else if (redTeamPlayerDistanceToPuck < blueTeamPlayerDistanceToPuck && closestPlayerToEndBoardRedTeam.IsBehindHashmarks)
-                                    closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Player;
+                        foreach (PlayerIcing player in dictPlayersPositionsForIcing) {
+                            if (player.Team == PlayerTeam.Blue) {
+                                float _blueTeamPlayerDistanceToPuck = GetDistance(puckXCoordinate, puckZCoordinate, player.X, player.Z);
+                                if (_blueTeamPlayerDistanceToPuck < blueTeamPlayerDistanceToPuck)
+                                    blueTeamPlayerDistanceToPuck = _blueTeamPlayerDistanceToPuck;
                             }
-                            else { // Take closest player with z coordinates.
-                                if (closestPlayerToEndBoardBlueTeam.Z > closestPlayerToEndBoardRedTeam.Z && closestPlayerToEndBoardBlueTeam.IsBehindHashmarks)
-                                    closestPlayerToEndBoard = closestPlayerToEndBoardBlueTeam.Player;
-                                else if (closestPlayerToEndBoardRedTeam.Z > closestPlayerToEndBoardBlueTeam.Z && closestPlayerToEndBoardRedTeam.IsBehindHashmarks)
-                                    closestPlayerToEndBoard = closestPlayerToEndBoardRedTeam.Player;
+                            else {
+                                float _redTeamPlayerDistanceToPuck = GetDistance(puckXCoordinate, puckZCoordinate, player.X, player.Z);
+                                if (_redTeamPlayerDistanceToPuck < redTeamPlayerDistanceToPuck)
+                                    redTeamPlayerDistanceToPuck = _redTeamPlayerDistanceToPuck;
                             }
                         }
 
-                        if (closestPlayerToEndBoard != null) {
-                            PlayerTeam closestPlayerToEndBoardOtherTeam = TeamFunc.GetOtherTeam(closestPlayerToEndBoard.Team);
-                            if (IsIcing(closestPlayerToEndBoard.Team)) {
-                                if (icingHasToBeWarned[closestPlayerToEndBoard.Team] == null) {
-                                    NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, closestPlayerToEndBoard.Team), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send stop icing signal for client-side UI
-                                    SendChat(Rule.Icing, closestPlayerToEndBoard.Team, true, true);
+                        Logging.Log($"!!!!!!!!!!!!!!! redTeamPlayerDistanceToPuck : {redTeamPlayerDistanceToPuck}", ServerConfig, true); // TODO
+                        Logging.Log($"!!!!!!!!!!!!!!! blueTeamPlayerDistanceToPuck : {blueTeamPlayerDistanceToPuck}", ServerConfig, true); // TODO
+
+                        if (blueTeamPlayerDistanceToPuck < redTeamPlayerDistanceToPuck)
+                            closestPlayerToPuckTeam = PlayerTeam.Blue;
+                        else if (redTeamPlayerDistanceToPuck < blueTeamPlayerDistanceToPuck)
+                            closestPlayerToPuckTeam = PlayerTeam.Red;
+
+                        if (closestPlayerToPuckTeam != PlayerTeam.None) {
+                            if (IsIcing(closestPlayerToPuckTeam)) {
+                                if (icingHasToBeWarned[closestPlayerToPuckTeam] == null) {
+                                    NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, closestPlayerToPuckTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send stop icing signal for client-side UI
+                                    SendChat(Rule.Icing, closestPlayerToPuckTeam, true, true);
                                 }
                                 else
-                                    icingHasToBeWarned[closestPlayerToEndBoard.Team] = false;
+                                    icingHasToBeWarned[closestPlayerToPuckTeam] = false;
                                 ResetIcings();
                             }
-                            else if (IsIcing(closestPlayerToEndBoardOtherTeam)) {
-                                SendChat(Rule.Icing, closestPlayerToEndBoardOtherTeam, true);
+                            else {
+                                PlayerTeam closestPlayerToEndBoardOtherTeam = TeamFunc.GetOtherTeam(closestPlayerToPuckTeam);
+                                if (IsIcing(closestPlayerToEndBoardOtherTeam)) {
+                                    SendChat(Rule.Icing, closestPlayerToEndBoardOtherTeam, true);
+
+                                    int remainingPlayTime = GameManager.Instance.Tick;
+                                    if (_lastStoppageReason == Rule.Icing && _lastIcing[closestPlayerToEndBoardOtherTeam] > _lastIcing[closestPlayerToEndBoardOtherTeam] && _lastIcing[closestPlayerToEndBoardOtherTeam] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
+                                        _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] += 1;
+                                    else
+                                        _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] = 0;
+
+                                    _lastStoppageReason = Rule.Icing;
+                                    _lastIcing[closestPlayerToEndBoardOtherTeam] = remainingPlayTime;
+                                    DoFaceoff();
+                                }
+                            }
+                        }
+                        else {
+                            if (IsIcing(PlayerTeam.Blue)) {
+                                SendChat(Rule.Icing, PlayerTeam.Blue, true);
 
                                 int remainingPlayTime = GameManager.Instance.Tick;
-                                if (_lastStoppageReason == Rule.Icing && _lastIcing[closestPlayerToEndBoard.Team] > _lastIcing[closestPlayerToEndBoardOtherTeam] && _lastIcing[closestPlayerToEndBoardOtherTeam] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
-                                    _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] += 1;
+                                if (_lastStoppageReason == Rule.Icing && _lastIcing[PlayerTeam.Blue] > _lastIcing[PlayerTeam.Blue] && _lastIcing[PlayerTeam.Blue] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
+                                    _icingStaminaDrainPenaltyAmount[PlayerTeam.Blue] += 1;
                                 else
-                                    _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] = 0;
+                                    _icingStaminaDrainPenaltyAmount[PlayerTeam.Blue] = 0;
 
                                 _lastStoppageReason = Rule.Icing;
-                                _lastIcing[closestPlayerToEndBoardOtherTeam] = remainingPlayTime;
+                                _lastIcing[PlayerTeam.Blue] = remainingPlayTime;
+                                DoFaceoff();
+                            }
+                            else if (IsIcing(PlayerTeam.Red)) {
+                                SendChat(Rule.Icing, PlayerTeam.Red, true);
+
+                                int remainingPlayTime = GameManager.Instance.Tick;
+                                if (_lastStoppageReason == Rule.Icing && _lastIcing[PlayerTeam.Red] > _lastIcing[PlayerTeam.Red] && _lastIcing[PlayerTeam.Red] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
+                                    _icingStaminaDrainPenaltyAmount[PlayerTeam.Red] += 1;
+                                else
+                                    _icingStaminaDrainPenaltyAmount[PlayerTeam.Red] = 0;
+
+                                _lastStoppageReason = Rule.Icing;
+                                _lastIcing[PlayerTeam.Red] = remainingPlayTime;
                                 DoFaceoff();
                             }
                         }
@@ -4192,8 +4221,11 @@ namespace oomtm450PuckMod_Ruleset {
             return (num1 <= 0 && num2 <= 0) || (num1 >= 0 && num2 >= 0);
         }
 
-        public static double GetDistance(double x1, double z1, double x2, double z2) {
-            return Math.Sqrt(Math.Pow(Math.Abs(x1 - x2), 2) + Math.Pow(Math.Abs(z1 - z2), 2));
+        public static float GetDistance(float x1, float z1, float x2, float z2) {
+            Vector2 vector1 = new Vector2(x1, z1);
+            Vector2 vector2 = new Vector2(x2, z2);
+
+            return Vector2.Distance(vector1, vector2);
         }
 
         private static void CleanupClientIds() {
@@ -4256,7 +4288,7 @@ namespace oomtm450PuckMod_Ruleset {
     }
 
     internal class PlayerIcing {
-        internal Player Player { get; set; }
+        internal PlayerTeam Team { get; set; }
 
         internal float X { get; set; }
 
