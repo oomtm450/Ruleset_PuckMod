@@ -1758,9 +1758,6 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                         }
 
-                        Logging.Log($"!!!!!!!!!!!!!!! redTeamPlayerDistanceToPuck : {redTeamPlayerDistanceToPuck}", ServerConfig, true); // TODO
-                        Logging.Log($"!!!!!!!!!!!!!!! blueTeamPlayerDistanceToPuck : {blueTeamPlayerDistanceToPuck}", ServerConfig, true); // TODO
-
                         if (blueTeamPlayerDistanceToPuck < redTeamPlayerDistanceToPuck)
                             closestPlayerToPuckTeam = PlayerTeam.Blue;
                         else if (redTeamPlayerDistanceToPuck < blueTeamPlayerDistanceToPuck)
