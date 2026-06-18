@@ -954,8 +954,11 @@ namespace oomtm450PuckMod_Ruleset {
                     if ((goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived) {
                         if (hasHitterDived)
                             PenaltyModule.GivePenalty(PenaltyType.Tripping, hitter, goalieSteamId);
-                        else
-                            PenaltyModule.GivePenalty(PenaltyType.GoalieInterference, hitter, goalieSteamId);
+                        else {
+                            if (hitter.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + _arenaOffsetY) { // If the other person jumped.
+                                PenaltyModule.GivePenalty(PenaltyType.GoalieInterference, hitter, goalieSteamId);
+                            }
+                        }
                     }
                     else if (force > ServerConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease) {
                         _ = _goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch);
