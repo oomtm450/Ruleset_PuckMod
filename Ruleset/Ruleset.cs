@@ -321,10 +321,12 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly LockDictionary<string, bool> _playersHasBlockedFromChangingTeams = new LockDictionary<string, bool>();
 
         private static readonly LockDictionary<string, DateTime> _playersLastSlipDateTime = new LockDictionary<string, DateTime>();
-
+        
         private static readonly LockDictionary<string, (string, DateTime)> _playersLastDivedIntoTime = new LockDictionary<string, (string, DateTime)>();
 
         private static readonly LockDictionary<string, (string, DateTime)> _playersWasLastHitWithoutPuckDateTime = new LockDictionary<string, (string, DateTime)>();
+
+        private static readonly LockDictionary<string, (string, DateTime)> _playersLastJumpedIntoWithoutPuckTime = new LockDictionary<string, (string, DateTime)>();
 
         private static float _arenaScaleX = 1f;
         private static float _arenaScaleY = 1f;
@@ -888,6 +890,7 @@ namespace oomtm450PuckMod_Ruleset {
                                         _playersWasLastHitWithoutPuckDateTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
 
                                         if (playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + _arenaOffsetY) { // If the other person jumped.
+                                            _playersLastJumpedIntoWithoutPuckTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
                                             PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
                                         }
                                     }
@@ -905,6 +908,7 @@ namespace oomtm450PuckMod_Ruleset {
                                         _playersWasLastHitWithoutPuckDateTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
 
                                         if (lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + _arenaOffsetY) { // If the other person jumped.
+                                            _playersLastJumpedIntoWithoutPuckTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
                                             PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
                                         }
                                     }
@@ -956,6 +960,7 @@ namespace oomtm450PuckMod_Ruleset {
                             PenaltyModule.GivePenalty(PenaltyType.Tripping, hitter, goalieSteamId);
                         else {
                             if (hitter.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + _arenaOffsetY) { // If the other person jumped.
+                                _playersLastJumpedIntoWithoutPuckTime.AddOrUpdate(goalieSteamId, (hitterSteamId, now));
                                 PenaltyModule.GivePenalty(PenaltyType.GoalieInterference, hitter, goalieSteamId);
                             }
                         }
@@ -1115,6 +1120,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _playersLastSlipDateTime.Clear();
                         _playersLastDivedIntoTime.Clear();
                         _playersWasLastHitWithoutPuckDateTime.Clear();
+                        _playersLastJumpedIntoWithoutPuckTime.Clear();
 
                         if (!ServerConfig.Faceoff.UseCustomFaceoff) {
                             PenaltyModule.TeleportPlayers();
@@ -1152,6 +1158,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _playersLastSlipDateTime.Clear();
                         _playersLastDivedIntoTime.Clear();
                         _playersWasLastHitWithoutPuckDateTime.Clear();
+                        _playersLastJumpedIntoWithoutPuckTime.Clear();
                         PenaltyModule.TeleportPlayers();
                     }
                 }
@@ -1637,10 +1644,20 @@ namespace oomtm450PuckMod_Ruleset {
                             if (player.PlayerBody.IsSlipping || player.PlayerBody.HasSlipped)
                                 _playersLastSlipDateTime.AddOrUpdate(playerSteamId, now);
 
-                            if (_playersLastDivedIntoTime.TryGetValue(playerSteamId, out var playerLastDivedIntoTime) && playerLastDivedIntoTime.Item2 + TimeSpan.FromMilliseconds(500) > now) {
+                            if (_playersLastDivedIntoTime.TryGetValue(playerSteamId, out var playerLastDivedIntoTime) && playerLastDivedIntoTime.Item2 + TimeSpan.FromMilliseconds(ServerConfig.Penalty.LateInterferenceTimeThreshold) > now) {
                                 Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerLastDivedIntoTime.Item1);
                                 if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned)
                                     PenaltyModule.GivePenalty(PenaltyType.Tripping, penalizedPlayer, playerSteamId);
+                            }
+
+                            if (_playersLastJumpedIntoWithoutPuckTime.TryGetValue(playerSteamId, out var playerLastJumpedIntoWithoutPuckTime) && playerLastJumpedIntoWithoutPuckTime.Item2 + TimeSpan.FromMilliseconds(ServerConfig.Penalty.LateInterferenceTimeThreshold) > now) {
+                                Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerLastJumpedIntoWithoutPuckTime.Item1);
+                                if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned) {
+                                    if (Codebase.PlayerFunc.IsGoalie(player))
+                                        PenaltyModule.GivePenalty(PenaltyType.GoalieInterference, penalizedPlayer, playerSteamId);
+                                    else
+                                        PenaltyModule.GivePenalty(PenaltyType.Interference, penalizedPlayer, playerSteamId);
+                                }
                             }
                         }
 
@@ -2313,6 +2330,7 @@ namespace oomtm450PuckMod_Ruleset {
             _playersLastSlipDateTime.Clear();
             _playersLastDivedIntoTime.Clear();
             _playersWasLastHitWithoutPuckDateTime.Clear();
+            _playersLastJumpedIntoWithoutPuckTime.Clear();
         }
 
         private static bool IsAdmin(ulong clientId) {

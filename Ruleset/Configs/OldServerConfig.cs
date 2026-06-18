@@ -134,6 +134,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public int GoalieInterferenceTime { get; } = 45000;
 
         /// <summary>
+        /// Int, time for a late slip/fall to be considered as interference against the opposing player.
+        /// </summary>
+        public int LateInterferenceTimeThreshold { get; } = 500;
+
+        /// <summary>
         /// Bool, true if delay of game is enabled and the invisible wall has to be lowered.
         /// </summary>
         public bool DelayOfGame { get; } = true;
