@@ -536,6 +536,14 @@ namespace oomtm450PuckMod_Stats {
                     NetworkCommunication.SendDataToAll(RESET_ALL, "1", Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
                     _sentOutOfDateMessage.Clear();
+
+                    // Remove teams of players that are no longer connected (covers leavers the end of game seems to miss)
+                    Dictionary<string, PlayerTeam> playersTeam = new Dictionary<string, PlayerTeam>(_playersTeam);
+                    foreach (string steamId in new List<string>(playersTeam.Keys)) {
+                        Player player = PlayerManager.Instance.GetPlayerBySteamId(steamId);
+                        if (player == null || !player)
+                            _playersTeam.Remove(steamId);
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(BaseGameMode_OnGameStateChanged_Patch)} Postfix().\n{ex}", ServerConfig);
