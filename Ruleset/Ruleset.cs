@@ -4177,21 +4177,22 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void PauseGame(bool callStopTicking = true) {
-            Paused = true;
             PenaltyModule.PausePenalties();
 
             if (callStopTicking)
                 GameManager.Instance.Server_StopTicking();
+
+            _paused = true;
         }
 
         internal static void UnpauseGame(GamePhase gamePhase, bool callStartTicking = true) {
-            Paused = false;
-
             if (callStartTicking)
                 GameManager.Instance.Server_StartTicking();
 
             if (gamePhase == GamePhase.Play)
                 PenaltyModule.UnpausePenalties();
+
+            _paused = false;
         }
 
         internal static List<string> GetClaimedPositions(PlayerTeam team) {
