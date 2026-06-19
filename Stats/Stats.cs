@@ -1192,6 +1192,46 @@ namespace oomtm450PuckMod_Stats {
         }
 
         /// <summary>
+        /// Class that patches the Server_StopTicking event from GameManager.
+        /// </summary>
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_StopTicking))]
+        public class GameManager_Server_StopTicking_Patch {
+            [HarmonyPostfix]
+            public static void Postfix() {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return;
+
+                    _paused = true;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(GameManager_Server_StopTicking_Patch)} Postfix().\n{ex}", ClientConfig);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_StartTicking event from GameManager.
+        /// </summary>
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_StartTicking))]
+        public class GameManager_Server_StartTicking_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(GameManager __instance) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return;
+
+                    _paused = false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(GameManager_Server_StartTicking_Patch)} Postfix().\n{ex}", ClientConfig);
+                }
+            }
+        }
+
+        /// <summary>
         /// Method that launches when the mod is being enabled.
         /// </summary>
         /// <returns>Bool, true if the mod successfully enabled.</returns>
