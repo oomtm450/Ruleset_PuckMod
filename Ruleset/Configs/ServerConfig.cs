@@ -605,12 +605,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Double, deferred icing max possible time multiplicator.
         /// </summary>
-        public double DeferredMaxPossibleTimeMultiplicator { get; set; } = 285d;
+        public double DeferredMaxPossibleTimeMultiplicator { get; set; } = 290d;
 
         /// <summary>
         /// Double, deferred icing max possible time addition (after multiplicator).
         /// </summary>
-        public double DeferredMaxPossibleTimeAddition { get; set; } = 9500d;
+        public double DeferredMaxPossibleTimeAddition { get; set; } = 9850d;
 
         /// <summary>
         /// Float, deferred icing max possible time substraction depending of players distance to puck (after addition).
@@ -621,12 +621,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
         public Dictionary<Zone, float> MaxPossibleTime { get; set; } = new Dictionary<Zone, float> {
-            { Zone.BlueTeam_BehindGoalLine, 9750f },
-            { Zone.RedTeam_BehindGoalLine, 9750f },
-            { Zone.BlueTeam_Zone, 8000f },
-            { Zone.RedTeam_Zone, 8000f },
-            { Zone.BlueTeam_Center, 5750f },
-            { Zone.RedTeam_Center, 5750f },
+            { Zone.BlueTeam_BehindGoalLine, 9850f },
+            { Zone.RedTeam_BehindGoalLine, 9850f },
+            { Zone.BlueTeam_Zone, 8125f },
+            { Zone.RedTeam_Zone, 8125f },
+            { Zone.BlueTeam_Center, 5800f },
+            { Zone.RedTeam_Center, 5800f },
         };
 
         /// <summary>
@@ -637,12 +637,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, delta used to calculate the dynamic icing possible times.
         /// </summary>
-        public float Delta { get; set; } = 21.75f;
+        public float Delta { get; set; } = 22f;
 
         /// <summary>
         /// Float, max height before deferred icing does not check for possibility that the other team touches the puck before icing.
         /// </summary>
-        public float DeferredMaxHeight { get; set; } = 0.85f;
+        public float DeferredMaxHeight { get; set; } = 0.8f;
 
         /// <summary>
         /// Bool, true if icing team stamina has to be drained.
