@@ -4177,10 +4177,12 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void PauseGame(bool callStopTicking = true) {
-            PenaltyModule.PausePenalties();
-
-            if (callStopTicking)
+            if (callStopTicking) {
+                PenaltyModule.PausePenalties();
                 GameManager.Instance.Server_StopTicking();
+            }
+            else if (!_paused)
+                PenaltyModule.PausePenalties();
 
             _paused = true;
         }
