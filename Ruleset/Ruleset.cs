@@ -3750,28 +3750,33 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void SetPenaltiesLabel(Label penaltiesLabel, Label referenceLabel, bool blue) {
-            if (blue)
-                penaltiesLabel.style.color = new StyleColor(Color.blue);
-            else
-                penaltiesLabel.style.color = new StyleColor(Color.red);
+            try {
+                if (blue)
+                    penaltiesLabel.style.color = new StyleColor(Color.blue);
+                else
+                    penaltiesLabel.style.color = new StyleColor(Color.red);
 
-            penaltiesLabel.style.fontSize = referenceLabel.resolvedStyle.fontSize;
-            penaltiesLabel.style.unityFont = referenceLabel.resolvedStyle.unityFont;
-            penaltiesLabel.style.unityFontDefinition = referenceLabel.resolvedStyle.unityFontDefinition;
-            penaltiesLabel.style.unityFontStyleAndWeight = referenceLabel.resolvedStyle.unityFontStyleAndWeight;
-            penaltiesLabel.style.position = referenceLabel.resolvedStyle.position;
-            penaltiesLabel.style.justifyContent = Justify.FlexEnd;
-            penaltiesLabel.style.flexDirection = FlexDirection.Column;
-            penaltiesLabel.style.backgroundColor = referenceLabel.resolvedStyle.backgroundColor;
-            penaltiesLabel.style.unityTextOutlineColor = referenceLabel.resolvedStyle.unityTextOutlineColor;
-            penaltiesLabel.style.unityTextOutlineWidth = referenceLabel.resolvedStyle.unityTextOutlineWidth;
-            penaltiesLabel.style.textShadow = new StyleTextShadow(StyleKeyword.Auto);
+                penaltiesLabel.style.fontSize = referenceLabel.resolvedStyle.fontSize;
+                penaltiesLabel.style.unityFont = referenceLabel.resolvedStyle.unityFont;
+                penaltiesLabel.style.unityFontDefinition = referenceLabel.resolvedStyle.unityFontDefinition;
+                penaltiesLabel.style.unityFontStyleAndWeight = referenceLabel.resolvedStyle.unityFontStyleAndWeight;
+                penaltiesLabel.style.position = referenceLabel.resolvedStyle.position;
+                penaltiesLabel.style.justifyContent = Justify.FlexEnd;
+                penaltiesLabel.style.flexDirection = FlexDirection.Column;
+                penaltiesLabel.style.backgroundColor = referenceLabel.resolvedStyle.backgroundColor;
+                penaltiesLabel.style.unityTextOutlineColor = referenceLabel.resolvedStyle.unityTextOutlineColor;
+                penaltiesLabel.style.unityTextOutlineWidth = referenceLabel.resolvedStyle.unityTextOutlineWidth;
+                penaltiesLabel.style.textShadow = new StyleTextShadow(StyleKeyword.Auto);
 
-            penaltiesLabel.style.top = new Length(99.35f - (MAX_PENALTY_TIMER_LABELS * 3), LengthUnit.Percent);
-            if (!blue)
-                penaltiesLabel.style.marginLeft = new Length(100f - ClientConfig.RedTeamPenaltyTimerXOffset, LengthUnit.Percent);
-            else
-                penaltiesLabel.style.marginLeft = new Length(6.5f, LengthUnit.Percent);
+                penaltiesLabel.style.top = new Length(99.35f - (MAX_PENALTY_TIMER_LABELS * 3), LengthUnit.Percent);
+                if (!blue)
+                    penaltiesLabel.style.marginLeft = new Length(100f - ClientConfig.RedTeamPenaltyTimerXOffset, LengthUnit.Percent);
+                else
+                    penaltiesLabel.style.marginLeft = new Length(6.5f, LengthUnit.Percent);
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(SetPenaltiesLabel)}.\n{ex}", ClientConfig);
+            }
         }
 
         private static void PenaltiesLabelTimerCallback(object stateInfo) {
