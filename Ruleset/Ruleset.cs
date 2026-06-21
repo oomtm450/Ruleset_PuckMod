@@ -3784,6 +3784,7 @@ namespace oomtm450PuckMod_Ruleset {
                 // Blue team.
                 string penaltyTimersTextBlueTeam = "";
                 var bluePenaltyTimers = penaltyTimers.Where(x => x.PlayerIdentity.StartsWith("B"));
+
                 foreach (var timer in bluePenaltyTimers) {
                     TimeSpan ts = TimeSpan.FromMilliseconds(timer.Timer.MillisecondsLeft);
                     penaltyTimersTextBlueTeam += $"{timer.PlayerIdentity.Remove(0, 2)} {string.Format("{0}:{1:00}", (int)ts.TotalMinutes, ts.Seconds)}\n";
@@ -3792,7 +3793,9 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!string.IsNullOrEmpty(penaltyTimersTextBlueTeam))
                     penaltyTimersTextBlueTeam = penaltyTimersTextBlueTeam.Remove(penaltyTimersTextBlueTeam.Length - 1);
 
-                for (int i = 0; i < MAX_PENALTY_TIMER_LABELS - bluePenaltyTimers.Count(); i++) {
+                var redPenaltyTimers = penaltyTimers.Where(x => x.PlayerIdentity.StartsWith("R"));
+                int penaltyNewLineUICount = MAX_PENALTY_TIMER_LABELS - redPenaltyTimers.Count() - bluePenaltyTimers.Count();
+                for (int i = 0; i < penaltyNewLineUICount; i++) {
                     penaltyTimersTextBlueTeam = "\n" + penaltyTimersTextBlueTeam;
                 }
 
@@ -3800,7 +3803,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                 // Red team.
                 string penaltyTimersTextRedTeam = "";
-                var redPenaltyTimers = penaltyTimers.Where(x => x.PlayerIdentity.StartsWith("R"));
                 foreach (var timer in redPenaltyTimers) {
                     TimeSpan ts = TimeSpan.FromMilliseconds(timer.Timer.MillisecondsLeft);
                     penaltyTimersTextRedTeam += $"{timer.PlayerIdentity.Remove(0, 2)} {string.Format("{0}:{1:00}", (int)ts.TotalMinutes, ts.Seconds)}\n";
@@ -3808,10 +3810,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                 if (!string.IsNullOrEmpty(penaltyTimersTextRedTeam))
                     penaltyTimersTextRedTeam = penaltyTimersTextRedTeam.Remove(penaltyTimersTextRedTeam.Length - 1);
-
-                for (int i = 0; i < MAX_PENALTY_TIMER_LABELS - redPenaltyTimers.Count() - bluePenaltyTimers.Count(); i++) {
-                    penaltyTimersTextRedTeam = "\n" + penaltyTimersTextRedTeam;
-                }
 
                 _penaltiesLabelRed.text = penaltyTimersTextRedTeam;
             }
