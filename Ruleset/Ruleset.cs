@@ -469,6 +469,9 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         internal static bool Logic { get; set; } = true;
 
+        /// <summary>
+        /// Float, radius of the puck using its current scale.
+        /// </summary>
         internal static float PuckRadius => Codebase.Constants.PUCK_RADIUS * _puckScale;
         #endregion
 
@@ -486,7 +489,7 @@ namespace oomtm450PuckMod_Ruleset {
                     return;
 
                 try {
-                    _puckScale = __instance.transform.localScale.x;
+                    _puckScale = (__instance.transform.localScale.x + __instance.transform.localScale.z) / 2;
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
                         PlayerBody playerBody = SystemFunc.GetPlayerBody(collision.gameObject);
@@ -3653,69 +3656,74 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void LowerBarriers(float arenaScaleY, float arenaOffsetY) {
-            if (_barriersLowered || !ServerConfig.Penalty.DelayOfGame)
-                return;
+            try {
+                if (_barriersLowered || !ServerConfig.Penalty.DelayOfGame)
+                    return;
 
-            GameObject levelObj = GameObject.Find("Level Default");
-            for (int i = 0; i < levelObj.transform.childCount; i++) {
-                Transform levelManagerChild = levelObj.transform.GetChild(i);
-                if (levelManagerChild.gameObject.name != "Rink")
-                    continue;
-
-                for (int j = 0; j < levelManagerChild.childCount; j++) {
-                    Transform rinkChild = levelManagerChild.GetChild(j);
-                    if (rinkChild.gameObject.name == "Front Collider" || rinkChild.gameObject.name == "Back Collider" ||
-                        rinkChild.gameObject.name == "Left Collider" || rinkChild.gameObject.name == "Right Collider") {
-                        rinkChild.position = new Vector3(rinkChild.position.x, (4.9f * arenaScaleY) + arenaOffsetY, rinkChild.position.z);
+                GameObject levelObj = GameObject.Find("Level Default");
+                for (int i = 0; i < levelObj.transform.childCount; i++) {
+                    Transform levelManagerChild = levelObj.transform.GetChild(i);
+                    if (levelManagerChild.gameObject.name != "Rink")
                         continue;
+
+                    for (int j = 0; j < levelManagerChild.childCount; j++) {
+                        Transform rinkChild = levelManagerChild.GetChild(j);
+                        if (rinkChild.gameObject.name == "Front Collider" || rinkChild.gameObject.name == "Back Collider" ||
+                            rinkChild.gameObject.name == "Left Collider" || rinkChild.gameObject.name == "Right Collider") {
+                            rinkChild.position = new Vector3(rinkChild.position.x, (4.9f * arenaScaleY) + arenaOffsetY, rinkChild.position.z);
+                            continue;
+                        }
+
+                        if (rinkChild.gameObject.name == "Barrier Collider") {
+                            rinkChild.position = new Vector3(rinkChild.position.x, (-19.05f * arenaScaleY) + arenaOffsetY, rinkChild.position.z);
+                            continue;
+                        }
                     }
 
-                    if (rinkChild.gameObject.name == "Barrier Collider") {
-                        rinkChild.position = new Vector3(rinkChild.position.x, (-19.05f * arenaScaleY) + arenaOffsetY, rinkChild.position.z);
-                        continue;
-                    }
-                }
+                    /*// Custom CompAdjust rink barriers lowering.
+                    for (int j = 0; j < levelManagerChild.childCount; j++) {
+                        Transform rinkChild = levelManagerChild.GetChild(j);
 
-                /*// Custom CompAdjust rink barriers lowering.
-                for (int j = 0; j < levelManagerChild.childCount; j++) {
-                    Transform rinkChild = levelManagerChild.GetChild(j);
-
-                    if (rinkChild.gameObject.name != "CustomArenaAndColliders")
-                        continue;
-
-                    Logging.Log("Found CustomArenaAndColliders !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
-                    for (int k = 0; k < rinkChild.childCount; k++) {
-                        Transform customArenaAndCollidersChild = rinkChild.GetChild(k);
-
-                        if (customArenaAndCollidersChild.gameObject.name != "Colliders")
+                        if (rinkChild.gameObject.name != "CustomArenaAndColliders")
                             continue;
 
-                        Logging.Log("Found Colliders !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+                        Logging.Log("Found CustomArenaAndColliders !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+                        for (int k = 0; k < rinkChild.childCount; k++) {
+                            Transform customArenaAndCollidersChild = rinkChild.GetChild(k);
 
-                        Collider[] colliders = customArenaAndCollidersChild.GetComponentsInChildren<Collider>();
-                        for (int l = 0; l < colliders.Length; l++) {
-                            Transform collidersChild = colliders[l].transform;
-
-                            if (collidersChild.gameObject.name.ToLower().Contains("front") || collidersChild.gameObject.name.ToLower().Contains("back") ||
-                                collidersChild.gameObject.name.ToLower().Contains("left") || collidersChild.gameObject.name.ToLower().Contains("right")) {
-                                collidersChild.position = new Vector3(collidersChild.position.x, (4.9f * arenaScaleY) + arenaOffsetY, collidersChild.position.z);
-                                Logging.Log("Found a collider !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+                            if (customArenaAndCollidersChild.gameObject.name != "Colliders")
                                 continue;
-                            }
 
-                            if (collidersChild.gameObject.name.ToLower().Contains("barrier")) {
-                                collidersChild.position = new Vector3(collidersChild.position.x, (-19.05f * arenaScaleY) + arenaOffsetY, collidersChild.position.z);
-                                Logging.Log("Found a barrier  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
-                                continue;
+                            Logging.Log("Found Colliders !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+
+                            Collider[] colliders = customArenaAndCollidersChild.GetComponentsInChildren<Collider>();
+                            for (int l = 0; l < colliders.Length; l++) {
+                                Transform collidersChild = colliders[l].transform;
+
+                                if (collidersChild.gameObject.name.ToLower().Contains("front") || collidersChild.gameObject.name.ToLower().Contains("back") ||
+                                    collidersChild.gameObject.name.ToLower().Contains("left") || collidersChild.gameObject.name.ToLower().Contains("right")) {
+                                    collidersChild.position = new Vector3(collidersChild.position.x, (4.9f * arenaScaleY) + arenaOffsetY, collidersChild.position.z);
+                                    Logging.Log("Found a collider !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+                                    continue;
+                                }
+
+                                if (collidersChild.gameObject.name.ToLower().Contains("barrier")) {
+                                    collidersChild.position = new Vector3(collidersChild.position.x, (-19.05f * arenaScaleY) + arenaOffsetY, collidersChild.position.z);
+                                    Logging.Log("Found a barrier  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+                                    continue;
+                                }
                             }
+                            break;
                         }
                         break;
-                    }
-                    break;
-                }*/
+                    }*/
 
-                _barriersLowered = true;
-                break;
+                    _barriersLowered = true;
+                    break;
+                }
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(LowerBarriers)}.\n{ex}", ServerConfig);
             }
         }
 
@@ -4064,12 +4072,14 @@ namespace oomtm450PuckMod_Ruleset {
 
                 _harmonyPatched = true;
                 Logic = true;
+
                 return true;
             }
             catch (Exception ex) {
                 Logging.LogError($"Failed to enable.\n{ex}", ServerConfig);
-                return false;
             }
+
+            return false;
         }
 
         /// <summary>
@@ -4155,13 +4165,15 @@ namespace oomtm450PuckMod_Ruleset {
                 Logging.Log($"Disabled.", ServerConfig, true);
 
                 _harmonyPatched = false;
-                Logic = true;
+                Logic = false;
+
                 return true;
             }
             catch (Exception ex) {
                 Logging.LogError($"Failed to disable.\n{ex}", ServerConfig);
-                return false;
             }
+
+            return false;
         }
 
         /// <summary>
