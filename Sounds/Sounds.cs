@@ -373,8 +373,8 @@ namespace oomtm450PuckMod_Sounds {
 
                                     ClientConfig.MusicVolume = vol;
                                     ClientConfig.Save();
-                                    _soundsSystem?.ChangeMusicVolume(ClientConfig.MusicVolume);
-                                    SystemFunc.AddClientChatMessage($"Adjusted client music volume to {vol.ToString(CultureInfo.InvariantCulture)}");
+                                    _soundsSystem?.ChangeVolume(ClientConfig.MusicVolume);
+                                    SystemFunc.AddClientChatMessage($"Adjusted music volume to {vol.ToString(CultureInfo.InvariantCulture)}");
                                 }
                             }
 
@@ -384,16 +384,101 @@ namespace oomtm450PuckMod_Sounds {
                             content = content.Replace(@"/hornvol", "").Trim();
 
                             if (string.IsNullOrEmpty(content))
-                                SystemFunc.AddClientChatMessage($"Music volume is currently at {ClientConfig.HornVolume.ToString(CultureInfo.InvariantCulture)}");
+                                SystemFunc.AddClientChatMessage($"Horns volume is currently at {ClientConfig.HornVolume.ToString(CultureInfo.InvariantCulture)}");
                             else {
                                 if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
                                     vol = Math.Clamp(vol, 0, 1f);
 
                                     ClientConfig.HornVolume = vol;
                                     ClientConfig.Save();
-                                    var hornsAudioSource = SoundsSystem.GetHornsAudioSource();
-                                    SoundsSystem.ChangeHornsVolume(ClientConfig.HornVolume, new List<AudioSource> { hornsAudioSource.BlueGoalAudioSource, hornsAudioSource.RedGoalAudioSource, });
-                                    SystemFunc.AddClientChatMessage($"Adjusted client music volume to {vol.ToString(CultureInfo.InvariantCulture)}");
+                                    (AudioSource blueGoalAudioSource, AudioSource redGoalAudioSource) = SoundsSystem.GetHornsAudioSource();
+                                    SoundsSystem.ChangeHornsVolume(ClientConfig.HornVolume, new List<AudioSource> { blueGoalAudioSource, redGoalAudioSource, });
+                                    SystemFunc.AddClientChatMessage($"Adjusted horns volume to {vol.ToString(CultureInfo.InvariantCulture)}");
+                                }
+                            }
+
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/faceoffvol")) {
+                            content = content.Replace(@"/faceoffvol", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Faceoff music volume is currently at {ClientConfig.FaceoffMusicVolume.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                    vol = Math.Clamp(vol, 0, 1f);
+
+                                    ClientConfig.FaceoffMusicVolume = vol;
+                                    ClientConfig.Save();
+                                    SystemFunc.AddClientChatMessage($"Adjusted faceoff music volume to {vol.ToString(CultureInfo.InvariantCulture)} for next music");
+                                }
+                            }
+
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/warmupvol")) {
+                            content = content.Replace(@"/warmupvol", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Warmup music volume is currently at {ClientConfig.WarmupMusicVolume.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                    vol = Math.Clamp(vol, 0, 1f);
+
+                                    ClientConfig.WarmupMusicVolume = vol;
+                                    ClientConfig.Save();
+                                    SystemFunc.AddClientChatMessage($"Adjusted warmup music volume to {vol.ToString(CultureInfo.InvariantCulture)} for next music");
+                                }
+                            }
+
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/goalvol")) {
+                            content = content.Replace(@"/goalvol", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Goal music volume is currently at {ClientConfig.GoalMusicVolume.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                    vol = Math.Clamp(vol, 0, 1f);
+
+                                    ClientConfig.GoalMusicVolume = vol;
+                                    ClientConfig.Save();
+                                    SystemFunc.AddClientChatMessage($"Adjusted goal music volume to {vol.ToString(CultureInfo.InvariantCulture)} for next music");
+                                }
+                            }
+
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/betweenperiodsvol")) {
+                            content = content.Replace(@"/betweenperiodsvol", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Between periods music volume is currently at {ClientConfig.BetweenPeriodsMusicVolume.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                    vol = Math.Clamp(vol, 0, 1f);
+
+                                    ClientConfig.BetweenPeriodsMusicVolume = vol;
+                                    ClientConfig.Save();
+                                    SystemFunc.AddClientChatMessage($"Adjusted between periods music volume to {vol.ToString(CultureInfo.InvariantCulture)} for next music");
+                                }
+                            }
+
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/gameovervol")) {
+                            content = content.Replace(@"/gameovervol", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Game over music volume is currently at {ClientConfig.GameOverMusicVolume.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                    vol = Math.Clamp(vol, 0, 1f);
+
+                                    ClientConfig.GameOverMusicVolume = vol;
+                                    ClientConfig.Save();
+                                    SystemFunc.AddClientChatMessage($"Adjusted game over music volume to {vol.ToString(CultureInfo.InvariantCulture)} for next music");
                                 }
                             }
 
@@ -422,7 +507,7 @@ namespace oomtm450PuckMod_Sounds {
                                         if (ClientConfig.WarmupMusic && !((bool)enableWarmupMusic))
                                             _soundsSystem.StopAll();
                                         else if (!ClientConfig.WarmupMusic && (bool)enableWarmupMusic)
-                                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0, true);
+                                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0, 0, true);
                                     }
 
                                     ClientConfig.WarmupMusic = (bool)enableWarmupMusic;
@@ -456,7 +541,7 @@ namespace oomtm450PuckMod_Sounds {
                         content = content.ToLowerInvariant();
 
                         if (content.StartsWith(@"/help"))
-                            SystemFunc.AddClientChatMessage("Sounds commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n* <b>/warmupmusic</b> - Disable or enable warmup music (false-true)\n");
+                            SystemFunc.AddClientChatMessage("Sounds commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n* <b>/hornvol</b> - Adjust horn volume (0.0-1.0)\n* <b>/faceoffvol /warmupvol /goalvol /betweenperiodsvol /gameovervol</b> - Adjust specific music volume (0.0-1.0)\n* <b>/warmupmusic</b> - Disable or enable warmup music (false-true)\n");
                     }
                 }
                 catch (Exception ex) {
@@ -966,26 +1051,26 @@ namespace oomtm450PuckMod_Sounds {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BlueGoalMusicList, seed);
 
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 2.25f);
+                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GoalMusicVolume, 2.25f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.RED_GOAL_MUSIC) {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.RedGoalMusicList, seed);
 
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 2.25f);
+                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GoalMusicVolume, 2.25f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC) {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BetweenPeriodsMusicList, seed);
 
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 1.5f);
+                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.BetweenPeriodsMusicVolume, 1.5f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.WARMUP_MUSIC) {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.WarmupMusicList, seed);
 
                             if (ClientConfig.WarmupMusic)
-                                _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0, true);
+                                _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.WarmupMusicVolume, 0, true);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.LAST_MINUTE_MUSIC) {
                             if (string.IsNullOrEmpty(chosenSound))
@@ -1030,7 +1115,7 @@ namespace oomtm450PuckMod_Sounds {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.GameOverMusicList, seed);
 
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0.5f);
+                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GameOverMusicVolume, 0.5f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.WHISTLE)
                             _soundsSystem.Play(Codebase.SoundsSystem.WHISTLE, "");
@@ -1038,7 +1123,7 @@ namespace oomtm450PuckMod_Sounds {
                         if (isFaceoffMusic) {
                             if (string.IsNullOrEmpty(_currentMusicPlaying))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FaceoffMusicList, seed);
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, delay);
+                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.FaceoffMusicVolume, delay);
                         }
                         break;
 

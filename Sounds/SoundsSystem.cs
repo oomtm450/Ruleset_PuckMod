@@ -214,7 +214,7 @@ namespace oomtm450PuckMod_Sounds {
                 GameOverMusicList.Add(clipName);
         }
 
-        internal void Play(string name, string type, float delay = 0, bool loop = false) {
+        internal void Play(string name, string type, float vol = float.MaxValue, float delay = 0, bool loop = false) {
             if (string.IsNullOrEmpty(name))
                 return;
 
@@ -236,10 +236,14 @@ namespace oomtm450PuckMod_Sounds {
 
             AudioSource audioSource = soundObject.GetComponent<AudioSource>();
             audioSource.loop = loop;
+            audioSource.volume = vol;
 
             if (type == Codebase.SoundsSystem.MUSIC) {
                 _currentAudioSource = audioSource;
-                ChangeMusicVolume(Sounds.ClientConfig.MusicVolume);
+                if (vol != float.MaxValue)
+                    ChangeVolume(vol);
+                else
+                    ChangeVolume(SettingsManager.GlobalVolume * SettingsManager.GameVolume);
             }
             else {
                 _currentAudioSource = null;
@@ -266,11 +270,11 @@ namespace oomtm450PuckMod_Sounds {
                 soundObject.GetComponent<AudioSource>().Stop();
         }
 
-        internal void ChangeMusicVolume(float musicVol) {
+        internal void ChangeVolume(float vol) {
             if (_currentAudioSource == null)
                 return;
 
-            _currentAudioSource.volume = SettingsManager.GlobalVolume * musicVol;
+            _currentAudioSource.volume = SettingsManager.GlobalVolume * vol;
         }
 
         internal static void ChangeHornVolume(float hornVol, AudioSource hornAudioSource) {
