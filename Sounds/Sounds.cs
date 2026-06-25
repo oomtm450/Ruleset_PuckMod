@@ -1016,7 +1016,7 @@ namespace oomtm450PuckMod_Sounds {
                         if (_soundsSystem == null)
                             break;
                         if (_soundsSystem.Errors.Count != 0) {
-                            Logging.LogError("There was an error when initializing _soundsSystem.", ClientConfig);
+                            Logging.LogError($"There was an error when initializing {nameof(_soundsSystem)}.", ClientConfig);
                             foreach (string error in _soundsSystem.Errors)
                                 Logging.LogError(error, ClientConfig);
                         }
