@@ -383,6 +383,28 @@ namespace oomtm450PuckMod_Sounds {
 
                             return false;
                         }
+                        else if (content.StartsWith(@"/hornvol")) {
+                            content = content.Replace(@"/hornvol", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Music volume is currently at {ClientConfig.HornVolume.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                    if (vol > 1f)
+                                        vol = 1f;
+                                    else if (vol < 0)
+                                        vol = 0;
+
+                                    ClientConfig.HornVolume = vol;
+                                    ClientConfig.Save();
+                                    var hornsAudioSource = SoundsSystem.GetHornsAudioSource();
+                                    SoundsSystem.ChangeHornsVolume(ClientConfig.HornVolume, new List<AudioSource> { hornsAudioSource.BlueGoalAudioSource, hornsAudioSource.RedGoalAudioSource, });
+                                    SystemFunc.AddClientChatMessage($"Adjusted client music volume to {vol.ToString(CultureInfo.InvariantCulture)}");
+                                }
+                            }
+
+                            return false;
+                        }
                         else if (content.StartsWith(@"/warmupmusic")) {
                             content = content.Replace(@"/warmupmusic", "").Trim();
 

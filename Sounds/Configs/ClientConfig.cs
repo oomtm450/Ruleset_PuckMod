@@ -39,6 +39,11 @@ namespace oomtm450PuckMod_Sounds.Configs {
         public float MusicVolume { get; set; } = 0.8f;
 
         /// <summary>
+        /// Float, volume from 0.0 to 1.0 for the horns.
+        /// </summary>
+        public float HornVolume { get; set; } = 1f;
+
+        /// <summary>
         /// Bool, true if the custom goal horns must be set.
         /// </summary>
         public bool CustomGoalHorns { get; set; } = true;
