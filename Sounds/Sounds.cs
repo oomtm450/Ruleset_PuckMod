@@ -875,15 +875,13 @@ namespace oomtm450PuckMod_Sounds {
                 if (_soundsSystem == null)
                     return;
 
-                if (_soundsSystem != null) {
-                    if (!string.IsNullOrEmpty(_currentMusicPlaying)) {
-                        _soundsSystem.Stop(_currentMusicPlaying);
-                        _currentMusicPlaying = "";
-                    }
-
-                    _soundsSystem.DestroyGameObjects();
-                    _soundsSystem = null;
+                if (!string.IsNullOrEmpty(_currentMusicPlaying)) {
+                    _soundsSystem.Stop(_currentMusicPlaying);
+                    _currentMusicPlaying = "";
                 }
+
+                _soundsSystem.DestroyGameObjects();
+                _soundsSystem = null;
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(Event_OnClientStopped)}.\n{ex}", ClientConfig);
@@ -942,7 +940,7 @@ namespace oomtm450PuckMod_Sounds {
                     (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, ServerConfig);
 
                 switch (dataName) {
-                    case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
+                    case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, warn if client and server versions are not the same.
                         _serverHasResponded = true;
                         if (MOD_VERSION == dataStr)
                             break;
@@ -954,7 +952,7 @@ namespace oomtm450PuckMod_Sounds {
                         _askForModOutOfDateWarning = true;
                         break;
 
-                    case Constants.MOD_NAME + "_kick": // SERVER-SIDE : Kick the client that asked to be kicked.
+                    case Constants.MOD_NAME + "_kick": // SERVER-SIDE : Warn the client that asked to be warned.
                         if (dataStr != "1")
                             break;
 
