@@ -369,10 +369,7 @@ namespace oomtm450PuckMod_Sounds {
                                 SystemFunc.AddClientChatMessage($"Music volume is currently at {ClientConfig.MusicVolume.ToString(CultureInfo.InvariantCulture)}");
                             else {
                                 if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
-                                    if (vol > 1f)
-                                        vol = 1f;
-                                    else if (vol < 0)
-                                        vol = 0;
+                                    vol = Math.Clamp(vol, 0, 1f);
 
                                     ClientConfig.MusicVolume = vol;
                                     ClientConfig.Save();
@@ -390,10 +387,7 @@ namespace oomtm450PuckMod_Sounds {
                                 SystemFunc.AddClientChatMessage($"Music volume is currently at {ClientConfig.HornVolume.ToString(CultureInfo.InvariantCulture)}");
                             else {
                                 if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
-                                    if (vol > 1f)
-                                        vol = 1f;
-                                    else if (vol < 0)
-                                        vol = 0;
+                                    vol = Math.Clamp(vol, 0, 1f);
 
                                     ClientConfig.HornVolume = vol;
                                     ClientConfig.Save();
