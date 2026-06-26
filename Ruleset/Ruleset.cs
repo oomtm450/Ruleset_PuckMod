@@ -34,7 +34,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// ReadOnlyCollection of string, last released versions of the mod.
         /// </summary>
         private static readonly ReadOnlyCollection<string> OLD_MOD_VERSIONS = new ReadOnlyCollection<string>(new List<string> {
-            "0.16.0",
+            /*"0.16.0",
             "0.16.1",
             "0.16.2",
             "0.17.0",
@@ -62,7 +62,7 @@ namespace oomtm450PuckMod_Ruleset {
             "0.26.4",
             "0.27.0",
             "0.27.1",
-            "0.28.0",
+            "0.28.0",*/
             "1.0.0",
             "1.0.0a",
             "1.0.0b",
