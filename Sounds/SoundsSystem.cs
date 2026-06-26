@@ -13,6 +13,8 @@ namespace oomtm450PuckMod_Sounds {
     internal class SoundsSystem : MonoBehaviour {
         #region Constants
         private const string SOUND_EXTENSION = ".ogg";
+
+        private static float DEFAULT_HORN_VOLUME = 1f;
         #endregion
 
         #region Fields
@@ -212,7 +214,7 @@ namespace oomtm450PuckMod_Sounds {
                 GameOverMusicList.Add(clipName);
         }
 
-        internal void Play(string name, string type, float delay = 0, bool loop = false) {
+        internal void Play(string name, string type, float vol = float.MaxValue, float delay = 0, bool loop = false) {
             if (string.IsNullOrEmpty(name))
                 return;
 
@@ -234,10 +236,14 @@ namespace oomtm450PuckMod_Sounds {
 
             AudioSource audioSource = soundObject.GetComponent<AudioSource>();
             audioSource.loop = loop;
+            audioSource.volume = vol;
 
             if (type == Codebase.SoundsSystem.MUSIC) {
                 _currentAudioSource = audioSource;
-                ChangeMusicVolume(Sounds.ClientConfig.MusicVolume);
+                if (vol != float.MaxValue)
+                    ChangeVolume(vol);
+                else
+                    ChangeVolume(SettingsManager.GlobalVolume * SettingsManager.GameVolume);
             }
             else {
                 _currentAudioSource = null;
@@ -264,11 +270,20 @@ namespace oomtm450PuckMod_Sounds {
                 soundObject.GetComponent<AudioSource>().Stop();
         }
 
-        internal void ChangeMusicVolume(float musicVol) {
+        internal void ChangeVolume(float vol) {
             if (_currentAudioSource == null)
                 return;
 
-            _currentAudioSource.volume = SettingsManager.GlobalVolume * musicVol;
+            _currentAudioSource.volume = SettingsManager.GlobalVolume * vol;
+        }
+
+        internal static void ChangeHornVolume(float hornVol, AudioSource hornAudioSource) {
+            hornAudioSource.volume = DEFAULT_HORN_VOLUME * hornVol;
+        }
+
+        internal static void ChangeHornsVolume(float hornVol, List<AudioSource> hornsAudioSource) {
+            foreach (AudioSource hornAudioSource in hornsAudioSource)
+                ChangeHornVolume(hornVol, hornAudioSource);
         }
 
         internal static string GetRandomSound(IEnumerable<string> soundList, int? seed = null) {
@@ -313,47 +328,56 @@ namespace oomtm450PuckMod_Sounds {
         /// </summary>
         internal void SetGoalHorns() {
             try {
-                if (GameObject.Find("Changing Room"))
+                (AudioSource blueGoalAudioSource, AudioSource redGoalAudioSource) = GetHornsAudioSource(Errors);
+                if (blueGoalAudioSource == null || redGoalAudioSource == null)
                     return;
 
-                GameObject levelGameObj = GameObject.Find("Level Default");
-                if (!levelGameObj) {
-                    Errors.Add("Cant't find GameObject \"Level Default\" !");
-                    return;
-                }
-
-                GameObject soundsGameObj = levelGameObj.transform.Find("Sounds").gameObject;
-
-                if (!soundsGameObj) {
-                    Errors.Add("Cant't find GameObject \"Sounds\" !");
-                    return;
-                }
-
-                GameObject blueGoalObj = soundsGameObj.transform.Find("Blue Goal").gameObject;
-
-                if (!blueGoalObj) {
-                    Errors.Add("Cant't find GameObject \"Blue Goal\" !");
-                    return;
-                }
-
-                AudioSource blueGoalAudioSource = blueGoalObj.GetComponent<AudioSource>();
                 blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.REDGOALHORN));
                 blueGoalAudioSource.maxDistance = 400f;
-
-                GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
-
-                if (!redGoalObj) {
-                    Errors.Add("Cant't find GameObject \"Red Goal\" !");
-                    return;
-                }
-
-                AudioSource redGoalAudioSource = redGoalObj.GetComponent<AudioSource>();
+                DEFAULT_HORN_VOLUME = blueGoalAudioSource.volume;
+                
                 redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUEGOALHORN));
                 redGoalAudioSource.maxDistance = 400f;
+
+                ChangeHornsVolume(Sounds.ClientConfig.HornVolume, new List<AudioSource> { blueGoalAudioSource, redGoalAudioSource, });
             }
             catch (Exception ex) {
                 Errors.Add(ex.ToString());
             }
+        }
+
+        internal static (AudioSource BlueGoalAudioSource, AudioSource RedGoalAudioSource) GetHornsAudioSource(LockList<string> errors = null) {
+            if (GameObject.Find("Changing Room"))
+                return (null, null);
+
+            GameObject levelGameObj = GameObject.Find("Level Default");
+            if (!levelGameObj) {
+                errors?.Add("Cant't find GameObject \"Level Default\" !");
+                return (null, null);
+            }
+
+            GameObject soundsGameObj = levelGameObj.transform.Find("Sounds").gameObject;
+
+            if (!soundsGameObj) {
+                errors?.Add("Cant't find GameObject \"Sounds\" !");
+                return (null, null);
+            }
+
+            GameObject blueGoalObj = soundsGameObj.transform.Find("Blue Goal").gameObject;
+
+            if (!blueGoalObj) {
+                errors?.Add("Cant't find GameObject \"Blue Goal\" !");
+                return (null, null);
+            }
+
+            GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
+
+            if (!redGoalObj) {
+                errors?.Add("Cant't find GameObject \"Red Goal\" !");
+                return (null, null);
+            }
+
+            return (blueGoalObj.GetComponent<AudioSource>(), redGoalObj.GetComponent<AudioSource>());
         }
 
         internal static string FormatSoundStrForCommunication(string sound, string chosenClipName = "") {

@@ -39,6 +39,36 @@ namespace oomtm450PuckMod_Sounds.Configs {
         public float MusicVolume { get; set; } = 0.8f;
 
         /// <summary>
+        /// Float, volume from 0.0 to 1.0 for the horns.
+        /// </summary>
+        public float HornVolume { get; set; } = 1f;
+
+        /// <summary>
+        /// Float, volume from 0.0 to 1.0 for the faceoff musics. Combined with MusicVolume.
+        /// </summary>
+        public float FaceoffMusicVolume { get; set; } = 1f;
+
+        /// <summary>
+        /// Float, volume from 0.0 to 1.0 for the warmup musics. Combined with MusicVolume.
+        /// </summary>
+        public float WarmupMusicVolume { get; set; } = 1f;
+
+        /// <summary>
+        /// Float, volume from 0.0 to 1.0 for the goal songs. Combined with MusicVolume.
+        /// </summary>
+        public float GoalMusicVolume { get; set; } = 1f;
+
+        /// <summary>
+        /// Float, volume from 0.0 to 1.0 for the between periods musics. Combined with MusicVolume.
+        /// </summary>
+        public float BetweenPeriodsMusicVolume { get; set; } = 1f;
+
+        /// <summary>
+        /// Float, volume from 0.0 to 1.0 for the game over musics. Combined with MusicVolume.
+        /// </summary>
+        public float GameOverMusicVolume { get; set; } = 1f;
+
+        /// <summary>
         /// Bool, true if the custom goal horns must be set.
         /// </summary>
         public bool CustomGoalHorns { get; set; } = true;
@@ -47,6 +77,11 @@ namespace oomtm450PuckMod_Sounds.Configs {
         /// Bool, true if the warmup music must be played. Won't work if Music is false.
         /// </summary>
         public bool WarmupMusic { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if the server has authority on how loud each music has to be compared to each others. False if the client has authority.
+        /// </summary>
+        public bool UseServerPerMusicVolume { get; set; } = true;
 
         /// <summary>
         /// String, name of the mod.
