@@ -198,6 +198,21 @@ namespace oomtm450PuckMod_Stats {
         private static readonly LockList<string> _playersTeamToRemoveAfterGame = new LockList<string>();
 
         /// <summary>
+        /// LockDictionary of string and double, accumulated live-play time-on-ice in seconds per player (steamId). Reset each game.
+        /// </summary>
+        private static readonly LockDictionary<string, double> _toiSeconds = new LockDictionary<string, double>();
+
+        /// <summary>
+        /// LockDictionary of string and DateTime, UTC time each currently-accruing player (steamId) started their on-ice stint. Its keys are the players accruing right now (on the ice and GamePhase.Play).
+        /// </summary>
+        private static readonly LockDictionary<string, DateTime> _accruingSince = new LockDictionary<string, DateTime>();
+
+        /// <summary>
+        /// DateTime, UTC time the current match started (set at PreGame).
+        /// </summary>
+        private static DateTime _matchStartUtc = DateTime.MinValue;
+
+        /// <summary>
         /// LockDictionary of ulong and DateTime, last time a mod out of date message was sent to a client (ulong clientId).
         /// </summary>
         private static readonly LockDictionary<ulong, DateTime> _sentOutOfDateMessage = new LockDictionary<ulong, DateTime>();
@@ -494,7 +509,24 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix(GameState oldGameState, GameState newGameState) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || oldGameState.Phase == newGameState.Phase || (newGameState.Phase != GamePhase.PreGame && newGameState.Phase != GamePhase.Warmup))
+                    if (!ServerFunc.IsDedicatedServer() || oldGameState.Phase == newGameState.Phase)
+                        return;
+
+                    // Live-play time-on-ice, accrue only while the game clock is running (Play).
+                    if (newGameState.Phase == GamePhase.Play) {
+                        // Entering live play, start every player currently on the ice.
+                        foreach (Player _p in PlayerManager.Instance.GetPlayers()) {
+                            if (_p == null || !_p)
+                                continue;
+                            if (PlayerFunc.IsPlayerPlaying(_p))
+                                ToiStart(_p.SteamId.Value.ToString());
+                        }
+                    }
+                    // Leaving live play (stoppage, period or GameOver), bank everyone.
+                    else if (oldGameState.Phase == GamePhase.Play)
+                        ToiBankAll();
+
+                    if (newGameState.Phase != GamePhase.PreGame && newGameState.Phase != GamePhase.Warmup)
                         return;
 
                     // Reset s%.
@@ -529,6 +561,12 @@ namespace oomtm450PuckMod_Stats {
                     _blueAssists.Clear();
                     _redGoals.Clear();
                     _redAssists.Clear();
+
+                    // Reset time-on-ice and capture the match start time (PreGame is the new game forming).
+                    _toiSeconds.Clear();
+                    _accruingSince.Clear();
+                    if (newGameState.Phase == GamePhase.PreGame)
+                        _matchStartUtc = DateTime.UtcNow;
 
                     // Reset last possession.
                     _lastPossession = new Possession();
@@ -1270,6 +1308,7 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.AddEventListener(nameof(Event_Everyone_OnClientConnected), Event_Everyone_OnClientConnected);
                     EventManager.AddEventListener(nameof(Event_Everyone_OnClientDisconnected), Event_Everyone_OnClientDisconnected);
                     EventManager.AddEventListener(nameof(Event_Everyone_OnPlayerGameStateChanged), Event_Everyone_OnPlayerGameStateChanged);
+                    EventManager.AddEventListener(nameof(Event_Everyone_OnPlayerBodySpawned), Event_Everyone_OnPlayerBodySpawned);
                     EventManager.AddEventListener(Codebase.Constants.STATS_MOD_NAME, Event_OnStatsTrigger);
                     EventManager.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     EventManager.AddEventListener("Event_CompetitiveAdjustments_OnArenaSync", Event_CompetitiveAdjustments_OnArenaSync);
@@ -1305,6 +1344,7 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.RemoveEventListener("Event_Everyone_OnClientConnected", Event_Everyone_OnClientConnected);
                     EventManager.RemoveEventListener("Event_Everyone_OnClientDisconnected", Event_Everyone_OnClientDisconnected);
                     EventManager.RemoveEventListener("Event_Everyone_OnPlayerGameStateChanged", Event_Everyone_OnPlayerGameStateChanged);
+                    EventManager.RemoveEventListener("Event_Everyone_OnPlayerBodySpawned", Event_Everyone_OnPlayerBodySpawned);
                     EventManager.RemoveEventListener(Codebase.Constants.STATS_MOD_NAME, Event_OnStatsTrigger);
                     EventManager.RemoveEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     EventManager.RemoveEventListener("Event_CompetitiveAdjustments_OnArenaSync", Event_CompetitiveAdjustments_OnArenaSync);
@@ -1539,6 +1579,9 @@ namespace oomtm450PuckMod_Stats {
                 _playersCurrentPuckTouch.Remove(clientSteamId);
                 _lastTimeOnCollisionStayOrExitWasCalled.Remove(clientSteamId);
 
+                // Bank live-play time-on-ice for the leaving player (no-op if not currently accruing).
+                ToiBank(clientSteamId);
+
                 _playersInfoToRemoveAfterGame.Add(clientId);
                 _playersTeamToRemoveAfterGame.Add(clientSteamId);
             }
@@ -1594,6 +1637,16 @@ namespace oomtm450PuckMod_Stats {
                 PlayerGameState oldPlayerGameState = (PlayerGameState)message["oldGameState"];
 
                 string playerSteamId = player.SteamId.Value.ToString();
+
+                // Live-play time-on-ice, start when the player is playing and the clock is running, bank when they stop playing.
+                if (!string.IsNullOrEmpty(playerSteamId)) {
+                    if (PlayerFunc.IsPlayerPlaying(player)) {
+                        if (ToiIsPlay() && !_accruingSince.TryGetValue(playerSteamId, out DateTime _))
+                            ToiStart(playerSteamId);
+                    }
+                    else
+                        ToiBank(playerSteamId);
+                }
 
                 if (newPlayerGameState.Team == PlayerTeam.Blue || newPlayerGameState.Team == PlayerTeam.Red) {
                     if (string.IsNullOrEmpty(playerSteamId))
@@ -1663,6 +1716,41 @@ namespace oomtm450PuckMod_Stats {
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(Event_Everyone_OnPlayerGameStateChanged)}.\n{ex}", ServerConfig);
+            }
+        }
+
+        /// <summary>
+        /// Method called when a player's body has (re)spawned on the server-side. Re-seeds live-play time-on-ice
+        /// so a respawn during Play resumes accruing (goalie auto-switch respawn, mid-game join taking the ice,
+        /// team switch that respawns the body). A respawn is not a game state change, so OnPlayerGameStateChanged
+        /// does not fire for it. No-op if the player is already accruing.
+        /// </summary>
+        /// <param name="message">Dictionary of string and object, content of the event.</param>
+        public static void Event_Everyone_OnPlayerBodySpawned(Dictionary<string, object> message) {
+            if (!ServerFunc.IsDedicatedServer())
+                return;
+
+            try {
+                if (!ToiIsPlay())
+                    return;
+
+                if (!message.TryGetValue("playerBody", out object playerBodyObj))
+                    return;
+
+                PlayerBody playerBody = playerBodyObj as PlayerBody;
+                if (!playerBody || !playerBody.Player)
+                    return;
+
+                Player player = playerBody.Player;
+                if (!PlayerFunc.IsPlayerPlaying(player))
+                    return;
+
+                string playerSteamId = player.SteamId.Value.ToString();
+                if (!string.IsNullOrEmpty(playerSteamId) && !_accruingSince.TryGetValue(playerSteamId, out DateTime _))
+                    ToiStart(playerSteamId);
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(Event_Everyone_OnPlayerBodySpawned)}.\n{ex}", ServerConfig);
             }
         }
         #endregion
@@ -1848,6 +1936,17 @@ namespace oomtm450PuckMod_Stats {
                 plusMinusDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
 
             if (sogDict.Count != 0) {
+                // Time-on-ice {steamId: (username, seconds)}, including any still-on-ice player up to now.
+                // Copies into locals (non-mutating) so a duplicate re-emission yields consistent values.
+                Dictionary<string, double> toiFinal = new Dictionary<string, double>();
+                foreach (var kvp in _toiSeconds)
+                    toiFinal[kvp.Key] = kvp.Value;
+                foreach (var kvp in _accruingSince)
+                    toiFinal[kvp.Key] = (toiFinal.TryGetValue(kvp.Key, out double previousSeconds) ? previousSeconds : 0) + (DateTime.UtcNow - kvp.Value).TotalSeconds;
+                Dictionary<string, (string, int)> timeOnIceDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in toiFinal)
+                    timeOnIceDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string toiUsername) ? toiUsername : "", (int)Math.Round(kvp.Value)));
+
                 // Log JSON for game stats.
                 Dictionary<string, object> jsonDict = new Dictionary<string, object> {
                     { "steamIds", playersUsername },
@@ -1867,6 +1966,12 @@ namespace oomtm450PuckMod_Stats {
                     { "gwg", gwgSteamId + "," + (playersUsername.TryGetValue(gwgSteamId, out string gwgUsername) == true ? gwgUsername : "") },
                     { "stars", starsDict },
                     { "plusminus", plusMinusDict },
+                    // Time-on-ice (played roster where toi > 0, plus per-player minutes).
+                    { "timeOnIce", timeOnIceDict },
+                    // Final GameState score, including OT and the shootout.
+                    { "blue_score", blueScore },
+                    { "red_score", redScore },
+                    { "started_at", _matchStartUtc == DateTime.MinValue ? "" : _matchStartUtc.ToString("yyyy-MM-dd HH:mm:ss") },
                 };
 
                 string jsonContent = JsonConvert.SerializeObject(jsonDict, Formatting.Indented);
@@ -1895,6 +2000,45 @@ namespace oomtm450PuckMod_Stats {
                 _playersTeam.Remove(steamId);
             _playersTeamToRemoveAfterGame.Clear();
         }
+
+        /// <summary>
+        /// Method that returns if the game clock is currently running (GamePhase.Play).
+        /// </summary>
+        /// <returns>Bool, true if the current game phase is Play.</returns>
+        private static bool ToiIsPlay() {
+            return GameManager.Instance != null && GameManager.Instance.Phase == GamePhase.Play;
+        }
+
+        /// <summary>
+        /// Method that starts accruing time-on-ice for a player. No-op if the player is already accruing.
+        /// </summary>
+        /// <param name="steamId">String, steam Id of the player to start accruing for.</param>
+        private static void ToiStart(string steamId) {
+            if (!string.IsNullOrEmpty(steamId))
+                _accruingSince.AddOrUpdate(steamId, DateTime.UtcNow);
+        }
+
+        /// <summary>
+        /// Method that banks a player's current on-ice stint into their accumulated time-on-ice and stops accruing them. No-op if the player is not currently accruing.
+        /// </summary>
+        /// <param name="steamId">String, steam Id of the player to bank.</param>
+        private static void ToiBank(string steamId) {
+            if (!string.IsNullOrEmpty(steamId) && _accruingSince.TryGetValue(steamId, out DateTime since)) {
+                _toiSeconds.AddOrUpdate(steamId, (_toiSeconds.TryGetValue(steamId, out double previousSeconds) ? previousSeconds : 0) + (DateTime.UtcNow - since).TotalSeconds);
+                _accruingSince.Remove(steamId);
+            }
+        }
+
+        /// <summary>
+        /// Method that banks every currently-accruing player's on-ice stint and stops accruing them all.
+        /// </summary>
+        private static void ToiBankAll() {
+            DateTime now = DateTime.UtcNow;
+            foreach (var kvp in _accruingSince)
+                _toiSeconds.AddOrUpdate(kvp.Key, (_toiSeconds.TryGetValue(kvp.Key, out double previousSeconds) ? previousSeconds : 0) + (now - kvp.Value).TotalSeconds);
+            _accruingSince.Clear();
+        }
+
         /// <summary>
         /// Method that processes a hit by a player.
         /// </summary>
