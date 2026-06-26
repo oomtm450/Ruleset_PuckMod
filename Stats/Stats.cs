@@ -562,11 +562,12 @@ namespace oomtm450PuckMod_Stats {
                     _redGoals.Clear();
                     _redAssists.Clear();
 
-                    // Reset time-on-ice and capture the match start time (PreGame is the new game forming).
+                    // Reset time-on-ice and stamp the match start. Runs at Warmup/PreGame (the new game forming);
+                    // PreGame overwrites Warmup in the normal flow, and stamping at Warmup too covers a game that
+                    // reaches Play without a PreGame transition being seen.
                     _toiSeconds.Clear();
                     _accruingSince.Clear();
-                    if (newGameState.Phase == GamePhase.PreGame)
-                        _matchStartUtc = DateTime.UtcNow;
+                    _matchStartUtc = DateTime.UtcNow;
 
                     // Reset last possession.
                     _lastPossession = new Possession();
@@ -601,7 +602,10 @@ namespace oomtm450PuckMod_Stats {
                     if (!ServerFunc.IsDedicatedServer() || !vote.Passed)
                         return;
 
-                    if (GameManager.Instance.Period >= 3 && (vote.Name == "start" || vote.Name == "warmup" || vote.Name == "forfeit"))
+                    // Don't re-emit the EOG if the game already ended (a vote passing after GameOver would duplicate it).
+                    // "forfeit" is excluded: ForfeitGame already sets GameOver, which emits the EOG — listing it here would double-emit.
+                    if (GameManager.Instance.Period >= 3 && (vote.Name == "start" || vote.Name == "warmup") &&
+                        GameManager.Instance.Phase != GamePhase.GameOver && GameManager.Instance.Phase != GamePhase.PostGame)
                         CreateEOGJson(GameManager.Instance.BlueScore, GameManager.Instance.RedScore);
                 }
                 catch (Exception ex) {
@@ -1200,7 +1204,8 @@ namespace oomtm450PuckMod_Stats {
                             watch.Stop();
                         _playersCurrentPuckTouch.Clear();
 
-                        if (phase == GamePhase.GameOver)
+                        // Only emit on a real transition into GameOver. The prefix sees the old phase, so a re-asserted GameOver is skipped.
+                        if (phase == GamePhase.GameOver && __instance.GameState.Value.Phase != GamePhase.GameOver)
                             CreateEOGJson(__instance.GameState.Value.BlueScore, __instance.GameState.Value.RedScore);
                     }
                 }
