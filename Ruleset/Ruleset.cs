@@ -1607,7 +1607,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         else {
                             Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(lastPlayerOnPuckSteamId);
-                            if (penalizedDelayOfGamePlayer != null && penalizedDelayOfGamePlayer)
+                            if (Codebase.PlayerFunc.IsPlayerPlaying(penalizedDelayOfGamePlayer))
                                 PenaltyModule.GivePenalty(PenaltyType.DelayOfGame, penalizedDelayOfGamePlayer);
                             CallPenalty(_lastPlayerOnPuckTeam);
                         }

@@ -386,7 +386,18 @@ namespace oomtm450PuckMod_Ruleset {
             if (teamPlayers.Count < Ruleset.ServerConfig.Penalty.MaximumPenaltyImmunedPlayersCountPerTeam)
                 return false;
 
-            string penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
+            string penalizedPlayerSteamId;
+
+            try {
+                penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
+                if (string.IsNullOrEmpty(penalizedPlayerSteamId))
+                    return false;
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(GivePenalty)} 1.\n{ex}", Ruleset.ServerConfig);
+                return false;
+            }
+
             if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> penaltyList)) {
                 penaltyList = new LockList<Penalty>();
                 PenalizedPlayers.Add(penalizedPlayerSteamId, penaltyList);
@@ -420,7 +431,7 @@ namespace oomtm450PuckMod_Ruleset {
                     return false;
 
                 Player _playerToUnpenalize = teamPlayers.FirstOrDefault(x => x.SteamId.Value.ToString() == _penalties.Key);
-                if (_playerToUnpenalize.Equals(default(Player)))
+                if (_playerToUnpenalize == null || _playerToUnpenalize.Equals(default(Player)))
                     return false;
 
                 RemoveOnePenalty(_playerToUnpenalize.Team);
