@@ -2717,6 +2717,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned && !Codebase.PlayerFunc.IsGoalie(penalizedPlayer)) {
                                     PenaltyModule.GivePenalty(PenaltyType.Embellishment, penalizedPlayer);
 
+                                    // TODO : Fix roughing not working when someone touches puck AFTER the hit/slip.
                                     if (_playersWasLastHitWithoutPuckDateTime.TryGetValue(value, out var playerWasHitBy) && (now - playerWasHitBy.Item2).TotalMilliseconds < ServerConfig.Penalty.RoughingMillisecondsThreshold && new System.Random().Next(0, ServerConfig.Penalty.RoughingChancePercInverse) == 0) {
                                         if (!PenaltyModule.PenalizedPlayers.TryGetValue(playerWasHitBy.Item1, out LockList<Penalty> penaltyList) || penaltyList.Count != 0) {
                                             Player roughingPenalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerWasHitBy.Item1);
