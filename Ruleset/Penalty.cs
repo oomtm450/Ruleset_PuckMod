@@ -407,8 +407,14 @@ namespace oomtm450PuckMod_Ruleset {
                 return false;
 
             DateTime now = DateTime.UtcNow;
-            if (!string.IsNullOrEmpty(receivingPlayerSteamId) && GetAllPenalties().Where(x => x.Team == penalizedPlayer.Team && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000))
-                return false;
+            if (!string.IsNullOrEmpty(receivingPlayerSteamId)) {
+                List<Penalty> allPenalties = GetAllPenalties();
+                if (allPenalties.Where(x => x.Team == penalizedPlayer.Team && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000))
+                    return false;
+
+                if (penaltyType == PenaltyType.Roughing && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Interference || x.PenaltyType == PenaltyType.GoalieInterference) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000))
+                    return false;
+            }
 
             if ((penalizedPlayer.Team == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
                 (penalizedPlayer.Team == PlayerTeam.Red && PenalizedPlayersCountRedTeam == Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
