@@ -3300,6 +3300,8 @@ namespace oomtm450PuckMod_Ruleset {
                                 ServerConfig.HighStick.BlueTeam = false;
                                 ServerConfig.HighStick.RedTeam = false;
 
+                                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+
                                 Logging.Log($"Ref mode has been enabled.", ServerConfig);
                             }
                             SystemChatMessages.Add("Ref mode has been enabled.");
