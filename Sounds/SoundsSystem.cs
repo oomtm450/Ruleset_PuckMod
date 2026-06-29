@@ -65,16 +65,16 @@ namespace oomtm450PuckMod_Sounds {
                 if (_audioClips.Count == 0)
                     DontDestroyOnLoad(gameObject);
 
-                string[] splittedPath = new string[] { path };
-                if (path.Contains('/')) // Linux path
-                    splittedPath = path.Split('/');
-                else // Windows path
-                    splittedPath = path.Split('\\');
+                char directorySeparatorChar = Path.DirectorySeparatorChar;
+                string[] splittedPath = path.Split(directorySeparatorChar);
+                if (splittedPath.Length <= 1) {
+                    directorySeparatorChar = Path.AltDirectorySeparatorChar;
+                    splittedPath = path.Split(directorySeparatorChar);
+                }
 
                 string rootPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                int lastIndexOf = rootPath.LastIndexOf('/');
-                if (lastIndexOf == -1)
-                    lastIndexOf = rootPath.LastIndexOf('\\');
+                int lastIndexOf = rootPath.LastIndexOf(directorySeparatorChar);
+
                 rootPath = rootPath.Substring(0, lastIndexOf);
                 string fullPath = Path.Combine(Path.Combine(rootPath, splittedPath[splittedPath.Count() - 2]), splittedPath.Last());
 
