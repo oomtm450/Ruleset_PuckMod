@@ -1,4 +1,5 @@
 ﻿using Codebase;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,34 +9,32 @@ using System.Reflection;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
+using static oomtm450PuckMod_Sounds.SoundsSystem;
 
 namespace oomtm450PuckMod_Sounds {
     internal class SoundsSystem : MonoBehaviour {
         #region Constants
         private const string SOUND_EXTENSION = ".ogg";
 
-        private static float DEFAULT_HORN_VOLUME = 1f;
+        private const string SOUNDS_SETTINGS_FILENAME = "settings.json";
+
+        private const float DEFAULT_SOUND_VOLUME = 1f;
+
+        private static float DEFAULT_HORN_VOLUME = DEFAULT_SOUND_VOLUME;
+
+        private const float DEFAULT_SOUND_WEIGHT = 60f;
         #endregion
 
         #region Fields
         private readonly LockDictionary<string, GameObject> _soundObjects = new LockDictionary<string, GameObject>();
         private readonly LockList<AudioClip> _audioClips = new LockList<AudioClip>();
+        private readonly LockDictionary<string, SoundSettings> _soundSettings = new LockDictionary<string, SoundSettings>();
 
         private AudioSource _currentAudioSource = null;
 
         private static string _lastRandomSound = "";
 
         private int _isLoadingValue = 0;
-
-        private bool IsLoading {
-            get { return Interlocked.CompareExchange(ref _isLoadingValue, 1, 1) == 1; }
-            set {
-                if (value)
-                    Interlocked.CompareExchange(ref _isLoadingValue, 1, 0);
-                else
-                    Interlocked.CompareExchange(ref _isLoadingValue, 0, 1);
-            }
-        }
         #endregion
 
         #region Properties
@@ -52,6 +51,16 @@ namespace oomtm450PuckMod_Sounds {
         internal LockList<string> Errors { get; } = new LockList<string>();
 
         internal LockList<string> Warnings { get; } = new LockList<string>();
+
+        private bool IsLoading {
+            get { return Interlocked.CompareExchange(ref _isLoadingValue, 1, 1) == 1; }
+            set {
+                if (value)
+                    Interlocked.CompareExchange(ref _isLoadingValue, 1, 0);
+                else
+                    Interlocked.CompareExchange(ref _isLoadingValue, 0, 1);
+            }
+        }
         #endregion
 
         #region Methods/Functions
@@ -129,7 +138,32 @@ namespace oomtm450PuckMod_Sounds {
                 }
                 catch (Exception ex) {
                     tryGetFiles = true;
-                    Warnings.Add($"Sounds.{nameof(GetAudioClips)} 1 : " + ex.ToString());
+                    Warnings.Add($"Sounds.{nameof(GetAudioClips)} 1 : {ex}");
+                }
+
+                string jsonPath = "";
+                Dictionary<string, SoundSettings> currentConfig = new Dictionary<string, SoundSettings>();
+                try {
+                    jsonPath = Path.Combine(path, SOUNDS_SETTINGS_FILENAME);
+
+                    if (File.Exists(jsonPath)) {
+                        string settingsFileContent = File.ReadAllText(jsonPath);
+                        currentConfig = settingsFileContent.ToSoundSettings();
+
+                        foreach (string key in currentConfig.Keys)
+                            _soundSettings.AddOrUpdate(key, currentConfig[key]);
+                    }
+                }
+                catch (Exception ex) {
+                    Warnings.Add($"Sounds.{nameof(GetAudioClips)} 2 : {ex}");
+                }
+
+                try {
+                    if (!string.IsNullOrEmpty(jsonPath))
+                        File.WriteAllText(jsonPath, currentConfig.ToJSON());
+                }
+                catch (Exception ex) {
+                    Warnings.Add($"Sounds.{nameof(GetAudioClips)} 3 : {ex}");
                 }
 
                 if (tryGetFiles)
@@ -138,6 +172,11 @@ namespace oomtm450PuckMod_Sounds {
 
             foreach (string file in files) {
                 string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
+                if (Path.GetExtension(filePath).ToLowerInvariant() != SOUND_EXTENSION) {
+                    yield return null;
+                    continue;
+                }
+
                 UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS);
                 yield return webRequest.SendWebRequest();
                 yield return null;
@@ -158,6 +197,7 @@ namespace oomtm450PuckMod_Sounds {
 
                         AddClipNameToCorrectList(clip.name);
 
+                        // TODO : Remove this when weight is implemented.
                         // Add a faceoff music twice to the list to double the chance of playing if it's a not a multi part music.
                         // This is going to help music with one ogg to play more.
                         if (!char.IsDigit(clip.name[clip.name.Length - 1]))
@@ -165,7 +205,7 @@ namespace oomtm450PuckMod_Sounds {
 
                     }
                     catch (Exception ex) {
-                        Errors.Add($"Sounds.{nameof(GetAudioClips)} 2 : " + ex.ToString());
+                        Errors.Add($"Sounds.{nameof(GetAudioClips)} 4 : {ex}");
                     }
                 }
 
@@ -179,7 +219,7 @@ namespace oomtm450PuckMod_Sounds {
                     SetGoalHorns();
             }
             catch (Exception ex) {
-                Errors.Add($"Sounds.{nameof(GetAudioClips)} 3 : " + ex.ToString());
+                Errors.Add($"Sounds.{nameof(GetAudioClips)} 5 : {ex}");
             }
 
             try {
@@ -187,7 +227,7 @@ namespace oomtm450PuckMod_Sounds {
                 ReorderAllLists();
             }
             catch (Exception ex) {
-                Errors.Add($"Sounds.{nameof(GetAudioClips)} 4 : " + ex.ToString());
+                Errors.Add($"Sounds.{nameof(GetAudioClips)} 6 : {ex}");
             }
 
             IsLoading = false;
@@ -236,6 +276,12 @@ namespace oomtm450PuckMod_Sounds {
 
             AudioSource audioSource = soundObject.GetComponent<AudioSource>();
             audioSource.loop = loop;
+
+            SoundSettings soundSettings = null;
+            float volModifier = DEFAULT_SOUND_VOLUME;
+            if (_soundSettings.TryGetValue(name, out soundSettings))
+                volModifier = soundSettings.Volume;
+            vol *= volModifier;
             audioSource.volume = vol;
 
             if (type == Codebase.SoundsSystem.MUSIC) {
@@ -243,11 +289,11 @@ namespace oomtm450PuckMod_Sounds {
                 if (vol != float.MaxValue)
                     ChangeVolume(vol);
                 else
-                    ChangeVolume(SettingsManager.GlobalVolume * SettingsManager.GameVolume);
+                    ChangeVolume(SettingsManager.GlobalVolume * SettingsManager.GameVolume * volModifier);
             }
             else {
                 _currentAudioSource = null;
-                audioSource.volume = SettingsManager.GlobalVolume * SettingsManager.GameVolume;
+                audioSource.volume = SettingsManager.GlobalVolume * SettingsManager.GameVolume * volModifier;
             }
 
             if (delay == 0)
@@ -286,7 +332,7 @@ namespace oomtm450PuckMod_Sounds {
                 ChangeHornVolume(hornVol, hornAudioSource);
         }
 
-        internal static string GetRandomSound(IEnumerable<string> soundList, int? seed = null) {
+        internal static string GetRandomSound(IEnumerable<string> soundList, int? seed = null) { // TODO : Add weight calc.
             string sound = "";
 
             int soundListCount = soundList.Count();
@@ -442,5 +488,26 @@ namespace oomtm450PuckMod_Sounds {
             GameOverMusicList = new LockList<string>(GameOverMusicList.OrderBy(x => x).ToList());
         }
         #endregion
+
+        internal class SoundSettings {
+            public float Volume { get; set; } = DEFAULT_SOUND_VOLUME;
+
+            public float Weight { get; set; } = DEFAULT_SOUND_WEIGHT;
+        }
+    }
+
+    internal static class SoundSettingsExtension {
+        /// <summary>
+        /// Function that serialize the config object.
+        /// </summary>
+        /// <returns>String, serialized config.</returns>
+        internal static string ToJSON(this Dictionary<string, SoundSettings> soundSettings) => JsonConvert.SerializeObject(soundSettings, Formatting.Indented);
+
+        /// <summary>
+        /// Function that unserialize a ServerConfig.
+        /// </summary>
+        /// <param name="json">String, JSON that is the serialized ServerConfig.</param>
+        /// <returns>ServerConfig, unserialized ServerConfig.</returns>
+        internal static Dictionary<string, SoundSettings> ToSoundSettings(this string json) => JsonConvert.DeserializeObject<Dictionary<string, SoundSettings>>(json);
     }
 }
