@@ -257,6 +257,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                             FaceoffViolation = config.Penalty.FaceoffViolation,
                             Embellishment = config.Penalty.Embellishment,
                             Roughing = config.Penalty.Roughing,
+                            Charging = config.Penalty.Charging,
                         },
                         Faceoff = new FaceoffConfig {
                             EnableViolations = config.Faceoff.EnableViolations,
@@ -392,6 +393,15 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, chance for an roughing to be called. (1 is equal to 100%. 1 / 100 * 100 = 1)
         /// </summary>
         public int RoughingChancePercInverse { get; set; } = 1;
+
+        /// <summary>
+        /// Bool, true if charging penalty is enabled.
+        /// </summary>
+        public bool Charging { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingTime { get; set; } = 45000;
         #endregion
 
         #region Constructors
@@ -436,6 +446,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             RoughingTime = penaltyConfig.RoughingTime;
             RoughingMillisecondsThreshold = penaltyConfig.RoughingMillisecondsThreshold;
             RoughingChancePercInverse = penaltyConfig.RoughingChancePercInverse;
+
+            Charging = penaltyConfig.Charging;
+            ChargingTime = penaltyConfig.ChargingTime;
         }
         #endregion
 
@@ -531,6 +544,13 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (RoughingChancePercInverse == _oldConfig.RoughingChancePercInverse)
                 RoughingChancePercInverse = newConfig.RoughingChancePercInverse;
+
+
+            if (Charging == _oldConfig.Charging)
+                Charging = newConfig.Charging;
+
+            if (ChargingTime == _oldConfig.ChargingTime)
+                ChargingTime = newConfig.ChargingTime;
         }
     }
 

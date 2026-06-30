@@ -3472,6 +3472,14 @@ namespace oomtm450PuckMod_Ruleset {
                             dataStr = dataStr.Replace("foff", "");
                             penaltyType = PenaltyType.FaceoffViolation;
                         }
+                        else if (dataStr.Contains("rough")) {
+                            dataStr = dataStr.Replace("rough", "");
+                            penaltyType = PenaltyType.Roughing;
+                        }
+                        else if (dataStr.Contains("charge") || dataStr.Contains("charging")) {
+                            dataStr = dataStr.Replace("charge", "").Replace("charging", "");
+                            penaltyType = PenaltyType.Charging;
+                        }
                         else
                             break;
 

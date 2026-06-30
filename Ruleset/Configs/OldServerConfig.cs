@@ -199,6 +199,15 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public int RoughingChancePercInverse { get; } = 1;
 
         /// <summary>
+        /// Bool, true if charging penalty is enabled.
+        /// </summary>
+        public bool Charging { get; } = true;
+        /// <summary>
+        /// Int, time in the box for a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingTime { get; } = 45000;
+
+        /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
         /// </summary>
         /// <param name="oldConfig">ISubConfig, config with old values.</param>

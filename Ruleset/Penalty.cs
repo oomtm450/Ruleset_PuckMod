@@ -795,6 +795,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                 case PenaltyType.Roughing:
                     return Ruleset.ServerConfig.Penalty.RoughingTime;
+
+                case PenaltyType.Charging:
+                    return Ruleset.ServerConfig.Penalty.ChargingTime;
             }
 
             return 45000;
@@ -894,5 +897,6 @@ namespace oomtm450PuckMod_Ruleset {
         [Description("Faceoff violation"), Category("ToString")]
         FaceoffViolation,
         Roughing,
+        Charging,
     }
 }
