@@ -1529,7 +1529,7 @@ namespace oomtm450PuckMod_Stats {
                     clientSteamId = _playersInfo[clientId].SteamId;
                 }
                 catch {
-                    Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(_playersInfo)}.", ServerConfig);
+                    //Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(_playersInfo)}.", ServerConfig);
                     return;
                 }
 

@@ -2894,7 +2894,7 @@ namespace oomtm450PuckMod_Ruleset {
                     clientSteamId = PlayerFunc.Players_ClientId_SteamId[clientId];
                 }
                 catch {
-                    Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(PlayerFunc.Players_ClientId_SteamId)}.", ServerConfig);
+                    //Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(PlayerFunc.Players_ClientId_SteamId)}.", ServerConfig);
                     return;
                 }
 
