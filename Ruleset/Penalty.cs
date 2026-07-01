@@ -368,18 +368,22 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static bool GivePenalty(PenaltyType penaltyType, Player penalizedPlayer, string receivingPlayerSteamId = "", Player referee = null) {
-            if (!Ruleset.ServerConfig.Penalty.Interference && (penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.Tripping))
-                return false;
-            if (!Ruleset.ServerConfig.Penalty.GoalieInterference && penaltyType == PenaltyType.GoalieInterference)
-                return false;
-            if (!Ruleset.ServerConfig.Penalty.DelayOfGame && penaltyType == PenaltyType.DelayOfGame)
-                return false;
-            if (!Ruleset.ServerConfig.Penalty.FaceoffViolation && penaltyType == PenaltyType.FaceoffViolation)
-                return false;
-            if (!Ruleset.ServerConfig.Penalty.Embellishment && penaltyType == PenaltyType.Embellishment)
-                return false;
-            if (!Ruleset.ServerConfig.Penalty.Roughing && penaltyType == PenaltyType.Roughing)
-                return false;
+            if (referee == null) {
+                if (!Ruleset.ServerConfig.Penalty.Interference && (penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.Tripping))
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.GoalieInterference && penaltyType == PenaltyType.GoalieInterference)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.DelayOfGame && penaltyType == PenaltyType.DelayOfGame)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.FaceoffViolation && penaltyType == PenaltyType.FaceoffViolation)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.Embellishment && penaltyType == PenaltyType.Embellishment)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.Roughing && penaltyType == PenaltyType.Roughing)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.Charging && penaltyType == PenaltyType.Charging)
+                    return false;
+            }
 
             List<Player> teamPlayers = PlayerManager.Instance.GetPlayersByTeam(penalizedPlayer.Team).Where(x => !Codebase.PlayerFunc.IsGoalie(x)).ToList();
 

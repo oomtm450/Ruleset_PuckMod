@@ -14,19 +14,19 @@ namespace Codebase {
     /// O(n) CRUD complexity. In other words, you can add any item of type T to a List with an integer weight,
     /// and get a random item from the list with probability ( weight / sum-weights ).
     /// </summary>
-    public class WeightedList<T> : IEnumerable<T> {
+    public class LockWeightedList<T> : IEnumerable<T> {
         /// <summary>
         /// Create a new WeightedList with an optional System.Random.
         /// </summary>
         /// <param name="rand"></param>
-        public WeightedList(Random rand = null) {
+        public LockWeightedList(Random rand = null) {
             _rand = rand ?? new Random();
         }
 
         /// <summary>
         /// Create a WeightedList with the provided items, function to get weight per item and an optional System.Random.
         /// </summary>
-        public WeightedList(IEnumerable<T> listItems, Func<T, int> getWeight, Random rand = null) {
+        public LockWeightedList(IEnumerable<T> listItems, Func<T, int> getWeight, Random rand = null) {
             _rand = rand ?? new Random();
             foreach (var item in listItems) {
                 _list.Add(item);
@@ -38,7 +38,7 @@ namespace Codebase {
         /// <summary>
         /// Create a WeightedList with the provided items and an optional System.Random.
         /// </summary>
-        public WeightedList(ICollection<WeightedListItem<T>> listItems, Random rand = null) {
+        public LockWeightedList(ICollection<WeightedListItem<T>> listItems, Random rand = null) {
             _rand = rand ?? new Random();
             foreach (WeightedListItem<T> item in listItems) {
                 _list.Add(item._item);
@@ -86,7 +86,7 @@ namespace Codebase {
         /// </summary>
         public int MaxWeight => _maxWeight;
 
-        public IReadOnlyList<T> Items => _list.AsReadOnly();
+        public IReadOnlyList<T> Items => new List<T>(_list).AsReadOnly();
 
         public IEnumerator<T> GetEnumerator() => _list.GetEnumerator();
 
@@ -149,6 +149,10 @@ namespace Codebase {
 
         public int GetWeightAtIndex(int index) => _weights[index];
 
+        public void SetRandomSeed(int seed) {
+            _rand = new Random(seed);
+        }
+
         public override string ToString() {
             StringBuilder sb = new StringBuilder();
 
@@ -173,11 +177,11 @@ namespace Codebase {
             return sb.ToString();
         }
 
-        private readonly List<T> _list = new List<T>();
-        private readonly List<int> _weights = new List<int>();
-        private readonly List<int> _probabilities = new List<int>();
-        private readonly List<int> _alias = new List<int>();
-        private readonly Random _rand;
+        private readonly LockList<T> _list = new LockList<T>();
+        private readonly LockList<int> _weights = new LockList<int>();
+        private readonly LockList<int> _probabilities = new LockList<int>();
+        private readonly LockList<int> _alias = new LockList<int>();
+        private Random _rand;
         private int _totalWeight;
         private bool _areAllProbabilitiesIdentical = false;
         private int _minWeight;

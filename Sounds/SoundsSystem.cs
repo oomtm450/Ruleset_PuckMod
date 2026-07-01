@@ -22,7 +22,7 @@ namespace oomtm450PuckMod_Sounds {
 
         private static float DEFAULT_HORN_VOLUME = DEFAULT_SOUND_VOLUME;
 
-        private const float DEFAULT_SOUND_WEIGHT = 60f;
+        private const int DEFAULT_SOUND_WEIGHT = 60;
         #endregion
 
         #region Fields
@@ -38,15 +38,15 @@ namespace oomtm450PuckMod_Sounds {
         #endregion
 
         #region Properties
-        internal LockList<string> FaceoffMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> BlueGoalMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> RedGoalMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> BetweenPeriodsMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> WarmupMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> LastMinuteMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> FirstFaceoffMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> SecondFaceoffMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> GameOverMusicList { get; set; } = new LockList<string>();
+        internal LockWeightedList<string> FaceoffMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> BlueGoalMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> RedGoalMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> BetweenPeriodsMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> WarmupMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> LastMinuteMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> FirstFaceoffMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> SecondFaceoffMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> GameOverMusicList { get; set; } = new LockWeightedList<string>();
         
         internal LockList<string> Errors { get; } = new LockList<string>();
 
@@ -74,15 +74,16 @@ namespace oomtm450PuckMod_Sounds {
                 if (_audioClips.Count == 0)
                     DontDestroyOnLoad(gameObject);
 
-                char directorySeparatorChar = Path.DirectorySeparatorChar;
-                string[] splittedPath = path.Split(directorySeparatorChar);
-                if (splittedPath.Length <= 1) {
-                    directorySeparatorChar = Path.AltDirectorySeparatorChar;
-                    splittedPath = path.Split(directorySeparatorChar);
-                }
+                string[] splittedPath = new string[] { path };
+                if (path.Contains('/')) // Linux path
+                    splittedPath = path.Split('/');
+                else // Windows path
+                    splittedPath = path.Split('\\');
 
                 string rootPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                int lastIndexOf = rootPath.LastIndexOf(directorySeparatorChar);
+                int lastIndexOf = rootPath.LastIndexOf('/');
+                if (lastIndexOf == -1)
+                    lastIndexOf = rootPath.LastIndexOf('\\');
 
                 rootPath = rootPath.Substring(0, lastIndexOf);
                 string fullPath = Path.Combine(Path.Combine(rootPath, splittedPath[splittedPath.Count() - 2]), splittedPath.Last());
@@ -130,6 +131,8 @@ namespace oomtm450PuckMod_Sounds {
             string[] files = Array.Empty<string>();
 
             bool tryGetFiles = true;
+            string jsonPath = "";
+            Dictionary<string, SoundSettings> currentConfig = new Dictionary<string, SoundSettings>();
             while (tryGetFiles) {
                 tryGetFiles = false;
 
@@ -141,29 +144,16 @@ namespace oomtm450PuckMod_Sounds {
                     Warnings.Add($"Sounds.{nameof(GetAudioClips)} 1 : {ex}");
                 }
 
-                string jsonPath = "";
-                Dictionary<string, SoundSettings> currentConfig = new Dictionary<string, SoundSettings>();
                 try {
                     jsonPath = Path.Combine(path, SOUNDS_SETTINGS_FILENAME);
 
                     if (File.Exists(jsonPath)) {
                         string settingsFileContent = File.ReadAllText(jsonPath);
                         currentConfig = settingsFileContent.ToSoundSettings();
-
-                        foreach (string key in currentConfig.Keys)
-                            _soundSettings.AddOrUpdate(key, currentConfig[key]);
                     }
                 }
                 catch (Exception ex) {
                     Warnings.Add($"Sounds.{nameof(GetAudioClips)} 2 : {ex}");
-                }
-
-                try {
-                    if (!string.IsNullOrEmpty(jsonPath))
-                        File.WriteAllText(jsonPath, currentConfig.ToJSON());
-                }
-                catch (Exception ex) {
-                    Warnings.Add($"Sounds.{nameof(GetAudioClips)} 3 : {ex}");
                 }
 
                 if (tryGetFiles)
@@ -192,24 +182,42 @@ namespace oomtm450PuckMod_Sounds {
                         }
 
                         clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
+
+                        if (!currentConfig.TryGetValue(clip.name, out SoundSettings clipSettings)) {
+                            clipSettings = new SoundSettings {
+                                Weight = DEFAULT_SOUND_WEIGHT,
+                                Volume = DEFAULT_SOUND_VOLUME,
+                            };
+                            currentConfig.Add(clip.name, clipSettings);
+                        }
+
+                        if (clipSettings.Weight <= 0)
+                            continue;
+
                         DontDestroyOnLoad(clip);
                         _audioClips.Add(clip);
 
-                        AddClipNameToCorrectList(clip.name);
-
-                        // TODO : Remove this when weight is implemented.
-                        // Add a faceoff music twice to the list to double the chance of playing if it's a not a multi part music.
-                        // This is going to help music with one ogg to play more.
-                        if (!char.IsDigit(clip.name[clip.name.Length - 1]))
-                            AddClipNameToCorrectList(clip.name);
-
+                        AddClipNameToCorrectList(clip.name, clipSettings.Weight);
                     }
                     catch (Exception ex) {
-                        Errors.Add($"Sounds.{nameof(GetAudioClips)} 4 : {ex}");
+                        Errors.Add($"Sounds.{nameof(GetAudioClips)} 3 : {ex}");
                     }
                 }
 
                 yield return null;
+            }
+
+            yield return null;
+
+            try {
+                foreach (string key in currentConfig.Keys)
+                    _soundSettings.AddOrUpdate(key, currentConfig[key]);
+
+                if (!string.IsNullOrEmpty(jsonPath))
+                    File.WriteAllText(jsonPath, currentConfig.ToDictionary((x) => x.Key, (x) => x.Value).ToJSON());
+            }
+            catch (Exception ex) {
+                Warnings.Add($"Sounds.{nameof(GetAudioClips)} 4 : {ex}");
             }
 
             yield return null;
@@ -233,25 +241,25 @@ namespace oomtm450PuckMod_Sounds {
             IsLoading = false;
         }
 
-        private void AddClipNameToCorrectList(string clipName) {
+        private void AddClipNameToCorrectList(string clipName, int weight = DEFAULT_SOUND_WEIGHT) {
             if (clipName.Contains(Codebase.SoundsSystem.FACEOFF_MUSIC))
-                FaceoffMusicList.Add(clipName);
+                FaceoffMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.BLUE_GOAL_MUSIC))
-                BlueGoalMusicList.Add(clipName);
+                BlueGoalMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.RED_GOAL_MUSIC))
-                RedGoalMusicList.Add(clipName);
+                RedGoalMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC))
-                BetweenPeriodsMusicList.Add(clipName);
+                BetweenPeriodsMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.WARMUP_MUSIC))
-                WarmupMusicList.Add(clipName);
+                WarmupMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.LAST_MINUTE_MUSIC))
-                LastMinuteMusicList.Add(clipName);
+                LastMinuteMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC))
-                FirstFaceoffMusicList.Add(clipName);
+                FirstFaceoffMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC))
-                SecondFaceoffMusicList.Add(clipName);
+                SecondFaceoffMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.GAMEOVER_MUSIC))
-                GameOverMusicList.Add(clipName);
+                GameOverMusicList.Add(clipName, weight);
         }
 
         internal void Play(string name, string type, float vol = float.MaxValue, float delay = 0, bool loop = false) {
@@ -332,36 +340,34 @@ namespace oomtm450PuckMod_Sounds {
                 ChangeHornVolume(hornVol, hornAudioSource);
         }
 
-        internal static string GetRandomSound(IEnumerable<string> soundList, int? seed = null) { // TODO : Add weight calc.
-            string sound = "";
-
+        internal static string GetRandomSound(LockWeightedList<string> soundList, int? seed = null) {
+            soundList = new LockWeightedList<string>(soundList, soundList.GetWeightOf);
             int soundListCount = soundList.Count();
 
             if (soundListCount == 0)
-                return sound;
-
-            if (seed == null)
-                sound = soundList.ElementAt(new System.Random().Next(0, soundListCount));
-            else
-                sound = soundList.ElementAt(new System.Random((int)seed).Next(0, soundListCount));
-
-            if (sound == _lastRandomSound) {
-                int soundIndex;
-                if (soundList is IList<string> _soundList)
-                    soundIndex = _soundList.IndexOf(sound);
-                else if (soundList is LockList<string> __soundList)
-                    soundIndex = __soundList.IndexOf(sound);
-                else {
-                    Logging.LogError(nameof(soundList) + " argument must be of type IList or LockList.", Sounds.ClientConfig);
-                    return sound;
+                return "";
+            else if (soundListCount == 1)
+                return soundList.First();
+            else if (soundListCount == 2) {
+                string _sound = soundList.First();
+                if (soundList.First() != _lastRandomSound) {
+                    _lastRandomSound = _sound;
+                    return _sound;
                 }
+                else {
+                    _lastRandomSound = soundList.ElementAt(1);
+                    return _sound;
+                }
+            }
 
-                if (soundIndex == soundListCount - 1)
-                    soundIndex = 0;
-                else
-                    soundIndex++;
+            string sound = _lastRandomSound;
 
-                sound = soundList.ElementAt(soundIndex);
+            if (seed != null)
+                soundList.SetRandomSeed((int)seed);
+
+            while (sound == _lastRandomSound) {
+                sound = soundList.Next();
+                soundList.Remove(sound);
             }
 
             _lastRandomSound = sound;
@@ -477,22 +483,22 @@ namespace oomtm450PuckMod_Sounds {
         }
 
         private void ReorderAllLists() {
-            FaceoffMusicList = new LockList<string>(FaceoffMusicList.OrderBy(x => x).ToList());
-            BlueGoalMusicList = new LockList<string>(BlueGoalMusicList.OrderBy(x => x).ToList());
-            RedGoalMusicList = new LockList<string>(RedGoalMusicList.OrderBy(x => x).ToList());
-            BetweenPeriodsMusicList = new LockList<string>(BetweenPeriodsMusicList.OrderBy(x => x).ToList());
-            WarmupMusicList = new LockList<string>(WarmupMusicList.OrderBy(x => x).ToList());
-            LastMinuteMusicList = new LockList<string>(LastMinuteMusicList.OrderBy(x => x).ToList());
-            FirstFaceoffMusicList = new LockList<string>(FirstFaceoffMusicList.OrderBy(x => x).ToList());
-            SecondFaceoffMusicList = new LockList<string>(SecondFaceoffMusicList.OrderBy(x => x).ToList());
-            GameOverMusicList = new LockList<string>(GameOverMusicList.OrderBy(x => x).ToList());
+            FaceoffMusicList = new LockWeightedList<string>(FaceoffMusicList.OrderBy(x => x), FaceoffMusicList.GetWeightOf);
+            BlueGoalMusicList = new LockWeightedList<string>(BlueGoalMusicList.OrderBy(x => x), BlueGoalMusicList.GetWeightOf);
+            RedGoalMusicList = new LockWeightedList<string>(RedGoalMusicList.OrderBy(x => x), RedGoalMusicList.GetWeightOf);
+            BetweenPeriodsMusicList = new LockWeightedList<string>(BetweenPeriodsMusicList.OrderBy(x => x), BetweenPeriodsMusicList.GetWeightOf);
+            WarmupMusicList = new LockWeightedList<string>(WarmupMusicList.OrderBy(x => x), WarmupMusicList.GetWeightOf);
+            LastMinuteMusicList = new LockWeightedList<string>(LastMinuteMusicList.OrderBy(x => x), LastMinuteMusicList.GetWeightOf);
+            FirstFaceoffMusicList = new LockWeightedList<string>(FirstFaceoffMusicList.OrderBy(x => x), FirstFaceoffMusicList.GetWeightOf);
+            SecondFaceoffMusicList = new LockWeightedList<string>(SecondFaceoffMusicList.OrderBy(x => x), SecondFaceoffMusicList.GetWeightOf);
+            GameOverMusicList = new LockWeightedList<string>(GameOverMusicList.OrderBy(x => x), GameOverMusicList.GetWeightOf);
         }
         #endregion
 
         internal class SoundSettings {
             public float Volume { get; set; } = DEFAULT_SOUND_VOLUME;
 
-            public float Weight { get; set; } = DEFAULT_SOUND_WEIGHT;
+            public int Weight { get; set; } = DEFAULT_SOUND_WEIGHT;
         }
     }
 

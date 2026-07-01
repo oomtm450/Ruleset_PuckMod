@@ -3300,6 +3300,15 @@ namespace oomtm450PuckMod_Ruleset {
                                 ServerConfig.HighStick.BlueTeam = false;
                                 ServerConfig.HighStick.RedTeam = false;
 
+                                ServerConfig.Penalty.Charging = false;
+                                ServerConfig.Penalty.DelayOfGame = false;
+                                ServerConfig.Penalty.Embellishment = false;
+                                ServerConfig.Penalty.FaceoffViolation = false;
+                                ServerConfig.Faceoff.EnableViolations = false; // TODO : Create new ref command to redo faceoff to simulate violations.
+                                ServerConfig.Penalty.GoalieInterference = false;
+                                ServerConfig.Penalty.Interference = false;
+                                ServerConfig.Penalty.Roughing = false;
+
                                 NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
                                 Logging.Log($"Ref mode has been enabled.", ServerConfig);
@@ -3435,16 +3444,16 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case PenaltyModule.GIVE_PENALTY_DATANAME: // SERVER-SIDE : Give penalty.
-                        if (Paused || GameManager.Instance.Phase != GamePhase.Play)
+                        if (GameManager.Instance.Phase != GamePhase.Play && GameManager.Instance.Phase != GamePhase.FaceOff && GameManager.Instance.Phase != GamePhase.Intermission)
                             break;
 
-                        Player gintPenReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
-                        if (gintPenReferee == null || !gintPenReferee)
+                        Player penReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (penReferee == null || !penReferee)
                             break;
 
-                        string gintPenRefereeSteamId = gintPenReferee.SteamId.Value.ToString();
+                        string penRefereeSteamId = penReferee.SteamId.Value.ToString();
 
-                        if (!IsAdmin(gintPenRefereeSteamId) && !_currentRefsSteamId.Contains(gintPenRefereeSteamId))
+                        if (string.IsNullOrEmpty(penRefereeSteamId) || (!IsAdmin(penRefereeSteamId) && !_currentRefsSteamId.Contains(penRefereeSteamId)))
                             break;
 
                         PenaltyType penaltyType;
@@ -3486,21 +3495,17 @@ namespace oomtm450PuckMod_Ruleset {
                         string[] steamIdsPen = dataStr.Trim().Split(' ');
 
                         string steamIdReceivingPlayer = "";
-                        if (penaltyType == PenaltyType.Embellishment || penaltyType == PenaltyType.DelayOfGame || penaltyType == PenaltyType.FaceoffViolation) {
-                            if (steamIdsPen.Count() != 1)
-                                break;
-                        }
-                        else {
-                            if (steamIdsPen.Count() != 2)
-                                break;
+                        if (steamIdsPen.Length == 0)
+                            break;
+
+                        if (steamIdsPen.Length >= 1)
                             steamIdReceivingPlayer = steamIdsPen[1];
-                        }
 
                         Player penPlayer = PlayerManager.Instance.GetPlayerBySteamId(steamIdsPen[0]);
                         if (penPlayer == null || !penPlayer)
                             break;
 
-                        PenaltyModule.GivePenalty(penaltyType, penPlayer, steamIdReceivingPlayer, gintPenReferee);
+                        PenaltyModule.GivePenalty(penaltyType, penPlayer, steamIdReceivingPlayer, penReferee);
                         break;
 
                     case PenaltyModule.REMOVE_ALL_PENALTIES_REFMODE_DATANAME: // SERVER-SIDE : Remove all penalties.

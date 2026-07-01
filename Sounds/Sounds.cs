@@ -1012,7 +1012,7 @@ namespace oomtm450PuckMod_Sounds {
                         _soundsSystem.SetGoalHorns();
                         break;
 
-                    case Codebase.SoundsSystem.PLAY_SOUND: // CLIENT-SIDE : Play sound. // TODO : Add per music weight and volume.
+                    case Codebase.SoundsSystem.PLAY_SOUND: // CLIENT-SIDE : Play sound.
                         if (_soundsSystem == null)
                             break;
                         if (_soundsSystem.Errors.Count != 0) {

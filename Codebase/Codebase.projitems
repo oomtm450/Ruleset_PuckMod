@@ -23,7 +23,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\SoundsSystem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\SystemFunc.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\TeamFunc.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)systemfunc\WeightedList.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)systemfunc\LockWeightedList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\ZoneFunc.cs" />
   </ItemGroup>
 </Project>
