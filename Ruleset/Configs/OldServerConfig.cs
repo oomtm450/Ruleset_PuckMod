@@ -46,17 +46,17 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; } = 68; // TODO : Change after release.
+        public int MaxTippedMilliseconds { get; } = 67; // TODO : Change after release.
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; } = 350;
+        public int MinPossessionMilliseconds { get; } = 350; // TODO : Change after release.
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
         /// </summary>
-        public int MaxPossessionMilliseconds { get; } = 1000; // TODO : Change after release.
+        public int MaxPossessionMilliseconds { get; } = 1250;
 
         /// <summary>
         /// Bool, authorize ref mode to be voted or activated by an admin.
@@ -98,6 +98,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, max number of penalized players per team.
         /// </summary>
         public int MaxPenalizedPlayersPerTeam { get; } = 2;
+        /// <summary>
+        /// Int, maximum number of players per team where penalties don't count.
+        /// </summary>
+        public int MaximumPenaltyImmunedPlayersCountPerTeam { get; } = 2;
 
         /// <summary>
         /// Bool, true if player interference is enabled.
@@ -144,7 +148,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds before leaving the stick.
         /// </summary>
-        public int DelayOfGameMillisecondsThreshold { get; } = 120;
+        public int DelayOfGameMillisecondsThreshold { get; } = 120; // TODO : Change after release.
 
         /// <summary>
         /// Bool, true if faceoff violation penalty is enabled.
@@ -171,6 +175,23 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, chance for an embellishment to be called. (2 is equal to 50%. 1 / 50 * 100 = 2)
         /// </summary>
         public int EmbellishmentChancePercInverse { get; } = 2;
+
+        /// <summary>
+        /// Bool, true if roughing penalty is enabled. (Embellishment revenge call, can't be called if Embellishment is off)
+        /// </summary>
+        public bool Roughing { get; } = true;
+        /// <summary>
+        /// Int, time in the box for a roughing penalty in milliseconds.
+        /// </summary>
+        public int RoughingTime { get; } = 30000;
+        /// <summary>
+        /// Int, roughing can be called after this number of milliseconds after the player gets up.
+        /// </summary>
+        public int RoughingMillisecondsThreshold { get; } = 6500;
+        /// <summary>
+        /// Int, chance for an roughing to be called. (1 is equal to 100%. 1 / 100 * 100 = 1)
+        /// </summary>
+        public int RoughingChancePercInverse { get; } = 1;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -363,12 +384,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
-        public float CollisionForceThreshold { get; } = 0.97f; // TODO : Change after release.
+        public float CollisionForceThreshold { get; } = 0.9695f;
 
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
-        public float GoalieRadius { get; } = 0.805f; // TODO : Change after release.
+        public float GoalieRadius { get; } = 0.81f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.

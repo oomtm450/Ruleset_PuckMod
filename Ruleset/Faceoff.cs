@@ -93,32 +93,34 @@ namespace oomtm450PuckMod_Ruleset {
         /// Function that returns the position of the faceoff dot linked to the faceoff spot.
         /// </summary>
         /// <param name="faceoffSpot">FaceoffSpot, faceoff spot.</param>
+        /// <param name="arenaScaleX">Float, scale of the arena in X.</param>
+        /// <param name="arenaScaleZ">Float, scale of the arena in Z.</param>
         /// <returns>Vector3, position of the faceoff dot.</returns>
-        internal static Vector3 GetFaceoffDot(FaceoffSpot faceoffSpot) {
+        internal static Vector3 GetFaceoffDot(FaceoffSpot faceoffSpot, float arenaScaleX = 1f, float arenaScaleZ = 1f) {
             switch (faceoffSpot) {
                 case FaceoffSpot.BlueteamBLLeft:
-                    return new Vector3(-9.97f, 0.01f, 11f);
+                    return new Vector3(-9.97f * arenaScaleX, 0.01f, 11f * arenaScaleZ);
 
                 case FaceoffSpot.BlueteamBLRight:
-                    return new Vector3(9.97f, 0.01f, 11f);
+                    return new Vector3(9.97f * arenaScaleX, 0.01f, 11f * arenaScaleZ);
 
                 case FaceoffSpot.RedteamBLLeft:
-                    return new Vector3(-9.97f, 0.01f, -11f);
+                    return new Vector3(-9.97f * arenaScaleX, 0.01f, -11f * arenaScaleZ);
 
                 case FaceoffSpot.RedteamBLRight:
-                    return new Vector3(9.97f, 0.01f, -11f);
+                    return new Vector3(9.97f * arenaScaleX, 0.01f, -11f * arenaScaleZ);
 
                 case FaceoffSpot.BlueteamDZoneLeft:
-                    return new Vector3(-9.95f, 0.01f, 29.75f);
+                    return new Vector3(-9.95f * arenaScaleX, 0.01f, 29.75f * arenaScaleZ);
 
                 case FaceoffSpot.BlueteamDZoneRight:
-                    return new Vector3(9.95f, 0.01f, 29.75f);
+                    return new Vector3(9.95f * arenaScaleX, 0.01f, 29.75f * arenaScaleZ);
 
                 case FaceoffSpot.RedteamDZoneLeft:
-                    return new Vector3(-9.95f, 0.01f, -29.75f);
+                    return new Vector3(-9.95f * arenaScaleX, 0.01f, -29.75f * arenaScaleZ);
 
                 case FaceoffSpot.RedteamDZoneRight:
-                    return new Vector3(9.95f, 0.01f, -29.75f);
+                    return new Vector3(9.95f * arenaScaleX, 0.01f, -29.75f * arenaScaleZ);
 
                 default:
                     return new Vector3(0f, 0.01f, 0f);

@@ -192,6 +192,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             // Use Server_Teleport for proper networked teleportation.
             player.PlayerBody.Server_Teleport(penaltyPos, player.PlayerBody.transform.rotation);
+            Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = player, Position = penaltyPos, Rotation = player.PlayerBody.transform.rotation, });
             player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
             player.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
             _frozenPlayers.Add(player);

@@ -80,12 +80,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; set; } = 67;
+        public int MaxTippedMilliseconds { get; set; } = 32;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; set; } = 350;
+        public int MinPossessionMilliseconds { get; set; } = 333;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
@@ -256,6 +256,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                             DelayOfGame = config.Penalty.DelayOfGame,
                             FaceoffViolation = config.Penalty.FaceoffViolation,
                             Embellishment = config.Penalty.Embellishment,
+                            Roughing = config.Penalty.Roughing,
                         },
                         Faceoff = new FaceoffConfig {
                             EnableViolations = config.Faceoff.EnableViolations,
@@ -292,6 +293,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, max number of penalized players per team.
         /// </summary>
         public int MaxPenalizedPlayersPerTeam { get; set; } = 2;
+        /// <summary>
+        /// Int, maximum number of players per team where penalties don't count.
+        /// </summary>
+        public int MaximumPenaltyImmunedPlayersCountPerTeam { get; set; } = 2;
 
         /// <summary>
         /// Bool, true if player interference is enabled.
@@ -338,7 +343,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds before leaving the stick.
         /// </summary>
-        public int DelayOfGameMillisecondsThreshold { get; set; } = 120;
+        public int DelayOfGameMillisecondsThreshold { get; set; } = 95;
 
         /// <summary>
         /// Bool, true if faceoff violation penalty is enabled.
@@ -365,6 +370,23 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, chance for an embellishment to be called. (2 is equal to 50%. 1 / 50 * 100 = 2)
         /// </summary>
         public int EmbellishmentChancePercInverse { get; set; } = 2;
+
+        /// <summary>
+        /// Bool, true if roughing penalty is enabled. (Embellishment revenge call, can't be called if Embellishment is off)
+        /// </summary>
+        public bool Roughing { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a roughing penalty in milliseconds.
+        /// </summary>
+        public int RoughingTime { get; set; } = 30000;
+        /// <summary>
+        /// Int, roughing can be called after this number of milliseconds after the player gets up.
+        /// </summary>
+        public int RoughingMillisecondsThreshold { get; set; } = 6500;
+        /// <summary>
+        /// Int, chance for an roughing to be called. (1 is equal to 100%. 1 / 100 * 100 = 1)
+        /// </summary>
+        public int RoughingChancePercInverse { get; set; } = 1;
         #endregion
 
         #region Constructors
@@ -401,6 +423,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             Embellishment = penaltyConfig.Embellishment;
             EmbellishmentTime = penaltyConfig.EmbellishmentTime;
             EmbellishmentMillisecondsThreshold = penaltyConfig.EmbellishmentMillisecondsThreshold;
+            EmbellishmentChancePercInverse = penaltyConfig.EmbellishmentChancePercInverse;
+
+            Roughing = penaltyConfig.Roughing;
+            RoughingTime = penaltyConfig.RoughingTime;
+            RoughingMillisecondsThreshold = penaltyConfig.RoughingMillisecondsThreshold;
+            RoughingChancePercInverse = penaltyConfig.RoughingChancePercInverse;
         }
         #endregion
 
@@ -420,6 +448,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (MaxPenalizedPlayersPerTeam == _oldConfig.MaxPenalizedPlayersPerTeam)
                 MaxPenalizedPlayersPerTeam = newConfig.MaxPenalizedPlayersPerTeam;
+
+            if (MaximumPenaltyImmunedPlayersCountPerTeam == _oldConfig.MaximumPenaltyImmunedPlayersCountPerTeam)
+                MaximumPenaltyImmunedPlayersCountPerTeam = newConfig.MaximumPenaltyImmunedPlayersCountPerTeam;
 
 
             if (Interference == _oldConfig.Interference)
@@ -476,6 +507,19 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (EmbellishmentChancePercInverse == _oldConfig.EmbellishmentChancePercInverse)
                 EmbellishmentChancePercInverse = newConfig.EmbellishmentChancePercInverse;
+
+
+            if (Roughing == _oldConfig.Roughing)
+                Roughing = newConfig.Roughing;
+
+            if (RoughingTime == _oldConfig.RoughingTime)
+                RoughingTime = newConfig.RoughingTime;
+
+            if (RoughingMillisecondsThreshold == _oldConfig.RoughingMillisecondsThreshold)
+                RoughingMillisecondsThreshold = newConfig.RoughingMillisecondsThreshold;
+
+            if (RoughingChancePercInverse == _oldConfig.RoughingChancePercInverse)
+                RoughingChancePercInverse = newConfig.RoughingChancePercInverse;
         }
     }
 
