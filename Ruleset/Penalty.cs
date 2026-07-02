@@ -346,6 +346,8 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void ResetPenalties() {
+            RemoveAllPenalties();
+
             PenalizedPlayers.Clear();
             PenalizedPlayersCountBlueTeam = 0;
             PenalizedPlayersInBoxCountBlueTeam = 0;
@@ -366,25 +368,40 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static bool GivePenalty(PenaltyType penaltyType, Player penalizedPlayer, string receivingPlayerSteamId = "", Player referee = null) {
-            if (!Ruleset.ServerConfig.Penalty.Interference && (penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.Tripping))
-                return false;
-            if (!Ruleset.ServerConfig.Penalty.GoalieInterference && penaltyType == PenaltyType.GoalieInterference)
-                return false;
-            if (!Ruleset.ServerConfig.Penalty.DelayOfGame && penaltyType == PenaltyType.DelayOfGame)
-                return false;
-            if (!Ruleset.ServerConfig.Penalty.FaceoffViolation && penaltyType == PenaltyType.FaceoffViolation)
-                return false;
-            if (!Ruleset.ServerConfig.Penalty.Embellishment && penaltyType == PenaltyType.Embellishment)
-                return false;
-            if (!Ruleset.ServerConfig.Penalty.Roughing && penaltyType == PenaltyType.Roughing)
-                return false;
+            if (referee == null) {
+                if (!Ruleset.ServerConfig.Penalty.Interference && (penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.Tripping))
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.GoalieInterference && penaltyType == PenaltyType.GoalieInterference)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.DelayOfGame && penaltyType == PenaltyType.DelayOfGame)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.FaceoffViolation && penaltyType == PenaltyType.FaceoffViolation)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.Embellishment && penaltyType == PenaltyType.Embellishment)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.Roughing && penaltyType == PenaltyType.Roughing)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.Charging && penaltyType == PenaltyType.Charging)
+                    return false;
+            }
 
             List<Player> teamPlayers = PlayerManager.Instance.GetPlayersByTeam(penalizedPlayer.Team).Where(x => !Codebase.PlayerFunc.IsGoalie(x)).ToList();
 
             if (teamPlayers.Count < Ruleset.ServerConfig.Penalty.MaximumPenaltyImmunedPlayersCountPerTeam)
                 return false;
 
-            string penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
+            string penalizedPlayerSteamId;
+
+            try {
+                penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
+                if (string.IsNullOrEmpty(penalizedPlayerSteamId))
+                    return false;
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(GivePenalty)} 1.\n{ex}", Ruleset.ServerConfig);
+                return false;
+            }
+
             if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> penaltyList)) {
                 penaltyList = new LockList<Penalty>();
                 PenalizedPlayers.Add(penalizedPlayerSteamId, penaltyList);
@@ -394,8 +411,14 @@ namespace oomtm450PuckMod_Ruleset {
                 return false;
 
             DateTime now = DateTime.UtcNow;
-            if (!string.IsNullOrEmpty(receivingPlayerSteamId) && PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayer.Team && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000))
-                return false;
+            if (!string.IsNullOrEmpty(receivingPlayerSteamId)) {
+                List<Penalty> allPenalties = GetAllPenalties();
+                if (allPenalties.Where(x => x.Team == penalizedPlayer.Team && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
+                    return false;
+
+                if (penaltyType == PenaltyType.Roughing && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Interference || x.PenaltyType == PenaltyType.GoalieInterference) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
+                    return false;
+            }
 
             if ((penalizedPlayer.Team == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
                 (penalizedPlayer.Team == PlayerTeam.Red && PenalizedPlayersCountRedTeam == Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
@@ -418,7 +441,7 @@ namespace oomtm450PuckMod_Ruleset {
                     return false;
 
                 Player _playerToUnpenalize = teamPlayers.FirstOrDefault(x => x.SteamId.Value.ToString() == _penalties.Key);
-                if (_playerToUnpenalize.Equals(default(Player)))
+                if (_playerToUnpenalize == null || _playerToUnpenalize.Equals(default(Player)))
                     return false;
 
                 RemoveOnePenalty(_playerToUnpenalize.Team);
@@ -627,7 +650,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void RemoveAllPenalties() {
-            List<Penalty> penaltiesToRemove = PenalizedPlayers.SelectMany(x => x.Value).ToList();
+            List<Penalty> penaltiesToRemove = GetAllPenalties();
             if (penaltiesToRemove.Count == 0)
                 return;
             foreach (Penalty penaltyToRemove in penaltiesToRemove) {
@@ -662,7 +685,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
 
-            Penalty penaltyToRemove = PenalizedPlayers.SelectMany(x => x.Value).Where(x => x.Team == penalizedPlayerTeam).OrderBy(x => x.Timer.MillisecondsLeft).FirstOrDefault();
+            Penalty penaltyToRemove = GetAllPenalties().Where(x => x.Team == penalizedPlayerTeam).OrderBy(x => x.Timer.MillisecondsLeft).FirstOrDefault();
             if (penaltyToRemove == null || penaltyToRemove.Equals(default(Penalty)))
                 return false;
 
@@ -776,6 +799,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                 case PenaltyType.Roughing:
                     return Ruleset.ServerConfig.Penalty.RoughingTime;
+
+                case PenaltyType.Charging:
+                    return Ruleset.ServerConfig.Penalty.ChargingTime;
             }
 
             return 45000;
@@ -875,5 +901,6 @@ namespace oomtm450PuckMod_Ruleset {
         [Description("Faceoff violation"), Category("ToString")]
         FaceoffViolation,
         Roughing,
+        Charging,
     }
 }

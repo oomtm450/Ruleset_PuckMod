@@ -80,7 +80,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; set; } = 32;
+        public int MaxTippedMilliseconds { get; set; } = 34;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
@@ -257,6 +257,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                             FaceoffViolation = config.Penalty.FaceoffViolation,
                             Embellishment = config.Penalty.Embellishment,
                             Roughing = config.Penalty.Roughing,
+                            Charging = config.Penalty.Charging,
                         },
                         Faceoff = new FaceoffConfig {
                             EnableViolations = config.Faceoff.EnableViolations,
@@ -329,6 +330,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public int GoalieInterferenceTime { get; set; } = 45000;
 
         /// <summary>
+        /// Int, time for a late slip/fall to be considered as interference against the opposing player.
+        /// </summary>
+        public int LateInterferenceTimeThreshold { get; set; } = 500;
+
+        /// <summary>
         /// Bool, true if delay of game is enabled and the invisible wall has to be lowered.
         /// </summary>
         public bool DelayOfGame { get; set; } = true;
@@ -343,7 +349,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds before leaving the stick.
         /// </summary>
-        public int DelayOfGameMillisecondsThreshold { get; set; } = 95;
+        public int DelayOfGameMillisecondsThreshold { get; set; } = 10;
 
         /// <summary>
         /// Bool, true if faceoff violation penalty is enabled.
@@ -387,6 +393,15 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, chance for an roughing to be called. (1 is equal to 100%. 1 / 100 * 100 = 1)
         /// </summary>
         public int RoughingChancePercInverse { get; set; } = 1;
+
+        /// <summary>
+        /// Bool, true if charging penalty is enabled.
+        /// </summary>
+        public bool Charging { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingTime { get; set; } = 45000;
         #endregion
 
         #region Constructors
@@ -412,6 +427,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             GoalieInterference = penaltyConfig.GoalieInterference;
             GoalieInterferenceTime = penaltyConfig.GoalieInterferenceTime;
 
+            LateInterferenceTimeThreshold = penaltyConfig.LateInterferenceTimeThreshold;
+
             DelayOfGame = penaltyConfig.DelayOfGame;
             DelayOfGameTime = penaltyConfig.DelayOfGameTime;
             DelayOfGameZDelta = penaltyConfig.DelayOfGameZDelta;
@@ -429,6 +446,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             RoughingTime = penaltyConfig.RoughingTime;
             RoughingMillisecondsThreshold = penaltyConfig.RoughingMillisecondsThreshold;
             RoughingChancePercInverse = penaltyConfig.RoughingChancePercInverse;
+
+            Charging = penaltyConfig.Charging;
+            ChargingTime = penaltyConfig.ChargingTime;
         }
         #endregion
 
@@ -476,6 +496,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 GoalieInterferenceTime = newConfig.GoalieInterferenceTime;
 
 
+            if (LateInterferenceTimeThreshold == _oldConfig.LateInterferenceTimeThreshold)
+                LateInterferenceTimeThreshold = newConfig.LateInterferenceTimeThreshold;
+
+
             if (DelayOfGame == _oldConfig.DelayOfGame)
                 DelayOfGame = newConfig.DelayOfGame;
 
@@ -520,6 +544,13 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (RoughingChancePercInverse == _oldConfig.RoughingChancePercInverse)
                 RoughingChancePercInverse = newConfig.RoughingChancePercInverse;
+
+
+            if (Charging == _oldConfig.Charging)
+                Charging = newConfig.Charging;
+
+            if (ChargingTime == _oldConfig.ChargingTime)
+                ChargingTime = newConfig.ChargingTime;
         }
     }
 
@@ -594,28 +625,28 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Double, deferred icing max possible time multiplicator.
         /// </summary>
-        public double DeferredMaxPossibleTimeMultiplicator { get; set; } = 280d;
+        public double DeferredMaxPossibleTimeMultiplicator { get; set; } = 300d;
 
         /// <summary>
         /// Double, deferred icing max possible time addition (after multiplicator).
         /// </summary>
-        public double DeferredMaxPossibleTimeAddition { get; set; } = 9500d;
+        public double DeferredMaxPossibleTimeAddition { get; set; } = 9850d;
 
         /// <summary>
         /// Float, deferred icing max possible time substraction depending of players distance to puck (after addition).
         /// </summary>
-        public float DeferredMaxPossibleTimeDistanceDelta { get; set; } = 250f;
+        public float DeferredMaxPossibleTimeDistanceDelta { get; set; } = 200f;
 
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
         public Dictionary<Zone, float> MaxPossibleTime { get; set; } = new Dictionary<Zone, float> {
-            { Zone.BlueTeam_BehindGoalLine, 9750f },
-            { Zone.RedTeam_BehindGoalLine, 9750f },
-            { Zone.BlueTeam_Zone, 8000f },
-            { Zone.RedTeam_Zone, 8000f },
-            { Zone.BlueTeam_Center, 5750f },
-            { Zone.RedTeam_Center, 5750f },
+            { Zone.BlueTeam_BehindGoalLine, 9850f },
+            { Zone.RedTeam_BehindGoalLine, 9850f },
+            { Zone.BlueTeam_Zone, 8125f },
+            { Zone.RedTeam_Zone, 8125f },
+            { Zone.BlueTeam_Center, 5800f },
+            { Zone.RedTeam_Center, 5800f },
         };
 
         /// <summary>
@@ -626,12 +657,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, delta used to calculate the dynamic icing possible times.
         /// </summary>
-        public float Delta { get; set; } = 21.75f;
+        public float Delta { get; set; } = 22f;
 
         /// <summary>
         /// Float, max height before deferred icing does not check for possibility that the other team touches the puck before icing.
         /// </summary>
-        public float DeferredMaxHeight { get; set; } = 0.85f;
+        public float DeferredMaxHeight { get; set; } = 0.8f;
 
         /// <summary>
         /// Bool, true if icing team stamina has to be drained.

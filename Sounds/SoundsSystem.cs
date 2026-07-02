@@ -1,4 +1,5 @@
 ﻿using Codebase;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,22 +9,48 @@ using System.Reflection;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
+using static oomtm450PuckMod_Sounds.SoundsSystem;
 
 namespace oomtm450PuckMod_Sounds {
     internal class SoundsSystem : MonoBehaviour {
         #region Constants
         private const string SOUND_EXTENSION = ".ogg";
+
+        private const string SOUNDS_SETTINGS_FILENAME = "settings.json";
+
+        private const float DEFAULT_SOUND_VOLUME = 1f;
+
+        private static float DEFAULT_HORN_VOLUME = DEFAULT_SOUND_VOLUME;
+
+        private const int DEFAULT_SOUND_WEIGHT = 60;
         #endregion
 
         #region Fields
         private readonly LockDictionary<string, GameObject> _soundObjects = new LockDictionary<string, GameObject>();
         private readonly LockList<AudioClip> _audioClips = new LockList<AudioClip>();
+        private readonly LockDictionary<string, SoundSettings> _soundSettings = new LockDictionary<string, SoundSettings>();
 
         private AudioSource _currentAudioSource = null;
 
         private static string _lastRandomSound = "";
 
         private int _isLoadingValue = 0;
+        #endregion
+
+        #region Properties
+        internal LockWeightedList<string> FaceoffMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> BlueGoalMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> RedGoalMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> BetweenPeriodsMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> WarmupMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> LastMinuteMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> FirstFaceoffMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> SecondFaceoffMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> GameOverMusicList { get; set; } = new LockWeightedList<string>();
+        
+        internal LockList<string> Errors { get; } = new LockList<string>();
+
+        internal LockList<string> Warnings { get; } = new LockList<string>();
 
         private bool IsLoading {
             get { return Interlocked.CompareExchange(ref _isLoadingValue, 1, 1) == 1; }
@@ -34,22 +61,6 @@ namespace oomtm450PuckMod_Sounds {
                     Interlocked.CompareExchange(ref _isLoadingValue, 0, 1);
             }
         }
-        #endregion
-
-        #region Properties
-        internal LockList<string> FaceoffMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> BlueGoalMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> RedGoalMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> BetweenPeriodsMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> WarmupMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> LastMinuteMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> FirstFaceoffMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> SecondFaceoffMusicList { get; set; } = new LockList<string>();
-        internal LockList<string> GameOverMusicList { get; set; } = new LockList<string>();
-        
-        internal LockList<string> Errors { get; } = new LockList<string>();
-
-        internal LockList<string> Warnings { get; } = new LockList<string>();
         #endregion
 
         #region Methods/Functions
@@ -73,6 +84,7 @@ namespace oomtm450PuckMod_Sounds {
                 int lastIndexOf = rootPath.LastIndexOf('/');
                 if (lastIndexOf == -1)
                     lastIndexOf = rootPath.LastIndexOf('\\');
+
                 rootPath = rootPath.Substring(0, lastIndexOf);
                 string fullPath = Path.Combine(Path.Combine(rootPath, splittedPath[splittedPath.Count() - 2]), splittedPath.Last());
 
@@ -119,6 +131,8 @@ namespace oomtm450PuckMod_Sounds {
             string[] files = Array.Empty<string>();
 
             bool tryGetFiles = true;
+            string jsonPath = "";
+            Dictionary<string, SoundSettings> currentConfig = new Dictionary<string, SoundSettings>();
             while (tryGetFiles) {
                 tryGetFiles = false;
 
@@ -127,7 +141,19 @@ namespace oomtm450PuckMod_Sounds {
                 }
                 catch (Exception ex) {
                     tryGetFiles = true;
-                    Warnings.Add($"Sounds.{nameof(GetAudioClips)} 1 : " + ex.ToString());
+                    Warnings.Add($"Sounds.{nameof(GetAudioClips)} 1 : {ex}");
+                }
+
+                try {
+                    jsonPath = Path.Combine(path, SOUNDS_SETTINGS_FILENAME);
+
+                    if (File.Exists(jsonPath)) {
+                        string settingsFileContent = File.ReadAllText(jsonPath);
+                        currentConfig = settingsFileContent.ToSoundSettings();
+                    }
+                }
+                catch (Exception ex) {
+                    Warnings.Add($"Sounds.{nameof(GetAudioClips)} 2 : {ex}");
                 }
 
                 if (tryGetFiles)
@@ -136,6 +162,11 @@ namespace oomtm450PuckMod_Sounds {
 
             foreach (string file in files) {
                 string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
+                if (Path.GetExtension(filePath).ToLowerInvariant() != SOUND_EXTENSION) {
+                    yield return null;
+                    continue;
+                }
+
                 UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS);
                 yield return webRequest.SendWebRequest();
                 yield return null;
@@ -151,19 +182,25 @@ namespace oomtm450PuckMod_Sounds {
                         }
 
                         clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
+
+                        if (!currentConfig.TryGetValue(clip.name, out SoundSettings clipSettings)) {
+                            clipSettings = new SoundSettings {
+                                Weight = DEFAULT_SOUND_WEIGHT,
+                                Volume = DEFAULT_SOUND_VOLUME,
+                            };
+                            currentConfig.Add(clip.name, clipSettings);
+                        }
+
+                        if (clipSettings.Weight <= 0)
+                            continue;
+
                         DontDestroyOnLoad(clip);
                         _audioClips.Add(clip);
 
-                        AddClipNameToCorrectList(clip.name);
-
-                        // Add a faceoff music twice to the list to double the chance of playing if it's a not a multi part music.
-                        // This is going to help music with one ogg to play more.
-                        if (!char.IsDigit(clip.name[clip.name.Length - 1]))
-                            AddClipNameToCorrectList(clip.name);
-
+                        AddClipNameToCorrectList(clip.name, clipSettings.Weight);
                     }
                     catch (Exception ex) {
-                        Errors.Add($"Sounds.{nameof(GetAudioClips)} 2 : " + ex.ToString());
+                        Errors.Add($"Sounds.{nameof(GetAudioClips)} 3 : {ex}");
                     }
                 }
 
@@ -173,11 +210,24 @@ namespace oomtm450PuckMod_Sounds {
             yield return null;
 
             try {
+                foreach (string key in currentConfig.Keys)
+                    _soundSettings.AddOrUpdate(key, currentConfig[key]);
+
+                if (!string.IsNullOrEmpty(jsonPath))
+                    File.WriteAllText(jsonPath, currentConfig.ToDictionary((x) => x.Key, (x) => x.Value).ToJSON());
+            }
+            catch (Exception ex) {
+                Warnings.Add($"Sounds.{nameof(GetAudioClips)} 4 : {ex}");
+            }
+
+            yield return null;
+
+            try {
                 if (setCustomGoalHorns)
                     SetGoalHorns();
             }
             catch (Exception ex) {
-                Errors.Add($"Sounds.{nameof(GetAudioClips)} 3 : " + ex.ToString());
+                Errors.Add($"Sounds.{nameof(GetAudioClips)} 5 : {ex}");
             }
 
             try {
@@ -185,34 +235,34 @@ namespace oomtm450PuckMod_Sounds {
                 ReorderAllLists();
             }
             catch (Exception ex) {
-                Errors.Add($"Sounds.{nameof(GetAudioClips)} 4 : " + ex.ToString());
+                Errors.Add($"Sounds.{nameof(GetAudioClips)} 6 : {ex}");
             }
 
             IsLoading = false;
         }
 
-        private void AddClipNameToCorrectList(string clipName) {
+        private void AddClipNameToCorrectList(string clipName, int weight = DEFAULT_SOUND_WEIGHT) {
             if (clipName.Contains(Codebase.SoundsSystem.FACEOFF_MUSIC))
-                FaceoffMusicList.Add(clipName);
+                FaceoffMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.BLUE_GOAL_MUSIC))
-                BlueGoalMusicList.Add(clipName);
+                BlueGoalMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.RED_GOAL_MUSIC))
-                RedGoalMusicList.Add(clipName);
+                RedGoalMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC))
-                BetweenPeriodsMusicList.Add(clipName);
+                BetweenPeriodsMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.WARMUP_MUSIC))
-                WarmupMusicList.Add(clipName);
+                WarmupMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.LAST_MINUTE_MUSIC))
-                LastMinuteMusicList.Add(clipName);
+                LastMinuteMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC))
-                FirstFaceoffMusicList.Add(clipName);
+                FirstFaceoffMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC))
-                SecondFaceoffMusicList.Add(clipName);
+                SecondFaceoffMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.GAMEOVER_MUSIC))
-                GameOverMusicList.Add(clipName);
+                GameOverMusicList.Add(clipName, weight);
         }
 
-        internal void Play(string name, string type, float delay = 0, bool loop = false) {
+        internal void Play(string name, string type, float vol = float.MaxValue, float delay = 0, bool loop = false) {
             if (string.IsNullOrEmpty(name))
                 return;
 
@@ -235,13 +285,23 @@ namespace oomtm450PuckMod_Sounds {
             AudioSource audioSource = soundObject.GetComponent<AudioSource>();
             audioSource.loop = loop;
 
+            SoundSettings soundSettings = null;
+            float volModifier = DEFAULT_SOUND_VOLUME;
+            if (_soundSettings.TryGetValue(name, out soundSettings))
+                volModifier = soundSettings.Volume;
+            vol *= volModifier;
+            audioSource.volume = vol;
+
             if (type == Codebase.SoundsSystem.MUSIC) {
                 _currentAudioSource = audioSource;
-                ChangeMusicVolume(Sounds.ClientConfig.MusicVolume);
+                if (vol != float.MaxValue)
+                    ChangeVolume(vol);
+                else
+                    ChangeVolume(SettingsManager.GlobalVolume * SettingsManager.GameVolume * volModifier);
             }
             else {
                 _currentAudioSource = null;
-                audioSource.volume = SettingsManager.GlobalVolume * SettingsManager.GameVolume;
+                audioSource.volume = SettingsManager.GlobalVolume * SettingsManager.GameVolume * volModifier;
             }
 
             if (delay == 0)
@@ -264,43 +324,50 @@ namespace oomtm450PuckMod_Sounds {
                 soundObject.GetComponent<AudioSource>().Stop();
         }
 
-        internal void ChangeMusicVolume(float musicVol) {
+        internal void ChangeVolume(float vol) {
             if (_currentAudioSource == null)
                 return;
 
-            _currentAudioSource.volume = SettingsManager.GlobalVolume * musicVol;
+            _currentAudioSource.volume = SettingsManager.GlobalVolume * vol;
         }
 
-        internal static string GetRandomSound(IEnumerable<string> soundList, int? seed = null) {
-            string sound = "";
+        internal static void ChangeHornVolume(float hornVol, AudioSource hornAudioSource) {
+            hornAudioSource.volume = DEFAULT_HORN_VOLUME * hornVol;
+        }
 
+        internal static void ChangeHornsVolume(float hornVol, List<AudioSource> hornsAudioSource) {
+            foreach (AudioSource hornAudioSource in hornsAudioSource)
+                ChangeHornVolume(hornVol, hornAudioSource);
+        }
+
+        internal static string GetRandomSound(LockWeightedList<string> soundList, int? seed = null) {
+            soundList = new LockWeightedList<string>(soundList, soundList.GetWeightOf);
             int soundListCount = soundList.Count();
 
             if (soundListCount == 0)
-                return sound;
-
-            if (seed == null)
-                sound = soundList.ElementAt(new System.Random().Next(0, soundListCount));
-            else
-                sound = soundList.ElementAt(new System.Random((int)seed).Next(0, soundListCount));
-
-            if (sound == _lastRandomSound) {
-                int soundIndex;
-                if (soundList is IList<string> _soundList)
-                    soundIndex = _soundList.IndexOf(sound);
-                else if (soundList is LockList<string> __soundList)
-                    soundIndex = __soundList.IndexOf(sound);
-                else {
-                    Logging.LogError(nameof(soundList) + " argument must be of type IList or LockList.", Sounds.ClientConfig);
-                    return sound;
+                return "";
+            else if (soundListCount == 1)
+                return soundList.First();
+            else if (soundListCount == 2) {
+                string _sound = soundList.First();
+                if (soundList.First() != _lastRandomSound) {
+                    _lastRandomSound = _sound;
+                    return _sound;
                 }
+                else {
+                    _lastRandomSound = soundList.ElementAt(1);
+                    return _sound;
+                }
+            }
 
-                if (soundIndex == soundListCount - 1)
-                    soundIndex = 0;
-                else
-                    soundIndex++;
+            string sound = _lastRandomSound;
 
-                sound = soundList.ElementAt(soundIndex);
+            if (seed != null)
+                soundList.SetRandomSeed((int)seed);
+
+            while (sound == _lastRandomSound) {
+                sound = soundList.Next();
+                soundList.Remove(sound);
             }
 
             _lastRandomSound = sound;
@@ -311,66 +378,142 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Method that sets the custom goal horns.
         /// </summary>
-        private void SetGoalHorns() {
+        internal void SetGoalHorns() {
             try {
-                if (GameObject.Find("Changing Room"))
+                (AudioSource blueGoalAudioSource, AudioSource redGoalAudioSource) = GetHornsAudioSource(Errors);
+                if (blueGoalAudioSource == null || redGoalAudioSource == null)
                     return;
 
-                GameObject levelGameObj = GameObject.Find("Level Default");
-                if (!levelGameObj) {
-                    Errors.Add("Cant't find GameObject \"Level Default\" !");
-                    return;
-                }
-
-                GameObject soundsGameObj = levelGameObj.transform.Find("Sounds").gameObject;
-
-                if (!soundsGameObj) {
-                    Errors.Add("Cant't find GameObject \"Sounds\" !");
-                    return;
-                }
-
-                GameObject blueGoalObj = soundsGameObj.transform.Find("Blue Goal").gameObject;
-
-                if (!blueGoalObj) {
-                    Errors.Add("Cant't find GameObject \"Blue Goal\" !");
-                    return;
-                }
-
-                AudioSource blueGoalAudioSource = blueGoalObj.GetComponent<AudioSource>();
                 blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.REDGOALHORN));
                 blueGoalAudioSource.maxDistance = 400f;
-
-                GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
-
-                if (!redGoalObj) {
-                    Errors.Add("Cant't find GameObject \"Red Goal\" !");
-                    return;
-                }
-
-                AudioSource redGoalAudioSource = redGoalObj.GetComponent<AudioSource>();
+                DEFAULT_HORN_VOLUME = blueGoalAudioSource.volume;
+                
                 redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUEGOALHORN));
                 redGoalAudioSource.maxDistance = 400f;
+
+                ChangeHornsVolume(Sounds.ClientConfig.HornVolume, new List<AudioSource> { blueGoalAudioSource, redGoalAudioSource, });
             }
             catch (Exception ex) {
                 Errors.Add(ex.ToString());
             }
         }
 
-        internal static string FormatSoundStrForCommunication(string sound) {
-            return sound + $";{new System.Random().Next(0, 100000)}";
+        internal static (AudioSource BlueGoalAudioSource, AudioSource RedGoalAudioSource) GetHornsAudioSource(LockList<string> errors = null) {
+            if (GameObject.Find("Changing Room"))
+                return (null, null);
+
+            GameObject levelGameObj = GameObject.Find("Level Default");
+            if (!levelGameObj) {
+                errors?.Add("Cant't find GameObject \"Level Default\" !");
+                return (null, null);
+            }
+
+            GameObject soundsGameObj = levelGameObj.transform.Find("Sounds").gameObject;
+
+            if (!soundsGameObj) {
+                errors?.Add("Cant't find GameObject \"Sounds\" !");
+                return (null, null);
+            }
+
+            GameObject blueGoalObj = soundsGameObj.transform.Find("Blue Goal").gameObject;
+
+            if (!blueGoalObj) {
+                errors?.Add("Cant't find GameObject \"Blue Goal\" !");
+                return (null, null);
+            }
+
+            GameObject redGoalObj = soundsGameObj.transform.Find("Red Goal").gameObject;
+
+            if (!redGoalObj) {
+                errors?.Add("Cant't find GameObject \"Red Goal\" !");
+                return (null, null);
+            }
+
+            return (blueGoalObj.GetComponent<AudioSource>(), redGoalObj.GetComponent<AudioSource>());
+        }
+
+        internal static string FormatSoundStrForCommunication(string sound, string chosenClipName = "") {
+            if (!string.IsNullOrEmpty(chosenClipName))
+                sound += $";{chosenClipName}";
+            else
+                sound += $";{new System.Random().Next(0, 100000)}";
+            return sound;
+        }
+
+        /// <summary>
+        /// Method that swaps the goal horn AudioSource clip to a donor's chosen horn for the next fire.
+        /// The "Blue Goal" GameObject is the goal Blue defends, so it fires when Red scores — i.e.
+        /// the scoring team and the firing AudioSource are CROSSED. No-op if the clip isn't loaded
+        /// locally (client didn't subscribe to the donor pack), in which case the default scene-load
+        /// clip plays unchanged.
+        /// </summary>
+        /// <param name="clipName">String, exact AudioClip name to swap in.</param>
+        /// <param name="scoringTeam">PlayerTeam, team that just scored.</param>
+        internal void SetGoalHornForNext(string clipName, PlayerTeam scoringTeam) {
+            try {
+                if (string.IsNullOrEmpty(clipName))
+                    return;
+
+                AudioClip clip = _audioClips.FirstOrDefault(x => x.name == clipName);
+                if (clip == null)
+                    return;
+
+                GameObject levelGameObj = GameObject.Find("Level Default");
+                if (!levelGameObj)
+                    return;
+
+                Transform soundsTransform = levelGameObj.transform.Find("Sounds");
+                if (!soundsTransform)
+                    return;
+
+                string targetGoalName = scoringTeam == PlayerTeam.Blue ? "Red Goal" : "Blue Goal";
+                Transform goalTransform = soundsTransform.Find(targetGoalName);
+                if (!goalTransform)
+                    return;
+
+                AudioSource audioSource = goalTransform.GetComponent<AudioSource>();
+                if (audioSource == null)
+                    return;
+
+                audioSource.clip = clip;
+            }
+            catch (Exception ex) {
+                Errors.Add(ex.ToString());
+            }
         }
 
         private void ReorderAllLists() {
-            FaceoffMusicList = new LockList<string>(FaceoffMusicList.OrderBy(x => x).ToList());
-            BlueGoalMusicList = new LockList<string>(BlueGoalMusicList.OrderBy(x => x).ToList());
-            RedGoalMusicList = new LockList<string>(RedGoalMusicList.OrderBy(x => x).ToList());
-            BetweenPeriodsMusicList = new LockList<string>(BetweenPeriodsMusicList.OrderBy(x => x).ToList());
-            WarmupMusicList = new LockList<string>(WarmupMusicList.OrderBy(x => x).ToList());
-            LastMinuteMusicList = new LockList<string>(LastMinuteMusicList.OrderBy(x => x).ToList());
-            FirstFaceoffMusicList = new LockList<string>(FirstFaceoffMusicList.OrderBy(x => x).ToList());
-            SecondFaceoffMusicList = new LockList<string>(SecondFaceoffMusicList.OrderBy(x => x).ToList());
-            GameOverMusicList = new LockList<string>(GameOverMusicList.OrderBy(x => x).ToList());
+            FaceoffMusicList = new LockWeightedList<string>(FaceoffMusicList.OrderBy(x => x), FaceoffMusicList.GetWeightOf);
+            BlueGoalMusicList = new LockWeightedList<string>(BlueGoalMusicList.OrderBy(x => x), BlueGoalMusicList.GetWeightOf);
+            RedGoalMusicList = new LockWeightedList<string>(RedGoalMusicList.OrderBy(x => x), RedGoalMusicList.GetWeightOf);
+            BetweenPeriodsMusicList = new LockWeightedList<string>(BetweenPeriodsMusicList.OrderBy(x => x), BetweenPeriodsMusicList.GetWeightOf);
+            WarmupMusicList = new LockWeightedList<string>(WarmupMusicList.OrderBy(x => x), WarmupMusicList.GetWeightOf);
+            LastMinuteMusicList = new LockWeightedList<string>(LastMinuteMusicList.OrderBy(x => x), LastMinuteMusicList.GetWeightOf);
+            FirstFaceoffMusicList = new LockWeightedList<string>(FirstFaceoffMusicList.OrderBy(x => x), FirstFaceoffMusicList.GetWeightOf);
+            SecondFaceoffMusicList = new LockWeightedList<string>(SecondFaceoffMusicList.OrderBy(x => x), SecondFaceoffMusicList.GetWeightOf);
+            GameOverMusicList = new LockWeightedList<string>(GameOverMusicList.OrderBy(x => x), GameOverMusicList.GetWeightOf);
         }
         #endregion
+
+        internal class SoundSettings {
+            public float Volume { get; set; } = DEFAULT_SOUND_VOLUME;
+
+            public int Weight { get; set; } = DEFAULT_SOUND_WEIGHT;
+        }
+    }
+
+    internal static class SoundSettingsExtension {
+        /// <summary>
+        /// Function that serialize the config object.
+        /// </summary>
+        /// <returns>String, serialized config.</returns>
+        internal static string ToJSON(this Dictionary<string, SoundSettings> soundSettings) => JsonConvert.SerializeObject(soundSettings, Formatting.Indented);
+
+        /// <summary>
+        /// Function that unserialize a ServerConfig.
+        /// </summary>
+        /// <param name="json">String, JSON that is the serialized ServerConfig.</param>
+        /// <returns>ServerConfig, unserialized ServerConfig.</returns>
+        internal static Dictionary<string, SoundSettings> ToSoundSettings(this string json) => JsonConvert.DeserializeObject<Dictionary<string, SoundSettings>>(json);
     }
 }

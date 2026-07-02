@@ -27,5 +27,16 @@ namespace oomtm450PuckMod_Sounds {
         /// Const string, tag to ask the server for the startup data.
         /// </summary>
         internal const string ASK_SERVER_FOR_STARTUP_DATA = MOD_NAME + "ASKDATA";
+
+        /// <summary>
+        /// Const string, tag for swapping the next goal horn AudioSource clip to a donor's
+        /// chosen horn before the game's internal horn RPC fires. Payload: "{clipName};{B|R}".
+        /// </summary>
+        internal const string SET_GOAL_HORN = MOD_NAME + "SETHORN";
+
+        /// <summary>
+        /// Const string, tag for swapping the next goal horn with default horns before the game's internal horn RPC fires.
+        /// </summary>
+        internal const string RESET_GOAL_HORN = MOD_NAME + "RESETHORN";
     }
 }

@@ -536,6 +536,14 @@ namespace oomtm450PuckMod_Stats {
                     NetworkCommunication.SendDataToAll(RESET_ALL, "1", Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
                     _sentOutOfDateMessage.Clear();
+
+                    // Remove teams of players that are no longer connected (covers leavers the end of game seems to miss)
+                    Dictionary<string, PlayerTeam> playersTeam = new Dictionary<string, PlayerTeam>(_playersTeam);
+                    foreach (string steamId in new List<string>(playersTeam.Keys)) {
+                        Player player = PlayerManager.Instance.GetPlayerBySteamId(steamId);
+                        if (player == null || !player)
+                            _playersTeam.Remove(steamId);
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(BaseGameMode_OnGameStateChanged_Patch)} Postfix().\n{ex}", ServerConfig);
@@ -1184,6 +1192,46 @@ namespace oomtm450PuckMod_Stats {
         }
 
         /// <summary>
+        /// Class that patches the Server_StopTicking event from GameManager.
+        /// </summary>
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_StopTicking))]
+        public class GameManager_Server_StopTicking_Patch {
+            [HarmonyPostfix]
+            public static void Postfix() {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return;
+
+                    _paused = true;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(GameManager_Server_StopTicking_Patch)} Postfix().\n{ex}", ClientConfig);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_StartTicking event from GameManager.
+        /// </summary>
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_StartTicking))]
+        public class GameManager_Server_StartTicking_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(GameManager __instance) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return;
+
+                    _paused = false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(GameManager_Server_StartTicking_Patch)} Postfix().\n{ex}", ClientConfig);
+                }
+            }
+        }
+
+        /// <summary>
         /// Method that launches when the mod is being enabled.
         /// </summary>
         /// <returns>Bool, true if the mod successfully enabled.</returns>
@@ -1481,7 +1529,7 @@ namespace oomtm450PuckMod_Stats {
                     clientSteamId = _playersInfo[clientId].SteamId;
                 }
                 catch {
-                    Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(_playersInfo)}.", ServerConfig);
+                    //Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(_playersInfo)}.", ServerConfig);
                     return;
                 }
 

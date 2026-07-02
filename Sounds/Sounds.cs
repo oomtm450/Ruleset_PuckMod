@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.2.3a";
+        private static readonly string MOD_VERSION = "0.3.0";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -28,6 +28,7 @@ namespace oomtm450PuckMod_Sounds {
             "0.2.2",
             "0.2.2a",
             "0.2.3",
+            "0.2.3a",
         });
 
         /// <summary>
@@ -70,11 +71,26 @@ namespace oomtm450PuckMod_Sounds {
         /// </summary>
         private static bool _changedPhase = false;
 
+        /// <summary>
+        /// Bool, true if the last minute music has played in the current game.
+        /// </summary>
         private static bool _hasPlayedLastMinuteMusic = false;
 
+        /// <summary>
+        /// Bool, true if the first faceoff music has played in the current game.
+        /// </summary>
         private static bool _hasPlayedFirstFaceoffMusic = false;
 
+        /// <summary>
+        /// Bool, true if the second faceoff music has played in the current game.
+        /// </summary>
         private static bool _hasPlayedSecondFaceoffMusic = false;
+
+        /// <summary>
+        /// String, steamId of the last goal scorer.
+        /// Used by the phase patch to look up the donor's chosen song and by the SET_GOAL_HORN dispatch. Cleared on GamePhase.Play and on OnGameStarted.
+        /// </summary>
+        private static string _lastGoalScorerSteamId = "";
 
         // Client-side and server-side.
         /// <summary>
@@ -152,11 +168,13 @@ namespace oomtm450PuckMod_Sounds {
 
                     if (newGameState.Phase == GamePhase.BlueScore) {
                         _currentMusicPlaying = Codebase.SoundsSystem.BLUE_GOAL_MUSIC;
-                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                        string donorSong = DonorPrefs.GetSong(_lastGoalScorerSteamId);
+                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying, donorSong), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
                     else if (newGameState.Phase == GamePhase.RedScore) {
                         _currentMusicPlaying = Codebase.SoundsSystem.RED_GOAL_MUSIC;
-                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                        string donorSong = DonorPrefs.GetSong(_lastGoalScorerSteamId);
+                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying, donorSong), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
                     else if (newGameState.Phase == GamePhase.Intermission) {
                         _currentMusicPlaying = Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC;
@@ -215,6 +233,7 @@ namespace oomtm450PuckMod_Sounds {
                     if (newGameState.Phase == GamePhase.Play) {
                         NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                         _currentMusicPlaying = "";
+                        _lastGoalScorerSteamId = "";
                         return;
                     }
                 }
@@ -242,11 +261,55 @@ namespace oomtm450PuckMod_Sounds {
                     _hasPlayedLastMinuteMusic = false;
                     _hasPlayedFirstFaceoffMusic = false;
                     _hasPlayedSecondFaceoffMusic = false;
+                    _lastGoalScorerSteamId = "";
 
                     _sentOutOfDateMessage.Clear();
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(StandardGameMode_OnPreGameTimedOut_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the ScoreGoal event from BaseGameMode.
+        /// </summary>
+        [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "ScoreGoal")]
+        public class BaseGameMode_ScoreGoal_Patch {
+            // Prefix (not Postfix) because the original ScoreGoal fires both the goal-horn
+            // RPC (SynchronizedAudio.Server_PlayRpc) and the BlueScore/RedScore phase change
+            // (which our OnGameStateChanged Prefix reads to emit the music PLAY_SOUND).
+            // Both happen inside the original method body, so a Postfix is too late — the
+            // horn RPC and music send would race the SET_GOAL_HORN dispatch on the wire.
+            //
+            // Priority.Low so we run after Stats/Ruleset's default-priority Prefixes that
+            // reassign goalPlayer (ref) for own-goal cases — we see the post-attribution value.
+            [HarmonyPrefix]
+            [HarmonyPriority(Priority.Low)]
+            public static bool Prefix(PlayerTeam byTeam, Player goalPlayer, Player assistPlayer, Player secondAssistPlayer, Puck puck) {
+                try {
+                    // If this is not the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    _lastGoalScorerSteamId = goalPlayer != null ? goalPlayer.SteamId.Value.ToString() : "";
+
+                    // Donor horn swap: send to all clients NOW, before the game's internal horn RPC fires.
+                    // Empty hornId means non-donor or no horn picked — skip the message entirely; the
+                    // scene-load default horn stays in place (donor-gate behavior).
+                    string donorHorn = DonorPrefs.GetHorn(_lastGoalScorerSteamId);
+                    if (string.IsNullOrEmpty(donorHorn)) {
+                        NetworkCommunication.SendDataToAll(Constants.RESET_GOAL_HORN, "1", Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                        return true;
+                    }
+
+                    string fullClipName = $"{donorHorn};{(byTeam == PlayerTeam.Blue ? "B" : "R")}";
+                    NetworkCommunication.SendDataToAll(Constants.SET_GOAL_HORN, fullClipName, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -306,15 +369,116 @@ namespace oomtm450PuckMod_Sounds {
                                 SystemFunc.AddClientChatMessage($"Music volume is currently at {ClientConfig.MusicVolume.ToString(CultureInfo.InvariantCulture)}");
                             else {
                                 if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
-                                    if (vol > 1f)
-                                        vol = 1f;
-                                    else if (vol < 0)
-                                        vol = 0;
+                                    vol = Math.Clamp(vol, 0, 1f);
 
                                     ClientConfig.MusicVolume = vol;
                                     ClientConfig.Save();
-                                    _soundsSystem?.ChangeMusicVolume(ClientConfig.MusicVolume);
-                                    SystemFunc.AddClientChatMessage($"Adjusted client music volume to {vol.ToString(CultureInfo.InvariantCulture)}");
+                                    _soundsSystem?.ChangeVolume(ClientConfig.MusicVolume);
+                                    SystemFunc.AddClientChatMessage($"Adjusted music volume to {vol.ToString(CultureInfo.InvariantCulture)}");
+                                }
+                            }
+
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/hornvol")) {
+                            content = content.Replace(@"/hornvol", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Horns volume is currently at {ClientConfig.HornVolume.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                    vol = Math.Clamp(vol, 0, 1f);
+
+                                    ClientConfig.HornVolume = vol;
+                                    ClientConfig.Save();
+                                    (AudioSource blueGoalAudioSource, AudioSource redGoalAudioSource) = SoundsSystem.GetHornsAudioSource();
+                                    SoundsSystem.ChangeHornsVolume(ClientConfig.HornVolume, new List<AudioSource> { blueGoalAudioSource, redGoalAudioSource, });
+                                    SystemFunc.AddClientChatMessage($"Adjusted horns volume to {vol.ToString(CultureInfo.InvariantCulture)}");
+                                }
+                            }
+
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/faceoffvol")) {
+                            content = content.Replace(@"/faceoffvol", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Faceoff music volume is currently at {ClientConfig.FaceoffMusicVolume.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                    vol = Math.Clamp(vol, 0, 1f);
+
+                                    ClientConfig.FaceoffMusicVolume = vol;
+                                    ClientConfig.Save();
+                                    SystemFunc.AddClientChatMessage($"Adjusted faceoff music volume to {vol.ToString(CultureInfo.InvariantCulture)} for next music");
+                                }
+                            }
+
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/warmupvol")) {
+                            content = content.Replace(@"/warmupvol", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Warmup music volume is currently at {ClientConfig.WarmupMusicVolume.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                    vol = Math.Clamp(vol, 0, 1f);
+
+                                    ClientConfig.WarmupMusicVolume = vol;
+                                    ClientConfig.Save();
+                                    SystemFunc.AddClientChatMessage($"Adjusted warmup music volume to {vol.ToString(CultureInfo.InvariantCulture)} for next music");
+                                }
+                            }
+
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/goalvol")) {
+                            content = content.Replace(@"/goalvol", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Goal music volume is currently at {ClientConfig.GoalMusicVolume.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                    vol = Math.Clamp(vol, 0, 1f);
+
+                                    ClientConfig.GoalMusicVolume = vol;
+                                    ClientConfig.Save();
+                                    SystemFunc.AddClientChatMessage($"Adjusted goal music volume to {vol.ToString(CultureInfo.InvariantCulture)} for next music");
+                                }
+                            }
+
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/betweenperiodsvol")) {
+                            content = content.Replace(@"/betweenperiodsvol", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Between periods music volume is currently at {ClientConfig.BetweenPeriodsMusicVolume.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                    vol = Math.Clamp(vol, 0, 1f);
+
+                                    ClientConfig.BetweenPeriodsMusicVolume = vol;
+                                    ClientConfig.Save();
+                                    SystemFunc.AddClientChatMessage($"Adjusted between periods music volume to {vol.ToString(CultureInfo.InvariantCulture)} for next music");
+                                }
+                            }
+
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/gameovervol")) {
+                            content = content.Replace(@"/gameovervol", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Game over music volume is currently at {ClientConfig.GameOverMusicVolume.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float vol)) {
+                                    vol = Math.Clamp(vol, 0, 1f);
+
+                                    ClientConfig.GameOverMusicVolume = vol;
+                                    ClientConfig.Save();
+                                    SystemFunc.AddClientChatMessage($"Adjusted game over music volume to {vol.ToString(CultureInfo.InvariantCulture)} for next music");
                                 }
                             }
 
@@ -343,7 +507,7 @@ namespace oomtm450PuckMod_Sounds {
                                         if (ClientConfig.WarmupMusic && !((bool)enableWarmupMusic))
                                             _soundsSystem.StopAll();
                                         else if (!ClientConfig.WarmupMusic && (bool)enableWarmupMusic)
-                                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0, true);
+                                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0, 0, true);
                                     }
 
                                     ClientConfig.WarmupMusic = (bool)enableWarmupMusic;
@@ -377,7 +541,7 @@ namespace oomtm450PuckMod_Sounds {
                         content = content.ToLowerInvariant();
 
                         if (content.StartsWith(@"/help"))
-                            SystemFunc.AddClientChatMessage("Sounds commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n* <b>/warmupmusic</b> - Disable or enable warmup music (false-true)\n");
+                            SystemFunc.AddClientChatMessage("Sounds commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n* <b>/hornvol</b> - Adjust horn volume (0.0-1.0)\n* <b>/faceoffvol /warmupvol /goalvol /betweenperiodsvol /gameovervol</b> - Adjust specific music volume (0.0-1.0)\n* <b>/warmupmusic</b> - Disable or enable warmup music (false-true)\n");
                     }
                 }
                 catch (Exception ex) {
@@ -678,7 +842,7 @@ namespace oomtm450PuckMod_Sounds {
                     clientSteamId = _players_ClientId_SteamId[clientId];
                 }
                 catch {
-                    Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(_players_ClientId_SteamId)}.", ServerConfig);
+                    //Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(_players_ClientId_SteamId)}.", ServerConfig);
                     return;
                 }
 
@@ -711,15 +875,13 @@ namespace oomtm450PuckMod_Sounds {
                 if (_soundsSystem == null)
                     return;
 
-                if (_soundsSystem != null) {
-                    if (!string.IsNullOrEmpty(_currentMusicPlaying)) {
-                        _soundsSystem.Stop(_currentMusicPlaying);
-                        _currentMusicPlaying = "";
-                    }
-
-                    _soundsSystem.DestroyGameObjects();
-                    _soundsSystem = null;
+                if (!string.IsNullOrEmpty(_currentMusicPlaying)) {
+                    _soundsSystem.Stop(_currentMusicPlaying);
+                    _currentMusicPlaying = "";
                 }
+
+                _soundsSystem.DestroyGameObjects();
+                _soundsSystem = null;
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(Event_OnClientStopped)}.\n{ex}", ClientConfig);
@@ -762,8 +924,6 @@ namespace oomtm450PuckMod_Sounds {
                 _soundsSystem = soundsGameObject.AddComponent<SoundsSystem>();
                 Logging.Log("SoundsSystem object was created.", ClientConfig);
             }
-
-            //_soundsSystem.LoadSounds(ClientConfig.Music, ClientConfig.CustomGoalHorns);
         }
 
         /// <summary>
@@ -780,7 +940,7 @@ namespace oomtm450PuckMod_Sounds {
                     (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, ServerConfig);
 
                 switch (dataName) {
-                    case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, kick if client and server versions are not the same.
+                    case Constants.MOD_NAME + "_" + nameof(MOD_VERSION): // CLIENT-SIDE : Mod version check, warn if client and server versions are not the same.
                         _serverHasResponded = true;
                         if (MOD_VERSION == dataStr)
                             break;
@@ -792,7 +952,7 @@ namespace oomtm450PuckMod_Sounds {
                         _askForModOutOfDateWarning = true;
                         break;
 
-                    case Constants.MOD_NAME + "_kick": // SERVER-SIDE : Kick the client that asked to be kicked.
+                    case Constants.MOD_NAME + "_kick": // SERVER-SIDE : Warn the client that asked to be warned.
                         if (dataStr != "1")
                             break;
 
@@ -810,7 +970,7 @@ namespace oomtm450PuckMod_Sounds {
                                 break;
 
                             Logging.Log($"Warning client {clientId} mod out of date.", ServerConfig);
-                            ChatManager.Instance.Server_BroadcastChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
+                            ChatManager.Instance.Server_BroadcastChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} and all SoundsPack in the workshop and restart your game to update.");
                             _sentOutOfDateMessage[clientId] = utcNow;
                         }
                         break;
@@ -833,79 +993,127 @@ namespace oomtm450PuckMod_Sounds {
                         NetworkCommunication.SendData(Constants.MOD_NAME + "_" + nameof(MOD_VERSION), MOD_VERSION, clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                         break;
 
+                    case Constants.SET_GOAL_HORN: // CLIENT-SIDE : Swap goal horn AudioSource clip for donor's chosen horn.
+                        if (_soundsSystem == null || !ClientConfig.CustomGoalHorns)
+                            break;
+
+                        string[] setHornDataStrSplitted = dataStr.Split(';');
+                        if (setHornDataStrSplitted.Length != 2)
+                            break;
+
+                        PlayerTeam scoringTeam = setHornDataStrSplitted[1] == "B" ? PlayerTeam.Blue : PlayerTeam.Red;
+                        _soundsSystem.SetGoalHornForNext(setHornDataStrSplitted[0], scoringTeam);
+                        break;
+
+                    case Constants.RESET_GOAL_HORN: // CLIENT-SIDE : Swap goal horn AudioSource clip for defaults horn.
+                        if (_soundsSystem == null || !ClientConfig.CustomGoalHorns)
+                            break;
+
+                        _soundsSystem.SetGoalHorns();
+                        break;
+
                     case Codebase.SoundsSystem.PLAY_SOUND: // CLIENT-SIDE : Play sound.
                         if (_soundsSystem == null)
                             break;
                         if (_soundsSystem.Errors.Count != 0) {
-                            Logging.LogError("There was an error when initializing _soundsSystem.", ClientConfig);
+                            Logging.LogError($"There was an error when initializing {nameof(_soundsSystem)}.", ClientConfig);
                             foreach (string error in _soundsSystem.Errors)
                                 Logging.LogError(error, ClientConfig);
                         }
 
                         int? seed = null;
+                        string chosenSound = "";
                         string[] playSoundDataStrSplitted = dataStr.Split(';');
 
                         if (int.TryParse(playSoundDataStrSplitted[1], out int _seed))
                             seed = _seed;
+                        else
+                            _currentMusicPlaying = chosenSound = playSoundDataStrSplitted[1];
 
                         bool isFaceoffMusic = false;
                         float delay = 0;
                         if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FACEOFF_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FaceoffMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FaceoffMusicList, seed);
+
                             isFaceoffMusic = true;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FACEOFF_MUSIC_DELAYED) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FaceoffMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FaceoffMusicList, seed);
+
                             isFaceoffMusic = true;
                             delay = 1f;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.BLUE_GOAL_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BlueGoalMusicList, seed);
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 2.25f);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BlueGoalMusicList, seed);
+
+                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GoalMusicVolume, 2.25f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.RED_GOAL_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.RedGoalMusicList, seed);
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 2.25f);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.RedGoalMusicList, seed);
+
+                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GoalMusicVolume, 2.25f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BetweenPeriodsMusicList, seed);
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 1.5f);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BetweenPeriodsMusicList, seed);
+
+                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.BetweenPeriodsMusicVolume, 1.5f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.WARMUP_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.WarmupMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.WarmupMusicList, seed);
+
                             if (ClientConfig.WarmupMusic)
-                                _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0, true);
+                                _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.WarmupMusicVolume, 0, true);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.LAST_MINUTE_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.LastMinuteMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.LastMinuteMusicList, seed);
+
                             isFaceoffMusic = true;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FirstFaceoffMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FirstFaceoffMusicList, seed);
+
                             isFaceoffMusic = true;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.SecondFaceoffMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.SecondFaceoffMusicList, seed);
+
                             isFaceoffMusic = true;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.LAST_MINUTE_MUSIC_DELAYED) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.LastMinuteMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.LastMinuteMusicList, seed);
+
                             isFaceoffMusic = true;
                             delay = 1f;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC_DELAYED) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FirstFaceoffMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FirstFaceoffMusicList, seed);
+
                             isFaceoffMusic = true;
                             delay = 1f;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC_DELAYED) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.SecondFaceoffMusicList, seed);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.SecondFaceoffMusicList, seed);
+
                             isFaceoffMusic = true;
                             delay = 1f;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.GAMEOVER_MUSIC) {
-                            _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.GameOverMusicList, seed);
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0.5f);
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.GameOverMusicList, seed);
+
+                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GameOverMusicVolume, 0.5f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.WHISTLE)
                             _soundsSystem.Play(Codebase.SoundsSystem.WHISTLE, "");
@@ -913,7 +1121,7 @@ namespace oomtm450PuckMod_Sounds {
                         if (isFaceoffMusic) {
                             if (string.IsNullOrEmpty(_currentMusicPlaying))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FaceoffMusicList, seed);
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, delay);
+                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.FaceoffMusicVolume, delay);
                         }
                         break;
 
