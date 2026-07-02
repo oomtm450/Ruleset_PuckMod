@@ -133,6 +133,7 @@ namespace oomtm450PuckMod_Sounds {
             bool tryGetFiles = true;
             string jsonPath = "";
             Dictionary<string, SoundSettings> currentConfig = new Dictionary<string, SoundSettings>();
+            bool currentConfigWasEmpty = false;
             while (tryGetFiles) {
                 tryGetFiles = false;
 
@@ -150,6 +151,8 @@ namespace oomtm450PuckMod_Sounds {
                     if (File.Exists(jsonPath)) {
                         string settingsFileContent = File.ReadAllText(jsonPath);
                         currentConfig = settingsFileContent.ToSoundSettings();
+                        if (currentConfig.Count == 0)
+                            currentConfigWasEmpty = true;
                     }
                 }
                 catch (Exception ex) {
@@ -213,7 +216,7 @@ namespace oomtm450PuckMod_Sounds {
                 foreach (string key in currentConfig.Keys)
                     _soundSettings.AddOrUpdate(key, currentConfig[key]);
 
-                if (!string.IsNullOrEmpty(jsonPath))
+                if (!string.IsNullOrEmpty(jsonPath) && !currentConfigWasEmpty)
                     File.WriteAllText(jsonPath, currentConfig.ToDictionary((x) => x.Key, (x) => x.Value).ToJSON());
             }
             catch (Exception ex) {
