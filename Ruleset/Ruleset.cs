@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.0.7";
+        private static readonly string MOD_VERSION = "1.0.8";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -78,6 +78,7 @@ namespace oomtm450PuckMod_Ruleset {
             "1.0.6",
             "1.0.6a",
             "1.0.6b",
+            "1.0.7",
         });
 
         /// <summary>
@@ -194,7 +195,7 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, null },
         };
 
-        private static readonly LockDictionary<Rule, (Vector3 Position, Zone Zone)> _puckLastStateBeforeCall = new LockDictionary<Rule, (Vector3, Zone)> {
+        private static readonly LockDictionary<Rule, (Vector3 Position, Codebase.Zone Zone)> _puckLastStateBeforeCall = new LockDictionary<Rule, (Vector3, Codebase.Zone)> {
             { Rule.Offside, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
             { Rule.Icing, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
             { Rule.HighStick, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
@@ -205,17 +206,17 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Zone, current zone of the puck.
         /// </summary>
-        private static Zone _puckZone = ZoneFunc.DEFAULT_ZONE;
+        private static Codebase.Zone _puckZone = ZoneFunc.DEFAULT_ZONE;
 
         /// <summary>
         /// Zone, zone of the puck when it was last touched.
         /// </summary>
-        private static Zone _puckZoneLastTouched = ZoneFunc.DEFAULT_ZONE;
+        private static Codebase.Zone _puckZoneLastTouched = ZoneFunc.DEFAULT_ZONE;
 
         /// <summary>
         /// LockDictionary of string and (PlayerTeam and Zone), dictionary of all the players' zone by steam Id.
         /// </summary>
-        private static readonly LockDictionary<string, (PlayerTeam Team, Zone Zone)> _playersZone = new LockDictionary<string, (PlayerTeam, Zone)>();
+        private static readonly LockDictionary<string, (PlayerTeam Team, Codebase.Zone Zone)> _playersZone = new LockDictionary<string, (PlayerTeam, Codebase.Zone)>();
 
         /// <summary>
         /// LockDictionary of string and Stopwatch, dictionary of all players current puck touch time.
@@ -668,7 +669,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(stick.Player.Team);
                     // Offside logic.
-                    List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
+                    List<Codebase.Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
                     if (IsOffside(stick.Player.Team) && (_puckZone == otherTeamZones[0] || _puckZone == otherTeamZones[1])) {
                         var temp = _puckLastStateBeforeCall[Rule.Offside];
                         _puckLastStateBeforeCall[Rule.Offside] = puckLastStateBeforeCallOffside;
@@ -869,14 +870,14 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             hasOtherPlayerDived = false;
 
-                        if (lastPlayerHit.PlayerBody.HasFallen || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping || lastPlayerHit.PlayerBody.IsSideways || lastPlayerHit.PlayerBody.HasSlipped) {
+                        if (lastPlayerHit.PlayerBody.HasFallen.Value || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping || lastPlayerHit.PlayerBody.IsSideways || lastPlayerHit.PlayerBody.HasSlipped) {
                             if (!_playersLastSlipDateTime.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitSlipTime) || (now - lastPlayerHitSlipTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceOnSamePlayerMillisecondsThreshold)
                                 hasLastPlayerBeenHit = !hasLastPlayerDived;
                         }
                         else if (hasOtherPlayerDived)
                             _playersLastDivedIntoTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
 
-                        if (playerBody.Player.PlayerBody.HasFallen || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping || playerBody.Player.PlayerBody.IsSideways || playerBody.Player.PlayerBody.HasSlipped) {
+                        if (playerBody.Player.PlayerBody.HasFallen.Value || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping || playerBody.Player.PlayerBody.IsSideways || playerBody.Player.PlayerBody.HasSlipped) {
                             if (!_playersLastSlipDateTime.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitSlipTime) || (now - otherPlayerHitSlipTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceOnSamePlayerMillisecondsThreshold)
                                 hasOtherPlayerBeenHit = !hasOtherPlayerDived;
                         }
@@ -958,7 +959,7 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         hasHitterDived = false;
 
-                    if ((goalie.PlayerBody.HasFallen || goalie.PlayerBody.HasSlipped) && !hasGoalieDived) {
+                    if ((goalie.PlayerBody.HasFallen.Value || goalie.PlayerBody.HasSlipped) && !hasGoalieDived) {
                         if (hasHitterDived)
                             PenaltyModule.GivePenalty(PenaltyType.Tripping, hitter, goalieSteamId);
                         else {
@@ -1544,7 +1545,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 Puck puck = null;
                 List<Player> players = null;
-                Zone oldZone = ZoneFunc.DEFAULT_ZONE;
+                Codebase.Zone oldZone = ZoneFunc.DEFAULT_ZONE;
                 Dictionary<PlayerTeam, bool?> icingHasToBeWarned = new Dictionary<PlayerTeam, bool?> {
                     {PlayerTeam.Blue, null},
                     {PlayerTeam.Red, null},
@@ -1602,7 +1603,7 @@ namespace oomtm450PuckMod_Ruleset {
                         playerTouched = playerTouched || playerWasLastInPossession;
                         if (!playerTouched ||
                             (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)) ||
-                            (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Zone.RedTeam_Zone)) {
+                            (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_Zone)) {
                             CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
                         }
                         else {
@@ -1643,7 +1644,7 @@ namespace oomtm450PuckMod_Ruleset {
                         string playerSteamId = player.SteamId.Value.ToString();
 
                         DateTime now = DateTime.UtcNow;
-                        if ((player.PlayerBody.HasFallen || player.PlayerBody.HasSlipped || player.PlayerBody.IsSlipping || player.PlayerBody.IsSideways || player.PlayerBody.HasSlipped) && (!_dives.TryGetValue(playerSteamId, out DateTime playerDiveDateTime) || playerDiveDateTime < now)) {
+                        if ((player.PlayerBody.HasFallen.Value || player.PlayerBody.HasSlipped || player.PlayerBody.IsSlipping || player.PlayerBody.IsSideways || player.PlayerBody.HasSlipped) && (!_dives.TryGetValue(playerSteamId, out DateTime playerDiveDateTime) || playerDiveDateTime < now)) {
                             if (player.PlayerBody.IsSlipping || player.PlayerBody.HasSlipped)
                                 _playersLastSlipDateTime.AddOrUpdate(playerSteamId, now);
 
@@ -1667,12 +1668,12 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!_isOffside.TryGetValue(playerSteamId, out _))
                             _isOffside.Add(playerSteamId, (player.Team, false));
 
-                        Zone oldPlayerZone;
+                        Codebase.Zone oldPlayerZone;
                         if (!_playersZone.TryGetValue(playerSteamId, out var result)) {
                             if (player.Team == PlayerTeam.Red)
-                                oldPlayerZone = Zone.RedTeam_Center;
+                                oldPlayerZone = Codebase.Zone.RedTeam_Center;
                             else
-                                oldPlayerZone = Zone.BlueTeam_Center;
+                                oldPlayerZone = Codebase.Zone.BlueTeam_Center;
 
                             _playersZone.Add(playerSteamId, (player.Team, oldPlayerZone));
                         }
@@ -1680,10 +1681,10 @@ namespace oomtm450PuckMod_Ruleset {
                             oldPlayerZone = result.Zone;
 
                         _playersZone[playerSteamId] = (player.Team, ZoneFunc.GetZone(player.PlayerBody.transform.position, oldPlayerZone, Codebase.Constants.PLAYER_RADIUS));
-                        Zone playerZoneForOffside = ZoneFunc.GetZone(player.PlayerBody.transform.position, oldPlayerZone, Codebase.Constants.PLAYER_RADIUS, true);
+                        Codebase.Zone playerZoneForOffside = ZoneFunc.GetZone(player.PlayerBody.transform.position, oldPlayerZone, Codebase.Constants.PLAYER_RADIUS, true);
 
                         PlayerTeam otherTeam = TeamFunc.GetOtherTeam(player.Team);
-                        List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
+                        List<Codebase.Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
 
                         // Is offside.
                         bool isPlayerTeamOffside = isTeamOffside[player.Team];
@@ -1735,7 +1736,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Remove offside if the other team entered their zone with the puck.
                     if (_lastPlayerOnPuckTeamTipIncluded == _lastPlayerOnPuckTeam) {
-                        List<Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(_lastPlayerOnPuckTeam, true);
+                        List<Codebase.Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(_lastPlayerOnPuckTeam, true);
                         if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
                             PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
                             foreach (string key in new List<string>(_isOffside.Keys)) {
@@ -2549,7 +2550,7 @@ namespace oomtm450PuckMod_Ruleset {
                     icingObj.DeltaHasBeenChecked = true;
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
-                    List<Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
+                    List<Codebase.Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
                     List<string> otherTeamPlayersSteamId = _playersZone.Where(x => x.Value.Team == otherTeam && x.Value.Zone == otherTeamZones[0]).Select(x => x.Key).ToList();
 
                     if (otherTeamPlayersSteamId.Count != 0 && puck.Rigidbody.transform.position.y < ServerConfig.Icing.DeferredMaxHeight + _arenaOffsetY && puck.Speed < puck.MaxSpeed / 1.6f) {
@@ -3498,7 +3499,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (steamIdsPen.Length == 0)
                             break;
 
-                        if (steamIdsPen.Length >= 1)
+                        if (steamIdsPen.Length >= 2)
                             steamIdReceivingPlayer = steamIdsPen[1];
 
                         Player penPlayer = PlayerManager.Instance.GetPlayerBySteamId(steamIdsPen[0]);

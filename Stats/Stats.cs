@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.5";
+        private static readonly string MOD_VERSION = "0.7.6";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -43,6 +43,7 @@ namespace oomtm450PuckMod_Stats {
             "0.7.3",
             "0.7.3a",
             "0.7.4",
+            "0.7.5",
         });
 
         /// <summary>
@@ -1059,13 +1060,13 @@ namespace oomtm450PuckMod_Stats {
 
                     string instancePlayerSteamId = __instance.Player.SteamId.Value.ToString();
 
-                    if (!collisionPlayerBodyIsDown && (collisionPlayerBody.HasFallen || collisionPlayerBody.HasSlipped)) {
+                    if (!collisionPlayerBodyIsDown && (collisionPlayerBody.HasFallen.Value || collisionPlayerBody.HasSlipped)) {
                         if (_playerIsDown.TryGetValue(collisionPlayerBodySteamId, out bool _))
                             _playerIsDown[collisionPlayerBodySteamId] = true;
                         else
                             _playerIsDown.Add(collisionPlayerBodySteamId, true);
 
-                        if (__instance.Player.PlayerBody.HasFallen || __instance.Player.PlayerBody.HasSlipped) {
+                        if (__instance.Player.PlayerBody.HasFallen.Value || __instance.Player.PlayerBody.HasSlipped) {
                             if (_playerIsDown.TryGetValue(instancePlayerSteamId, out bool _))
                                 _playerIsDown[instancePlayerSteamId] = true;
                             else
@@ -1077,7 +1078,7 @@ namespace oomtm450PuckMod_Stats {
                         ProcessHit(__instance.Player.SteamId.Value.ToString());
                     }
 
-                    if (__instance.Player.PlayerBody.HasFallen || __instance.Player.PlayerBody.HasSlipped) {
+                    if (__instance.Player.PlayerBody.HasFallen.Value || __instance.Player.PlayerBody.HasSlipped) {
                         if (_playerIsDown.TryGetValue(instancePlayerSteamId, out bool _))
                             _playerIsDown[instancePlayerSteamId] = true;
                         else

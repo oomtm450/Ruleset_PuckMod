@@ -640,13 +640,13 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
-        public Dictionary<Zone, float> MaxPossibleTime { get; set; } = new Dictionary<Zone, float> {
-            { Zone.BlueTeam_BehindGoalLine, 9850f },
-            { Zone.RedTeam_BehindGoalLine, 9850f },
-            { Zone.BlueTeam_Zone, 8125f },
-            { Zone.RedTeam_Zone, 8125f },
-            { Zone.BlueTeam_Center, 5800f },
-            { Zone.RedTeam_Center, 5800f },
+        public Dictionary<Codebase.Zone, float> MaxPossibleTime { get; set; } = new Dictionary<Codebase.Zone, float> {
+            { Codebase.Zone.BlueTeam_BehindGoalLine, 9850f },
+            { Codebase.Zone.RedTeam_BehindGoalLine, 9850f },
+            { Codebase.Zone.BlueTeam_Zone, 8125f },
+            { Codebase.Zone.RedTeam_Zone, 8125f },
+            { Codebase.Zone.BlueTeam_Center, 5800f },
+            { Codebase.Zone.RedTeam_Center, 5800f },
         };
 
         /// <summary>
@@ -707,7 +707,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             DeferredMaxPossibleTimeMultiplicator = icingConfig.DeferredMaxPossibleTimeMultiplicator;
             DeferredMaxPossibleTimeAddition = icingConfig.DeferredMaxPossibleTimeAddition;
             DeferredMaxPossibleTimeDistanceDelta = icingConfig.DeferredMaxPossibleTimeDistanceDelta;
-            MaxPossibleTime = new Dictionary<Zone, float>(icingConfig.MaxPossibleTime);
+            MaxPossibleTime = new Dictionary<Codebase.Zone, float>(icingConfig.MaxPossibleTime);
             MaxActiveTime = icingConfig.MaxActiveTime;
             Delta = icingConfig.Delta;
             DeferredMaxHeight = icingConfig.DeferredMaxHeight;
@@ -750,7 +750,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 DeferredMaxPossibleTimeDistanceDelta = newConfig.DeferredMaxPossibleTimeDistanceDelta;
 
             try {
-                foreach (KeyValuePair<Zone, float> kvp in new Dictionary<Zone, float>(MaxPossibleTime)) {
+                foreach (KeyValuePair<Codebase.Zone, float> kvp in new Dictionary<Codebase.Zone, float>(MaxPossibleTime)) {
                     if (_oldConfig.MaxPossibleTime.TryGetValue(kvp.Key, out float value) && value == kvp.Value)
                         MaxPossibleTime[kvp.Key] = newConfig.MaxPossibleTime[kvp.Key];
                 }
