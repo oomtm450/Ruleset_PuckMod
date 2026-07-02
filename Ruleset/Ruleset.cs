@@ -1589,28 +1589,32 @@ namespace oomtm450PuckMod_Ruleset {
 
                 // Delay of game penalty logic or offside.
                 try {
-                    if (ServerConfig.Penalty.DelayOfGame && PenaltyModule.PuckIsOutsideOfBounds(puck)) {
-                        string lastPlayerOnPuckSteamId = _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam];
-                        bool playerTouched = _playersOnPuckDateTime.TryGetValue(lastPlayerOnPuckSteamId, out var lastTouchDateTime);
-                        bool playerWasLastInPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == lastPlayerOnPuckSteamId;
-
-                        Logging.Log("playerTouched : " + playerTouched, ServerConfig, true); // TODO
-                        Logging.Log("playerWasLastInPossession : " + playerWasLastInPossession, ServerConfig, true); // TODO
-                        Logging.Log("_puckDeflectedDateTimeSinceLastTouch : " + _puckDeflectedDateTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
-                        Logging.Log("lastTouchDateTime.LastTouchDateTime : " + lastTouchDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
-                        Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds({ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}) : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)), ServerConfig, true); // TODO
-
-                        playerTouched = playerTouched || playerWasLastInPossession;
-                        if (!playerTouched ||
-                            (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)) ||
-                            (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_Zone)) {
+                    if (ServerConfig.LowerBarriers && PenaltyModule.PuckIsOutsideOfBounds(puck)) {
+                        if (!ServerConfig.Penalty.DelayOfGame)
                             CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
-                        }
                         else {
-                            Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(lastPlayerOnPuckSteamId);
-                            if (Codebase.PlayerFunc.IsPlayerPlaying(penalizedDelayOfGamePlayer))
-                                PenaltyModule.GivePenalty(PenaltyType.DelayOfGame, penalizedDelayOfGamePlayer);
-                            CallPenalty(_lastPlayerOnPuckTeam);
+                            string lastPlayerOnPuckSteamId = _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam];
+                            bool playerTouched = _playersOnPuckDateTime.TryGetValue(lastPlayerOnPuckSteamId, out var lastTouchDateTime);
+                            bool playerWasLastInPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == lastPlayerOnPuckSteamId;
+
+                            Logging.Log("playerTouched : " + playerTouched, ServerConfig, true); // TODO
+                            Logging.Log("playerWasLastInPossession : " + playerWasLastInPossession, ServerConfig, true); // TODO
+                            Logging.Log("_puckDeflectedDateTimeSinceLastTouch : " + _puckDeflectedDateTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                            Logging.Log("lastTouchDateTime.LastTouchDateTime : " + lastTouchDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                            Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds({ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}) : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)), ServerConfig, true); // TODO
+
+                            playerTouched = playerTouched || playerWasLastInPossession;
+                            if (!playerTouched ||
+                                (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)) ||
+                                (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_Zone)) {
+                                CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
+                            }
+                            else {
+                                Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(lastPlayerOnPuckSteamId);
+                                if (Codebase.PlayerFunc.IsPlayerPlaying(penalizedDelayOfGamePlayer))
+                                    PenaltyModule.GivePenalty(PenaltyType.DelayOfGame, penalizedDelayOfGamePlayer);
+                                CallPenalty(_lastPlayerOnPuckTeam);
+                            }
                         }
                     }
                 }
@@ -3674,70 +3678,62 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void LowerBarriers(float arenaScaleY, float arenaOffsetY) {
             try {
-                if (_barriersLowered || !ServerConfig.Penalty.DelayOfGame)
+                if (_barriersLowered || !ServerConfig.LowerBarriers)
                     return;
 
-                GameObject levelObj = GameObject.Find("Level Default");
-                for (int i = 0; i < levelObj.transform.childCount; i++) {
-                    Transform levelManagerChild = levelObj.transform.GetChild(i);
-                    if (levelManagerChild.gameObject.name != "Rink")
-                        continue;
+                GameObject barrierCollider = GameObject.Find("Barrier Collider");
+                barrierCollider.transform.position = new Vector3(barrierCollider.transform.position.x, (-19.05f * arenaScaleY) + arenaOffsetY, barrierCollider.transform.position.z);
+                GameObject colliderBarrier = GameObject.Find("Collider Barrier");
+                colliderBarrier.transform.position = new Vector3(colliderBarrier.transform.position.x, (4.9f * arenaScaleY) + arenaOffsetY, colliderBarrier.transform.position.z);
 
-                    for (int j = 0; j < levelManagerChild.childCount; j++) {
-                        Transform rinkChild = levelManagerChild.GetChild(j);
+                /*for (int i = 0; i < rinkObj.transform.childCount; i++) {
+                        Transform rinkChild = rinkObj.transform.GetChild(j);
                         if (rinkChild.gameObject.name == "Front Collider" || rinkChild.gameObject.name == "Back Collider" ||
                             rinkChild.gameObject.name == "Left Collider" || rinkChild.gameObject.name == "Right Collider") {
                             rinkChild.position = new Vector3(rinkChild.position.x, (4.9f * arenaScaleY) + arenaOffsetY, rinkChild.position.z);
                             continue;
                         }
-
-                        if (rinkChild.gameObject.name == "Barrier Collider") {
-                            rinkChild.position = new Vector3(rinkChild.position.x, (-19.05f * arenaScaleY) + arenaOffsetY, rinkChild.position.z);
-                            continue;
-                        }
-                    }
-
-                    /*// Custom CompAdjust rink barriers lowering.
-                    for (int j = 0; j < levelManagerChild.childCount; j++) {
-                        Transform rinkChild = levelManagerChild.GetChild(j);
-
-                        if (rinkChild.gameObject.name != "CustomArenaAndColliders")
-                            continue;
-
-                        Logging.Log("Found CustomArenaAndColliders !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
-                        for (int k = 0; k < rinkChild.childCount; k++) {
-                            Transform customArenaAndCollidersChild = rinkChild.GetChild(k);
-
-                            if (customArenaAndCollidersChild.gameObject.name != "Colliders")
-                                continue;
-
-                            Logging.Log("Found Colliders !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
-
-                            Collider[] colliders = customArenaAndCollidersChild.GetComponentsInChildren<Collider>();
-                            for (int l = 0; l < colliders.Length; l++) {
-                                Transform collidersChild = colliders[l].transform;
-
-                                if (collidersChild.gameObject.name.ToLower().Contains("front") || collidersChild.gameObject.name.ToLower().Contains("back") ||
-                                    collidersChild.gameObject.name.ToLower().Contains("left") || collidersChild.gameObject.name.ToLower().Contains("right")) {
-                                    collidersChild.position = new Vector3(collidersChild.position.x, (4.9f * arenaScaleY) + arenaOffsetY, collidersChild.position.z);
-                                    Logging.Log("Found a collider !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
-                                    continue;
-                                }
-
-                                if (collidersChild.gameObject.name.ToLower().Contains("barrier")) {
-                                    collidersChild.position = new Vector3(collidersChild.position.x, (-19.05f * arenaScaleY) + arenaOffsetY, collidersChild.position.z);
-                                    Logging.Log("Found a barrier  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
-                                    continue;
-                                }
-                            }
-                            break;
-                        }
-                        break;
                     }*/
 
-                    _barriersLowered = true;
+                /*// Custom CompAdjust rink barriers lowering.
+                for (int j = 0; j < levelManagerChild.childCount; j++) {
+                    Transform rinkChild = levelManagerChild.GetChild(j);
+
+                    if (rinkChild.gameObject.name != "CustomArenaAndColliders")
+                        continue;
+
+                    Logging.Log("Found CustomArenaAndColliders !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+                    for (int k = 0; k < rinkChild.childCount; k++) {
+                        Transform customArenaAndCollidersChild = rinkChild.GetChild(k);
+
+                        if (customArenaAndCollidersChild.gameObject.name != "Colliders")
+                            continue;
+
+                        Logging.Log("Found Colliders !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+
+                        Collider[] colliders = customArenaAndCollidersChild.GetComponentsInChildren<Collider>();
+                        for (int l = 0; l < colliders.Length; l++) {
+                            Transform collidersChild = colliders[l].transform;
+
+                            if (collidersChild.gameObject.name.ToLower().Contains("front") || collidersChild.gameObject.name.ToLower().Contains("back") ||
+                                collidersChild.gameObject.name.ToLower().Contains("left") || collidersChild.gameObject.name.ToLower().Contains("right")) {
+                                collidersChild.position = new Vector3(collidersChild.position.x, (4.9f * arenaScaleY) + arenaOffsetY, collidersChild.position.z);
+                                Logging.Log("Found a collider !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+                                continue;
+                            }
+
+                            if (collidersChild.gameObject.name.ToLower().Contains("barrier")) {
+                                collidersChild.position = new Vector3(collidersChild.position.x, (-19.05f * arenaScaleY) + arenaOffsetY, collidersChild.position.z);
+                                Logging.Log("Found a barrier  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+                                continue;
+                            }
+                        }
+                        break;
+                    }
                     break;
-                }
+                }*/
+
+                _barriersLowered = true;
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(LowerBarriers)}.\n{ex}", ServerConfig);

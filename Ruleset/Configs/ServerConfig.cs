@@ -106,6 +106,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true the mod has to log all phase changes and stoppages.
         /// </summary>
         public bool LogPhaseChangeAndStoppage { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if the glass barriers has to be lowered.
+        /// </summary>
+        public bool LowerBarriers { get; set; } = true;
         #endregion
 
         #region Constructors
@@ -138,6 +143,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             DefaultPlayerHeight = serverConfig.DefaultPlayerHeight;
 
             LogPhaseChangeAndStoppage = serverConfig.LogPhaseChangeAndStoppage;
+
+            LowerBarriers = serverConfig.LowerBarriers;
         }
         #endregion
 
@@ -173,6 +180,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (LogPhaseChangeAndStoppage == _oldConfig.LogPhaseChangeAndStoppage)
                 LogPhaseChangeAndStoppage = newConfig.LogPhaseChangeAndStoppage;
+
+            if (LowerBarriers == _oldConfig.LowerBarriers)
+                LowerBarriers = newConfig.LowerBarriers;
 
             Offside.UpdateDefaultValues(_oldConfig.Offside);
             Icing.UpdateDefaultValues(_oldConfig.Icing);
@@ -267,6 +277,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                             ResetPlayersOnFaceoff = config.Faceoff.ResetPlayersOnFaceoff,
                         },
                         LogPhaseChangeAndStoppage = config.LogPhaseChangeAndStoppage,
+                        LowerBarriers = config.LowerBarriers,
                     };
 
                     config = defaultConfig;

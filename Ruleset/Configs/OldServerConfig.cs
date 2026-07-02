@@ -72,6 +72,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true the mod has to log all phase changes and stoppages.
         /// </summary>
         public bool LogPhaseChangeAndStoppage { get; } = true;
+
+        /// <summary>
+        /// Bool, true if the glass barriers has to be lowered.
+        /// </summary>
+        public bool LowerBarriers { get; } = true;
         #endregion
 
         #region Methods/Functions
