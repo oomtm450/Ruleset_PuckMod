@@ -204,6 +204,11 @@ namespace oomtm450PuckMod_Ruleset {
         };
 
         /// <summary>
+        /// Float, default height of the windows of the boards.
+        /// </summary>
+        private static float _boardWindowsDefaultHeight = -20.4f;
+
+        /// <summary>
         /// Zone, current zone of the puck.
         /// </summary>
         private static Codebase.Zone _puckZone = ZoneFunc.DEFAULT_ZONE;
@@ -1336,6 +1341,13 @@ namespace oomtm450PuckMod_Ruleset {
                                 }
                             }
 
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/board")) {
+                            content = content.Replace(@"/board", "").Trim();
+                            _boardWindowsDefaultHeight = float.Parse(content, CultureInfo.InvariantCulture);
+                            _barriersLowered = false;
+                            LowerBarriers(_boardWindowsDefaultHeight, _arenaScaleY, _arenaOffsetY);
                             return false;
                         }
                         else if (content.StartsWith(@"/offblue")) {
@@ -2834,7 +2846,7 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             try {
-                LowerBarriers(_arenaScaleY, _arenaOffsetY);
+                LowerBarriers(_boardWindowsDefaultHeight, _arenaScaleY, _arenaOffsetY);
 
                 if (POSITION_ROTATION_ON_FACEOFF == null) {
                     Dictionary<PlayerPosition, VisualElement> playerPositions = SystemFunc.GetPrivateField<Dictionary<PlayerPosition, VisualElement>>(typeof(UIPositionSelect), UIManager.Instance.PositionSelect, "playerPositionVisualElementMap");
@@ -3053,7 +3065,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
                     }
 
-                    LowerBarriers(_arenaScaleY, _arenaOffsetY);
+                    LowerBarriers(_boardWindowsDefaultHeight, _arenaScaleY, _arenaOffsetY);
                 }
             }
             catch (Exception ex) {
@@ -3676,24 +3688,51 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void LowerBarriers(float arenaScaleY, float arenaOffsetY) {
+        private static void LowerBarriers(float boardWindowsDefaultHeight, float arenaScaleY, float arenaOffsetY) {
             try {
                 if (_barriersLowered || !ServerConfig.LowerBarriers)
                     return;
 
                 GameObject barrierCollider = GameObject.Find("Barrier Collider");
-                barrierCollider.transform.position = new Vector3(barrierCollider.transform.position.x, (-19.05f * arenaScaleY) + arenaOffsetY, barrierCollider.transform.position.z);
-                GameObject colliderBarrier = GameObject.Find("Collider Barrier");
-                colliderBarrier.transform.position = new Vector3(colliderBarrier.transform.position.x, (4.9f * arenaScaleY) + arenaOffsetY, colliderBarrier.transform.position.z);
+                barrierCollider.transform.position = new Vector3(barrierCollider.transform.position.x, (boardWindowsDefaultHeight * arenaScaleY) + arenaOffsetY, barrierCollider.transform.position.z);
 
-                /*for (int i = 0; i < rinkObj.transform.childCount; i++) {
-                        Transform rinkChild = rinkObj.transform.GetChild(j);
-                        if (rinkChild.gameObject.name == "Front Collider" || rinkChild.gameObject.name == "Back Collider" ||
-                            rinkChild.gameObject.name == "Left Collider" || rinkChild.gameObject.name == "Right Collider") {
-                            rinkChild.position = new Vector3(rinkChild.position.x, (4.9f * arenaScaleY) + arenaOffsetY, rinkChild.position.z);
-                            continue;
-                        }
-                    }*/
+                /*MeshFilter meshFilter = null;
+                try {
+                    meshFilter = barrierCollider.GetComponent<MeshFilter>();
+                    if (meshFilter == null)
+                        meshFilter = barrierCollider.AddComponent<MeshFilter>();
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"1 : {ex}", ServerConfig);
+                }
+
+                MeshRenderer meshRenderer = null;
+                try {
+                    meshRenderer = barrierCollider.GetComponent<MeshRenderer>();
+                    if (meshRenderer == null)
+                        meshRenderer = barrierCollider.AddComponent<MeshRenderer>();
+                    meshRenderer.enabled = true;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"2 : {ex}", ServerConfig);
+                }
+
+                try {
+                    MeshCollider meshCollider = barrierCollider.GetComponent<MeshCollider>();
+                    if (meshCollider.sharedMesh != null) {
+                        // Duplicate or share the mesh data with the MeshFilter
+                        meshFilter.sharedMesh = meshCollider.sharedMesh;
+                    }
+
+                    // 3. Assign a default built-in material so it is visible
+                    Shader test = Shader.Find("Universal Render Pipeline/Lit");
+                    if (test == null)
+                        test = Shader.Find("HDRP/Lit");
+                    meshRenderer.material = new Material(test);
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"3 : {ex}", ServerConfig);
+                }*/
 
                 /*// Custom CompAdjust rink barriers lowering.
                 for (int j = 0; j < levelManagerChild.childCount; j++) {
