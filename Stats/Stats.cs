@@ -326,6 +326,8 @@ namespace oomtm450PuckMod_Stats {
 
         private static readonly LockDictionary<string, int> _plusMinus = new LockDictionary<string, int>();
 
+        private static readonly LockDictionary<string, int> _posts = new LockDictionary<string, int>();
+
         // Client-side.
         /// <summary>
         /// ClientConfig, config set by the client.
@@ -556,6 +558,9 @@ namespace oomtm450PuckMod_Stats {
 
                     // Reset +/-.
                     _plusMinus.Clear();
+
+                    // Reset posts.
+                    _posts.Clear();
 
                     // Reset goal and assists trackers.
                     _blueGoals.Clear();
@@ -1624,6 +1629,7 @@ namespace oomtm450PuckMod_Stats {
                 _redGoals.Clear();
                 _redAssists.Clear();
                 _plusMinus.Clear();
+                _posts.Clear();
 
                 ScoreboardModifications(false);
             }
@@ -1793,7 +1799,7 @@ namespace oomtm450PuckMod_Stats {
 
                 if (PlayerFunc.IsGoalie(player)) {
                     if (_savePerc.TryGetValue(steamId, out var saveValues))
-                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.500d * ((double)saveValues.Saves) * 21d;
+                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.500d * ((double)saveValues.Saves) * 35d;
 
                     if (_sog.TryGetValue(steamId, out int shots))
                         starPoints[steamId] += ((double)shots) * 1d;
@@ -1810,7 +1816,7 @@ namespace oomtm450PuckMod_Stats {
                 }
                 else {
                     if (_sog.TryGetValue(steamId, out int shots)) {
-                        starPoints[steamId] += ((double)shots) * 5d;
+                        starPoints[steamId] += ((double)shots) * 4d;
                         starPoints[steamId] += (((double)(player.Goals.Value + 1)) / ((double)shots) - 0.25d) * ((double)shots) * 4d;
                     }
 
@@ -1821,7 +1827,7 @@ namespace oomtm450PuckMod_Stats {
                         starPoints[steamId] += ((double)blocks) * 5d;
 
                     const double SKATER_GOAL_MODIFIER = 70d;
-                    const double SKATER_ASSIST_MODIFIER = 30d;
+                    const double SKATER_ASSIST_MODIFIER = 55d;
 
                     starPoints[steamId] += SKATER_GOAL_MODIFIER * gwgModifier;
                     starPoints[steamId] += ((double)player.Goals.Value) * SKATER_GOAL_MODIFIER;
@@ -1829,16 +1835,19 @@ namespace oomtm450PuckMod_Stats {
                 }
 
                 if (_hits.TryGetValue(steamId, out int hits))
-                    starPoints[steamId] += ((double)hits) * 0.2d;
+                    starPoints[steamId] += ((double)hits) * 2d;
 
                 if (_takeaways.TryGetValue(steamId, out int takeaways))
-                    starPoints[steamId] += ((double)takeaways) * 0.2d;
+                    starPoints[steamId] += ((double)takeaways) * 0.3d;
 
                 if (_turnovers.TryGetValue(steamId, out int turnovers))
-                    starPoints[steamId] -= ((double)turnovers) * 0.2d;
+                    starPoints[steamId] -= ((double)turnovers) * 0.3d;
 
                 if (_plusMinus.TryGetValue(steamId, out int plusMinus))
-                    starPoints[steamId] += ((double)plusMinus) * 5d;
+                    starPoints[steamId] += ((double)plusMinus) * 4d;
+
+                if (_posts.TryGetValue(steamId, out int posts))
+                    starPoints[steamId] += ((double)posts) * 2d;
 
                 starPoints[steamId] *= teamModifier;
             }
@@ -1942,6 +1951,10 @@ namespace oomtm450PuckMod_Stats {
                 foreach (var kvp in _plusMinus)
                     plusMinusDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
 
+                Dictionary<string, (string, int)> postsDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _posts)
+                    postsDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
                 // Time-on-ice {steamId: (username, seconds)}, including any still-on-ice player up to now.
                 Dictionary<string, double> toiFinal = new Dictionary<string, double>();
                 foreach (var kvp in _toiSeconds)
@@ -1971,7 +1984,7 @@ namespace oomtm450PuckMod_Stats {
                     { "gwg", gwgSteamId + "," + (playersUsername.TryGetValue(gwgSteamId, out string gwgUsername) == true ? gwgUsername : "") },
                     { "stars", starsDict },
                     { "plusminus", plusMinusDict },
-                    //{ "posts", postsDict }, // TODO
+                    { "posts", postsDict },
                     { "time_on_ice", timeOnIceDict },
                     { "blue_score", blueScore },
                     { "red_score", redScore },
