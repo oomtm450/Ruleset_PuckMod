@@ -1889,59 +1889,59 @@ namespace oomtm450PuckMod_Stats {
             foreach (var kvp in _sog)
                 sogDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
 
-            Dictionary<string, (string, int)> passesDict = new Dictionary<string, (string, int)>();
-            foreach (var kvp in _passes)
-                passesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-            Dictionary<string, (string, int)> blocksDict = new Dictionary<string, (string, int)>();
-            foreach (var kvp in _blocks)
-                blocksDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-            Dictionary<string, (string, int)> hitsDict = new Dictionary<string, (string, int)>();
-            foreach (var kvp in _hits)
-                hitsDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-            Dictionary<string, (string, int)> takeawaysDict = new Dictionary<string, (string, int)>();
-            foreach (var kvp in _takeaways)
-                takeawaysDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-            Dictionary<string, (string, int)> turnoversDict = new Dictionary<string, (string, int)>();
-            foreach (var kvp in _turnovers)
-                turnoversDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-            Dictionary<string, (string, (int, int))> savePercDict = new Dictionary<string, (string, (int, int))>();
-            foreach (var kvp in _savePerc)
-                savePercDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-            Dictionary<string, (string, int)> stickSavesDict = new Dictionary<string, (string, int)>();
-            foreach (var kvp in _stickSaves)
-                stickSavesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-            List<string> blueGoalsDict = new List<string>();
-            foreach (var goalSteamId in _blueGoals)
-                blueGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
-
-            List<string> redGoalsDict = new List<string>();
-            foreach (var goalSteamId in _redGoals)
-                redGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
-
-            List<string> blueAssistsDict = new List<string>();
-            foreach (var assistSteamId in _blueAssists)
-                blueAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
-
-            List<string> redAssistsDict = new List<string>();
-            foreach (var assistSteamId in _redAssists)
-                redAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
-
-            Dictionary<int, (string, string)> starsDict = new Dictionary<int, (string, string)>();
-            foreach (var kvp in _stars)
-                starsDict.Add(kvp.Key, (kvp.Value, playersUsername.TryGetValue(kvp.Value, out string username) == true ? username : ""));
-
-            Dictionary<string, (string, int)> plusMinusDict = new Dictionary<string, (string, int)>();
-            foreach (var kvp in _plusMinus)
-                plusMinusDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
             if (sogDict.Count != 0) {
+                Dictionary<string, (string, int)> passesDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _passes)
+                    passesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                Dictionary<string, (string, int)> blocksDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _blocks)
+                    blocksDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                Dictionary<string, (string, int)> hitsDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _hits)
+                    hitsDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                Dictionary<string, (string, int)> takeawaysDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _takeaways)
+                    takeawaysDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                Dictionary<string, (string, int)> turnoversDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _turnovers)
+                    turnoversDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                Dictionary<string, (string, (int, int))> savePercDict = new Dictionary<string, (string, (int, int))>();
+                foreach (var kvp in _savePerc)
+                    savePercDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                Dictionary<string, (string, int)> stickSavesDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _stickSaves)
+                    stickSavesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                List<string> blueGoalsDict = new List<string>();
+                foreach (var goalSteamId in _blueGoals)
+                    blueGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
+
+                List<string> redGoalsDict = new List<string>();
+                foreach (var goalSteamId in _redGoals)
+                    redGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
+
+                List<string> blueAssistsDict = new List<string>();
+                foreach (var assistSteamId in _blueAssists)
+                    blueAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
+
+                List<string> redAssistsDict = new List<string>();
+                foreach (var assistSteamId in _redAssists)
+                    redAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
+
+                Dictionary<int, (string, string)> starsDict = new Dictionary<int, (string, string)>();
+                foreach (var kvp in _stars)
+                    starsDict.Add(kvp.Key, (kvp.Value, playersUsername.TryGetValue(kvp.Value, out string username) == true ? username : ""));
+
+                Dictionary<string, (string, int)> plusMinusDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _plusMinus)
+                    plusMinusDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
                 // Time-on-ice {steamId: (username, seconds)}, including any still-on-ice player up to now.
                 // Copies into locals (non-mutating) so a duplicate re-emission yields consistent values.
                 Dictionary<string, double> toiFinal = new Dictionary<string, double>();
