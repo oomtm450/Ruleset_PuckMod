@@ -607,7 +607,7 @@ namespace oomtm450PuckMod_Stats {
                     // "forfeit" is excluded: ForfeitGame already sets GameOver, which emits the EOG — listing it here would double-emit.
                     if (GameManager.Instance.Period >= 3 && (vote.Name == "start" || vote.Name == "warmup") &&
                         GameManager.Instance.Phase != GamePhase.GameOver && GameManager.Instance.Phase != GamePhase.PostGame)
-                        CreateEOGJson(GameManager.Instance.BlueScore, GameManager.Instance.RedScore);
+                        CreateEOGJson(GameManager.Instance.BlueScore, GameManager.Instance.RedScore, GameManager.Instance.Period);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(BaseGameMode_OnVoteRemoved_Patch)} Prefix().\n{ex}", ServerConfig);
@@ -1207,7 +1207,7 @@ namespace oomtm450PuckMod_Stats {
 
                         // Only emit on a real transition into GameOver. The prefix sees the old phase, so a re-asserted GameOver is skipped.
                         if (phase == GamePhase.GameOver && __instance.GameState.Value.Phase != GamePhase.GameOver)
-                            CreateEOGJson(__instance.GameState.Value.BlueScore, __instance.GameState.Value.RedScore);
+                            CreateEOGJson(__instance.GameState.Value.BlueScore, __instance.GameState.Value.RedScore, __instance.GameState.Value.Period);
                     }
                 }
                 catch (Exception ex) {
@@ -1762,7 +1762,7 @@ namespace oomtm450PuckMod_Stats {
         #endregion
 
         #region Methods/Functions
-        private static void CreateEOGJson(int blueScore, int redScore) {
+        private static void CreateEOGJson(int blueScore, int redScore, int lastPeriod) {
             string gwgSteamId = "";
             PlayerTeam winningTeam = PlayerTeam.None;
             try {
@@ -1971,10 +1971,13 @@ namespace oomtm450PuckMod_Stats {
                     { "gwg", gwgSteamId + "," + (playersUsername.TryGetValue(gwgSteamId, out string gwgUsername) == true ? gwgUsername : "") },
                     { "stars", starsDict },
                     { "plusminus", plusMinusDict },
+                    //{ "posts", postsDict }, // TODO
                     { "time_on_ice", timeOnIceDict },
                     { "blue_score", blueScore },
                     { "red_score", redScore },
+                    { "last_period", lastPeriod },
                     { "started_at", _matchStartUtc == DateTime.MinValue ? "" : _matchStartUtc.ToString("yyyy-MM-dd HH:mm:ss") },
+                    { "ended_at", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") },
                 };
 
                 string jsonContent = JsonConvert.SerializeObject(jsonDict, Formatting.Indented);
