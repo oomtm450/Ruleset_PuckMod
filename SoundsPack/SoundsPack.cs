@@ -152,8 +152,8 @@ namespace oomtm450PuckMod_SoundsPack {
 
                 Logging.Log($"Enabling...", ServerConfig, true);
 
-                if (Application.version != Codebase.Constants.CURRENT_APPLICATION_VERSION) {
-                    Logging.Log($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION}. Mod will not be enabled.", ServerConfig);
+                if (Application.version != Codebase.Constants.CURRENT_APPLICATION_VERSION || Application.version != "897") {
+                    Logging.Log($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION} or 897. Mod will not be enabled.", ServerConfig);
                     return false;
                 }
 
