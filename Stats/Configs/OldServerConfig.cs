@@ -29,12 +29,12 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; } = 67; // TODO : Change after release.
+        public int MaxTippedMilliseconds { get; } = 32; // TODO : Change after release.
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; } = 350; // TODO : Change after release.
+        public int MinPossessionMilliseconds { get; } = 333;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
@@ -55,6 +55,11 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// Float, maximum height for the puck to be touched on faceoff.
         /// </summary>
         public float PuckIceContactHeight { get; } = 0.205f;
+
+        /// <summary>
+        /// Int, number of milliseconds between posts hit to be considered a post hit.
+        /// </summary>
+        public int PostThresholdMilliseconds { get; } = 500;
         #endregion
 
         #region Methods/Functions

@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.8.0DEV";
+        private static readonly string MOD_VERSION = "0.8.0";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -326,7 +326,7 @@ namespace oomtm450PuckMod_Stats {
 
         private static readonly LockDictionary<string, int> _plusMinus = new LockDictionary<string, int>();
 
-        private static readonly LockDictionary<string, int> _posts = new LockDictionary<string, int>();
+        private static readonly LockDictionary<string, (int Count, DateTime LastPostDateTime)> _posts = new LockDictionary<string, (int, DateTime)>();
 
         // Client-side.
         /// <summary>
@@ -841,7 +841,35 @@ namespace oomtm450PuckMod_Stats {
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
                         PlayerBody playerBody = SystemFunc.GetPlayerBody(collision.gameObject);
-                        if (!playerBody || !playerBody.Player)
+                        if (!playerBody) {
+                            if (collision.gameObject.name == "Goal Post") { // Post stat.
+                                string lastPlayerOnPuckTipIncludedSteamId = _lastPlayerOnPuckTipIncludedSteamId[_lastTeamOnPuckTipIncluded].SteamId;
+
+                                if (string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId))
+                                    return;
+
+                                if (!_posts.TryGetValue(lastPlayerOnPuckTipIncludedSteamId, out (int, DateTime) _))
+                                    _posts.Add(lastPlayerOnPuckTipIncludedSteamId, (0, DateTime.MinValue));
+
+                                DateTime now = DateTime.UtcNow;
+
+                                if ((now - _posts[lastPlayerOnPuckTipIncludedSteamId].LastPostDateTime) < TimeSpan.FromMilliseconds(ServerConfig.PostThresholdMilliseconds)) {
+                                    _posts[lastPlayerOnPuckTipIncludedSteamId] = (_posts[lastPlayerOnPuckTipIncludedSteamId].Count, now);
+                                    return;
+                                }
+
+                                _posts[lastPlayerOnPuckTipIncludedSteamId] = (_posts[lastPlayerOnPuckTipIncludedSteamId].Count + 1, now);
+                                NetworkCommunication.SendDataToAll(Codebase.Constants.POST + lastPlayerOnPuckTipIncludedSteamId, _posts[lastPlayerOnPuckTipIncludedSteamId].ToString(),
+                                    Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+
+                                LogPost(lastPlayerOnPuckTipIncludedSteamId, _posts[lastPlayerOnPuckTipIncludedSteamId].Count);
+                                return;
+                            }
+
+                            return;
+                        }
+
+                        if (!playerBody.Player)
                             return;
 
                         player = playerBody.Player;
@@ -1846,8 +1874,8 @@ namespace oomtm450PuckMod_Stats {
                 if (_plusMinus.TryGetValue(steamId, out int plusMinus))
                     starPoints[steamId] += ((double)plusMinus) * 4d;
 
-                if (_posts.TryGetValue(steamId, out int posts))
-                    starPoints[steamId] += ((double)posts) * 2d;
+                if (_posts.TryGetValue(steamId, out (int Count, DateTime LastPostHit) posts))
+                    starPoints[steamId] += ((double)posts.Count) * 2d;
 
                 starPoints[steamId] *= teamModifier;
             }
@@ -1953,7 +1981,7 @@ namespace oomtm450PuckMod_Stats {
 
                 Dictionary<string, (string, int)> postsDict = new Dictionary<string, (string, int)>();
                 foreach (var kvp in _posts)
-                    postsDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+                    postsDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value.Count));
 
                 // Time-on-ice {steamId: (username, seconds)}, including any still-on-ice player up to now.
                 Dictionary<string, double> toiFinal = new Dictionary<string, double>();
@@ -1967,6 +1995,7 @@ namespace oomtm450PuckMod_Stats {
 
                 // Log JSON for game stats.
                 Dictionary<string, object> jsonDict = new Dictionary<string, object> {
+                    { "server_name", ServerManager.Instance.ServerConfig.name },
                     { "steamIds", playersUsername },
                     { "teams", _playersTeam },
                     { "sog", sogDict },
