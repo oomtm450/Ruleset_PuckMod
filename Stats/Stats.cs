@@ -1973,7 +1973,7 @@ namespace oomtm450PuckMod_Stats {
                     { "stars", starsDict },
                     { "plusminus", plusMinusDict },
                     // Time-on-ice (played roster where toi > 0, plus per-player minutes).
-                    { "timeOnIce", timeOnIceDict },
+                    { "time_on_ice", timeOnIceDict },
                     // Final GameState score, including OT and the shootout.
                     { "blue_score", blueScore },
                     { "red_score", redScore },
