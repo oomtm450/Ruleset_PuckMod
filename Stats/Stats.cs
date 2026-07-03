@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.6";
+        private static readonly string MOD_VERSION = "0.8.0DEV";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -2605,6 +2605,16 @@ namespace oomtm450PuckMod_Stats {
         private static void LogPlusMinus(string playerSteamId, int plusminus) {
             if (ServerConfig.LogStats)
                 Logging.Log($"playerSteamId:{playerSteamId},plusminus:{plusminus}", ServerConfig);
+        }
+
+        /// <summary>
+        /// Method that logs the post count of a player.
+        /// </summary>
+        /// <param name="playerSteamId">String, steam Id of the player.</param>
+        /// <param name="post">Int, number of posts hit with the puck.</param>
+        private static void LogPost(string playerSteamId, int post) {
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},post:{post}", ServerConfig);
         }
 
         private static string GetGoalieSavePerc(int saves, int shots) {

@@ -96,6 +96,11 @@
         public const string PLUSMINUS = STATS_MOD_NAME + "PLUSMINUS";
 
         /// <summary>
+        /// Const string, data name for post.
+        /// </summary>
+        public const string POST = STATS_MOD_NAME + "POST";
+
+        /// <summary>
         /// Const string, data name for pausing mods.
         /// </summary>
         public const string PAUSE = "pause";
