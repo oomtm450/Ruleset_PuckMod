@@ -2700,6 +2700,13 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             break;
 
+                        case "removeallpenalties":
+                            if (value != "1")
+                                return;
+
+                            PenaltyModule.RemoveAllPenalties();
+                            break;
+
                         case Codebase.Constants.LOGIC:
                             Logic = bool.Parse(value);
                             break;
