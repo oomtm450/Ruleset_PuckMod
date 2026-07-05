@@ -23,6 +23,8 @@ namespace oomtm450PuckMod_Sounds {
         private static float DEFAULT_HORN_VOLUME = DEFAULT_SOUND_VOLUME;
 
         private const int DEFAULT_SOUND_WEIGHT = 60;
+
+        private const float DEFAULT_SOUND_DELAY = 0;
         #endregion
 
         #region Fields
@@ -33,6 +35,8 @@ namespace oomtm450PuckMod_Sounds {
         private AudioSource _currentAudioSource = null;
 
         private static string _lastRandomSound = "";
+
+        private static Dictionary<SoundType, string> _lastRandomSoundPerType = new Dictionary<SoundType, string>();
 
         private int _isLoadingValue = 0;
         #endregion
@@ -153,6 +157,16 @@ namespace oomtm450PuckMod_Sounds {
                         currentConfig = settingsFileContent.ToSoundSettings();
                         if (currentConfig.Count == 0)
                             currentConfigWasEmpty = true;
+                        else {
+                            foreach (string key in new List<string>(currentConfig.Keys)) {
+                                SoundSettings soundSetting = currentConfig[key];
+                                currentConfig[key] = new SoundSettings {
+                                    Weight = soundSetting.Weight ?? DEFAULT_SOUND_WEIGHT,
+                                    Volume = soundSetting.Volume ?? DEFAULT_SOUND_VOLUME,
+                                    Delay = soundSetting.Delay ?? DEFAULT_SOUND_DELAY,
+                                };
+                            }
+                        }
                     }
                 }
                 catch (Exception ex) {
@@ -190,6 +204,7 @@ namespace oomtm450PuckMod_Sounds {
                             clipSettings = new SoundSettings {
                                 Weight = DEFAULT_SOUND_WEIGHT,
                                 Volume = DEFAULT_SOUND_VOLUME,
+                                Delay = DEFAULT_SOUND_DELAY,
                             };
                             currentConfig.Add(clip.name, clipSettings);
                         }
@@ -200,7 +215,7 @@ namespace oomtm450PuckMod_Sounds {
                         DontDestroyOnLoad(clip);
                         _audioClips.Add(clip);
 
-                        AddClipNameToCorrectList(clip.name, clipSettings.Weight);
+                        AddClipNameToCorrectList(clip.name, (int)clipSettings.Weight);
                     }
                     catch (Exception ex) {
                         Errors.Add($"Sounds.{nameof(GetAudioClips)} 3 : {ex}");
@@ -290,10 +305,16 @@ namespace oomtm450PuckMod_Sounds {
 
             SoundSettings soundSettings = null;
             float volModifier = DEFAULT_SOUND_VOLUME;
-            if (_soundSettings.TryGetValue(name, out soundSettings))
-                volModifier = soundSettings.Volume;
+            float delayModifier = DEFAULT_SOUND_DELAY;
+            if (_soundSettings.TryGetValue(name, out soundSettings)) {
+                volModifier = (float)soundSettings.Volume;
+                delayModifier = (float)soundSettings.Delay;
+            }
+
             vol *= volModifier;
             audioSource.volume = vol;
+
+            delay += delayModifier;
 
             if (type == Codebase.SoundsSystem.MUSIC) {
                 _currentAudioSource = audioSource;
@@ -343,9 +364,13 @@ namespace oomtm450PuckMod_Sounds {
                 ChangeHornVolume(hornVol, hornAudioSource);
         }
 
-        internal static string GetRandomSound(LockWeightedList<string> soundList, int? seed = null) {
+        internal static string GetRandomSound(LockWeightedList<string> soundList, SoundType type = SoundType.None, int? seed = null) {
             soundList = new LockWeightedList<string>(soundList, soundList.GetWeightOf);
             int soundListCount = soundList.Count();
+
+            string lastRandomSoundOfType = "";
+            if (type != SoundType.None)
+                _lastRandomSoundPerType.TryGetValue(type, out lastRandomSoundOfType);
 
             if (soundListCount == 0)
                 return "";
@@ -353,14 +378,17 @@ namespace oomtm450PuckMod_Sounds {
                 return soundList.First();
             else if (soundListCount == 2) {
                 string _sound = soundList.First();
-                if (soundList.First() != _lastRandomSound) {
+                if (_sound != _lastRandomSound && _sound != lastRandomSoundOfType)
                     _lastRandomSound = _sound;
-                    return _sound;
+                else
+                    _lastRandomSound = _sound = soundList.ElementAt(1);
+
+                if (type != SoundType.None) {
+                    if (!_lastRandomSoundPerType.TryAdd(type, _lastRandomSound))
+                        _lastRandomSoundPerType[type] = _lastRandomSound;
                 }
-                else {
-                    _lastRandomSound = soundList.ElementAt(1);
-                    return _sound;
-                }
+
+                return _sound;
             }
 
             string sound = _lastRandomSound;
@@ -368,12 +396,16 @@ namespace oomtm450PuckMod_Sounds {
             if (seed != null)
                 soundList.SetRandomSeed((int)seed);
 
-            while (sound == _lastRandomSound) {
+            while (sound == _lastRandomSound && sound == lastRandomSoundOfType) {
                 sound = soundList.Next();
                 soundList.Remove(sound);
             }
 
             _lastRandomSound = sound;
+            if (type != SoundType.None) {
+                if (!_lastRandomSoundPerType.TryAdd(type, _lastRandomSound))
+                    _lastRandomSoundPerType[type] = _lastRandomSound;
+            }
 
             return sound;
         }
@@ -499,9 +531,23 @@ namespace oomtm450PuckMod_Sounds {
         #endregion
 
         internal class SoundSettings {
-            public float Volume { get; set; } = DEFAULT_SOUND_VOLUME;
+            public float? Volume { get; set; } = DEFAULT_SOUND_VOLUME;
 
-            public int Weight { get; set; } = DEFAULT_SOUND_WEIGHT;
+            public int? Weight { get; set; } = DEFAULT_SOUND_WEIGHT;
+
+            public float? Delay { get; set; } = DEFAULT_SOUND_DELAY;
+        }
+
+        internal enum SoundType {
+            None = 0,
+            Faceoff = 1,
+            BetweenPeriods = 2,
+            Warmup = 3,
+            RedGoal = 4,
+            BlueGoal = 5,
+            FirstFaceoff = 6,
+            SecondFaceoff = 7,
+            LastMinuteFaceoff = 8,
         }
     }
 
