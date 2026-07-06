@@ -328,7 +328,7 @@ namespace oomtm450PuckMod_Sounds {
                 audioSource.volume = SettingsManager.GlobalVolume * SettingsManager.GameVolume * volModifier;
             }
 
-            if (delay == 0)
+            if (delay <= 0)
                 audioSource.Play();
             else
                 audioSource.PlayDelayed(delay);
