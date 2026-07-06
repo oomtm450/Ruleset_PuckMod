@@ -3883,6 +3883,11 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!string.IsNullOrEmpty(penaltyTimersTextRedTeam))
                     penaltyTimersTextRedTeam = penaltyTimersTextRedTeam.Remove(penaltyTimersTextRedTeam.Length - 1);
 
+                penaltyNewLineUICount = MAX_PENALTY_TIMER_LABELS - redPenaltyTimers.Count();
+                for (int i = 0; i < penaltyNewLineUICount; i++) {
+                    penaltyTimersTextRedTeam = "\n" + penaltyTimersTextRedTeam;
+                }
+
                 _penaltiesLabelRed.text = penaltyTimersTextRedTeam;
             }
             catch (Exception ex) {
