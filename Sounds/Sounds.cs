@@ -1038,7 +1038,7 @@ namespace oomtm450PuckMod_Sounds {
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FACEOFF_MUSIC_DELAYED) {
                             isFaceoffMusic = true;
-                            delay = 1f;
+                            delay = 0.95f;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.BLUE_GOAL_MUSIC) {
                             if (string.IsNullOrEmpty(chosenSound))
@@ -1088,21 +1088,21 @@ namespace oomtm450PuckMod_Sounds {
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.LastMinuteMusicList, SoundsSystem.SoundType.LastMinuteFaceoff, seed);
 
                             isFaceoffMusic = true;
-                            delay = 1f;
+                            delay = 0.95f;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC_DELAYED) {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FirstFaceoffMusicList, SoundsSystem.SoundType.FirstFaceoff, seed);
 
                             isFaceoffMusic = true;
-                            delay = 1f;
+                            delay = 0.95f;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC_DELAYED) {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.SecondFaceoffMusicList, SoundsSystem.SoundType.SecondFaceoff, seed);
 
                             isFaceoffMusic = true;
-                            delay = 1f;
+                            delay = 0.95f;
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.GAMEOVER_MUSIC) {
                             if (string.IsNullOrEmpty(chosenSound))
