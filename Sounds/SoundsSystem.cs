@@ -396,7 +396,7 @@ namespace oomtm450PuckMod_Sounds {
             if (seed != null)
                 soundList.SetRandomSeed((int)seed);
 
-            while (sound == _lastRandomSound && sound == lastRandomSoundOfType) {
+            while (string.IsNullOrEmpty(sound) || sound == _lastRandomSound || sound == lastRandomSoundOfType) {
                 sound = soundList.Next();
                 soundList.Remove(sound);
             }
