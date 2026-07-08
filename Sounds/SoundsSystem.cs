@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 using static oomtm450PuckMod_Sounds.SoundsSystem;
@@ -98,8 +99,8 @@ namespace oomtm450PuckMod_Sounds {
                     return true;
                 }
 
-                Logging.Log($"{nameof(LoadSounds)} launching {nameof(GetAudioClips)}. ({fullPath})", Sounds.ClientConfig);
-                StartCoroutine(GetAudioClips(fullPath, setCustomGoalHorns));
+                Logging.Log($"{nameof(LoadSounds)} launching {nameof(GetAudioClipsAsync)}. ({fullPath})", Sounds.ClientConfig);
+                _ = GetAudioClipsAsync(fullPath, setCustomGoalHorns, destroyCancellationToken);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error loading Sounds {path}.\n{ex}", Sounds.ClientConfig);
@@ -130,8 +131,9 @@ namespace oomtm450PuckMod_Sounds {
         /// </summary>
         /// <param name="path">String, full path to the directory containing the sounds to load.</param>
         /// <param name="setCustomGoalHorns">Bool, true if the custom goal horns has to be set.</param>
+        /// <param name="setCustomGoalHorns">Bool, true if the custom goal horns has to be set.</param>
         /// <returns>IEnumerator, enumerator used by the Coroutine to load the audio clips.</returns>
-        private IEnumerator GetAudioClips(string path, bool setCustomGoalHorns) {
+        private async Awaitable GetAudioClipsAsync(string path, bool setCustomGoalHorns, CancellationToken cancellationToken) {
             string[] files = Array.Empty<string>();
 
             bool tryGetFiles = true;
@@ -146,7 +148,7 @@ namespace oomtm450PuckMod_Sounds {
                 }
                 catch (Exception ex) {
                     tryGetFiles = true;
-                    Warnings.Add($"Sounds.{nameof(GetAudioClips)} 1 : {ex}");
+                    Warnings.Add($"Sounds.{nameof(GetAudioClipsAsync)} 1 : {ex}");
                 }
 
                 try {
@@ -170,62 +172,82 @@ namespace oomtm450PuckMod_Sounds {
                     }
                 }
                 catch (Exception ex) {
-                    Warnings.Add($"Sounds.{nameof(GetAudioClips)} 2 : {ex}");
+                    Warnings.Add($"Sounds.{nameof(GetAudioClipsAsync)} 2 : {ex}");
                 }
 
                 if (tryGetFiles)
-                    yield return null;
+                    await Awaitable.NextFrameAsync(cancellationToken);
             }
 
             foreach (string file in files) {
                 string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
                 if (Path.GetExtension(filePath).ToLowerInvariant() != SOUND_EXTENSION) {
-                    yield return null;
+                    await Awaitable.NextFrameAsync(cancellationToken);
                     continue;
                 }
 
-                UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS);
-                yield return webRequest.SendWebRequest();
-                yield return null;
+                using (UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS)) {
+                    DownloadHandlerAudioClip downloadHandler = (DownloadHandlerAudioClip)webRequest.downloadHandler;
 
-                if (webRequest.result != UnityWebRequest.Result.Success)
-                    Warnings.Add(webRequest.error);
-                else {
-                    try {
-                        AudioClip clip = DownloadHandlerAudioClip.GetContent(webRequest);
-                        if (!clip) {
-                            Errors.Add($"Sounds.{nameof(GetAudioClips)} clip null.");
-                            continue;
-                        }
+                    downloadHandler.streamAudio = true;
 
-                        clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
+                    var asyncOp = webRequest.SendWebRequest();
 
-                        if (!currentConfig.TryGetValue(clip.name, out SoundSettings clipSettings)) {
-                            clipSettings = new SoundSettings {
-                                Weight = DEFAULT_SOUND_WEIGHT,
-                                Volume = DEFAULT_SOUND_VOLUME,
-                                Delay = DEFAULT_SOUND_DELAY,
-                            };
-                            currentConfig.Add(clip.name, clipSettings);
-                        }
+                    while (!asyncOp.isDone) {
+                        if (cancellationToken.IsCancellationRequested)
+                            return;
 
-                        if (clipSettings.Weight <= 0)
-                            continue;
-
-                        DontDestroyOnLoad(clip);
-                        _audioClips.Add(clip);
-
-                        AddClipNameToCorrectList(clip.name, (int)clipSettings.Weight);
+                        await Awaitable.NextFrameAsync(cancellationToken);
                     }
-                    catch (Exception ex) {
-                        Errors.Add($"Sounds.{nameof(GetAudioClips)} 3 : {ex}");
+
+                    if (webRequest.result != UnityWebRequest.Result.Success)
+                        Warnings.Add(webRequest.error);
+                    else {
+                        try {
+                            await Awaitable.BackgroundThreadAsync();
+
+                            AudioClip clip = downloadHandler.audioClip;
+
+                            await Awaitable.MainThreadAsync();
+
+                            if (!clip) {
+                                Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} clip null.");
+                                continue;
+                            }
+
+                            clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
+
+                            if (!currentConfig.TryGetValue(clip.name, out SoundSettings clipSettings)) {
+                                clipSettings = new SoundSettings {
+                                    Weight = DEFAULT_SOUND_WEIGHT,
+                                    Volume = DEFAULT_SOUND_VOLUME,
+                                    Delay = DEFAULT_SOUND_DELAY,
+                                };
+                                currentConfig.Add(clip.name, clipSettings);
+                            }
+
+                            if (clipSettings.Weight <= 0)
+                                continue;
+
+                            DontDestroyOnLoad(clip);
+                            _audioClips.Add(clip);
+
+                            AddClipNameToCorrectList(clip.name, (int)clipSettings.Weight);
+                        }
+                        catch (Exception ex) {
+                            Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} 3 : {ex}");
+
+                            // Safeguard: Ensure you are returned to the main thread even if a failure occurs
+                            await Awaitable.MainThreadAsync();
+                            return;
+                        }
                     }
                 }
 
-                yield return null;
+                await Awaitable.NextFrameAsync(cancellationToken);
             }
 
-            yield return null;
+            await Awaitable.NextFrameAsync(cancellationToken);
 
             try {
                 foreach (string key in currentConfig.Keys)
@@ -235,17 +257,17 @@ namespace oomtm450PuckMod_Sounds {
                     File.WriteAllText(jsonPath, currentConfig.ToDictionary((x) => x.Key, (x) => x.Value).ToJSON());
             }
             catch (Exception ex) {
-                Warnings.Add($"Sounds.{nameof(GetAudioClips)} 4 : {ex}");
+                Warnings.Add($"Sounds.{nameof(GetAudioClipsAsync)} 4 : {ex}");
             }
 
-            yield return null;
+            await Awaitable.NextFrameAsync(cancellationToken);
 
             try {
                 if (setCustomGoalHorns)
                     SetGoalHorns();
             }
             catch (Exception ex) {
-                Errors.Add($"Sounds.{nameof(GetAudioClips)} 5 : {ex}");
+                Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} 5 : {ex}");
             }
 
             try {
@@ -253,7 +275,7 @@ namespace oomtm450PuckMod_Sounds {
                 ReorderAllLists();
             }
             catch (Exception ex) {
-                Errors.Add($"Sounds.{nameof(GetAudioClips)} 6 : {ex}");
+                Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} 6 : {ex}");
             }
 
             IsLoading = false;
