@@ -390,6 +390,7 @@ namespace oomtm450PuckMod_Stats {
         /// Class that patches the ScoreGoal event from BaseGameMode.
         /// </summary>
         [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "ScoreGoal")]
+        [HarmonyPriority(Priority.VeryLow)]
         public class BaseGameMode_ScoreGoal_Patch {
             [HarmonyPrefix]
             public static bool Prefix(PlayerTeam byTeam, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
@@ -414,33 +415,24 @@ namespace oomtm450PuckMod_Stats {
                                 secondAssistPlayer = null;
                         }
                         SendSavePercDuringGoal(byTeam, SendSOGDuringGoal(goalPlayer));
-                        return true;
                     }
+                    else {
+                        // If own goal, add goal attribution to last player on puck on the other team.
+                        ChatManager.Instance.Server_BroadcastChatMessage($"OWN GOAL BY {PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(byTeam)].SteamId).Username.Value}");
+                        goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam].SteamId).FirstOrDefault();
 
-                    // If own goal, add goal attribution to last player on puck on the other team.
-                    ChatManager.Instance.Server_BroadcastChatMessage($"OWN GOAL BY {PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(byTeam)].SteamId).Username.Value}");
-                    goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam].SteamId).FirstOrDefault();
+                        bool saveWasCounted = false;
+                        if (goalPlayer != null)
+                            saveWasCounted = SendSOGDuringGoal(goalPlayer);
 
-                    bool saveWasCounted = false;
-                    if (goalPlayer != null)
-                        saveWasCounted = SendSOGDuringGoal(goalPlayer);
-
-                    SendSavePercDuringGoal(byTeam, saveWasCounted);
+                        SendSavePercDuringGoal(byTeam, saveWasCounted);
+                    }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Prefix() 1.\n{ex}", ServerConfig);
                 }
 
-                return true;
-            }
-
-            [HarmonyPostfix]
-            public static void Postfix(PlayerTeam byTeam, Player goalPlayer, Player assistPlayer, Player secondAssistPlayer, Puck puck) {
                 try {
-                    // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer())
-                        return;
-
                     foreach (Player player in PlayerManager.Instance.GetPlayers()) {
                         if (!PlayerFunc.IsPlayerPlaying(player) || PlayerFunc.IsGoalie(player))
                             continue;
@@ -477,8 +469,10 @@ namespace oomtm450PuckMod_Stats {
                         assistsList.Add(secondAssistPlayer.SteamId.Value.ToString());
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Postfix() 2.\n{ex}", ServerConfig);
                 }
+
+                return true;
             }
         }
 
@@ -602,11 +596,11 @@ namespace oomtm450PuckMod_Stats {
         [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "OnVoteRemoved")]
         public class BaseGameMode_OnVoteRemoved_Patch {
             [HarmonyPrefix]
-            public static void Prefix(Vote vote) {
+            public static bool Prefix(Vote vote) {
                 try {
                     // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || !vote.Passed)
-                        return;
+                        return true;
 
                     // Don't re-emit the EOG if the game already ended (a vote passing after GameOver would duplicate it).
                     // "forfeit" is excluded: ForfeitGame already sets GameOver, which emits the EOG — listing it here would double-emit.
@@ -617,6 +611,8 @@ namespace oomtm450PuckMod_Stats {
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(BaseGameMode_OnVoteRemoved_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
+
+                return true;
             }
         }
 
