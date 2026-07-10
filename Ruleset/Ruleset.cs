@@ -4073,10 +4073,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                 Logging.Log($"Enabling...", ServerConfig, true);
 
-                if (Application.version != Codebase.Constants.CURRENT_APPLICATION_VERSION) {
-                    Logging.Log($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION}. Mod will not be enabled.", ServerConfig);
-                    return false;
-                }
+                if (Application.version != Codebase.Constants.CURRENT_APPLICATION_VERSION)
+                    Logging.LogWarning($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION} !", ServerConfig);
 
                 _harmony.PatchAll();
 
