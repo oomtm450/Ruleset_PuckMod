@@ -605,7 +605,8 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     DateTime now = DateTime.UtcNow;
-                    _puckDeflectedDateTimeSinceLastTouch = now;
+                    if (collision.gameObject.name != "Bottom Collider")
+                        _puckDeflectedDateTimeSinceLastTouch = now;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
@@ -719,7 +720,8 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     DateTime now = DateTime.UtcNow;
-                    _puckDeflectedDateTimeSinceLastTouch = now;
+                    if (collision.gameObject.name != "Bottom Collider")
+                        _puckDeflectedDateTimeSinceLastTouch = now;
 
                     //if (!__instance.IsTouchingStick)
                         //return;
