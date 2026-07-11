@@ -181,7 +181,7 @@ namespace oomtm450PuckMod_Stats {
         private static float _arenaScaleZ = 1f;
 
         private static float _arenaOffsetX = 0;
-        private static float _arenaOffsetY = 0;
+        internal static float ArenaOffsetY { get; set; } = 0;
         private static float _arenaOffsetZ = 0;
 
         /// <summary>
@@ -1087,7 +1087,7 @@ namespace oomtm450PuckMod_Stats {
                     _lastTeamOnPuckTipIncluded = stick.Player.Team;
 
                     if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                        __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight + _arenaOffsetY)) {
+                        __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight + ArenaOffsetY)) {
                         //_lastTeamOnPuck = stick.Player.Team;
                         _lastPlayerOnPuckSteamId[stick.Player.Team] = (playerSteamId, DateTime.UtcNow);
                     }
@@ -1486,7 +1486,7 @@ namespace oomtm450PuckMod_Stats {
 
                         case "ArenaOffsetY":
                             double arenaOffsetY = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
-                            _arenaOffsetY = (float)arenaOffsetY;
+                            ArenaOffsetY = (float)arenaOffsetY;
                             break;
 
                         case "ArenaOffsetZ":

@@ -7,11 +7,11 @@ namespace oomtm450PuckMod_Stats {
     /// Class containing code for the puck raycasts with the goal trigger to know if the puck is going towards the net or not.
     /// </summary>
     internal class PuckRaycast : MonoBehaviour {
-        private const int CHECK_EVERY_X_FRAMES = 6;
-        //private readonly Vector3 TOP_VECTOR = new Vector3(0, 0.175f, 0);
-        private readonly Vector3 ABOVE_GROUND_VECTOR = new Vector3(0, 0.001f, 0);
+        private const int CHECK_EVERY_X_FRAMES = 4;
+        //private Vector3 TOP_VECTOR = new Vector3(0, 0.175f, 0);
+        private Vector3 ABOVE_GROUND_VECTOR = new Vector3(0, 0.001f, 0);
         private readonly float RIGHT_OFFSET = Codebase.Constants.PUCK_RADIUS + 0.02f;
-        private readonly Vector3 BOTTOM_VECTOR = new Vector3(0, -0.6f, 0);
+        private Vector3 BOTTOM_VECTOR = new Vector3(0, -0.6f, 0);
         private readonly LayerMask _goalTriggerlayerMask = GetLayerMask("Goal Trigger"); // 15
 
         private Ray _rayBottomLeft;
@@ -26,8 +26,8 @@ namespace oomtm450PuckMod_Stats {
         private Ray _rayFarBottomRight;
         //private LineRenderer _lineRendererFarBottomRight;
 
-        //private readonly Material _noHitMaterial = new Material(Shader.Find("Shader Graphs/Stick Shader"));
-        //private readonly Material _hitMaterial = new Material(Shader.Find("Shader Graphs/Stick Simple"));
+        //private Material _noHitMaterial;
+        //private Material _hitMaterial;
 
         private Vector3 _startingPosition;
 
@@ -39,20 +39,34 @@ namespace oomtm450PuckMod_Stats {
         };
 
         internal void Start() {
-            /*_lineRendererBottomLeft = CreateLineRenderer();
+            ABOVE_GROUND_VECTOR = new Vector3(ABOVE_GROUND_VECTOR.x, ABOVE_GROUND_VECTOR.y + Stats.ArenaOffsetY, ABOVE_GROUND_VECTOR.z);
+            BOTTOM_VECTOR = new Vector3(BOTTOM_VECTOR.x, BOTTOM_VECTOR.y + Stats.ArenaOffsetY, BOTTOM_VECTOR.z);
+            //TOP_VECTOR = new Vector3(TOP_VECTOR.x, TOP_VECTOR.y + Stats.ArenaOffsetY, TOP_VECTOR.z);
+
+            /*Shader testShader = Shader.Find("Universal Render Pipeline/Lit");
+            if (testShader == null)
+                testShader = Shader.Find("HDRP/Lit");
+
+            _noHitMaterial = new Material(testShader);
+            _noHitMaterial.color = Color.white;
+
+            _hitMaterial = new Material(testShader);
+            _hitMaterial.color = Color.red;
+
+            _lineRendererBottomLeft = CreateLineRenderer();
             _lineRendererBottomRight = CreateLineRenderer();
             _lineRendererFarBottomLeft = CreateLineRenderer();
             _lineRendererFarBottomRight = CreateLineRenderer();*/
 
             ResetStartingPosition();
             _increment = CHECK_EVERY_X_FRAMES - 1;
-            Update();
+            FixedUpdate();
         }
 
         /// <summary>
         /// Method that updates every frame to check for collision with the puck's raycasts and a goal trigger.
         /// </summary>
-        internal void Update() {
+        internal void FixedUpdate() {
             if (++_increment == CHECK_EVERY_X_FRAMES) {
                 foreach (PlayerTeam key in new List<PlayerTeam>(PuckIsGoingToNet.Keys))
                     PuckIsGoingToNet[key] = false;
@@ -112,27 +126,26 @@ namespace oomtm450PuckMod_Stats {
                             return;
                         /*else {
                             _lineRendererFarBottomRight.material = _hitMaterial;
-                            //Logging.Log("Far bottom right ray has hit !", Stats.ServerConfig, true);
+                            Logging.Log("Far bottom right ray has hit !", Stats.ServerConfig, true);
                         }*/
                     }
                     /*else {
                         _lineRendererFarBottomLeft.material = _hitMaterial;
-                        //Logging.Log("Far bottom left ray has hit !", Stats.ServerConfig, true);
+                        Logging.Log("Far bottom left ray has hit !", Stats.ServerConfig, true);
                     }*/
                 }
                 /*else {
                     _lineRendererBottomRight.material = _hitMaterial;
-                    //Logging.Log("Bottom right ray has hit !", Stats.ServerConfig, true);
+                    Logging.Log("Bottom right ray has hit !", Stats.ServerConfig, true);
                 }*/
             }
             /*else {
                 _lineRendererBottomLeft.material = _hitMaterial;
-                //Logging.Log("Bottom left ray has hit !", Stats.ServerConfig, true);
+                Logging.Log("Bottom left ray has hit !", Stats.ServerConfig, true);
             }*/
 
             Goal goal = SystemFunc.GetPrivateField<Goal>(typeof(GoalTrigger), hit.collider.gameObject.GetComponent<GoalTrigger>(), "goal");
-            PlayerTeam team = SystemFunc.GetPrivateField<PlayerTeam>(typeof(Goal), goal, "Team");
-            PuckIsGoingToNet[team] = hasHit;
+            PuckIsGoingToNet[goal.Team] = hasHit;
         }
 
         private static LayerMask GetLayerMask(string layerName) {

@@ -436,12 +436,18 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!unpenalizeOnePlayer)
                     return false;
 
-                KeyValuePair<string, LockList<Penalty>> _penalties = PenalizedPlayers.Where(x => x.Value.Count == 1 && x.Value.First().Team == penalizedPlayer.Team).OrderBy(x => x.Value.Min(y => y.Timer.MillisecondsLeft)).FirstOrDefault();
-                if (_penalties.Equals(default(KeyValuePair<string, LockList<Penalty>>)))
+                var _penaltiesLINQ = PenalizedPlayers.Where(x => x.Value.Count == 1 && x.Value.First().Team == penalizedPlayer.Team).OrderBy(x => x.Value.Min(y => y.Timer.MillisecondsLeft));
+                if (!_penaltiesLINQ.Any())
                     return false;
 
-                Player _playerToUnpenalize = teamPlayers.FirstOrDefault(x => x.SteamId.Value.ToString() == _penalties.Key);
-                if (_playerToUnpenalize == null || _playerToUnpenalize.Equals(default(Player)))
+                KeyValuePair<string, LockList<Penalty>> _penalties = _penaltiesLINQ.First();
+
+                var _playerToUnpenalizeLINQ = teamPlayers.Where(x => x.SteamId.Value.ToString() == _penalties.Key);
+                if (!_playerToUnpenalizeLINQ.Any())
+                    return false;
+
+                Player _playerToUnpenalize = _playerToUnpenalizeLINQ.First();
+                if (_playerToUnpenalize == null || !_playerToUnpenalize)
                     return false;
 
                 RemoveOnePenalty(_playerToUnpenalize.Team);
