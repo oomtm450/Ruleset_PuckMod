@@ -165,7 +165,7 @@ namespace oomtm450PuckMod_Sounds {
             public static bool Prefix(GameState oldGameState, GameState newGameState) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || !_logic || oldGameState.Phase == newGameState.Phase || !ServerConfig.EnableMusic || ClientConfig.DisableMod)
+                    if (!ServerFunc.IsDedicatedServer() || !_logic || oldGameState.Phase == newGameState.Phase || !ServerConfig.EnableMusic)
                         return true;
 
                     if (newGameState.Phase == GamePhase.BlueScore) {
@@ -584,6 +584,18 @@ namespace oomtm450PuckMod_Sounds {
                     }
 
                     if (_extraSoundsToLoad.Count != 0 && _soundsSystem != null) {
+                        if (_soundsSystem.Errors.Count != 0) {
+                            Logging.LogError($"There was an error when initializing {nameof(_soundsSystem)}.", ClientConfig);
+                            foreach (string error in _soundsSystem.Errors)
+                                Logging.LogError(error, ClientConfig);
+                        }
+                        if (_soundsSystem.Warnings.Count != 0) {
+                            Logging.LogError($"There was a warning when initializing {nameof(_soundsSystem)}.", ClientConfig);
+                            foreach (string warning in _soundsSystem.Warnings)
+                                Logging.LogError(warning, ClientConfig);
+                        }
+                        _soundsSystem.Warnings.Clear();
+
                         string path = _extraSoundsToLoad.First();
                         if (_soundsSystem.LoadSounds(ClientConfig.CustomGoalHorns, path))
                             _extraSoundsToLoad.Remove(path);
@@ -1127,6 +1139,12 @@ namespace oomtm450PuckMod_Sounds {
                             foreach (string error in _soundsSystem.Errors)
                                 Logging.LogError(error, ClientConfig);
                         }
+                        if (_soundsSystem.Warnings.Count != 0) {
+                            Logging.LogError($"There was a warning when initializing {nameof(_soundsSystem)}.", ClientConfig);
+                            foreach (string warning in _soundsSystem.Warnings)
+                                Logging.LogError(warning, ClientConfig);
+                        }
+                        _soundsSystem.Warnings.Clear();
 
                         if (dataStr == Codebase.SoundsSystem.MUSIC) {
                             if (!string.IsNullOrEmpty(_currentMusicPlaying))
@@ -1153,7 +1171,7 @@ namespace oomtm450PuckMod_Sounds {
         }
 
         private static void PlayFaceoffMusic() {
-            if (!ServerConfig.EnableMusic || ClientConfig.DisableMod)
+            if (!ServerConfig.EnableMusic)
                 return;
 
             if (!_hasPlayedLastMinuteMusic && GameManager.Instance.Tick <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
