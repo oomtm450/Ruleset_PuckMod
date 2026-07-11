@@ -29,6 +29,11 @@ namespace oomtm450PuckMod_Sounds.Configs {
         public bool LogInfo { get; set; } = true;
 
         /// <summary>
+        /// Bool, true if the mod has to be disabled.
+        /// </summary>
+        public bool DisableMod { get; set; } = false;
+
+        /// <summary>
         /// Bool, true if the music must be played ingame.
         /// </summary>
         public bool Music { get; set; } = true;

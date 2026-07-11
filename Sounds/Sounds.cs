@@ -165,7 +165,7 @@ namespace oomtm450PuckMod_Sounds {
             public static bool Prefix(GameState oldGameState, GameState newGameState) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || !_logic || oldGameState.Phase == newGameState.Phase || !ServerConfig.EnableMusic)
+                    if (!ServerFunc.IsDedicatedServer() || !_logic || oldGameState.Phase == newGameState.Phase || !ServerConfig.EnableMusic || ClientConfig.DisableMod)
                         return true;
 
                     if (newGameState.Phase == GamePhase.BlueScore) {
@@ -327,7 +327,7 @@ namespace oomtm450PuckMod_Sounds {
             public static bool Prefix(SynchronizedAudio __instance, ref float volume, ref float pitch, ref bool isOneShot, int clipIndex, float time, bool fadeIn, float fadeInDuration, bool fadeOut, float fadeOutDuration, float duration, RpcParams rpcParams) {
                 try {
                     // If this is the server or the custom goal horns are turned off, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer() || !ClientConfig.CustomGoalHorns)
+                    if (ServerFunc.IsDedicatedServer() || !ClientConfig.CustomGoalHorns || ClientConfig.DisableMod)
                         return true;
 
                     AudioSource audioSource = SystemFunc.GetPrivateField<AudioSource>(typeof(SynchronizedAudio), __instance, "audioSource");
@@ -561,7 +561,7 @@ namespace oomtm450PuckMod_Sounds {
             public static void Postfix() {
                 try {
                     // If this is the server, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer() || NetworkManager.Singleton == null)
+                    if (ServerFunc.IsDedicatedServer() || NetworkManager.Singleton == null || ClientConfig.DisableMod)
                         return;
 
                     if (!_hasRegisteredWithNamedMessageHandler || !_serverHasResponded) {
@@ -747,7 +747,7 @@ namespace oomtm450PuckMod_Sounds {
                             break;
 
                         case Codebase.SoundsSystem.PLAY_SOUND:
-                            if (value == Codebase.SoundsSystem.FACEOFF_MUSIC && ServerConfig.EnableMusic)
+                            if (value == Codebase.SoundsSystem.FACEOFF_MUSIC)
                                 PlayFaceoffMusic();
                             break;
 
@@ -919,7 +919,7 @@ namespace oomtm450PuckMod_Sounds {
         /// Method that loads the assets for the client-side sounds.
         /// </summary>
         private static void LoadAssets() {
-            if (_soundsSystem == null) {
+            if (_soundsSystem == null && !ClientConfig.DisableMod) {
                 GameObject soundsGameObject = new GameObject(Constants.MOD_NAME + "_Sounds");
                 _soundsSystem = soundsGameObject.AddComponent<SoundsSystem>();
                 Logging.Log("SoundsSystem object was created.", ClientConfig);
@@ -994,7 +994,7 @@ namespace oomtm450PuckMod_Sounds {
                         break;
 
                     case Constants.SET_GOAL_HORN: // CLIENT-SIDE : Swap goal horn AudioSource clip for donor's chosen horn.
-                        if (_soundsSystem == null || !ClientConfig.CustomGoalHorns)
+                        if (_soundsSystem == null || !ClientConfig.CustomGoalHorns || ClientConfig.DisableMod)
                             break;
 
                         string[] setHornDataStrSplitted = dataStr.Split(';');
@@ -1006,7 +1006,7 @@ namespace oomtm450PuckMod_Sounds {
                         break;
 
                     case Constants.RESET_GOAL_HORN: // CLIENT-SIDE : Swap goal horn AudioSource clip for defaults horn.
-                        if (_soundsSystem == null || !ClientConfig.CustomGoalHorns)
+                        if (_soundsSystem == null || !ClientConfig.CustomGoalHorns || ClientConfig.DisableMod)
                             break;
 
                         _soundsSystem.SetGoalHorns();
@@ -1139,7 +1139,8 @@ namespace oomtm450PuckMod_Sounds {
                         break;
 
                     case Codebase.SoundsSystem.LOAD_EXTRA_SOUNDS:
-                        _extraSoundsToLoad.Add(dataStr);
+                        if (!ClientConfig.DisableMod)
+                            _extraSoundsToLoad.Add(dataStr);
                         break;
 
                     default:
@@ -1152,7 +1153,7 @@ namespace oomtm450PuckMod_Sounds {
         }
 
         private static void PlayFaceoffMusic() {
-            if (!ServerConfig.EnableMusic)
+            if (!ServerConfig.EnableMusic || ClientConfig.DisableMod)
                 return;
 
             if (!_hasPlayedLastMinuteMusic && GameManager.Instance.Tick <= 60 && GameManager.Instance.GameState.Value.Period == 3) {

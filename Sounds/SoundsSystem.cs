@@ -74,6 +74,9 @@ namespace oomtm450PuckMod_Sounds {
                 if (IsLoading)
                     return false;
 
+                if (Sounds.ClientConfig.DisableMod)
+                    return true;
+
                 IsLoading = true;
 
                 if (_audioClips.Count == 0)
@@ -137,6 +140,7 @@ namespace oomtm450PuckMod_Sounds {
             string[] files = Array.Empty<string>();
 
             bool tryGetFiles = true;
+            int tryGetFilesCount = 0;
             string jsonPath = "";
             Dictionary<string, SoundSettings> currentConfig = new Dictionary<string, SoundSettings>();
             bool currentConfigWasEmpty = false;
@@ -175,8 +179,14 @@ namespace oomtm450PuckMod_Sounds {
                     Warnings.Add($"Sounds.{nameof(GetAudioClipsAsync)} 2 : {ex}");
                 }
 
+                if (++tryGetFilesCount > 5) {
+                    IsLoading = false;
+                    Warnings.Add($"{nameof(tryGetFilesCount)} has gone over the threshold, check the other warnings.");
+                    return;
+                }
+
                 if (tryGetFiles)
-                    await Awaitable.NextFrameAsync(cancellationToken);
+                    await Awaitable.WaitForSecondsAsync(1f, cancellationToken);
             }
 
             foreach (string file in files) {
@@ -194,10 +204,12 @@ namespace oomtm450PuckMod_Sounds {
                     var asyncOp = webRequest.SendWebRequest();
 
                     while (!asyncOp.isDone) {
-                        if (cancellationToken.IsCancellationRequested)
+                        if (cancellationToken.IsCancellationRequested) {
+                            IsLoading = false;
                             return;
+                        }
 
-                        await Awaitable.NextFrameAsync(cancellationToken);
+                        await Awaitable.WaitForSecondsAsync(0.1f, cancellationToken);
                     }
 
                     if (webRequest.result != UnityWebRequest.Result.Success)
@@ -239,6 +251,7 @@ namespace oomtm450PuckMod_Sounds {
 
                             // Safeguard: Ensure you are returned to the main thread even if a failure occurs
                             await Awaitable.MainThreadAsync();
+                            IsLoading = false;
                             return;
                         }
                     }
