@@ -396,7 +396,50 @@ namespace oomtm450PuckMod_Stats {
             public static bool Prefix(PlayerTeam byTeam, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || RulesetModEnabled() || !_logic)
+                    if (!ServerFunc.IsDedicatedServer() || !_logic)
+                        return true;
+
+                    try {
+                        foreach (Player player in PlayerManager.Instance.GetPlayers()) {
+                            if (!PlayerFunc.IsPlayerPlaying(player) || PlayerFunc.IsGoalie(player))
+                                continue;
+
+                            string playerSteamId = player.SteamId.Value.ToString();
+                            if (!_plusMinus.TryGetValue(playerSteamId, out int _))
+                                _plusMinus.Add(playerSteamId, 0);
+
+                            if (player.Team == byTeam)
+                                _plusMinus[playerSteamId] += 1;
+                            else
+                                _plusMinus[playerSteamId] -= 1;
+
+                            NetworkCommunication.SendDataToAll(Codebase.Constants.PLUSMINUS + playerSteamId, _plusMinus[playerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                            LogPlusMinus(playerSteamId, _plusMinus[playerSteamId]);
+                        }
+
+                        LockList<string> goalsList, assistsList;
+
+                        if (byTeam == PlayerTeam.Blue) {
+                            goalsList = _blueGoals;
+                            assistsList = _blueAssists;
+                        }
+                        else {
+                            goalsList = _redGoals;
+                            assistsList = _redAssists;
+                        }
+
+                        if (goalPlayer != null)
+                            goalsList.Add(goalPlayer.SteamId.Value.ToString());
+                        if (assistPlayer != null)
+                            assistsList.Add(assistPlayer.SteamId.Value.ToString());
+                        if (secondAssistPlayer != null)
+                            assistsList.Add(secondAssistPlayer.SteamId.Value.ToString());
+                    }
+                    catch (Exception ex) {
+                        Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Prefix() 1.\n{ex}", ServerConfig);
+                    }
+
+                    if (RulesetModEnabled())
                         return true;
 
                     if (goalPlayer != null) {
@@ -429,47 +472,7 @@ namespace oomtm450PuckMod_Stats {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Prefix() 1.\n{ex}", ServerConfig);
-                }
-
-                try {
-                    foreach (Player player in PlayerManager.Instance.GetPlayers()) {
-                        if (!PlayerFunc.IsPlayerPlaying(player) || PlayerFunc.IsGoalie(player))
-                            continue;
-
-                        string playerSteamId = player.SteamId.Value.ToString();
-                        if (!_plusMinus.TryGetValue(playerSteamId, out int _))
-                            _plusMinus.Add(playerSteamId, 0);
-
-                        if (player.Team == byTeam)
-                            _plusMinus[playerSteamId] += 1;
-                        else
-                            _plusMinus[playerSteamId] -= 1;
-
-                        NetworkCommunication.SendDataToAll(Codebase.Constants.PLUSMINUS + playerSteamId, _plusMinus[playerSteamId].ToString(), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                        LogPlusMinus(playerSteamId, _plusMinus[playerSteamId]);
-                    }
-
-                    LockList<string> goalsList, assistsList;
-
-                    if (byTeam == PlayerTeam.Blue) {
-                        goalsList = _blueGoals;
-                        assistsList = _blueAssists;
-                    }
-                    else {
-                        goalsList = _redGoals;
-                        assistsList = _redAssists;
-                    }
-
-                    if (goalPlayer != null)
-                        goalsList.Add(goalPlayer.SteamId.Value.ToString());
-                    if (assistPlayer != null)
-                        assistsList.Add(assistPlayer.SteamId.Value.ToString());
-                    if (secondAssistPlayer != null)
-                        assistsList.Add(secondAssistPlayer.SteamId.Value.ToString());
-                }
-                catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Postfix() 2.\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Prefix() 2.\n{ex}", ServerConfig);
                 }
 
                 return true;
