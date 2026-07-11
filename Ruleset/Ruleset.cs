@@ -568,14 +568,10 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsHighStick(stick.Player.Team)) {
                         Puck puck = PuckManager.Instance.GetPuck();
                         if (puck && puck.Rigidbody.transform.position.y < PuckRadius + _arenaOffsetY) {
-                            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team, Rule.HighStick, _puckLastStateBeforeCall[Rule.HighStick]);
-
                             _isHighStickActiveTimers.TryGetValue(stick.Player.Team, out Timer highStickTimer);
                             highStickTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
-                            SendChat(Rule.HighStick, stick.Player.Team, true);
-                            _lastStoppageReason = Rule.HighStick;
-                            DoFaceoff(RefSignals.GetSignalConstant(true, stick.Player.Team), RefSignals.HIGHSTICK_REF);
+                            CallHighStick(stick.Player.Team);
                         }
                     }
 
