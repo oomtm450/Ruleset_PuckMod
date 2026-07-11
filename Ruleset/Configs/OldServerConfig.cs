@@ -72,6 +72,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true the mod has to log all phase changes and stoppages.
         /// </summary>
         public bool LogPhaseChangeAndStoppage { get; } = true;
+
+        /// <summary>
+        /// Bool, true if the glass barriers has to be lowered.
+        /// </summary>
+        public bool LowerBarriers { get; } = true;
         #endregion
 
         #region Methods/Functions
@@ -278,13 +283,13 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
-        public Dictionary<Zone, float> MaxPossibleTime { get; } = new Dictionary<Zone, float> { // TODO : Change after release.
-            { Zone.BlueTeam_BehindGoalLine, 9500f },
-            { Zone.RedTeam_BehindGoalLine, 9500f },
-            { Zone.BlueTeam_Zone, 7750f },
-            { Zone.RedTeam_Zone, 7750f },
-            { Zone.BlueTeam_Center, 5500f },
-            { Zone.RedTeam_Center, 5500f },
+        public Dictionary<Codebase.Zone, float> MaxPossibleTime { get; } = new Dictionary<Codebase.Zone, float> { // TODO : Change after release.
+            { Codebase.Zone.BlueTeam_BehindGoalLine, 9500f },
+            { Codebase.Zone.RedTeam_BehindGoalLine, 9500f },
+            { Codebase.Zone.BlueTeam_Zone, 7750f },
+            { Codebase.Zone.RedTeam_Zone, 7750f },
+            { Codebase.Zone.BlueTeam_Center, 5500f },
+            { Codebase.Zone.RedTeam_Center, 5500f },
         };
 
         /// <summary>

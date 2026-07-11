@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Stats {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.7.5";
+        private static readonly string MOD_VERSION = "0.8.0";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -43,6 +43,7 @@ namespace oomtm450PuckMod_Stats {
             "0.7.3",
             "0.7.3a",
             "0.7.4",
+            "0.7.5",
         });
 
         /// <summary>
@@ -198,6 +199,21 @@ namespace oomtm450PuckMod_Stats {
         private static readonly LockList<string> _playersTeamToRemoveAfterGame = new LockList<string>();
 
         /// <summary>
+        /// LockDictionary of string and double, accumulated live-play time-on-ice in seconds per player (steamId). Reset each game.
+        /// </summary>
+        private static readonly LockDictionary<string, double> _toiSeconds = new LockDictionary<string, double>();
+
+        /// <summary>
+        /// LockDictionary of string and DateTime, UTC time each currently-accruing player (steamId) started their on-ice stint. Its keys are the players accruing right now (on the ice and GamePhase.Play).
+        /// </summary>
+        private static readonly LockDictionary<string, DateTime> _accruingSince = new LockDictionary<string, DateTime>();
+
+        /// <summary>
+        /// DateTime, UTC time the current match started (set at PreGame).
+        /// </summary>
+        private static DateTime _matchStartUtc = DateTime.MinValue;
+
+        /// <summary>
         /// LockDictionary of ulong and DateTime, last time a mod out of date message was sent to a client (ulong clientId).
         /// </summary>
         private static readonly LockDictionary<ulong, DateTime> _sentOutOfDateMessage = new LockDictionary<ulong, DateTime>();
@@ -310,6 +326,8 @@ namespace oomtm450PuckMod_Stats {
 
         private static readonly LockDictionary<string, int> _plusMinus = new LockDictionary<string, int>();
 
+        private static readonly LockDictionary<string, (int Count, DateTime LastPostDateTime)> _posts = new LockDictionary<string, (int, DateTime)>();
+
         // Client-side.
         /// <summary>
         /// ClientConfig, config set by the client.
@@ -372,6 +390,7 @@ namespace oomtm450PuckMod_Stats {
         /// Class that patches the ScoreGoal event from BaseGameMode.
         /// </summary>
         [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "ScoreGoal")]
+        [HarmonyPriority(Priority.VeryLow)]
         public class BaseGameMode_ScoreGoal_Patch {
             [HarmonyPrefix]
             public static bool Prefix(PlayerTeam byTeam, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
@@ -396,33 +415,24 @@ namespace oomtm450PuckMod_Stats {
                                 secondAssistPlayer = null;
                         }
                         SendSavePercDuringGoal(byTeam, SendSOGDuringGoal(goalPlayer));
-                        return true;
                     }
+                    else {
+                        // If own goal, add goal attribution to last player on puck on the other team.
+                        ChatManager.Instance.Server_BroadcastChatMessage($"OWN GOAL BY {PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(byTeam)].SteamId).Username.Value}");
+                        goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam].SteamId).FirstOrDefault();
 
-                    // If own goal, add goal attribution to last player on puck on the other team.
-                    ChatManager.Instance.Server_BroadcastChatMessage($"OWN GOAL BY {PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(byTeam)].SteamId).Username.Value}");
-                    goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam].SteamId).FirstOrDefault();
+                        bool saveWasCounted = false;
+                        if (goalPlayer != null)
+                            saveWasCounted = SendSOGDuringGoal(goalPlayer);
 
-                    bool saveWasCounted = false;
-                    if (goalPlayer != null)
-                        saveWasCounted = SendSOGDuringGoal(goalPlayer);
-
-                    SendSavePercDuringGoal(byTeam, saveWasCounted);
+                        SendSavePercDuringGoal(byTeam, saveWasCounted);
+                    }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Prefix() 1.\n{ex}", ServerConfig);
                 }
 
-                return true;
-            }
-
-            [HarmonyPostfix]
-            public static void Postfix(PlayerTeam byTeam, Player goalPlayer, Player assistPlayer, Player secondAssistPlayer, Puck puck) {
                 try {
-                    // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer())
-                        return;
-
                     foreach (Player player in PlayerManager.Instance.GetPlayers()) {
                         if (!PlayerFunc.IsPlayerPlaying(player) || PlayerFunc.IsGoalie(player))
                             continue;
@@ -459,8 +469,10 @@ namespace oomtm450PuckMod_Stats {
                         assistsList.Add(secondAssistPlayer.SteamId.Value.ToString());
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Postfix() 2.\n{ex}", ServerConfig);
                 }
+
+                return true;
             }
         }
 
@@ -494,7 +506,24 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix(GameState oldGameState, GameState newGameState) {
                 try {
                     // If this is not the server, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || oldGameState.Phase == newGameState.Phase || (newGameState.Phase != GamePhase.PreGame && newGameState.Phase != GamePhase.Warmup))
+                    if (!ServerFunc.IsDedicatedServer() || oldGameState.Phase == newGameState.Phase)
+                        return;
+
+                    // Live-play time-on-ice, accrue only while the game clock is running (Play).
+                    if (newGameState.Phase == GamePhase.Play) {
+                        // Entering live play, start every player currently on the ice.
+                        foreach (Player _p in PlayerManager.Instance.GetPlayers()) {
+                            if (_p == null || !_p)
+                                continue;
+                            if (PlayerFunc.IsPlayerPlaying(_p))
+                                TOIStart(_p.SteamId.Value.ToString());
+                        }
+                    }
+                    // Leaving live play (stoppage, period or GameOver), bank everyone.
+                    else if (oldGameState.Phase == GamePhase.Play)
+                        TOIBankAll();
+
+                    if (newGameState.Phase != GamePhase.PreGame && newGameState.Phase != GamePhase.Warmup)
                         return;
 
                     // Reset s%.
@@ -524,11 +553,21 @@ namespace oomtm450PuckMod_Stats {
                     // Reset +/-.
                     _plusMinus.Clear();
 
+                    // Reset posts.
+                    _posts.Clear();
+
                     // Reset goal and assists trackers.
                     _blueGoals.Clear();
                     _blueAssists.Clear();
                     _redGoals.Clear();
                     _redAssists.Clear();
+
+                    // Reset time-on-ice and stamp the match start. Runs at Warmup/PreGame (the new game forming);
+                    // PreGame overwrites Warmup in the normal flow, and stamping at Warmup too covers a game that
+                    // reaches Play without a PreGame transition being seen.
+                    _toiSeconds.Clear();
+                    _accruingSince.Clear();
+                    _matchStartUtc = DateTime.UtcNow;
 
                     // Reset last possession.
                     _lastPossession = new Possession();
@@ -557,18 +596,23 @@ namespace oomtm450PuckMod_Stats {
         [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "OnVoteRemoved")]
         public class BaseGameMode_OnVoteRemoved_Patch {
             [HarmonyPrefix]
-            public static void Prefix(Vote vote) {
+            public static bool Prefix(Vote vote) {
                 try {
                     // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || !vote.Passed)
-                        return;
+                        return true;
 
-                    if (GameManager.Instance.Period >= 3 && (vote.Name == "start" || vote.Name == "warmup" || vote.Name == "forfeit"))
-                        CreateEOGJson(GameManager.Instance.BlueScore, GameManager.Instance.RedScore);
+                    // Don't re-emit the EOG if the game already ended (a vote passing after GameOver would duplicate it).
+                    // "forfeit" is excluded: ForfeitGame already sets GameOver, which emits the EOG — listing it here would double-emit.
+                    if (GameManager.Instance.Period >= 3 && (vote.Name == "start" || vote.Name == "warmup") &&
+                        GameManager.Instance.Phase != GamePhase.GameOver && GameManager.Instance.Phase != GamePhase.PostGame)
+                        CreateEOGJson(GameManager.Instance.BlueScore, GameManager.Instance.RedScore, GameManager.Instance.Period);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(BaseGameMode_OnVoteRemoved_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
+
+                return true;
             }
         }
 
@@ -793,7 +837,35 @@ namespace oomtm450PuckMod_Stats {
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
                         PlayerBody playerBody = SystemFunc.GetPlayerBody(collision.gameObject);
-                        if (!playerBody || !playerBody.Player)
+                        if (!playerBody) {
+                            if (collision.gameObject.name == "Goal Post") { // Post stat.
+                                string lastPlayerOnPuckTipIncludedSteamId = _lastPlayerOnPuckTipIncludedSteamId[_lastTeamOnPuckTipIncluded].SteamId;
+
+                                if (string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId))
+                                    return;
+
+                                if (!_posts.TryGetValue(lastPlayerOnPuckTipIncludedSteamId, out (int, DateTime) _))
+                                    _posts.Add(lastPlayerOnPuckTipIncludedSteamId, (0, DateTime.MinValue));
+
+                                DateTime now = DateTime.UtcNow;
+
+                                if ((now - _posts[lastPlayerOnPuckTipIncludedSteamId].LastPostDateTime) < TimeSpan.FromMilliseconds(ServerConfig.PostThresholdMilliseconds)) {
+                                    _posts[lastPlayerOnPuckTipIncludedSteamId] = (_posts[lastPlayerOnPuckTipIncludedSteamId].Count, now);
+                                    return;
+                                }
+
+                                _posts[lastPlayerOnPuckTipIncludedSteamId] = (_posts[lastPlayerOnPuckTipIncludedSteamId].Count + 1, now);
+                                NetworkCommunication.SendDataToAll(Codebase.Constants.POST + lastPlayerOnPuckTipIncludedSteamId, _posts[lastPlayerOnPuckTipIncludedSteamId].ToString(),
+                                    Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+
+                                LogPost(lastPlayerOnPuckTipIncludedSteamId, _posts[lastPlayerOnPuckTipIncludedSteamId].Count);
+                                return;
+                            }
+
+                            return;
+                        }
+
+                        if (!playerBody.Player)
                             return;
 
                         player = playerBody.Player;
@@ -1059,13 +1131,13 @@ namespace oomtm450PuckMod_Stats {
 
                     string instancePlayerSteamId = __instance.Player.SteamId.Value.ToString();
 
-                    if (!collisionPlayerBodyIsDown && (collisionPlayerBody.HasFallen || collisionPlayerBody.HasSlipped)) {
+                    if (!collisionPlayerBodyIsDown && (collisionPlayerBody.HasFallen.Value || collisionPlayerBody.HasSlipped)) {
                         if (_playerIsDown.TryGetValue(collisionPlayerBodySteamId, out bool _))
                             _playerIsDown[collisionPlayerBodySteamId] = true;
                         else
                             _playerIsDown.Add(collisionPlayerBodySteamId, true);
 
-                        if (__instance.Player.PlayerBody.HasFallen || __instance.Player.PlayerBody.HasSlipped) {
+                        if (__instance.Player.PlayerBody.HasFallen.Value || __instance.Player.PlayerBody.HasSlipped) {
                             if (_playerIsDown.TryGetValue(instancePlayerSteamId, out bool _))
                                 _playerIsDown[instancePlayerSteamId] = true;
                             else
@@ -1077,7 +1149,7 @@ namespace oomtm450PuckMod_Stats {
                         ProcessHit(__instance.Player.SteamId.Value.ToString());
                     }
 
-                    if (__instance.Player.PlayerBody.HasFallen || __instance.Player.PlayerBody.HasSlipped) {
+                    if (__instance.Player.PlayerBody.HasFallen.Value || __instance.Player.PlayerBody.HasSlipped) {
                         if (_playerIsDown.TryGetValue(instancePlayerSteamId, out bool _))
                             _playerIsDown[instancePlayerSteamId] = true;
                         else
@@ -1162,8 +1234,9 @@ namespace oomtm450PuckMod_Stats {
                             watch.Stop();
                         _playersCurrentPuckTouch.Clear();
 
-                        if (phase == GamePhase.GameOver)
-                            CreateEOGJson(__instance.GameState.Value.BlueScore, __instance.GameState.Value.RedScore);
+                        // Only emit on a real transition into GameOver. The prefix sees the old phase, so a re-asserted GameOver is skipped.
+                        if (phase == GamePhase.GameOver && __instance.GameState.Value.Phase != GamePhase.GameOver)
+                            CreateEOGJson(__instance.GameState.Value.BlueScore, __instance.GameState.Value.RedScore, __instance.GameState.Value.Period);
                     }
                 }
                 catch (Exception ex) {
@@ -1242,10 +1315,8 @@ namespace oomtm450PuckMod_Stats {
 
                 Logging.Log($"Enabling...", ServerConfig, true);
 
-                if (Application.version != Codebase.Constants.CURRENT_APPLICATION_VERSION) {
-                    Logging.Log($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION}. Mod will not be enabled.", ServerConfig);
-                    return false;
-                }
+                if (Application.version != Codebase.Constants.CURRENT_APPLICATION_VERSION)
+                    Logging.LogWarning($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION} !", ServerConfig);
 
                 _harmony.PatchAll();
 
@@ -1270,6 +1341,7 @@ namespace oomtm450PuckMod_Stats {
                     EventManager.AddEventListener(nameof(Event_Everyone_OnClientConnected), Event_Everyone_OnClientConnected);
                     EventManager.AddEventListener(nameof(Event_Everyone_OnClientDisconnected), Event_Everyone_OnClientDisconnected);
                     EventManager.AddEventListener(nameof(Event_Everyone_OnPlayerGameStateChanged), Event_Everyone_OnPlayerGameStateChanged);
+                    EventManager.AddEventListener(nameof(Event_Everyone_OnPlayerBodySpawned), Event_Everyone_OnPlayerBodySpawned);
                     EventManager.AddEventListener(Codebase.Constants.STATS_MOD_NAME, Event_OnStatsTrigger);
                     EventManager.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     EventManager.AddEventListener("Event_CompetitiveAdjustments_OnArenaSync", Event_CompetitiveAdjustments_OnArenaSync);
@@ -1302,9 +1374,10 @@ namespace oomtm450PuckMod_Stats {
                 Logging.Log("Unsubscribing from events.", ServerConfig, true);
                 NetworkCommunication.RemoveFromNotLogList(DATA_NAMES_TO_IGNORE);
                 if (ServerFunc.IsDedicatedServer()) {
-                    EventManager.RemoveEventListener("Event_Everyone_OnClientConnected", Event_Everyone_OnClientConnected);
-                    EventManager.RemoveEventListener("Event_Everyone_OnClientDisconnected", Event_Everyone_OnClientDisconnected);
-                    EventManager.RemoveEventListener("Event_Everyone_OnPlayerGameStateChanged", Event_Everyone_OnPlayerGameStateChanged);
+                    EventManager.RemoveEventListener(nameof(Event_Everyone_OnClientConnected), Event_Everyone_OnClientConnected);
+                    EventManager.RemoveEventListener(nameof(Event_Everyone_OnClientDisconnected), Event_Everyone_OnClientDisconnected);
+                    EventManager.RemoveEventListener(nameof(Event_Everyone_OnPlayerGameStateChanged), Event_Everyone_OnPlayerGameStateChanged);
+                    EventManager.RemoveEventListener(nameof(Event_Everyone_OnPlayerBodySpawned), Event_Everyone_OnPlayerBodySpawned);
                     EventManager.RemoveEventListener(Codebase.Constants.STATS_MOD_NAME, Event_OnStatsTrigger);
                     EventManager.RemoveEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     EventManager.RemoveEventListener("Event_CompetitiveAdjustments_OnArenaSync", Event_CompetitiveAdjustments_OnArenaSync);
@@ -1539,6 +1612,9 @@ namespace oomtm450PuckMod_Stats {
                 _playersCurrentPuckTouch.Remove(clientSteamId);
                 _lastTimeOnCollisionStayOrExitWasCalled.Remove(clientSteamId);
 
+                // Bank live-play time-on-ice for the leaving player (no-op if not currently accruing).
+                TOIBank(clientSteamId);
+
                 _playersInfoToRemoveAfterGame.Add(clientId);
                 _playersTeamToRemoveAfterGame.Add(clientSteamId);
             }
@@ -1575,6 +1651,7 @@ namespace oomtm450PuckMod_Stats {
                 _redGoals.Clear();
                 _redAssists.Clear();
                 _plusMinus.Clear();
+                _posts.Clear();
 
                 ScoreboardModifications(false);
             }
@@ -1594,6 +1671,16 @@ namespace oomtm450PuckMod_Stats {
                 PlayerGameState oldPlayerGameState = (PlayerGameState)message["oldGameState"];
 
                 string playerSteamId = player.SteamId.Value.ToString();
+
+                // Live-play time-on-ice, start when the player is playing and the clock is running, bank when they stop playing.
+                if (!string.IsNullOrEmpty(playerSteamId)) {
+                    if (PlayerFunc.IsPlayerPlaying(player)) {
+                        if (GameManager.Instance != null && GameManager.Instance.Phase == GamePhase.Play && !_accruingSince.TryGetValue(playerSteamId, out DateTime _))
+                            TOIStart(playerSteamId);
+                    }
+                    else
+                        TOIBank(playerSteamId);
+                }
 
                 if (newPlayerGameState.Team == PlayerTeam.Blue || newPlayerGameState.Team == PlayerTeam.Red) {
                     if (string.IsNullOrEmpty(playerSteamId))
@@ -1665,10 +1752,45 @@ namespace oomtm450PuckMod_Stats {
                 Logging.LogError($"Error in {nameof(Event_Everyone_OnPlayerGameStateChanged)}.\n{ex}", ServerConfig);
             }
         }
+
+        /// <summary>
+        /// Method called when a player's body has (re)spawned on the server-side. Re-seeds live-play time-on-ice
+        /// so a respawn during Play resumes accruing (goalie auto-switch respawn, mid-game join taking the ice,
+        /// team switch that respawns the body). A respawn is not a game state change, so OnPlayerGameStateChanged
+        /// does not fire for it. No-op if the player is already accruing.
+        /// </summary>
+        /// <param name="message">Dictionary of string and object, content of the event.</param>
+        public static void Event_Everyone_OnPlayerBodySpawned(Dictionary<string, object> message) {
+            if (!ServerFunc.IsDedicatedServer())
+                return;
+
+            try {
+                if (GameManager.Instance == null || GameManager.Instance.Phase != GamePhase.Play)
+                    return;
+
+                if (!message.TryGetValue("playerBody", out object playerBodyObj))
+                    return;
+
+                PlayerBody playerBody = playerBodyObj as PlayerBody;
+                if (!playerBody || !playerBody.Player)
+                    return;
+
+                Player player = playerBody.Player;
+                if (!PlayerFunc.IsPlayerPlaying(player))
+                    return;
+
+                string playerSteamId = player.SteamId.Value.ToString();
+                if (!string.IsNullOrEmpty(playerSteamId) && !_accruingSince.TryGetValue(playerSteamId, out DateTime _))
+                    TOIStart(playerSteamId);
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(Event_Everyone_OnPlayerBodySpawned)}.\n{ex}", ServerConfig);
+            }
+        }
         #endregion
 
         #region Methods/Functions
-        private static void CreateEOGJson(int blueScore, int redScore) {
+        private static void CreateEOGJson(int blueScore, int redScore, int lastPeriod) {
             string gwgSteamId = "";
             PlayerTeam winningTeam = PlayerTeam.None;
             try {
@@ -1699,7 +1821,7 @@ namespace oomtm450PuckMod_Stats {
 
                 if (PlayerFunc.IsGoalie(player)) {
                     if (_savePerc.TryGetValue(steamId, out var saveValues))
-                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.500d * ((double)saveValues.Saves) * 21d;
+                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.450d * ((double)saveValues.Saves) * 40d;
 
                     if (_sog.TryGetValue(steamId, out int shots))
                         starPoints[steamId] += ((double)shots) * 1d;
@@ -1716,7 +1838,7 @@ namespace oomtm450PuckMod_Stats {
                 }
                 else {
                     if (_sog.TryGetValue(steamId, out int shots)) {
-                        starPoints[steamId] += ((double)shots) * 5d;
+                        starPoints[steamId] += ((double)shots) * 4d;
                         starPoints[steamId] += (((double)(player.Goals.Value + 1)) / ((double)shots) - 0.25d) * ((double)shots) * 4d;
                     }
 
@@ -1727,7 +1849,7 @@ namespace oomtm450PuckMod_Stats {
                         starPoints[steamId] += ((double)blocks) * 5d;
 
                     const double SKATER_GOAL_MODIFIER = 70d;
-                    const double SKATER_ASSIST_MODIFIER = 30d;
+                    const double SKATER_ASSIST_MODIFIER = 55d;
 
                     starPoints[steamId] += SKATER_GOAL_MODIFIER * gwgModifier;
                     starPoints[steamId] += ((double)player.Goals.Value) * SKATER_GOAL_MODIFIER;
@@ -1735,16 +1857,19 @@ namespace oomtm450PuckMod_Stats {
                 }
 
                 if (_hits.TryGetValue(steamId, out int hits))
-                    starPoints[steamId] += ((double)hits) * 0.2d;
+                    starPoints[steamId] += ((double)hits) * 2d;
 
                 if (_takeaways.TryGetValue(steamId, out int takeaways))
-                    starPoints[steamId] += ((double)takeaways) * 0.2d;
+                    starPoints[steamId] += ((double)takeaways) * 0.3d;
 
                 if (_turnovers.TryGetValue(steamId, out int turnovers))
-                    starPoints[steamId] -= ((double)turnovers) * 0.2d;
+                    starPoints[steamId] -= ((double)turnovers) * 0.3d;
 
                 if (_plusMinus.TryGetValue(steamId, out int plusMinus))
-                    starPoints[steamId] += ((double)plusMinus) * 5d;
+                    starPoints[steamId] += ((double)plusMinus) * 4d;
+
+                if (_posts.TryGetValue(steamId, out (int Count, DateTime LastPostHit) posts))
+                    starPoints[steamId] += ((double)posts.Count) * 2d;
 
                 starPoints[steamId] *= teamModifier;
             }
@@ -1795,61 +1920,76 @@ namespace oomtm450PuckMod_Stats {
             foreach (var kvp in _sog)
                 sogDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
 
-            Dictionary<string, (string, int)> passesDict = new Dictionary<string, (string, int)>();
-            foreach (var kvp in _passes)
-                passesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-            Dictionary<string, (string, int)> blocksDict = new Dictionary<string, (string, int)>();
-            foreach (var kvp in _blocks)
-                blocksDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-            Dictionary<string, (string, int)> hitsDict = new Dictionary<string, (string, int)>();
-            foreach (var kvp in _hits)
-                hitsDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-            Dictionary<string, (string, int)> takeawaysDict = new Dictionary<string, (string, int)>();
-            foreach (var kvp in _takeaways)
-                takeawaysDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-            Dictionary<string, (string, int)> turnoversDict = new Dictionary<string, (string, int)>();
-            foreach (var kvp in _turnovers)
-                turnoversDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-            Dictionary<string, (string, (int, int))> savePercDict = new Dictionary<string, (string, (int, int))>();
-            foreach (var kvp in _savePerc)
-                savePercDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-            Dictionary<string, (string, int)> stickSavesDict = new Dictionary<string, (string, int)>();
-            foreach (var kvp in _stickSaves)
-                stickSavesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
-            List<string> blueGoalsDict = new List<string>();
-            foreach (var goalSteamId in _blueGoals)
-                blueGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
-
-            List<string> redGoalsDict = new List<string>();
-            foreach (var goalSteamId in _redGoals)
-                redGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
-
-            List<string> blueAssistsDict = new List<string>();
-            foreach (var assistSteamId in _blueAssists)
-                blueAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
-
-            List<string> redAssistsDict = new List<string>();
-            foreach (var assistSteamId in _redAssists)
-                redAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
-
-            Dictionary<int, (string, string)> starsDict = new Dictionary<int, (string, string)>();
-            foreach (var kvp in _stars)
-                starsDict.Add(kvp.Key, (kvp.Value, playersUsername.TryGetValue(kvp.Value, out string username) == true ? username : ""));
-
-            Dictionary<string, (string, int)> plusMinusDict = new Dictionary<string, (string, int)>();
-            foreach (var kvp in _plusMinus)
-                plusMinusDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
-
             if (sogDict.Count != 0) {
+                Dictionary<string, (string, int)> passesDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _passes)
+                    passesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                Dictionary<string, (string, int)> blocksDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _blocks)
+                    blocksDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                Dictionary<string, (string, int)> hitsDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _hits)
+                    hitsDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                Dictionary<string, (string, int)> takeawaysDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _takeaways)
+                    takeawaysDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                Dictionary<string, (string, int)> turnoversDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _turnovers)
+                    turnoversDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                Dictionary<string, (string, (int, int))> savePercDict = new Dictionary<string, (string, (int, int))>();
+                foreach (var kvp in _savePerc)
+                    savePercDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                Dictionary<string, (string, int)> stickSavesDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _stickSaves)
+                    stickSavesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                List<string> blueGoalsDict = new List<string>();
+                foreach (var goalSteamId in _blueGoals)
+                    blueGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
+
+                List<string> redGoalsDict = new List<string>();
+                foreach (var goalSteamId in _redGoals)
+                    redGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
+
+                List<string> blueAssistsDict = new List<string>();
+                foreach (var assistSteamId in _blueAssists)
+                    blueAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
+
+                List<string> redAssistsDict = new List<string>();
+                foreach (var assistSteamId in _redAssists)
+                    redAssistsDict.Add(assistSteamId + "," + (playersUsername.TryGetValue(assistSteamId, out string username) == true ? username : ""));
+
+                Dictionary<int, (string, string)> starsDict = new Dictionary<int, (string, string)>();
+                foreach (var kvp in _stars)
+                    starsDict.Add(kvp.Key, (kvp.Value, playersUsername.TryGetValue(kvp.Value, out string username) == true ? username : ""));
+
+                Dictionary<string, (string, int)> plusMinusDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _plusMinus)
+                    plusMinusDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
+                Dictionary<string, (string, int)> postsDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _posts)
+                    postsDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value.Count));
+
+                // Time-on-ice {steamId: (username, seconds)}, including any still-on-ice player up to now.
+                Dictionary<string, double> toiFinal = new Dictionary<string, double>();
+                foreach (var kvp in _toiSeconds)
+                    toiFinal[kvp.Key] = kvp.Value;
+                foreach (var kvp in _accruingSince)
+                    toiFinal[kvp.Key] = (toiFinal.TryGetValue(kvp.Key, out double previousSeconds) ? previousSeconds : 0) + (DateTime.UtcNow - kvp.Value).TotalSeconds;
+                Dictionary<string, (string, int)> timeOnIceDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in toiFinal)
+                    timeOnIceDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string toiUsername) ? toiUsername : "", (int)Math.Round(kvp.Value)));
+
                 // Log JSON for game stats.
                 Dictionary<string, object> jsonDict = new Dictionary<string, object> {
+                    { "server_name", ServerManager.Instance.ServerConfig.name },
                     { "steamIds", playersUsername },
                     { "teams", _playersTeam },
                     { "sog", sogDict },
@@ -1867,6 +2007,13 @@ namespace oomtm450PuckMod_Stats {
                     { "gwg", gwgSteamId + "," + (playersUsername.TryGetValue(gwgSteamId, out string gwgUsername) == true ? gwgUsername : "") },
                     { "stars", starsDict },
                     { "plusminus", plusMinusDict },
+                    { "posts", postsDict },
+                    { "time_on_ice", timeOnIceDict },
+                    { "blue_score", blueScore },
+                    { "red_score", redScore },
+                    { "last_period", lastPeriod },
+                    { "started_at", _matchStartUtc == DateTime.MinValue ? "" : _matchStartUtc.ToString("yyyy-MM-dd HH:mm:ss") },
+                    { "ended_at", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") },
                 };
 
                 string jsonContent = JsonConvert.SerializeObject(jsonDict, Formatting.Indented);
@@ -1895,6 +2042,37 @@ namespace oomtm450PuckMod_Stats {
                 _playersTeam.Remove(steamId);
             _playersTeamToRemoveAfterGame.Clear();
         }
+
+        /// <summary>
+        /// Method that starts accruing time-on-ice for a player. No-op if the player is already accruing.
+        /// </summary>
+        /// <param name="steamId">String, steam Id of the player to start accruing for.</param>
+        private static void TOIStart(string steamId) {
+            if (!string.IsNullOrEmpty(steamId))
+                _accruingSince.AddOrUpdate(steamId, DateTime.UtcNow);
+        }
+
+        /// <summary>
+        /// Method that banks a player's current on-ice stint into their accumulated time-on-ice and stops accruing them. No-op if the player is not currently accruing.
+        /// </summary>
+        /// <param name="steamId">String, steam Id of the player to bank.</param>
+        private static void TOIBank(string steamId) {
+            if (!string.IsNullOrEmpty(steamId) && _accruingSince.TryGetValue(steamId, out DateTime since)) {
+                _toiSeconds.AddOrUpdate(steamId, (_toiSeconds.TryGetValue(steamId, out double previousSeconds) ? previousSeconds : 0) + (DateTime.UtcNow - since).TotalSeconds);
+                _accruingSince.Remove(steamId);
+            }
+        }
+
+        /// <summary>
+        /// Method that banks every currently-accruing player's on-ice stint and stops accruing them all.
+        /// </summary>
+        private static void TOIBankAll() {
+            DateTime now = DateTime.UtcNow;
+            foreach (var kvp in _accruingSince)
+                _toiSeconds.AddOrUpdate(kvp.Key, (_toiSeconds.TryGetValue(kvp.Key, out double previousSeconds) ? previousSeconds : 0) + (now - kvp.Value).TotalSeconds);
+            _accruingSince.Clear();
+        }
+
         /// <summary>
         /// Method that processes a hit by a player.
         /// </summary>
@@ -2466,6 +2644,16 @@ namespace oomtm450PuckMod_Stats {
         private static void LogPlusMinus(string playerSteamId, int plusminus) {
             if (ServerConfig.LogStats)
                 Logging.Log($"playerSteamId:{playerSteamId},plusminus:{plusminus}", ServerConfig);
+        }
+
+        /// <summary>
+        /// Method that logs the post count of a player.
+        /// </summary>
+        /// <param name="playerSteamId">String, steam Id of the player.</param>
+        /// <param name="post">Int, number of posts hit with the puck.</param>
+        private static void LogPost(string playerSteamId, int post) {
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},post:{post}", ServerConfig);
         }
 
         private static string GetGoalieSavePerc(int saves, int shots) {

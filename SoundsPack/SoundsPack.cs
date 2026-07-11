@@ -15,7 +15,7 @@ namespace oomtm450PuckMod_SoundsPack {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "2.0.0DEV";
+        private static readonly string MOD_VERSION = "1.0.3";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -24,7 +24,6 @@ namespace oomtm450PuckMod_SoundsPack {
             "1.0.0",
             "1.0.1",
             "1.0.2",
-            "1.0.3",
         });
 
         /// <summary>
@@ -153,10 +152,8 @@ namespace oomtm450PuckMod_SoundsPack {
 
                 Logging.Log($"Enabling...", ServerConfig, true);
 
-                if (Application.version != Codebase.Constants.CURRENT_APPLICATION_VERSION) {
-                    Logging.Log($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION}. Mod will not be enabled.", ServerConfig);
-                    return false;
-                }
+                if (Application.version != Codebase.Constants.CURRENT_APPLICATION_VERSION && Application.version != "897")
+                    Logging.LogWarning($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION} or 897 !", ServerConfig);
 
                 _harmony = new Harmony(ModName);
                 _harmony.PatchAll();

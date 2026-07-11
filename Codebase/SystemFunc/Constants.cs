@@ -3,7 +3,7 @@
         /// <summary>
         /// Const string, added current Puck Application.version to check for mod compatibility.
         /// </summary>
-        internal const string CURRENT_APPLICATION_VERSION = "897";
+        internal const string CURRENT_APPLICATION_VERSION = "1153";
 
         /// <summary>
         /// Const string, prefix of all the mod's names.
@@ -94,6 +94,11 @@
         /// Const string, data name for +/-.
         /// </summary>
         public const string PLUSMINUS = STATS_MOD_NAME + "PLUSMINUS";
+
+        /// <summary>
+        /// Const string, data name for post.
+        /// </summary>
+        public const string POST = STATS_MOD_NAME + "POST";
 
         /// <summary>
         /// Const string, data name for pausing mods.
