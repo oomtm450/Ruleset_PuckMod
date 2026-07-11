@@ -377,8 +377,7 @@ namespace oomtm450PuckMod_Stats {
                     if (!ServerFunc.IsDedicatedServer() || isReplay || (GameManager.Instance.Phase != GamePhase.Play && GameManager.Instance.Phase != GamePhase.FaceOff))
                         return;
 
-                    __result.gameObject.AddComponent<PuckRaycast>();
-                    _puckRaycast = __result.gameObject.GetComponent<PuckRaycast>();
+                    _puckRaycast = __result.gameObject.AddComponent<PuckRaycast>();
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(PuckManager_Server_SpawnPuck_Patch)} Postfix().\n{ex}", ServerConfig);
