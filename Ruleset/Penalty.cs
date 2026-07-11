@@ -457,7 +457,10 @@ namespace oomtm450PuckMod_Ruleset {
             if (Codebase.PlayerFunc.IsGoalie(penalizedPlayer) || penalizedPlayer.PlayerPosition.Name == Codebase.PlayerFunc.GOALIE_POSITION) {
                 List<Player> possiblePlayersToPenalize = new List<Player>();
                 foreach (Player teamPlayer in teamPlayers) {
-                    if (!PenalizedPlayers.TryGetValue(penalizedPlayer.SteamId.Value.ToString(), out LockList<Penalty> __penaltyList))
+                    if (!Codebase.PlayerFunc.IsPlayerPlaying(teamPlayer))
+                        continue;
+
+                    if (!PenalizedPlayers.TryGetValue(teamPlayer.SteamId.Value.ToString(), out LockList<Penalty> __penaltyList))
                         continue;
 
                     if (__penaltyList.Count != 0)
@@ -472,7 +475,7 @@ namespace oomtm450PuckMod_Ruleset {
                 penalizedPlayer = possiblePlayersToPenalize.OrderBy(x => x.Goals.Value + x.Assists.Value).First();
                 penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
 
-                if (!PenalizedPlayers.TryGetValue(penalizedPlayer.SteamId.Value.ToString(), out LockList<Penalty> _penaltyList)) {
+                if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> _penaltyList)) {
                     _penaltyList = new LockList<Penalty>();
                     PenalizedPlayers.Add(penalizedPlayerSteamId, _penaltyList);
                 }
