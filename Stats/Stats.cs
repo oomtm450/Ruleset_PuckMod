@@ -389,9 +389,9 @@ namespace oomtm450PuckMod_Stats {
         /// Class that patches the ScoreGoal event from BaseGameMode.
         /// </summary>
         [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "ScoreGoal")]
-        [HarmonyPriority(Priority.VeryLow)]
         public class BaseGameMode_ScoreGoal_Patch {
             [HarmonyPrefix]
+            [HarmonyPriority(Priority.VeryLow)]
             public static bool Prefix(PlayerTeam byTeam, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
                 try {
                     // If this is not the server or game is not started, do not use the patch.

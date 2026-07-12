@@ -1944,6 +1944,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "ScoreGoal")]
         public class BaseGameMode_ScoreGoal_Patch {
             [HarmonyPrefix]
+            [HarmonyPriority(Priority.First)]
             public static bool Prefix(PlayerTeam byTeam, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
                 try {
                     // If this is not the server or logic is paused, do not use the patch.
