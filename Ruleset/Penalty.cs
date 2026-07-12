@@ -460,11 +460,10 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!Codebase.PlayerFunc.IsPlayerPlaying(teamPlayer))
                         continue;
 
-                    if (!PenalizedPlayers.TryGetValue(teamPlayer.SteamId.Value.ToString(), out LockList<Penalty> __penaltyList))
-                        continue;
-
-                    if (__penaltyList.Count != 0)
-                        continue;
+                    if (PenalizedPlayers.TryGetValue(teamPlayer.SteamId.Value.ToString(), out LockList<Penalty> __penaltyList)) {
+                        if (__penaltyList.Count != 0)
+                            continue;
+                    }
 
                     possiblePlayersToPenalize.Add(teamPlayer);
                 }
