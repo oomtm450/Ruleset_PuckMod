@@ -392,8 +392,11 @@ namespace oomtm450PuckMod_Stats {
         public class BaseGameMode_ScoreGoal_Patch {
             [HarmonyPrefix]
             [HarmonyPriority(Priority.VeryLow)]
-            public static bool Prefix(PlayerTeam byTeam, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
+            public static bool Prefix(PlayerTeam byTeam, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck, bool __runOriginal) {
                 try {
+                    if (!__runOriginal)
+                        return false;
+
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || !_logic)
                         return true;
