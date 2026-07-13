@@ -317,7 +317,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, time in the box for a player interference penalty in milliseconds.
         /// </summary>
-        public int InterferenceTime { get; set; } = 45000;
+        public int InterferenceTime { get; set; } = PenaltyModule.LONG_PENALTY_TIME_MS;
         /// <summary>
         /// Int, interference can be called after this number of milliseconds after touching the puck.
         /// </summary>
@@ -338,7 +338,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, time in the box for a goalie interference penalty in milliseconds.
         /// </summary>
-        public int GoalieInterferenceTime { get; set; } = 45000;
+        public int GoalieInterferenceTime { get; set; } = PenaltyModule.LONG_PENALTY_TIME_MS;
 
         /// <summary>
         /// Int, time for a late slip/fall to be considered as interference against the opposing player.
@@ -352,7 +352,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, time in the box for a delay of game penalty in milliseconds.
         /// </summary>
-        public int DelayOfGameTime { get; set; } = 45000;
+        public int DelayOfGameTime { get; set; } = PenaltyModule.LONG_PENALTY_TIME_MS;
         /// <summary>
         /// Float, delta of the puck Z direction to use with the delay of game.
         /// </summary>
@@ -369,7 +369,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, time in the box for a faceoff violation penalty in milliseconds.
         /// </summary>
-        public int FaceoffViolationTime { get; set; } = 30000;
+        public int FaceoffViolationTime { get; set; } = PenaltyModule.SHORT_PENALTY_TIME_MS;
 
         /// <summary>
         /// Bool, true if embellishment penalty is enabled.
@@ -378,7 +378,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, time in the box for an embellishment penalty in milliseconds.
         /// </summary>
-        public int EmbellishmentTime { get; set; } = 30000;
+        public int EmbellishmentTime { get; set; } = PenaltyModule.SHORT_PENALTY_TIME_MS;
         /// <summary>
         /// Int, embellishment can be called after this number of milliseconds after the player gets up.
         /// </summary>
@@ -395,7 +395,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, time in the box for a roughing penalty in milliseconds.
         /// </summary>
-        public int RoughingTime { get; set; } = 30000;
+        public int RoughingTime { get; set; } = PenaltyModule.SHORT_PENALTY_TIME_MS;
         /// <summary>
         /// Int, roughing can be called after this number of milliseconds after the player gets up.
         /// </summary>
@@ -412,7 +412,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, time in the box for a charging penalty in milliseconds.
         /// </summary>
-        public int ChargingTime { get; set; } = 45000;
+        public int ChargingTime { get; set; } = PenaltyModule.LONG_PENALTY_TIME_MS;
         #endregion
 
         #region Constructors

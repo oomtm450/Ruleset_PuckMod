@@ -4273,7 +4273,7 @@ namespace oomtm450PuckMod_Ruleset {
             _paused = false;
         }
 
-        internal static List<string> GetClaimedPositions(PlayerTeam team) {
+        internal static List<(string Position, bool IsPenalized)> GetClaimedPositions(PlayerTeam team) {
             List<PlayerPosition> positions = new List<PlayerPosition>();
             Dictionary<PlayerPosition, VisualElement> playerPositions = SystemFunc.GetPrivateField<Dictionary<PlayerPosition, VisualElement>>(typeof(UIPositionSelect), UIManager.Instance.PositionSelect, "playerPositionVisualElementMap");
 
@@ -4282,10 +4282,15 @@ namespace oomtm450PuckMod_Ruleset {
                     positions.Add(ppos);
             }
 
-            List<string> claimedPositions = new List<string>();
+            List<(string Position, bool IsPenalized)> claimedPositions = new List<(string, bool)>();
             foreach (PlayerPosition playerPosition in positions) {
-                if (playerPosition.IsClaimed)
-                    claimedPositions.Add(playerPosition.Name);
+                if (playerPosition.IsClaimed) {
+                    string playerSteamId = playerPosition.ClaimedByPlayer.SteamId.Value.ToString();
+                    if (PenaltyModule.PenalizedPlayers.Any(x => x.Key == playerSteamId) && PenaltyModule.PenalizedPlayers[playerSteamId].Count != 0)
+                        claimedPositions.Add((playerPosition.Name, true));
+                    else
+                        claimedPositions.Add((playerPosition.Name, false));
+                }
             }
 
             return claimedPositions;
