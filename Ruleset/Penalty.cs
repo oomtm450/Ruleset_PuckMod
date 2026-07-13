@@ -690,8 +690,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return false;
                 }
             }
-
-            if (penalizedPlayerTeam == PlayerTeam.Red) {
+            else if (penalizedPlayerTeam == PlayerTeam.Red) {
                 if (removePendingPenalty) {
                     if (PenalizedPlayersCountRedTeam == 0)
                         return false;
