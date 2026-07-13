@@ -456,7 +456,10 @@ namespace oomtm450PuckMod_Ruleset {
                 if (_playerToUnpenalize == null || !_playerToUnpenalize)
                     return false;
 
-                RemoveOnePenalty(_playerToUnpenalize.Team);
+                if (_penalties.Value.First().Timer.MillisecondsLeft > GetPenaltyTypeTime(penaltyType))
+                    return false;
+
+                RemoveOnePenalty(_playerToUnpenalize.Team, true);
             }
 
             // If goalie has a penalty, take another player.
