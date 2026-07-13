@@ -354,6 +354,9 @@ namespace oomtm450PuckMod_Ruleset {
             PenalizedPlayersCountRedTeam = 0;
             PenalizedPlayersInBoxCountRedTeam = 0;
 
+            PenaltyToBeCalled[PlayerTeam.Blue] = false;
+            PenaltyToBeCalled[PlayerTeam.Red] = false;
+
             foreach (PlayerTeam key in new List<PlayerTeam>(PositionIsPenalized.Keys))
                 PositionIsPenalized[key] = new LockDictionary<string, bool>(POSITION_IS_PENALIZED_DEFAULT);
 
