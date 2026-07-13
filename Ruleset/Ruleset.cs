@@ -1136,15 +1136,15 @@ namespace oomtm450PuckMod_Ruleset {
 
                         Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ);
 
-                        List<string> claimedPositionsBlue = GetClaimedPositions(PlayerTeam.Blue);
-                        List<string> claimedPositionsRed = GetClaimedPositions(PlayerTeam.Red);
+                        List<(string Position, bool IsPenalized)> claimedPositionsBlue = GetClaimedPositions(PlayerTeam.Blue);
+                        List<(string Position, bool IsPenalized)> claimedPositionsRed = GetClaimedPositions(PlayerTeam.Red);
 
                         List<Player> players = PlayerManager.Instance.GetPlayers();
                         foreach (Player player in players) {
                             if (!Codebase.PlayerFunc.IsPlayerPlaying(player) || player.Team == PlayerTeam.Spectator || player.Team == PlayerTeam.None || PenaltyModule.PositionIsPenalized[player.Team][player.PlayerPosition.Name])
                                 continue;
 
-                            List<string> claimedPositions;
+                            List<(string Position, bool IsPenalized)> claimedPositions;
                             if (player.Team == PlayerTeam.Blue)
                                 claimedPositions = claimedPositionsBlue;
                             else
