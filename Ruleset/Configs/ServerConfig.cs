@@ -360,7 +360,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds before leaving the stick.
         /// </summary>
-        public int DelayOfGameMillisecondsThreshold { get; set; } = 10;
+        public int DelayOfGameMillisecondsThreshold { get; set; } = 0; // TODO : Check to remove if 0 is fine.
 
         /// <summary>
         /// Bool, true if faceoff violation penalty is enabled.
