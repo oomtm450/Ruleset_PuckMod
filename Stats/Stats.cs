@@ -1826,7 +1826,7 @@ namespace oomtm450PuckMod_Stats {
 
                 if (PlayerFunc.IsGoalie(player)) {
                     if (_savePerc.TryGetValue(steamId, out var saveValues))
-                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.450d * ((double)saveValues.Saves) * 40d;
+                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.450d * ((double)saveValues.Saves) * 45d;
 
                     if (_sog.TryGetValue(steamId, out int shots))
                         starPoints[steamId] += ((double)shots) * 1d;
