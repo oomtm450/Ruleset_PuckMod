@@ -83,7 +83,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; set; } = 32;
+        public int MaxTippedMilliseconds { get; set; } = 33;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
@@ -361,9 +361,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         public float DelayOfGameZDelta { get; set; } = 0.0125f;
         /// <summary>
-        /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds before leaving the stick.
+        /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds on the other team.
         /// </summary>
-        public int DelayOfGameMillisecondsThreshold { get; set; } = 0; // TODO : Check to remove if 0 is fine.
+        public int DelayOfGameMillisecondsThreshold { get; set; } = 25;
 
         /// <summary>
         /// Bool, true if faceoff violation penalty is enabled.
