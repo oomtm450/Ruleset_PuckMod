@@ -806,7 +806,7 @@ namespace oomtm450PuckMod_Stats {
         [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.AddPlayer))]
         public class UIScoreboard_AddPlayer_Patch {
             [HarmonyPostfix]
-            public static void Postfix(UIScoreboard __instance, Player player) {
+            public static void Postfix(UIScoreboard __instance, Player player) { // TODO : Fix this.
                 try {
                     string playerSteamId = player.SteamId.Value.ToString();
                     if (!string.IsNullOrEmpty(playerSteamId) && _stars.Values.Contains(playerSteamId)) {
@@ -1256,7 +1256,7 @@ namespace oomtm450PuckMod_Stats {
         /// Class that patches GetChatMessagePrefix event from UIChat.
         /// </summary>
         [HarmonyPatch(typeof(UIChat), "GetChatMessagePrefix")]
-        public static class UIChat_GetChatMessagePrefix_Patch {
+        public static class UIChat_GetChatMessagePrefix_Patch { // TODO : Fix this.
             public static void Postfix(ChatMessage chatMessage, ref string __result) {
                 if (chatMessage.IsSystem)
                     return;
