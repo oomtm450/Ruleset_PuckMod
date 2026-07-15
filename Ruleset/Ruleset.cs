@@ -624,6 +624,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                     string playerSteamId = stick.Player.SteamId.Value.ToString();
 
+                    if (string.IsNullOrEmpty(playerSteamId))
+                        return;
+
                     bool playerHasPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == playerSteamId;
 
                     if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(playerSteamId, out Stopwatch lastTimeCollisionWatch)) {
@@ -729,6 +732,8 @@ namespace oomtm450PuckMod_Ruleset {
                     _puckZoneLastTouched = _puckZone;
 
                     string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
+                    if (string.IsNullOrEmpty(currentPlayerSteamId))
+                        return;
 
                     bool playerHasPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == currentPlayerSteamId;
 
