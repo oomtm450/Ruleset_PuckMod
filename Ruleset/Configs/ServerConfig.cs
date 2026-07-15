@@ -28,6 +28,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         [JsonIgnore]
         private static readonly string CONFIG_PATH = Path.Combine(CONFIG_FOLDER_PATH, Constants.MOD_NAME + "_serverconfig.json");
+
+        [JsonIgnore]
+        internal const float DEFAULT_PLAYER_HEIGHT = 0.0338f; // TODO : Check in new Puck build.
         #endregion
 
         #region Properties
@@ -100,7 +103,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, default standing player height.
         /// </summary>
-        public float DefaultPlayerHeight { get; set; } = 0.0338f; // TODO : Check in new Puck build.
+        public float DefaultPlayerHeight { get; set; } = DEFAULT_PLAYER_HEIGHT;
 
         /// <summary>
         /// Bool, true the mod has to log all phase changes and stoppages.
@@ -811,7 +814,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
         /// </summary>
-        public float MaxHeight { get; set; } = Codebase.Constants.CROSSBAR_HEIGHT + 0.05f;
+        public float MaxHeight { get; set; } = Codebase.Constants.CROSSBAR_HEIGHT + 0.05f + ServerConfig.DEFAULT_PLAYER_HEIGHT;
 
         /// <summary>
         /// Int, number of milliseconds after a high stick to call high stick if no one touches the puck.
