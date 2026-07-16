@@ -1610,6 +1610,8 @@ namespace oomtm450PuckMod_Ruleset {
                         else {
                             string lastPlayerOnPuckSteamId = _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam];
                             bool playerTouched = _playersOnPuckDateTime.TryGetValue(lastPlayerOnPuckSteamId, out var lastTouchDateTime);
+                            if (!playerTouched)
+                                lastTouchDateTime = (_lastPlayerOnPuckTeam, DateTime.MinValue);
 
                             string lastPlayerOnPuckOtherTeamSteamId = _lastPlayerOnPuckSteamId[TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam)];
                             bool playerTouchedOtherTeam = _playersOnPuckDateTime.TryGetValue(lastPlayerOnPuckOtherTeamSteamId, out var lastTouchOtherTeamDateTime);
@@ -1623,8 +1625,10 @@ namespace oomtm450PuckMod_Ruleset {
 
                             Logging.Log("_puckDeflectedDateTimeSinceLastTouch : " + _puckDeflectedDateTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
 
-                            Logging.Log("lastTouchDateTime.LastTouchDateTime : " + lastTouchDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
-                            Logging.Log("lastTouchOtherTeamDateTime.LastTouchDateTime : " + lastTouchOtherTeamDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                            if (playerTouched)
+                                Logging.Log("lastTouchDateTime.LastTouchDateTime : " + lastTouchDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                            if (playerTouchedOtherTeam)
+                                Logging.Log("lastTouchOtherTeamDateTime.LastTouchDateTime : " + lastTouchOtherTeamDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
 
                             Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime), ServerConfig, true); // TODO
 
