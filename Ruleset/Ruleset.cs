@@ -568,14 +568,10 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsHighStick(stick.Player.Team)) {
                         Puck puck = PuckManager.Instance.GetPuck();
                         if (puck && puck.Rigidbody.transform.position.y < PuckRadius + _arenaOffsetY) {
-                            NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(stick.Player.Team, Rule.HighStick, _puckLastStateBeforeCall[Rule.HighStick]);
-
                             _isHighStickActiveTimers.TryGetValue(stick.Player.Team, out Timer highStickTimer);
                             highStickTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
-                            SendChat(Rule.HighStick, stick.Player.Team, true);
-                            _lastStoppageReason = Rule.HighStick;
-                            DoFaceoff(RefSignals.GetSignalConstant(true, stick.Player.Team), RefSignals.HIGHSTICK_REF);
+                            CallHighStick(stick.Player.Team);
                         }
                     }
 
@@ -628,6 +624,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                     string playerSteamId = stick.Player.SteamId.Value.ToString();
 
+                    if (string.IsNullOrEmpty(playerSteamId))
+                        return;
+
                     bool playerHasPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == playerSteamId;
 
                     if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(playerSteamId, out Stopwatch lastTimeCollisionWatch)) {
@@ -639,7 +638,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!_noHighStickFrames.TryGetValue(playerSteamId, out int _))
                         _noHighStickFrames.Add(playerSteamId, int.MaxValue);
 
-                    if (__instance && __instance.Rigidbody.transform.position.y <= ServerConfig.HighStick.MaxHeight + _arenaOffsetY + stick.Player.PlayerBody.Rigidbody.transform.position.y)
+                    if (__instance && __instance.Rigidbody.transform.position.y <= ServerConfig.HighStick.MaxHeight + _arenaOffsetY)
                         _noHighStickFrames[playerSteamId] = 0;
 
                     var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
@@ -733,6 +732,8 @@ namespace oomtm450PuckMod_Ruleset {
                     _puckZoneLastTouched = _puckZone;
 
                     string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
+                    if (string.IsNullOrEmpty(currentPlayerSteamId))
+                        return;
 
                     bool playerHasPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == currentPlayerSteamId;
 
@@ -781,7 +782,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsHighStickEnabled(stick.Player.Team) && __instance &&
                         !Codebase.PlayerFunc.IsGoalie(stick.Player) &&
                         !playerHasPossession &&
-                        __instance.Rigidbody.transform.position.y > ServerConfig.HighStick.MaxHeight + _arenaOffsetY + (stick.Player.PlayerBody.Rigidbody.transform.position.y < ServerConfig.DefaultPlayerHeight ? ServerConfig.DefaultPlayerHeight : stick.Player.PlayerBody.Rigidbody.transform.position.y)) {
+                        __instance.Rigidbody.transform.position.y > ServerConfig.HighStick.MaxHeight + _arenaOffsetY) {
                         if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
                             noHighStickFrames = int.MaxValue;
                             _noHighStickFrames.Add(currentPlayerSteamId, noHighStickFrames);
@@ -1140,15 +1141,15 @@ namespace oomtm450PuckMod_Ruleset {
 
                         Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ);
 
-                        List<string> claimedPositionsBlue = GetClaimedPositions(PlayerTeam.Blue);
-                        List<string> claimedPositionsRed = GetClaimedPositions(PlayerTeam.Red);
+                        List<(string Position, bool IsPenalized)> claimedPositionsBlue = GetClaimedPositions(PlayerTeam.Blue);
+                        List<(string Position, bool IsPenalized)> claimedPositionsRed = GetClaimedPositions(PlayerTeam.Red);
 
                         List<Player> players = PlayerManager.Instance.GetPlayers();
                         foreach (Player player in players) {
                             if (!Codebase.PlayerFunc.IsPlayerPlaying(player) || player.Team == PlayerTeam.Spectator || player.Team == PlayerTeam.None || PenaltyModule.PositionIsPenalized[player.Team][player.PlayerPosition.Name])
                                 continue;
 
-                            List<string> claimedPositions;
+                            List<(string Position, bool IsPenalized)> claimedPositions;
                             if (player.Team == PlayerTeam.Blue)
                                 claimedPositions = claimedPositionsBlue;
                             else
@@ -1609,17 +1610,43 @@ namespace oomtm450PuckMod_Ruleset {
                         else {
                             string lastPlayerOnPuckSteamId = _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam];
                             bool playerTouched = _playersOnPuckDateTime.TryGetValue(lastPlayerOnPuckSteamId, out var lastTouchDateTime);
+                            if (!playerTouched)
+                                lastTouchDateTime = (_lastPlayerOnPuckTeam, DateTime.MinValue);
+
+                            PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
+                            string lastPlayerOnPuckOtherTeamSteamId = _lastPlayerOnPuckSteamId[lastPlayerOnPuckOtherTeam];
+                            bool playerTouchedOtherTeam = _playersOnPuckDateTime.TryGetValue(lastPlayerOnPuckOtherTeamSteamId, out var lastTouchOtherTeamDateTime);
+                            if (!playerTouchedOtherTeam)
+                                lastTouchDateTime = (lastPlayerOnPuckOtherTeam, DateTime.MinValue);
+
                             bool playerWasLastInPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == lastPlayerOnPuckSteamId;
 
                             Logging.Log("playerTouched : " + playerTouched, ServerConfig, true); // TODO
-                            Logging.Log("playerWasLastInPossession : " + playerWasLastInPossession, ServerConfig, true); // TODO
-                            Logging.Log("_puckDeflectedDateTimeSinceLastTouch : " + _puckDeflectedDateTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
-                            Logging.Log("lastTouchDateTime.LastTouchDateTime : " + lastTouchDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
-                            Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds({ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}) : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)), ServerConfig, true); // TODO
+                            Logging.Log("playerTouchedOtherTeam : " + playerTouchedOtherTeam, ServerConfig, true); // TODO
 
-                            playerTouched = playerTouched || playerWasLastInPossession;
+                            Logging.Log("playerWasLastInPossession : " + playerWasLastInPossession, ServerConfig, true); // TODO
+
+                            Logging.Log("_puckDeflectedDateTimeSinceLastTouch : " + _puckDeflectedDateTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+
+                            if (playerTouched)
+                                Logging.Log("lastTouchDateTime.LastTouchDateTime : " + lastTouchDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                            if (playerTouchedOtherTeam)
+                                Logging.Log("lastTouchOtherTeamDateTime.LastTouchDateTime : " + lastTouchOtherTeamDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+
+                            Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime), ServerConfig, true); // TODO
+
+                            bool otherTeamTouchedTooClose = false;
+                            if (playerTouchedOtherTeam && (lastTouchDateTime.LastTouchDateTime - lastTouchOtherTeamDateTime.LastTouchDateTime).TotalMilliseconds < ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)
+                                otherTeamTouchedTooClose = true;
+
+                            Logging.Log($"(lastTouchDateTime.LastTouchDateTime - lastTouchOtherTeamDateTime.LastTouchDateTime).TotalMilliseconds : {(lastTouchDateTime.LastTouchDateTime - lastTouchOtherTeamDateTime.LastTouchDateTime).TotalMilliseconds}", ServerConfig, true); // TODO
+                            Logging.Log($"ServerConfig.Penalty.DelayOfGameMillisecondsThreshold : {ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}", ServerConfig, true); // TODO
+                            Logging.Log("otherTeamTouchedTooClose : " + otherTeamTouchedTooClose, ServerConfig, true); // TODO
+
+                            playerTouched = (playerTouched || playerWasLastInPossession);
                             if (!playerTouched ||
-                                (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime.AddMilliseconds(ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)) ||
+                                otherTeamTouchedTooClose ||
+                                (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime) ||
                                 (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_Zone)) {
                                 CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
                             }
@@ -1948,6 +1975,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(BaseGameMode<BaseGameModeConfig>), "ScoreGoal")]
         public class BaseGameMode_ScoreGoal_Patch {
             [HarmonyPrefix]
+            [HarmonyPriority(Priority.First)]
             public static bool Prefix(PlayerTeam byTeam, ref Player goalPlayer, ref Player assistPlayer, ref Player secondAssistPlayer, Puck puck) {
                 try {
                     // If this is not the server or logic is paused, do not use the patch.
@@ -4276,7 +4304,7 @@ namespace oomtm450PuckMod_Ruleset {
             _paused = false;
         }
 
-        internal static List<string> GetClaimedPositions(PlayerTeam team) {
+        internal static List<(string Position, bool IsPenalized)> GetClaimedPositions(PlayerTeam team) {
             List<PlayerPosition> positions = new List<PlayerPosition>();
             Dictionary<PlayerPosition, VisualElement> playerPositions = SystemFunc.GetPrivateField<Dictionary<PlayerPosition, VisualElement>>(typeof(UIPositionSelect), UIManager.Instance.PositionSelect, "playerPositionVisualElementMap");
 
@@ -4285,10 +4313,15 @@ namespace oomtm450PuckMod_Ruleset {
                     positions.Add(ppos);
             }
 
-            List<string> claimedPositions = new List<string>();
+            List<(string Position, bool IsPenalized)> claimedPositions = new List<(string, bool)>();
             foreach (PlayerPosition playerPosition in positions) {
-                if (playerPosition.IsClaimed)
-                    claimedPositions.Add(playerPosition.Name);
+                if (playerPosition.IsClaimed) {
+                    string playerSteamId = playerPosition.ClaimedByPlayer.SteamId.Value.ToString();
+                    if (PenaltyModule.PenalizedPlayers.Any(x => x.Key == playerSteamId) && PenaltyModule.PenalizedPlayers[playerSteamId].Count != 0)
+                        claimedPositions.Add((playerPosition.Name, true));
+                    else
+                        claimedPositions.Add((playerPosition.Name, false));
+                }
             }
 
             return claimedPositions;

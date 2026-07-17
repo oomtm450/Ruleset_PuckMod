@@ -12,6 +12,9 @@ namespace oomtm450PuckMod_Ruleset {
         internal const string REMOVE_ALL_PENALTIES_REFMODE_DATANAME = Constants.MOD_NAME + "refremoveallpen";
         internal const string REMOVE_PENALTY_DATANAME = Constants.MOD_NAME + "removepen";
 
+        internal const int LONG_PENALTY_TIME_MS = 45000;
+        internal const int SHORT_PENALTY_TIME_MS = 30000;
+
         private static readonly Vector3 BLUE_PENALTY_BOX_POSITION_DEFAULT = new Vector3(26f, 0.9f, 1.5f); // TODO : Config.
         private static Vector3 BLUE_PENALTY_BOX_POSITION { get; set; }
 
@@ -354,6 +357,9 @@ namespace oomtm450PuckMod_Ruleset {
             PenalizedPlayersCountRedTeam = 0;
             PenalizedPlayersInBoxCountRedTeam = 0;
 
+            PenaltyToBeCalled[PlayerTeam.Blue] = false;
+            PenaltyToBeCalled[PlayerTeam.Red] = false;
+
             foreach (PlayerTeam key in new List<PlayerTeam>(PositionIsPenalized.Keys))
                 PositionIsPenalized[key] = new LockDictionary<string, bool>(POSITION_IS_PENALIZED_DEFAULT);
 
@@ -436,26 +442,37 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!unpenalizeOnePlayer)
                     return false;
 
-                KeyValuePair<string, LockList<Penalty>> _penalties = PenalizedPlayers.Where(x => x.Value.Count == 1 && x.Value.First().Team == penalizedPlayer.Team).OrderBy(x => x.Value.Min(y => y.Timer.MillisecondsLeft)).FirstOrDefault();
-                if (_penalties.Equals(default(KeyValuePair<string, LockList<Penalty>>)))
+                var _penaltiesLINQ = PenalizedPlayers.Where(x => x.Value.Count == 1 && x.Value.First().Team == penalizedPlayer.Team).OrderBy(x => x.Value.Min(y => y.Timer.MillisecondsLeft));
+                if (!_penaltiesLINQ.Any())
                     return false;
 
-                Player _playerToUnpenalize = teamPlayers.FirstOrDefault(x => x.SteamId.Value.ToString() == _penalties.Key);
-                if (_playerToUnpenalize == null || _playerToUnpenalize.Equals(default(Player)))
+                KeyValuePair<string, LockList<Penalty>> _penalties = _penaltiesLINQ.First();
+
+                var _playerToUnpenalizeLINQ = teamPlayers.Where(x => x.SteamId.Value.ToString() == _penalties.Key);
+                if (!_playerToUnpenalizeLINQ.Any())
                     return false;
 
-                RemoveOnePenalty(_playerToUnpenalize.Team);
+                Player _playerToUnpenalize = _playerToUnpenalizeLINQ.First();
+                if (_playerToUnpenalize == null || !_playerToUnpenalize)
+                    return false;
+
+                if (_penalties.Value.First().Timer.MillisecondsLeft > GetPenaltyTypeTime(penaltyType))
+                    return false;
+
+                RemoveOnePenalty(_playerToUnpenalize.Team, true);
             }
 
             // If goalie has a penalty, take another player.
             if (Codebase.PlayerFunc.IsGoalie(penalizedPlayer) || penalizedPlayer.PlayerPosition.Name == Codebase.PlayerFunc.GOALIE_POSITION) {
                 List<Player> possiblePlayersToPenalize = new List<Player>();
                 foreach (Player teamPlayer in teamPlayers) {
-                    if (!PenalizedPlayers.TryGetValue(penalizedPlayer.SteamId.Value.ToString(), out LockList<Penalty> __penaltyList))
+                    if (!Codebase.PlayerFunc.IsPlayerPlaying(teamPlayer))
                         continue;
 
-                    if (__penaltyList.Count != 0)
-                        continue;
+                    if (PenalizedPlayers.TryGetValue(teamPlayer.SteamId.Value.ToString(), out LockList<Penalty> __penaltyList)) {
+                        if (__penaltyList.Count != 0)
+                            continue;
+                    }
 
                     possiblePlayersToPenalize.Add(teamPlayer);
                 }
@@ -466,7 +483,7 @@ namespace oomtm450PuckMod_Ruleset {
                 penalizedPlayer = possiblePlayersToPenalize.OrderBy(x => x.Goals.Value + x.Assists.Value).First();
                 penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
 
-                if (!PenalizedPlayers.TryGetValue(penalizedPlayer.SteamId.Value.ToString(), out LockList<Penalty> _penaltyList)) {
+                if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> _penaltyList)) {
                     _penaltyList = new LockList<Penalty>();
                     PenalizedPlayers.Add(penalizedPlayerSteamId, _penaltyList);
                 }
@@ -673,8 +690,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return false;
                 }
             }
-
-            if (penalizedPlayerTeam == PlayerTeam.Red) {
+            else if (penalizedPlayerTeam == PlayerTeam.Red) {
                 if (removePendingPenalty) {
                     if (PenalizedPlayersCountRedTeam == 0)
                         return false;
@@ -695,7 +711,7 @@ namespace oomtm450PuckMod_Ruleset {
             return true;
         }
 
-        internal static string FakePlayerPositionForFaceoffByAvailability(string position, PlayerTeam team, List<string> claimedPositions) {
+        internal static string FakePlayerPositionForFaceoffByAvailability(string position, PlayerTeam team, List<(string Position, bool IsPenalized)> claimedPositions) {
             if (team == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == 0)
                 return position;
 
@@ -704,26 +720,26 @@ namespace oomtm450PuckMod_Ruleset {
 
             switch (position) {
                 case Codebase.PlayerFunc.RIGHT_WINGER_POSITION:
-                    if (!claimedPositions.Contains(Codebase.PlayerFunc.LEFT_WINGER_POSITION))
+                    if (!claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_WINGER_POSITION))
                         return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
                     break;
 
                 case Codebase.PlayerFunc.LEFT_DEFENDER_POSITION:
-                    if (!claimedPositions.Contains(Codebase.PlayerFunc.LEFT_WINGER_POSITION) && !claimedPositions.Contains(Codebase.PlayerFunc.RIGHT_WINGER_POSITION))
+                    if (!claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_WINGER_POSITION) && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.RIGHT_WINGER_POSITION))
                         return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
 
-                    if (!claimedPositions.Contains(Codebase.PlayerFunc.RIGHT_WINGER_POSITION))
+                    if (!claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.RIGHT_WINGER_POSITION))
                         return Codebase.PlayerFunc.RIGHT_WINGER_POSITION;
                     break;
 
                 case Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION:
-                    if (!claimedPositions.Contains(Codebase.PlayerFunc.LEFT_WINGER_POSITION) && !claimedPositions.Contains(Codebase.PlayerFunc.RIGHT_WINGER_POSITION) && !claimedPositions.Contains(Codebase.PlayerFunc.LEFT_DEFENDER_POSITION))
+                    if (!claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_WINGER_POSITION) && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.RIGHT_WINGER_POSITION) && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_DEFENDER_POSITION))
                         return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
 
-                    if (!claimedPositions.Contains(Codebase.PlayerFunc.RIGHT_WINGER_POSITION) && !claimedPositions.Contains(Codebase.PlayerFunc.LEFT_DEFENDER_POSITION))
+                    if (!claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.RIGHT_WINGER_POSITION) && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_DEFENDER_POSITION))
                         return Codebase.PlayerFunc.RIGHT_WINGER_POSITION;
 
-                    if (!claimedPositions.Contains(Codebase.PlayerFunc.LEFT_DEFENDER_POSITION))
+                    if (!claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_DEFENDER_POSITION))
                         return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
                     break;
             }
@@ -731,48 +747,41 @@ namespace oomtm450PuckMod_Ruleset {
             return position;
         }
 
-        internal static string GetPlayerPositionForFaceoff(string position, PlayerTeam team, FaceoffSpot faceoffSpot, List<string> claimedPositions) {
+        internal static string GetPlayerPositionForFaceoff(string position, PlayerTeam team, FaceoffSpot faceoffSpot, List<(string Position, bool IsPenalized)> claimedPositions) {
             position = FakePlayerPositionForFaceoffByAvailability(position, team, claimedPositions);
+
+            bool centerPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.CENTER_POSITION);
+            bool leftDefenderPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION] && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_DEFENDER_POSITION);
 
             switch (position) {
                 case Codebase.PlayerFunc.LEFT_WINGER_POSITION:
-                    if (team == PlayerTeam.Blue) {
-                        if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION])
-                            return Codebase.PlayerFunc.CENTER_POSITION;
-                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
-                            return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
-                    }
-                    else {
-                        if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION])
-                            return Codebase.PlayerFunc.CENTER_POSITION;
-                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
-                            return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
-                    }
+                    if (centerPositionIsOpen)
+                        return Codebase.PlayerFunc.CENTER_POSITION;
+                    if (leftDefenderPositionIsOpen)
+                        return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
                     break;
 
                 case Codebase.PlayerFunc.RIGHT_WINGER_POSITION:
+                    bool leftWingerPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_WINGER_POSITION] && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_WINGER_POSITION);
+
+                    if (centerPositionIsOpen && leftWingerPositionIsOpen)
+                        return Codebase.PlayerFunc.CENTER_POSITION;
+
                     if (team == PlayerTeam.Blue) {
-                        if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_WINGER_POSITION])
-                            return Codebase.PlayerFunc.CENTER_POSITION;
-                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && (faceoffSpot == FaceoffSpot.BlueteamBLLeft || faceoffSpot == FaceoffSpot.RedteamBLLeft || faceoffSpot == FaceoffSpot.BlueteamDZoneLeft || faceoffSpot == FaceoffSpot.RedteamDZoneLeft || faceoffSpot == FaceoffSpot.Center)) {
+                        if (centerPositionIsOpen && (faceoffSpot == FaceoffSpot.BlueteamBLLeft || faceoffSpot == FaceoffSpot.RedteamBLLeft || faceoffSpot == FaceoffSpot.BlueteamDZoneLeft || faceoffSpot == FaceoffSpot.RedteamDZoneLeft || faceoffSpot == FaceoffSpot.Center))
                             return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
-                        }
-                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION])
-                            return Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION;
-                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
-                            return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
                     }
                     else {
-                        if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_WINGER_POSITION])
-                            return Codebase.PlayerFunc.CENTER_POSITION;
-                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && (faceoffSpot == FaceoffSpot.BlueteamBLRight || faceoffSpot == FaceoffSpot.RedteamBLRight || faceoffSpot == FaceoffSpot.BlueteamDZoneRight || faceoffSpot == FaceoffSpot.RedteamDZoneRight || faceoffSpot == FaceoffSpot.Center)) {
+                        if (centerPositionIsOpen && (faceoffSpot == FaceoffSpot.BlueteamBLRight || faceoffSpot == FaceoffSpot.RedteamBLRight || faceoffSpot == FaceoffSpot.BlueteamDZoneRight || faceoffSpot == FaceoffSpot.RedteamDZoneRight || faceoffSpot == FaceoffSpot.Center))
                             return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
-                        }
-                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION])
-                            return Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION;
-                        else if (PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION])
-                            return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
                     }
+
+                    bool rightDefenderPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION] && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION);
+
+                    if (rightDefenderPositionIsOpen)
+                        return Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION;
+                    if (centerPositionIsOpen && leftDefenderPositionIsOpen)
+                        return Codebase.PlayerFunc.LEFT_DEFENDER_POSITION;
                     break;
             }
 
@@ -804,7 +813,7 @@ namespace oomtm450PuckMod_Ruleset {
                     return Ruleset.ServerConfig.Penalty.ChargingTime;
             }
 
-            return 45000;
+            return PenaltyModule.LONG_PENALTY_TIME_MS;
         }
         #endregion
     }
