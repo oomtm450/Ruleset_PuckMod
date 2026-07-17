@@ -425,8 +425,8 @@ namespace oomtm450PuckMod_Sounds {
                 audioSource.PlayDelayed(delay);
         }
 
-        internal void Stop(string name) {
-            if (string.IsNullOrEmpty(name) || !_soundObjects.TryGetValue(name, out GameObject soundObject))
+        internal void Stop(string type) {
+            if (string.IsNullOrEmpty(type) || !_soundObjects.TryGetValue(type, out GameObject soundObject))
                 return;
             soundObject.GetComponent<AudioSource>().Stop();
         }
