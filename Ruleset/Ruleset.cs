@@ -1613,8 +1613,11 @@ namespace oomtm450PuckMod_Ruleset {
                             if (!playerTouched)
                                 lastTouchDateTime = (_lastPlayerOnPuckTeam, DateTime.MinValue);
 
-                            string lastPlayerOnPuckOtherTeamSteamId = _lastPlayerOnPuckSteamId[TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam)];
+                            PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
+                            string lastPlayerOnPuckOtherTeamSteamId = _lastPlayerOnPuckSteamId[lastPlayerOnPuckOtherTeam];
                             bool playerTouchedOtherTeam = _playersOnPuckDateTime.TryGetValue(lastPlayerOnPuckOtherTeamSteamId, out var lastTouchOtherTeamDateTime);
+                            if (!playerTouchedOtherTeam)
+                                lastTouchDateTime = (lastPlayerOnPuckOtherTeam, DateTime.MinValue);
 
                             bool playerWasLastInPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == lastPlayerOnPuckSteamId;
 
