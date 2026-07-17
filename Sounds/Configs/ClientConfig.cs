@@ -84,11 +84,6 @@ namespace oomtm450PuckMod_Sounds.Configs {
         public bool WarmupMusic { get; set; } = true;
 
         /// <summary>
-        /// Bool, true if the server has authority on how loud each music has to be compared to each others. False if the client has authority.
-        /// </summary>
-        public bool UseServerPerMusicVolume { get; set; } = true;
-
-        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]
