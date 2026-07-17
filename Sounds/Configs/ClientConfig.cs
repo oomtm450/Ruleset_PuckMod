@@ -84,6 +84,11 @@ namespace oomtm450PuckMod_Sounds.Configs {
         public bool WarmupMusic { get; set; } = true;
 
         /// <summary>
+        /// Bool, true if the audio clips have to be created on play, then cached.
+        /// </summary>
+        public bool LazyLoading { get; set; } = true;
+
+        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]
