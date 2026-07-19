@@ -1825,9 +1825,9 @@ namespace oomtm450PuckMod_Stats {
                 double gwgModifier = gwgSteamId == steamId ? 0.5d : 0;
                 double teamModifier = winningTeam == player.Team ? 1.1d : 1d;
 
-                if (PlayerFunc.IsGoalie(player)) {
+                if (PlayerFunc.IsGoalie(player) || player.PlayerPosition.Name == PlayerFunc.GOALIE_POSITION) {
                     if (_savePerc.TryGetValue(steamId, out var saveValues))
-                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.300d * ((double)saveValues.Saves) * 45d;
+                        starPoints[steamId] += (((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.250d * ((double)saveValues.Saves) * 45d;
 
                     if (_sog.TryGetValue(steamId, out int shots))
                         starPoints[steamId] += ((double)shots) * 1d;
