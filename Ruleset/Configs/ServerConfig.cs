@@ -114,6 +114,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if the glass barriers has to be lowered.
         /// </summary>
         public bool LowerBarriers { get; set; } = true;
+
+        /// <summary>
+        /// Float, Y offset to use when teleporting/spawning players and pucks related to Ruleset.
+        /// </summary>
+        public float YOffsetForTeleport { get; set; } = 0.01f;
         #endregion
 
         #region Constructors
@@ -148,6 +153,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             LogPhaseChangeAndStoppage = serverConfig.LogPhaseChangeAndStoppage;
 
             LowerBarriers = serverConfig.LowerBarriers;
+
+            YOffsetForTeleport = serverConfig.YOffsetForTeleport;
         }
         #endregion
 
@@ -186,6 +193,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (LowerBarriers == _oldConfig.LowerBarriers)
                 LowerBarriers = newConfig.LowerBarriers;
+
+            if (YOffsetForTeleport == _oldConfig.YOffsetForTeleport)
+                YOffsetForTeleport = newConfig.YOffsetForTeleport;
 
             Offside.UpdateDefaultValues(_oldConfig.Offside);
             Icing.UpdateDefaultValues(_oldConfig.Icing);

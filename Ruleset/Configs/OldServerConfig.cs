@@ -77,6 +77,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if the glass barriers has to be lowered.
         /// </summary>
         public bool LowerBarriers { get; } = true;
+
+        /// <summary>
+        /// Float, Y offset to use when teleporting/spawning players and pucks related to Ruleset.
+        /// </summary>
+        public float YOffsetForTeleport { get; } = 0.01f;
         #endregion
 
         #region Methods/Functions
