@@ -1461,7 +1461,7 @@ namespace oomtm450PuckMod_Ruleset {
                             return false;
                         }
                         else if (content.StartsWith(@"/removeallpen")) {
-                            NetworkCommunication.SendData(PenaltyModule.REMOVE_ALL_PENALTIES_REFMODE_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            NetworkCommunication.SendData(PenaltyModule.REMOVED_ALL_PENALTIES_REFMODE_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                         else if (content.StartsWith(@"/removepen")) {
@@ -2731,7 +2731,7 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             break;
 
-                        case "removeallpenalties":
+                        case PenaltyModule.REMOVE_ALL_PENALTIES_DATANAME:
                             if (value != "1")
                                 return;
 
@@ -3151,7 +3151,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         if (_refSignalsBlueTeam.Errors.Count != 0) {
-                            Logging.LogError("There was an error when initializing _refSignalsBlueTeam.", ClientConfig);
+                            Logging.LogError($"There was an error when initializing {nameof(_refSignalsBlueTeam)}.", ClientConfig);
                             foreach (string error in _refSignalsBlueTeam.Errors)
                                 Logging.LogError(error, ClientConfig);
                         }
@@ -3172,7 +3172,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         if (_refSignalsRedTeam.Errors.Count != 0) {
-                            Logging.LogError("There was an error when initializing _refSignalsRedTeam.", ClientConfig);
+                            Logging.LogError($"There was an error when initializing {nameof(_refSignalsRedTeam)}.", ClientConfig);
                             foreach (string error in _refSignalsRedTeam.Errors)
                                 Logging.LogError(error, ClientConfig);
                         }
@@ -3193,7 +3193,7 @@ namespace oomtm450PuckMod_Ruleset {
                         StopRedRefSignals(dataStr);
                         break;
 
-                    case "removeallpen": // CLIENT-SIDE : Remove all penalty timers.
+                    case PenaltyModule.REMOVED_ALL_PENALTIES_DATANAME: // CLIENT-SIDE : Remove all penalty timers.
                         if (dataStr != "1")
                             break;
 
@@ -3202,7 +3202,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _penaltyTimers.Clear();
                         break;
 
-                    case "penpause": // CLIENT-SIDE : Pause penalty timers.
+                    case PenaltyModule.PENALTIES_PAUSED_DATANAME: // CLIENT-SIDE : Pause penalty timers.
                         if (dataStr != "1")
                             break;
 
@@ -3210,7 +3210,7 @@ namespace oomtm450PuckMod_Ruleset {
                             penaltyTimer.Timer.Pause();
                         break;
 
-                    case "penunpause": // CLIENT-SIDE : Start penalty timers.
+                    case PenaltyModule.PENALTIES_UNPAUSED_DATANAME: // CLIENT-SIDE : Start penalty timers.
                         foreach (var penaltyTimer in _penaltyTimers)
                             penaltyTimer.Timer.Reset();
                         _penaltyTimers.Clear();
@@ -3563,7 +3563,7 @@ namespace oomtm450PuckMod_Ruleset {
                         PenaltyModule.GivePenalty(penaltyType, penPlayer, steamIdReceivingPlayer, penReferee);
                         break;
 
-                    case PenaltyModule.REMOVE_ALL_PENALTIES_REFMODE_DATANAME: // SERVER-SIDE : Remove all penalties.
+                    case PenaltyModule.REMOVED_ALL_PENALTIES_REFMODE_DATANAME: // SERVER-SIDE : Remove all penalties.
                         Player removeAllPenReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
                         if (removeAllPenReferee == null || !removeAllPenReferee)
                             break;
