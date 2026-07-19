@@ -3824,7 +3824,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 Label speedLabel = SystemFunc.GetPrivateField<Label>(typeof(UIHUD), uiHUD, "speedLabel");
 
-                VisualElement container = uiHUD.View;
+                VisualElement container = uiHUD.View; // TODO : Create a new container for the labels (like ref UI).
 
                 _penaltiesLabelBlue = new Label {
                     name = "PenaltiesLabelBlue",
