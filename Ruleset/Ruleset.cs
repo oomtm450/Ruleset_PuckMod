@@ -4137,12 +4137,12 @@ namespace oomtm450PuckMod_Ruleset {
                 Logging.Log("Subscribing to events.", ServerConfig, true);
                 
                 if (ServerFunc.IsDedicatedServer()) {
-                    EventManager.AddEventListener("Event_Everyone_OnClientConnected", Event_Everyone_OnClientConnected);
-                    EventManager.AddEventListener("Event_Everyone_OnClientDisconnected", Event_Everyone_OnClientDisconnected);
-                    EventManager.AddEventListener("Event_Everyone_OnPlayerGameStateChanged", Event_Everyone_OnPlayerGameStateChanged);
+                    EventManager.AddEventListener(nameof(Event_Everyone_OnClientConnected), Event_Everyone_OnClientConnected);
+                    EventManager.AddEventListener(nameof(Event_Everyone_OnClientDisconnected), Event_Everyone_OnClientDisconnected);
+                    EventManager.AddEventListener(nameof(Event_Everyone_OnPlayerGameStateChanged), Event_Everyone_OnPlayerGameStateChanged);
                     EventManager.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
-                    EventManager.AddEventListener("Event_Everyone_OnPlayerBodySpawned", Event_Everyone_OnPlayerBodySpawned);
-                    EventManager.AddEventListener("Event_CompetitiveAdjustments_OnArenaSync", Event_CompetitiveAdjustments_OnArenaSync);
+                    EventManager.AddEventListener(nameof(Event_Everyone_OnPlayerBodySpawned), Event_Everyone_OnPlayerBodySpawned);
+                    EventManager.AddEventListener(nameof(Event_CompetitiveAdjustments_OnArenaSync), Event_CompetitiveAdjustments_OnArenaSync);
 
                     if (ServerConfig.Faceoff.FreezePlayersBeforeDrop) {
                         // Create player unfreezer/tether system
@@ -4159,8 +4159,8 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 else {
-                    EventManager.AddEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
-                    EventManager.AddEventListener("Event_OnClientStopped", Event_OnClientStopped);
+                    EventManager.AddEventListener(nameof(Event_OnSceneLoaded), Event_OnSceneLoaded);
+                    EventManager.AddEventListener(nameof(Event_OnClientStopped), Event_OnClientStopped);
                 }
 
                 _harmonyPatched = true;
@@ -4201,17 +4201,17 @@ namespace oomtm450PuckMod_Ruleset {
                 Logging.Log("Unsubscribing from events.", ServerConfig, true);
                 NetworkCommunication.RemoveFromNotLogList(DATA_NAMES_TO_IGNORE);
                 if (ServerFunc.IsDedicatedServer()) {
-                    EventManager.RemoveEventListener("Event_Everyone_OnClientConnected", Event_Everyone_OnClientConnected);
-                    EventManager.RemoveEventListener("Event_Everyone_OnClientDisconnected", Event_Everyone_OnClientDisconnected);
-                    EventManager.RemoveEventListener("Event_Everyone_OnPlayerGameStateChanged", Event_Everyone_OnPlayerGameStateChanged);
+                    EventManager.RemoveEventListener(nameof(Event_Everyone_OnClientConnected), Event_Everyone_OnClientConnected);
+                    EventManager.RemoveEventListener(nameof(Event_Everyone_OnClientDisconnected), Event_Everyone_OnClientDisconnected);
+                    EventManager.RemoveEventListener(nameof(Event_Everyone_OnPlayerGameStateChanged), Event_Everyone_OnPlayerGameStateChanged);
                     EventManager.RemoveEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
-                    EventManager.RemoveEventListener("Event_Everyone_OnPlayerBodySpawned", Event_Everyone_OnPlayerBodySpawned);
-                    EventManager.RemoveEventListener("Event_CompetitiveAdjustments_OnArenaSync", Event_CompetitiveAdjustments_OnArenaSync);
+                    EventManager.RemoveEventListener(nameof(Event_Everyone_OnPlayerBodySpawned), Event_Everyone_OnPlayerBodySpawned);
+                    EventManager.RemoveEventListener(nameof(Event_CompetitiveAdjustments_OnArenaSync), Event_CompetitiveAdjustments_OnArenaSync);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
-                    EventManager.RemoveEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
-                    EventManager.RemoveEventListener("Event_OnClientStopped", Event_OnClientStopped);
+                    EventManager.RemoveEventListener(nameof(Event_OnSceneLoaded), Event_OnSceneLoaded);
+                    EventManager.RemoveEventListener(nameof(Event_OnClientStopped), Event_OnClientStopped);
                     Event_OnClientStopped(new Dictionary<string, object>());
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER_TO_CLIENT);
                     //_getStickLocation.Disable();
