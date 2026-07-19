@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
+using static Humanizer.In;
 using static oomtm450PuckMod_Sounds.SoundsSystem;
 
 namespace oomtm450PuckMod_Sounds {
@@ -196,75 +197,6 @@ namespace oomtm450PuckMod_Sounds {
 
             await Awaitable.MainThreadAsync();
 
-            foreach (string file in files) {
-                string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
-                if (Path.GetExtension(filePath).ToLowerInvariant() != SOUND_EXTENSION) {
-                    await Awaitable.NextFrameAsync(cancellationToken);
-                    continue;
-                }
-
-                using (UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS)) {
-                    DownloadHandlerAudioClip downloadHandler = (DownloadHandlerAudioClip)webRequest.downloadHandler;
-
-                    downloadHandler.streamAudio = true;
-
-                    var asyncOp = webRequest.SendWebRequest();
-
-                    while (!asyncOp.isDone) {
-                        if (cancellationToken.IsCancellationRequested) {
-                            await Awaitable.BackgroundThreadAsync();
-                            IsLoading = false;
-                            await Awaitable.MainThreadAsync();
-                            return;
-                        }
-
-                        await Awaitable.WaitForSecondsAsync(0.1f, cancellationToken);
-                    }
-
-                    if (webRequest.result != UnityWebRequest.Result.Success)
-                        Warnings.Add(webRequest.error);
-                    else {
-                        try {
-                            AudioClip clip = downloadHandler.audioClip;
-
-                            if (!clip) {
-                                Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} clip null.");
-                                continue;
-                            }
-
-                            clip.name = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
-
-                            if (!currentConfig.TryGetValue(clip.name, out SoundSettings clipSettings)) {
-                                clipSettings = new SoundSettings {
-                                    Weight = DEFAULT_SOUND_WEIGHT,
-                                    Volume = DEFAULT_SOUND_VOLUME,
-                                    Delay = DEFAULT_SOUND_DELAY,
-                                };
-                                currentConfig.Add(clip.name, clipSettings);
-                            }
-
-                            if (clipSettings.Weight <= 0)
-                                continue;
-
-                            DontDestroyOnLoad(clip);
-                            _audioClips.Add(clip);
-
-                            AddClipNameToCorrectList(clip.name, (int)clipSettings.Weight);
-                        }
-                        catch (Exception ex) {
-                            Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} 3 : {ex}");
-
-                            await Awaitable.BackgroundThreadAsync();
-                            IsLoading = false;
-                            await Awaitable.MainThreadAsync();
-                            return;
-                        }
-                    }
-                }
-
-                await Awaitable.NextFrameAsync(cancellationToken);
-            }
-
             try {
                 foreach (string key in currentConfig.Keys)
                     _soundSettings.AddOrUpdate(key, currentConfig[key]);
@@ -274,6 +206,11 @@ namespace oomtm450PuckMod_Sounds {
             }
             catch (Exception ex) {
                 Warnings.Add($"Sounds.{nameof(GetAudioClipsAsync)} 4 : {ex}");
+            }
+
+            foreach (string file in files) {
+                await CreateAudioClipAsync(file, cancellationToken);
+                await Awaitable.NextFrameAsync(cancellationToken);
             }
 
             try {
@@ -297,6 +234,114 @@ namespace oomtm450PuckMod_Sounds {
             await Awaitable.MainThreadAsync();
         }
 
+        private async Awaitable CreateAudioClipAsync(string file, CancellationToken cancellationToken = default) {
+            await Awaitable.MainThreadAsync();
+
+            string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
+            if (Path.GetExtension(filePath).ToLowerInvariant() != SOUND_EXTENSION) {
+                await Awaitable.NextFrameAsync(cancellationToken);
+                return;
+            }
+
+            string clipName = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
+
+            if (!_soundSettings.TryGetValue(clipName, out SoundSettings clipSettings)) {
+                clipSettings = new SoundSettings {
+                    Weight = DEFAULT_SOUND_WEIGHT,
+                    Volume = DEFAULT_SOUND_VOLUME,
+                    Delay = DEFAULT_SOUND_DELAY,
+                    FilePath = filePath,
+                };
+                _soundSettings.Add(clipName, clipSettings);
+            }
+            else {
+                if (clipSettings.Weight <= 0)
+                    return;
+
+                clipSettings.FilePath = filePath;
+            }
+
+            AddClipNameToCorrectList(clipName, (int)clipSettings.Weight);
+
+            if (!AudioHasToBePreloaded(clipName))
+                return;
+
+            await WebRequestAudioClipAsync(clipName, clipSettings.FilePath, cancellationToken);
+        }
+
+        private async Awaitable WebRequestAudioClipAsync(string clipName, string filePath, CancellationToken cancellationToken = default) {
+            await Awaitable.MainThreadAsync();
+
+            using (UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS)) {
+                DownloadHandlerAudioClip downloadHandler = (DownloadHandlerAudioClip)webRequest.downloadHandler;
+
+                downloadHandler.streamAudio = true;
+
+                var asyncOp = webRequest.SendWebRequest();
+
+                while (!asyncOp.isDone) {
+                    if (cancellationToken.IsCancellationRequested) {
+                        await Awaitable.BackgroundThreadAsync();
+                        IsLoading = false;
+                        await Awaitable.MainThreadAsync();
+                        return;
+                    }
+
+                    await Awaitable.WaitForSecondsAsync(0.1f, cancellationToken);
+                }
+
+                if (webRequest.result != UnityWebRequest.Result.Success)
+                    Warnings.Add(webRequest.error);
+                else {
+                    try {
+                        AudioClip clip = downloadHandler.audioClip;
+
+                        if (!clip) {
+                            Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} clip null {clipName}.");
+                            RemoveClip(clipName);
+                            return;
+                        }
+
+                        clip.name = clipName;
+
+                        DontDestroyOnLoad(clip);
+                        _audioClips.Add(clip);
+                    }
+                    catch (Exception ex) {
+                        Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} 3 : {ex}");
+
+                        RemoveClip(clipName);
+
+                        await Awaitable.BackgroundThreadAsync();
+                        IsLoading = false;
+                        await Awaitable.MainThreadAsync();
+                        return;
+                    }
+                }
+            }
+        }
+
+        private void RemoveClip(string clipName) {
+            FaceoffMusicList.Remove(clipName);
+            BlueGoalMusicList.Remove(clipName);
+            RedGoalMusicList.Remove(clipName);
+            BetweenPeriodsMusicList.Remove(clipName);
+            WarmupMusicList.Remove(clipName);
+            LastMinuteMusicList.Remove(clipName);
+            FirstFaceoffMusicList.Remove(clipName);
+            SecondFaceoffMusicList.Remove(clipName);
+            GameOverMusicList.Remove(clipName);
+        }
+
+        private bool AudioHasToBePreloaded(string clipName) {
+            if (!Sounds.ClientConfig.LazyLoading)
+                return true;
+            if (clipName.Contains(Codebase.SoundsSystem.GOAL_HORN))
+                return true;
+
+            return false;
+        }
+
         private void AddClipNameToCorrectList(string clipName, int weight = DEFAULT_SOUND_WEIGHT) {
             if (clipName.Contains(Codebase.SoundsSystem.FACEOFF_MUSIC))
                 FaceoffMusicList.Add(clipName, weight);
@@ -318,28 +363,12 @@ namespace oomtm450PuckMod_Sounds {
                 GameOverMusicList.Add(clipName, weight);
         }
 
-        internal void Play(string name, string type, float vol = float.MaxValue, float delay = 0, bool loop = false) {
+        internal async Awaitable PlayAsync(string name, string type, float vol = float.MaxValue, float delay = 0, bool loop = false) {
             if (string.IsNullOrEmpty(name))
                 return;
 
             if (type == Codebase.SoundsSystem.MUSIC && !Sounds.ClientConfig.Music)
                 return;
-
-            if (!_soundObjects.TryGetValue(name, out GameObject soundObject)) {
-                AudioClip clip = _audioClips.FirstOrDefault(x => x.name == name);
-                if (clip == null)
-                    return;
-
-                soundObject = new GameObject(name);
-                DontDestroyOnLoad(soundObject);
-                soundObject.AddComponent<AudioSource>();
-                soundObject.GetComponent<AudioSource>().clip = clip;
-                DontDestroyOnLoad(soundObject.GetComponent<AudioSource>());
-                _soundObjects.Add(name, soundObject);
-            }
-
-            AudioSource audioSource = soundObject.GetComponent<AudioSource>();
-            audioSource.loop = loop;
 
             SoundSettings soundSettings = null;
             float volModifier = DEFAULT_SOUND_VOLUME;
@@ -348,6 +377,30 @@ namespace oomtm450PuckMod_Sounds {
                 volModifier = (float)soundSettings.Volume;
                 delayModifier = (float)soundSettings.Delay;
             }
+            else
+                return;
+
+            AudioClip clip = _audioClips.FirstOrDefault(x => x.name == name);
+            if (clip == null) {
+                if (!Sounds.ClientConfig.LazyLoading)
+                    return;
+
+                await WebRequestAudioClipAsync(name, soundSettings.FilePath);
+                clip = _audioClips.FirstOrDefault(x => x.name == name);
+                if (clip == null)
+                    return;
+            }
+
+            if (!_soundObjects.TryGetValue(type, out GameObject soundObject)) {
+                soundObject = new GameObject(type);
+                DontDestroyOnLoad(soundObject);
+                DontDestroyOnLoad(soundObject.AddComponent<AudioSource>());
+                _soundObjects.Add(type, soundObject);
+            }
+
+            AudioSource audioSource = soundObject.GetComponent<AudioSource>();
+            audioSource.clip = clip;
+            audioSource.loop = loop;
 
             vol *= volModifier;
             audioSource.volume = vol;
@@ -372,8 +425,8 @@ namespace oomtm450PuckMod_Sounds {
                 audioSource.PlayDelayed(delay);
         }
 
-        internal void Stop(string name) {
-            if (string.IsNullOrEmpty(name) || !_soundObjects.TryGetValue(name, out GameObject soundObject))
+        internal void Stop(string type) {
+            if (string.IsNullOrEmpty(type) || !_soundObjects.TryGetValue(type, out GameObject soundObject))
                 return;
             soundObject.GetComponent<AudioSource>().Stop();
         }
@@ -457,11 +510,11 @@ namespace oomtm450PuckMod_Sounds {
                 if (blueGoalAudioSource == null || redGoalAudioSource == null)
                     return;
 
-                blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.REDGOALHORN));
+                blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.RED_GOAL_HORN));
                 blueGoalAudioSource.maxDistance = 400f;
                 DEFAULT_HORN_VOLUME = blueGoalAudioSource.volume;
                 
-                redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUEGOALHORN));
+                redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUE_GOAL_HORN));
                 redGoalAudioSource.maxDistance = 400f;
 
                 ChangeHornsVolume(Sounds.ClientConfig.HornVolume, new List<AudioSource> { blueGoalAudioSource, redGoalAudioSource, });
@@ -574,6 +627,9 @@ namespace oomtm450PuckMod_Sounds {
             public int? Weight { get; set; } = DEFAULT_SOUND_WEIGHT;
 
             public float? Delay { get; set; } = DEFAULT_SOUND_DELAY;
+
+            [JsonIgnore]
+            public string FilePath { get; set; } = "";
         }
 
         internal enum SoundType {

@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.4.1";
+        private static readonly string MOD_VERSION = "0.4.2";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -31,6 +31,7 @@ namespace oomtm450PuckMod_Sounds {
             "0.2.3a",
             "0.3.0",
             "0.4.0",
+            "0.4.1",
         });
 
         /// <summary>
@@ -151,6 +152,11 @@ namespace oomtm450PuckMod_Sounds {
         /// </summary>
         private static string _currentMusicPlaying = "";
 
+        /// <summary>
+        /// String, current music type playing.
+        /// </summary>
+        private static string _currentMusicPlayingType = "";
+
         // Client-side.
         private static readonly LockList<string> _extraSoundsToLoad = new LockList<string>();
         #endregion
@@ -169,51 +175,51 @@ namespace oomtm450PuckMod_Sounds {
                         return true;
 
                     if (newGameState.Phase == GamePhase.BlueScore) {
-                        _currentMusicPlaying = Codebase.SoundsSystem.BLUE_GOAL_MUSIC;
+                        _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.BLUE_GOAL_MUSIC;
                         string donorSong = DonorPrefs.GetSong(_lastGoalScorerSteamId);
-                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying, donorSong), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlayingType, donorSong), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
                     else if (newGameState.Phase == GamePhase.RedScore) {
-                        _currentMusicPlaying = Codebase.SoundsSystem.RED_GOAL_MUSIC;
+                        _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.RED_GOAL_MUSIC;
                         string donorSong = DonorPrefs.GetSong(_lastGoalScorerSteamId);
-                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying, donorSong), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlayingType, donorSong), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
                     else if (newGameState.Phase == GamePhase.Intermission) {
-                        _currentMusicPlaying = Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC;
-                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                        _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC;
+                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlayingType), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
                     else if (!_changedPhase) {
                         if (newGameState.Phase == GamePhase.GameOver) {
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.GAMEOVER_MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                            _currentMusicPlaying = Codebase.SoundsSystem.GAMEOVER_MUSIC;
+                            _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.GAMEOVER_MUSIC;
                         }
                         else if (newGameState.Phase == GamePhase.Warmup) {
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.WARMUP_MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                            _currentMusicPlaying = Codebase.SoundsSystem.WARMUP_MUSIC;
+                            _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.WARMUP_MUSIC;
                         }
-                        else if (string.IsNullOrEmpty(_currentMusicPlaying) || _currentMusicPlaying == Codebase.SoundsSystem.WARMUP_MUSIC) {
+                        else if (string.IsNullOrEmpty(_currentMusicPlayingType) || _currentMusicPlayingType == Codebase.SoundsSystem.WARMUP_MUSIC) {
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
                             if (newGameState.Phase == GamePhase.FaceOff) {
                                 if (!_hasPlayedLastMinuteMusic && GameManager.Instance.Tick <= 60 && GameManager.Instance.Period == 3) {
                                     _hasPlayedLastMinuteMusic = true;
-                                    _currentMusicPlaying = Codebase.SoundsSystem.LAST_MINUTE_MUSIC;
+                                    _currentMusicPlayingType = Codebase.SoundsSystem.LAST_MINUTE_MUSIC;
                                 }
                                 else if (!_hasPlayedFirstFaceoffMusic) {
                                     _hasPlayedFirstFaceoffMusic = true;
-                                    _currentMusicPlaying = Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC;
+                                    _currentMusicPlayingType = Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC;
                                 }
                                 else if (!_hasPlayedSecondFaceoffMusic) {
                                     _hasPlayedSecondFaceoffMusic = true;
-                                    _currentMusicPlaying = Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC;
+                                    _currentMusicPlayingType = Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC;
                                 }
                                 else
-                                    _currentMusicPlaying = Codebase.SoundsSystem.FACEOFF_MUSIC;
+                                    _currentMusicPlayingType = Codebase.SoundsSystem.FACEOFF_MUSIC;
 
-                                NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                                _currentMusicPlaying = Codebase.SoundsSystem.FACEOFF_MUSIC;
+                                NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlayingType), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                                _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.FACEOFF_MUSIC;
                             }
                         }
                     }
@@ -235,6 +241,7 @@ namespace oomtm450PuckMod_Sounds {
                     if (newGameState.Phase == GamePhase.Play) {
                         NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                         _currentMusicPlaying = "";
+                        _currentMusicPlayingType = "";
                         _lastGoalScorerSteamId = "";
                         return;
                     }
@@ -260,6 +267,7 @@ namespace oomtm450PuckMod_Sounds {
                     // Reset music.
                     NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     _currentMusicPlaying = "";
+                    _currentMusicPlayingType = "";
                     _hasPlayedLastMinuteMusic = false;
                     _hasPlayedFirstFaceoffMusic = false;
                     _hasPlayedSecondFaceoffMusic = false;
@@ -509,7 +517,7 @@ namespace oomtm450PuckMod_Sounds {
                                         if (ClientConfig.WarmupMusic && !((bool)enableWarmupMusic))
                                             _soundsSystem.StopAll();
                                         else if (!ClientConfig.WarmupMusic && (bool)enableWarmupMusic)
-                                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0, 0, true);
+                                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0, 0, true);
                                     }
 
                                     ClientConfig.WarmupMusic = (bool)enableWarmupMusic;
@@ -700,6 +708,7 @@ namespace oomtm450PuckMod_Sounds {
                 if (_soundsSystem != null) {
                     _soundsSystem.StopAll();
                     _currentMusicPlaying = "";
+                    _currentMusicPlayingType = "";
 
                     _soundsSystem.DestroyGameObjects();
                     _soundsSystem = null;
@@ -778,6 +787,7 @@ namespace oomtm450PuckMod_Sounds {
                             else if (value == Codebase.SoundsSystem.MUSIC) {
                                 NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                                 _currentMusicPlaying = "";
+                                _currentMusicPlayingType = "";
                             }
                             break;
                     }
@@ -887,9 +897,10 @@ namespace oomtm450PuckMod_Sounds {
                 if (_soundsSystem == null)
                     return;
 
-                if (!string.IsNullOrEmpty(_currentMusicPlaying)) {
-                    _soundsSystem.Stop(_currentMusicPlaying);
+                if (!string.IsNullOrEmpty(_currentMusicPlayingType)) {
+                    _soundsSystem.Stop(_currentMusicPlayingType);
                     _currentMusicPlaying = "";
+                    _currentMusicPlayingType = "";
                 }
 
                 _soundsSystem.DestroyGameObjects();
@@ -1042,6 +1053,8 @@ namespace oomtm450PuckMod_Sounds {
                         else
                             _currentMusicPlaying = chosenSound = playSoundDataStrSplitted[1];
 
+                        _currentMusicPlayingType = playSoundDataStrSplitted[0];
+
                         bool isFaceoffMusic = false;
                         float delay = 0;
                         if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FACEOFF_MUSIC) {
@@ -1055,26 +1068,31 @@ namespace oomtm450PuckMod_Sounds {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BlueGoalMusicList, SoundsSystem.SoundType.BlueGoal, seed);
 
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GoalMusicVolume, 2.25f);
+                            _currentMusicPlayingType = Codebase.SoundsSystem.MUSIC;
+                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GoalMusicVolume, 2.25f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.RED_GOAL_MUSIC) {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.RedGoalMusicList, SoundsSystem.SoundType.RedGoal, seed);
 
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GoalMusicVolume, 2.25f);
+                            _currentMusicPlayingType = Codebase.SoundsSystem.MUSIC;
+                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GoalMusicVolume, 2.25f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC) {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BetweenPeriodsMusicList, SoundsSystem.SoundType.BetweenPeriods, seed);
 
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.BetweenPeriodsMusicVolume, 1.5f);
+                            _currentMusicPlayingType = Codebase.SoundsSystem.MUSIC;
+                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.BetweenPeriodsMusicVolume, 1.5f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.WARMUP_MUSIC) {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.WarmupMusicList, SoundsSystem.SoundType.Warmup, seed);
 
-                            if (ClientConfig.WarmupMusic)
-                                _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.WarmupMusicVolume, 0, true);
+                            if (ClientConfig.WarmupMusic) {
+                                _currentMusicPlayingType = Codebase.SoundsSystem.MUSIC;
+                                _ = _soundsSystem.PlayAsync(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.WarmupMusicVolume, 0, true);
+                            }
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.LAST_MINUTE_MUSIC) {
                             if (string.IsNullOrEmpty(chosenSound))
@@ -1119,15 +1137,18 @@ namespace oomtm450PuckMod_Sounds {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.GameOverMusicList, SoundsSystem.SoundType.None, seed);
 
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GameOverMusicVolume, 0.5f);
+                            _currentMusicPlayingType = Codebase.SoundsSystem.MUSIC;
+                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GameOverMusicVolume, 0.5f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.WHISTLE)
-                            _soundsSystem.Play(Codebase.SoundsSystem.WHISTLE, "");
+                            _ = _soundsSystem.PlayAsync(Codebase.SoundsSystem.WHISTLE, "");
 
                         if (isFaceoffMusic) {
                             if (string.IsNullOrEmpty(_currentMusicPlaying))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FaceoffMusicList, SoundsSystem.SoundType.Faceoff, seed);
-                            _soundsSystem.Play(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.FaceoffMusicVolume, delay);
+
+                            _currentMusicPlayingType = Codebase.SoundsSystem.MUSIC;
+                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.FaceoffMusicVolume, delay);
                         }
                         break;
 
@@ -1147,13 +1168,14 @@ namespace oomtm450PuckMod_Sounds {
                         _soundsSystem.Warnings.Clear();
 
                         if (dataStr == Codebase.SoundsSystem.MUSIC) {
-                            if (!string.IsNullOrEmpty(_currentMusicPlaying))
-                                _soundsSystem.Stop(_currentMusicPlaying);
+                            if (!string.IsNullOrEmpty(_currentMusicPlayingType))
+                                _soundsSystem.Stop(_currentMusicPlayingType);
                         }
                         else if (dataStr == Codebase.SoundsSystem.ALL)
                             _soundsSystem.StopAll();
 
                         _currentMusicPlaying = "";
+                        _currentMusicPlayingType = "";
                         break;
 
                     case Codebase.SoundsSystem.LOAD_EXTRA_SOUNDS:
@@ -1176,21 +1198,21 @@ namespace oomtm450PuckMod_Sounds {
 
             if (!_hasPlayedLastMinuteMusic && GameManager.Instance.Tick <= 60 && GameManager.Instance.GameState.Value.Period == 3) {
                 _hasPlayedLastMinuteMusic = true;
-                _currentMusicPlaying = Codebase.SoundsSystem.LAST_MINUTE_MUSIC_DELAYED;
+                _currentMusicPlayingType = Codebase.SoundsSystem.LAST_MINUTE_MUSIC_DELAYED;
             }
             else if (!_hasPlayedFirstFaceoffMusic) {
                 _hasPlayedFirstFaceoffMusic = true;
-                _currentMusicPlaying = Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC_DELAYED;
+                _currentMusicPlayingType = Codebase.SoundsSystem.FIRST_FACEOFF_MUSIC_DELAYED;
             }
             else if (!_hasPlayedSecondFaceoffMusic) {
                 _hasPlayedSecondFaceoffMusic = true;
-                _currentMusicPlaying = Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC_DELAYED;
+                _currentMusicPlayingType = Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC_DELAYED;
             }
             else
-                _currentMusicPlaying = Codebase.SoundsSystem.FACEOFF_MUSIC_DELAYED;
+                _currentMusicPlayingType = Codebase.SoundsSystem.FACEOFF_MUSIC_DELAYED;
 
-            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlaying), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-            _currentMusicPlaying = Codebase.SoundsSystem.FACEOFF_MUSIC;
+            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlayingType), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+            _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.FACEOFF_MUSIC;
         }
 
         /// <summary>

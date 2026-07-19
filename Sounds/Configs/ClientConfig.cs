@@ -84,9 +84,9 @@ namespace oomtm450PuckMod_Sounds.Configs {
         public bool WarmupMusic { get; set; } = true;
 
         /// <summary>
-        /// Bool, true if the server has authority on how loud each music has to be compared to each others. False if the client has authority.
+        /// Bool, true if the audio clips have to be created on play, then cached.
         /// </summary>
-        public bool UseServerPerMusicVolume { get; set; } = true;
+        public bool LazyLoading { get; set; } = true;
 
         /// <summary>
         /// String, name of the mod.

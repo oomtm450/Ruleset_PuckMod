@@ -10,8 +10,9 @@
         internal const string ALL = "all";
         internal const string MUSIC = "music";
         internal const string WHISTLE = "whistle";
-        internal const string BLUEGOALHORN = "bluegoalhorn";
-        internal const string REDGOALHORN = "redgoalhorn";
+        internal const string GOAL_HORN = "goalhorn";
+        internal const string BLUE_GOAL_HORN = "blue" + GOAL_HORN;
+        internal const string RED_GOAL_HORN = "red" + GOAL_HORN;
         internal const string FACEOFF_MUSIC = "faceoffmusic";
         internal const string FACEOFF_MUSIC_DELAYED = FACEOFF_MUSIC + "d";
 
