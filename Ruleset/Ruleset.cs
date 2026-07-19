@@ -3367,8 +3367,8 @@ namespace oomtm450PuckMod_Ruleset {
                                 NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
                                 Logging.Log($"Ref mode has been enabled.", ServerConfig);
+                                SystemChatMessages.Add("Ref mode has been enabled.");
                             }
-                            SystemChatMessages.Add("Ref mode has been enabled.");
                         }
                         else if (dataStr == "0") {
                             if (ServerConfigBackup != null) {
@@ -3376,8 +3376,8 @@ namespace oomtm450PuckMod_Ruleset {
                                 ServerConfigBackup = null;
 
                                 Logging.Log($"Ref mode has been disabled.", ServerConfig);
+                                SystemChatMessages.Add("Ref mode has been disabled.");
                             }
-                            SystemChatMessages.Add("Ref mode has been disabled.");
                         }
 
                         break;
