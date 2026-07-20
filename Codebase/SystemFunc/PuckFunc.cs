@@ -13,8 +13,8 @@ namespace Codebase {
             if (!lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(playerSteamId, out Stopwatch lastPuckExitWatch))
                 return false;
 
-            if (puckYCoordinate > maxPuckYCoordinateOnGround)
-                return true;
+            if (puckYCoordinate < maxPuckYCoordinateOnGround)
+                return false;
 
             if (currentPuckTouchWatch.ElapsedMilliseconds - lastPuckExitWatch.ElapsedMilliseconds < maxTippedMilliseconds)
                 return true;
