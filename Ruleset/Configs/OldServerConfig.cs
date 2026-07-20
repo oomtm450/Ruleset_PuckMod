@@ -46,12 +46,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; } = 67; // TODO : Change after release.
+        public int MaxTippedMilliseconds { get; } = 33;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; } = 350; // TODO : Change after release.
+        public int MinPossessionMilliseconds { get; } = 333;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
@@ -163,7 +163,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds before leaving the stick.
         /// </summary>
-        public int DelayOfGameMillisecondsThreshold { get; } = 120; // TODO : Change after release.
+        public int DelayOfGameMillisecondsThreshold { get; } = 25;
 
         /// <summary>
         /// Bool, true if faceoff violation penalty is enabled.
@@ -273,28 +273,28 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Double, deferred icing max possible time multiplicator.
         /// </summary>
-        public double DeferredMaxPossibleTimeMultiplicator { get; } = 280d; // TODO : Change after release.
+        public double DeferredMaxPossibleTimeMultiplicator { get; } = 300d;
 
         /// <summary>
         /// Double, deferred icing max possible time addition (after multiplicator).
         /// </summary>
-        public double DeferredMaxPossibleTimeAddition { get; } = 9750d; // TODO : Change after release.
+        public double DeferredMaxPossibleTimeAddition { get; } = 9850d;
 
         /// <summary>
         /// Float, deferred icing max possible time substraction depending of players distance to puck (after addition).
         /// </summary>
-        public float DeferredMaxPossibleTimeDistanceDelta { get; } = 250f; // TODO : Change after release.
+        public float DeferredMaxPossibleTimeDistanceDelta { get; } = 200f;
 
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
-        public Dictionary<Codebase.Zone, float> MaxPossibleTime { get; } = new Dictionary<Codebase.Zone, float> { // TODO : Change after release.
-            { Codebase.Zone.BlueTeam_BehindGoalLine, 9500f },
-            { Codebase.Zone.RedTeam_BehindGoalLine, 9500f },
-            { Codebase.Zone.BlueTeam_Zone, 7750f },
-            { Codebase.Zone.RedTeam_Zone, 7750f },
-            { Codebase.Zone.BlueTeam_Center, 5500f },
-            { Codebase.Zone.RedTeam_Center, 5500f },
+        public Dictionary<Codebase.Zone, float> MaxPossibleTime { get; } = new Dictionary<Codebase.Zone, float> {
+            { Codebase.Zone.BlueTeam_BehindGoalLine, 9850f },
+            { Codebase.Zone.RedTeam_BehindGoalLine, 9850f },
+            { Codebase.Zone.BlueTeam_Zone, 8125f },
+            { Codebase.Zone.RedTeam_Zone, 8125f },
+            { Codebase.Zone.BlueTeam_Center, 5800f },
+            { Codebase.Zone.RedTeam_Center, 5800f },
         };
 
         /// <summary>
@@ -305,12 +305,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, delta used to calculate the dynamic icing possible times.
         /// </summary>
-        public float Delta { get; } = 21.75f; // TODO : Change after release.
+        public float Delta { get; } = 22f;
 
         /// <summary>
         /// Float, max height before deferred icing does not check for possibility that the other team touches the puck before icing.
         /// </summary>
-        public float DeferredMaxHeight { get; } = 0.85f; // TODO : Change after release.
+        public float DeferredMaxHeight { get; } = 0.8f;
 
         /// <summary>
         /// Bool, true if icing team stamina has to be drained.
