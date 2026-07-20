@@ -6,7 +6,8 @@ namespace Codebase {
     /// </summary>
     public class PuckFunc {
         public static bool PuckIsTipped(string playerSteamId, int maxTippedMilliseconds, LockDictionary<string, Stopwatch> playersCurrentPuckTouch,
-            LockDictionary<string, Stopwatch> lastTimeOnCollisionStayOrExitWasCalled, float puckYCoordinate, float maxPuckYCoordinateOnGround) {
+            LockDictionary<string, Stopwatch> lastTimeOnCollisionStayOrExitWasCalled, float puckYCoordinate, float maxPuckYCoordinateOnGround, float puckSpeed,
+            float puckSpeedRatio) {
             if (!playersCurrentPuckTouch.TryGetValue(playerSteamId, out Stopwatch currentPuckTouchWatch))
                 return false;
 
@@ -16,7 +17,7 @@ namespace Codebase {
             if (puckYCoordinate > maxPuckYCoordinateOnGround)
                 return true;
 
-            if (currentPuckTouchWatch.ElapsedMilliseconds - lastPuckExitWatch.ElapsedMilliseconds < maxTippedMilliseconds)
+            if (currentPuckTouchWatch.ElapsedMilliseconds - lastPuckExitWatch.ElapsedMilliseconds < maxTippedMilliseconds / (puckSpeed * puckSpeedRatio))
                 return true;
 
             return false;

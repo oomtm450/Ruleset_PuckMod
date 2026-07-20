@@ -645,8 +645,9 @@ namespace oomtm450PuckMod_Ruleset {
                     var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
 
                     if (__instance) {
-                        if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight + ArenaOffsetY) || _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == playerSteamId) {
+                        if (_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == playerSteamId ||
+                            !PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
+                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight + ArenaOffsetY, __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
                             if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && playerHasPossession)
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam), __instance);
@@ -747,8 +748,9 @@ namespace oomtm450PuckMod_Ruleset {
                     lastTimeCollisionWatch.Restart();
 
                     if (__instance) {
-                        if (!PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight + ArenaOffsetY) || _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId) {
+                        if (_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId ||
+                            !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
+                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight + ArenaOffsetY, __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
                             if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && playerHasPossession)
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam), __instance);

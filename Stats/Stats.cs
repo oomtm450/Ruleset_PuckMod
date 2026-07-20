@@ -265,7 +265,7 @@ namespace oomtm450PuckMod_Stats {
 
         private static PlayerTeam _lastTeamOnPuckTipIncluded = PlayerTeam.Blue;
 
-        //private static PlayerTeam _lastTeamOnPuck = PlayerTeam.Blue;
+        private static PlayerTeam _lastTeamOnPuck = PlayerTeam.Blue;
 
         private static PuckRaycast _puckRaycast;
 
@@ -1013,18 +1013,21 @@ namespace oomtm450PuckMod_Stats {
                         player = stick.Player;
                     }
 
-                    string playerSteamId = player.SteamId.Value.ToString();
+                    string currentPlayerSteamId = player.SteamId.Value.ToString();
 
-                    if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(playerSteamId, out Stopwatch lastTimeCollisionWatch)) {
+                    if (string.IsNullOrEmpty(currentPlayerSteamId))
+                        return;
+
+                    if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionWatch)) {
                         lastTimeCollisionWatch = new Stopwatch();
                         lastTimeCollisionWatch.Start();
-                        _lastTimeOnCollisionStayOrExitWasCalled.Add(playerSteamId, lastTimeCollisionWatch);
+                        _lastTimeOnCollisionStayOrExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionWatch);
                     }
                     lastTimeCollisionWatch.Restart();
 
                     string lastPlayerOnPuckTipIncluded = _lastPlayerOnPuckTipIncludedSteamId[player.Team].SteamId;
 
-                    if (playerSteamId != lastPlayerOnPuckTipIncluded) {
+                    if (currentPlayerSteamId != lastPlayerOnPuckTipIncluded) {
                         if (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncluded) && _lastTeamOnPuckTipIncluded == player.Team) {
                             double timeSinceLastTouchMs = (DateTime.UtcNow - _lastPlayerOnPuckTipIncludedSteamId[player.Team].Time).TotalMilliseconds;
                             if (timeSinceLastTouchMs < 5000 && timeSinceLastTouchMs > 80) {
@@ -1038,15 +1041,16 @@ namespace oomtm450PuckMod_Stats {
                             }
                         }
 
-                        _lastPlayerOnPuckTipIncludedSteamId[player.Team] = (playerSteamId, DateTime.UtcNow);
+                        _lastPlayerOnPuckTipIncludedSteamId[player.Team] = (currentPlayerSteamId, DateTime.UtcNow);
                     }
 
                     _lastTeamOnPuckTipIncluded = player.Team;
 
-                    if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                        __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight)) {
-                        //_lastTeamOnPuck = player.Team;
-                        _lastPlayerOnPuckSteamId[player.Team] = (playerSteamId, DateTime.UtcNow);
+                    if (_lastPlayerOnPuckSteamId[_lastTeamOnPuck].SteamId == currentPlayerSteamId ||
+                        !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
+                        __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight + ArenaOffsetY, __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
+                        _lastTeamOnPuck = player.Team;
+                        _lastPlayerOnPuckSteamId[player.Team] = (currentPlayerSteamId, DateTime.UtcNow);
                     }
                 }
                 catch (Exception ex) {
@@ -1077,22 +1081,26 @@ namespace oomtm450PuckMod_Stats {
                     if (!__instance.IsTouchingStick)
                         return;
 
-                    string playerSteamId = stick.Player.SteamId.Value.ToString();
+                    string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
 
-                    if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(playerSteamId, out Stopwatch lastTimeCollisionWatch)) {
+                    if (string.IsNullOrEmpty(currentPlayerSteamId))
+                        return;
+
+                    if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionWatch)) {
                         lastTimeCollisionWatch = new Stopwatch();
                         lastTimeCollisionWatch.Start();
-                        _lastTimeOnCollisionStayOrExitWasCalled.Add(playerSteamId, lastTimeCollisionWatch);
+                        _lastTimeOnCollisionStayOrExitWasCalled.Add(currentPlayerSteamId, lastTimeCollisionWatch);
                     }
                     lastTimeCollisionWatch.Restart();
 
-                    _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team] = (playerSteamId, DateTime.UtcNow);
+                    _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team] = (currentPlayerSteamId, DateTime.UtcNow);
                     _lastTeamOnPuckTipIncluded = stick.Player.Team;
 
-                    if (!PuckFunc.PuckIsTipped(playerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                        __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight + ArenaOffsetY)) {
-                        //_lastTeamOnPuck = stick.Player.Team;
-                        _lastPlayerOnPuckSteamId[stick.Player.Team] = (playerSteamId, DateTime.UtcNow);
+                    if (_lastPlayerOnPuckSteamId[_lastTeamOnPuck].SteamId == currentPlayerSteamId ||
+                        !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
+                        __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight + ArenaOffsetY, __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
+                        _lastTeamOnPuck = stick.Player.Team;
+                        _lastPlayerOnPuckSteamId[stick.Player.Team] = (currentPlayerSteamId, DateTime.UtcNow);
                     }
                 }
                 catch (Exception ex) {

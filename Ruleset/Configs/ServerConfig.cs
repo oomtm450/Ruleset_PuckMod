@@ -86,6 +86,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public int MaxTippedMilliseconds { get; set; } = 33;
 
         /// <summary>
+        /// Float, puck speed tipping ratio.
+        /// </summary>
+        public float PuckSpeedTippingRatio { get; set; } = 0.1f;
+
+        /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
         public int MinPossessionMilliseconds { get; set; } = 333;
@@ -143,6 +148,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             Penalty = new PenaltyConfig(serverConfig.Penalty);
 
             MaxTippedMilliseconds = serverConfig.MaxTippedMilliseconds;
+            PuckSpeedTippingRatio = serverConfig.PuckSpeedTippingRatio;
             MinPossessionMilliseconds = serverConfig.MinPossessionMilliseconds;
             MaxPossessionMilliseconds = serverConfig.MaxPossessionMilliseconds;
 
@@ -175,6 +181,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (MaxTippedMilliseconds == _oldConfig.MaxTippedMilliseconds)
                 MaxTippedMilliseconds = newConfig.MaxTippedMilliseconds;
+
+            if (PuckSpeedTippingRatio == _oldConfig.PuckSpeedTippingRatio)
+                PuckSpeedTippingRatio = newConfig.PuckSpeedTippingRatio;
 
             if (MinPossessionMilliseconds == _oldConfig.MinPossessionMilliseconds)
                 MinPossessionMilliseconds = newConfig.MinPossessionMilliseconds;

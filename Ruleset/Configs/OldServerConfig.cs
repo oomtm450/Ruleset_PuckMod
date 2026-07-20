@@ -49,6 +49,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public int MaxTippedMilliseconds { get; } = 33;
 
         /// <summary>
+        /// Float, puck speed tipping ratio.
+        /// </summary>
+        public float PuckSpeedTippingRatio { get; } = 0.1f;
+
+        /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
         public int MinPossessionMilliseconds { get; } = 333;
