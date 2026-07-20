@@ -34,7 +34,7 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// <summary>
         /// Float, puck speed tipping ratio.
         /// </summary>
-        public float PuckSpeedTippingRatio { get; } = 0.1f;
+        public float PuckSpeedTippingRatio { get; } = 0.025f;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.

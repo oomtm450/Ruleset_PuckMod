@@ -1048,7 +1048,7 @@ namespace oomtm450PuckMod_Stats {
 
                     if (_lastPlayerOnPuckSteamId[_lastTeamOnPuck].SteamId == currentPlayerSteamId ||
                         !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                        __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight + ArenaOffsetY, __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
+                            __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight + ArenaOffsetY, __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
                         _lastTeamOnPuck = player.Team;
                         _lastPlayerOnPuckSteamId[player.Team] = (currentPlayerSteamId, DateTime.UtcNow);
                     }
@@ -1098,7 +1098,7 @@ namespace oomtm450PuckMod_Stats {
 
                     if (_lastPlayerOnPuckSteamId[_lastTeamOnPuck].SteamId == currentPlayerSteamId ||
                         !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                        __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight + ArenaOffsetY, __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
+                            __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight + ArenaOffsetY, __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
                         _lastTeamOnPuck = stick.Player.Team;
                         _lastPlayerOnPuckSteamId[stick.Player.Team] = (currentPlayerSteamId, DateTime.UtcNow);
                     }
