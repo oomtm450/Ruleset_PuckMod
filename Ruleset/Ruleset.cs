@@ -645,17 +645,9 @@ namespace oomtm450PuckMod_Ruleset {
                     var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
 
                     if (__instance) {
-                        var puckWasTipped = PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight + ArenaOffsetY, __instance.Speed, ServerConfig.PuckSpeedTippingRatio);
-                        if (!puckWasTipped) {
-                            Logging.Log($"PUCK WAS NOT TIPPED !!!", ServerConfig, true); // TODO
-                            Logging.Log($"PUCK SPEED : {__instance.Speed}", ServerConfig, true); // TODO
-                            Logging.Log($"PUCK MAXTIPPEDMILLISECONDS AFTER CALC : {ServerConfig.MaxTippedMilliseconds / (__instance.Speed * ServerConfig.PuckSpeedTippingRatio)}", ServerConfig, true); // TODO
-                        }
-
                         if (_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId ||
                             !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                                __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight + ArenaOffsetY, __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
+                                __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
                             if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && playerHasPossession)
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(stick.Player.Team), __instance);
@@ -756,17 +748,9 @@ namespace oomtm450PuckMod_Ruleset {
                     lastTimeCollisionWatch.Restart();
 
                     if (__instance) {
-                        var puckWasTipped = PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                            __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight + ArenaOffsetY, __instance.Speed, ServerConfig.PuckSpeedTippingRatio);
-                        if (!puckWasTipped) {
-                            Logging.Log($"PUCK WAS NOT TIPPED !!!", ServerConfig, true); // TODO
-                            Logging.Log($"PUCK SPEED : {__instance.Speed}", ServerConfig, true); // TODO
-                            Logging.Log($"PUCK MAXTIPPEDMILLISECONDS AFTER CALC : {ServerConfig.MaxTippedMilliseconds / (__instance.Speed * ServerConfig.PuckSpeedTippingRatio)}", ServerConfig, true); // TODO
-                        }
-
                         if (_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId ||
                             !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                                __instance.Rigidbody.transform.position.y, ServerConfig.Faceoff.PuckIceContactHeight + ArenaOffsetY, __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
+                                __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
                             if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && playerHasPossession)
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(stick.Player.Team), __instance);
