@@ -1617,33 +1617,15 @@ namespace oomtm450PuckMod_Ruleset {
                             string lastPlayerOnPuckOtherTeamSteamId = _lastPlayerOnPuckSteamId[lastPlayerOnPuckOtherTeam];
                             bool playerTouchedOtherTeam = _playersOnPuckDateTime.TryGetValue(lastPlayerOnPuckOtherTeamSteamId, out var lastTouchOtherTeamDateTime);
                             if (!playerTouchedOtherTeam)
-                                lastTouchDateTime = (lastPlayerOnPuckOtherTeam, DateTime.MinValue);
+                                lastTouchOtherTeamDateTime = (lastPlayerOnPuckOtherTeam, DateTime.MinValue);
 
                             bool playerWasLastInPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == lastPlayerOnPuckSteamId;
-
-                            Logging.Log("playerTouched : " + playerTouched, ServerConfig, true); // TODO
-                            Logging.Log("playerTouchedOtherTeam : " + playerTouchedOtherTeam, ServerConfig, true); // TODO
-
-                            Logging.Log("playerWasLastInPossession : " + playerWasLastInPossession, ServerConfig, true); // TODO
-
-                            Logging.Log("_puckDeflectedDateTimeSinceLastTouch : " + _puckDeflectedDateTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
-
-                            if (playerTouched)
-                                Logging.Log("lastTouchDateTime.LastTouchDateTime : " + lastTouchDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
-                            if (playerTouchedOtherTeam)
-                                Logging.Log("lastTouchOtherTeamDateTime.LastTouchDateTime : " + lastTouchOtherTeamDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
-
-                            Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime), ServerConfig, true); // TODO
 
                             bool otherTeamTouchedTooClose = false;
                             if (playerTouchedOtherTeam && (lastTouchDateTime.LastTouchDateTime - lastTouchOtherTeamDateTime.LastTouchDateTime).TotalMilliseconds < ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)
                                 otherTeamTouchedTooClose = true;
 
-                            Logging.Log($"(lastTouchDateTime.LastTouchDateTime - lastTouchOtherTeamDateTime.LastTouchDateTime).TotalMilliseconds : {(lastTouchDateTime.LastTouchDateTime - lastTouchOtherTeamDateTime.LastTouchDateTime).TotalMilliseconds}", ServerConfig, true); // TODO
-                            Logging.Log($"ServerConfig.Penalty.DelayOfGameMillisecondsThreshold : {ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}", ServerConfig, true); // TODO
-                            Logging.Log("otherTeamTouchedTooClose : " + otherTeamTouchedTooClose, ServerConfig, true); // TODO
-
-                            playerTouched = (playerTouched || playerWasLastInPossession);
+                            playerTouched = playerTouched || playerWasLastInPossession;
                             if (!playerTouched ||
                                 otherTeamTouchedTooClose ||
                                 (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime) ||
