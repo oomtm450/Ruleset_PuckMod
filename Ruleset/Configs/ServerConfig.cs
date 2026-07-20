@@ -906,12 +906,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
-        public float CollisionForceThreshold { get; set; } = 0.9695f;
+        public float CollisionForceThreshold { get; set; } = 0.97f;
 
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
-        public float GoalieRadius { get; set; } = 0.81f;
+        public float GoalieRadius { get; set; } = 0.82f;
 
         #region Constructors
         /// <summary>
