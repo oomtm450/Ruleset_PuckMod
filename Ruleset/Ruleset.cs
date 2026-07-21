@@ -1746,10 +1746,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                             // Late roughing.
                             if (_playersWasLastRanIntoWithoutPuckTime.TryGetValue(playerSteamId, out var playerWasLastRanIntoWithoutPuckTime) && playerWasLastRanIntoWithoutPuckTime.Item2 + TimeSpan.FromMilliseconds(ServerConfig.Penalty.LateInterferenceTimeThreshold) > now) {
-                                Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerLastJumpedIntoWithoutPuckTime.Item1);
-                                if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned) {
-                                    _playersWasLastHitWithoutPuckDateTime.AddOrUpdate(playerSteamId, (playerLastJumpedIntoWithoutPuckTime.Item1, now));
-                                }
+                                _playersWasLastHitWithoutPuckDateTime.AddOrUpdate(playerSteamId, (playerLastJumpedIntoWithoutPuckTime.Item1, now));
                             }
                         }
 
