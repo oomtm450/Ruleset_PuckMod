@@ -1408,14 +1408,14 @@ namespace oomtm450PuckMod_Ruleset {
                             content = content.Replace(@"/rule", "").Replace("true", "1").Replace("false", "0").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
-                            NetworkCommunication.SendData(Constants.MOD_NAME + "rule", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            NetworkCommunication.SendData("rule", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                         else if (content.StartsWith(@"/refmode")) {
                             content = content.Replace(@"/refmode", "").Replace("true", "1").Replace("false", "0").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
-                            NetworkCommunication.SendData(Constants.MOD_NAME + "refmode", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            NetworkCommunication.SendData("refmode", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                         else if (content.StartsWith(@"/togglehighstick")) {
@@ -1454,21 +1454,21 @@ namespace oomtm450PuckMod_Ruleset {
                             content = content.Replace(@"/addrefsteamid", "").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
-                            NetworkCommunication.SendData(Constants.MOD_NAME + "addrefsteamid", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            NetworkCommunication.SendData("addrefsteamid", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                         else if (content.StartsWith(@"/removerefsteamid")) {
                             content = content.Replace(@"/removerefsteamid", "").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
-                            NetworkCommunication.SendData(Constants.MOD_NAME + "removerefsteamid", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            NetworkCommunication.SendData("removerefsteamid", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                         else if (content.StartsWith(@"/addpermrefsteamid")) {
                             content = content.Replace(@"/addpermrefsteamid", "").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
-                            NetworkCommunication.SendData(Constants.MOD_NAME + "addpermrefsteamid", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            NetworkCommunication.SendData("addpermrefsteamid", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                         else if (content.StartsWith(@"/pen")) {
@@ -3356,51 +3356,82 @@ namespace oomtm450PuckMod_Ruleset {
                         CallGoalieInt((PlayerTeam)gIntStoppageTeamInt, gintReferee);
                         break;
 
-                    case Constants.MOD_NAME + "refmode": // SERVER-SIDE : Remove rules to make the server reffable. // TODO : Constant.
+                    case "refmode": // SERVER-SIDE : Remove rules to make the server reffable. // TODO : Constant.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
-                        if (dataStr == "1") {
-                            if (ServerConfigBackup == null) {
-                                ServerConfigBackup = new Configs.ServerConfig(ServerConfig);
+                        if (ServerConfigBackup != null && (dataStr == "1" || dataStr == "2" || dataStr == "3")) {
+                            ServerConfig = new Configs.ServerConfig(ServerConfigBackup);
+                            ServerConfigBackup = null;
+                        }
 
-                                ServerConfig.Offside.BlueTeam = false;
-                                ServerConfig.Offside.RedTeam = false;
+                        if (dataStr == "1" || dataStr == "2") {
+                            ServerConfigBackup = new Configs.ServerConfig(ServerConfig);
 
-                                ServerConfig.Icing.BlueTeam = false;
-                                ServerConfig.Icing.RedTeam = false;
+                            ServerConfig.Offside.BlueTeam = false;
+                            ServerConfig.Offside.RedTeam = false;
 
-                                ServerConfig.HighStick.BlueTeam = false;
-                                ServerConfig.HighStick.RedTeam = false;
+                            ServerConfig.Icing.BlueTeam = false;
+                            ServerConfig.Icing.RedTeam = false;
 
-                                ServerConfig.Penalty.Charging = false;
-                                ServerConfig.Penalty.DelayOfGame = false;
-                                ServerConfig.Penalty.Embellishment = false;
-                                ServerConfig.Penalty.FaceoffViolation = false;
-                                ServerConfig.Faceoff.EnableViolations = false; // TODO : Create new ref command to redo faceoff to simulate violations.
-                                ServerConfig.Penalty.GoalieInterference = false;
-                                ServerConfig.Penalty.Interference = false;
-                                ServerConfig.Penalty.Roughing = false;
+                            ServerConfig.HighStick.BlueTeam = false;
+                            ServerConfig.HighStick.RedTeam = false;
 
+                            if (dataStr == "2") {
                                 NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
-                                Logging.Log($"Ref mode has been enabled.", ServerConfig);
-                                SystemChatMessages.Add("Ref mode has been enabled.");
+                                Logging.Log($"Ref mode has been enabled. (Linesman only)", ServerConfig);
+                                SystemChatMessages.Add("Ref mode has been enabled. (Linesman only)");
+
+                                return;
                             }
                         }
-                        else if (dataStr == "0") {
+                        
+                        if (dataStr == "1" || dataStr == "3") {
+                            ServerConfigBackup = new Configs.ServerConfig(ServerConfig);
+
+                            ServerConfig.Penalty.Charging = false;
+                            ServerConfig.Penalty.DelayOfGame = false;
+                            ServerConfig.Penalty.Embellishment = false;
+                            ServerConfig.Penalty.FaceoffViolation = false;
+                            ServerConfig.Faceoff.EnableViolations = false; // TODO : Create new ref command to redo faceoff to simulate violations.
+                            ServerConfig.Penalty.GoalieInterference = false;
+                            ServerConfig.Penalty.Interference = false;
+                            ServerConfig.Penalty.Roughing = false;
+
+                            if (dataStr == "3") {
+                                NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+
+                                Logging.Log($"Ref mode has been enabled. (Referee only)", ServerConfig);
+                                SystemChatMessages.Add("Ref mode has been enabled. (Referee only)");
+
+                                return;
+                            }
+                        }
+
+                        if (dataStr == "1") {
+                            NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+
+                            Logging.Log($"Ref mode has been enabled. (Hybrid)", ServerConfig);
+                            SystemChatMessages.Add("Ref mode has been enabled. (Hybrid)");
+
+                            return;
+                        }
+
+                        if (dataStr == "0") {
                             if (ServerConfigBackup != null) {
                                 ServerConfig = new Configs.ServerConfig(ServerConfigBackup);
                                 ServerConfigBackup = null;
 
                                 Logging.Log($"Ref mode has been disabled.", ServerConfig);
                                 SystemChatMessages.Add("Ref mode has been disabled.");
+
+                                return;
                             }
                         }
-
                         break;
 
-                    case Constants.MOD_NAME + "addrefsteamid": // SERVER-SIDE : Add a ref for a game. // TODO : Constant.
+                    case "addrefsteamid": // SERVER-SIDE : Add a ref for a game. // TODO : Constant.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
@@ -3413,7 +3444,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
-                    case Constants.MOD_NAME + "addpermrefsteamid": // SERVER-SIDE : Add a permanent ref (until server restarts). // TODO : Constant.
+                    case "addpermrefsteamid": // SERVER-SIDE : Add a permanent ref (until server restarts). // TODO : Constant.
                         /*PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_1, Quaternion.identity, Vector3.zero).Server_Freeze();
                         PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_1_POSITION_2, Quaternion.identity, Vector3.zero).Server_Freeze();
 
@@ -3433,7 +3464,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
-                    case Constants.MOD_NAME + "removerefsteamid": // SERVER-SIDE : Remove a ref. // TODO : Constant.
+                    case "removerefsteamid": // SERVER-SIDE : Remove a ref. // TODO : Constant.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
@@ -3446,7 +3477,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
-                    case Constants.MOD_NAME + "rule": // SERVER-SIDE : Change rule. // TODO : Constant.
+                    case "rule": // SERVER-SIDE : Change rule. // TODO : Constant.
                         if (!IsAdmin(clientId))
                             return;
 
