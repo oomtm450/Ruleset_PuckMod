@@ -341,6 +341,11 @@ namespace oomtm450PuckMod_Stats {
 
         private static readonly LockDictionary<string, int> _pim = new LockDictionary<string, int>();
 
+        /// <summary>
+        /// Float, last registered speed of the puck OnCollisionEnter on a stick.
+        /// </summary>
+        private static float _lastPuckSpeedOnCollisionEnter = 0f;
+
         // Client-side.
         /// <summary>
         /// ClientConfig, config set by the client.
@@ -848,7 +853,7 @@ namespace oomtm450PuckMod_Stats {
         [HarmonyPatch(typeof(Puck), "OnCollisionEnter")]
         public class Puck_OnCollisionEnter_Patch {
             [HarmonyPostfix]
-            public static void Postfix(Collision collision) {
+            public static void Postfix(Puck __instance, Collision collision) {
                 // If this is not the server or game is not started, do not use the patch.
                 if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Play || !_logic)
                     return;
@@ -895,11 +900,14 @@ namespace oomtm450PuckMod_Stats {
                         if (!stick.Player)
                             return;
 
+                        _lastPuckSpeedOnCollisionEnter = __instance.Speed;
+
                         player = stick.Player;
                     }
 
                     string currentPlayerSteamId = player.SteamId.Value.ToString();
-
+                    if (string.IsNullOrEmpty(currentPlayerSteamId))
+                        return;
 
                     if (!PlayerFunc.IsGoalie(player)) {
                         // Start tipped timer.
@@ -1063,7 +1071,7 @@ namespace oomtm450PuckMod_Stats {
 
                     if (_lastPlayerOnPuckSteamId[_lastTeamOnPuck].SteamId == currentPlayerSteamId ||
                         !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                            __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
+                            __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter)) {
                         _lastTeamOnPuck = player.Team;
                         _lastPlayerOnPuckSteamId[player.Team] = (currentPlayerSteamId, DateTime.UtcNow);
                     }
@@ -1113,7 +1121,7 @@ namespace oomtm450PuckMod_Stats {
 
                     if (_lastPlayerOnPuckSteamId[_lastTeamOnPuck].SteamId == currentPlayerSteamId ||
                         !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                            __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
+                            __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter)) {
                         _lastTeamOnPuck = stick.Player.Team;
                         _lastPlayerOnPuckSteamId[stick.Player.Team] = (currentPlayerSteamId, DateTime.UtcNow);
                     }

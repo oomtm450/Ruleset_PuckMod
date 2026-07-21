@@ -225,6 +225,11 @@ namespace oomtm450PuckMod_Ruleset {
         private static Codebase.Zone _puckZoneLastTouched = ZoneFunc.DEFAULT_ZONE;
 
         /// <summary>
+        /// Float, last registered speed of the puck OnCollisionEnter on a stick.
+        /// </summary>
+        private static float _lastPuckSpeedOnCollisionEnter = 0f;
+
+        /// <summary>
         /// LockDictionary of string and (PlayerTeam and Zone), dictionary of all the players' zone by steam Id.
         /// </summary>
         private static readonly LockDictionary<string, (PlayerTeam Team, Codebase.Zone Zone)> _playersZone = new LockDictionary<string, (PlayerTeam, Codebase.Zone)>();
@@ -535,11 +540,15 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!stick.Player)
                         return;
 
+                    string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
+                    if (string.IsNullOrEmpty(currentPlayerSteamId))
+                        return;
+
                     FaceOffPuckCollisionTracker.NotifyCollision(__instance, stick);
 
                     _puckZoneLastTouched = _puckZone;
 
-                    string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
+                    _lastPuckSpeedOnCollisionEnter = __instance.Speed;
 
                     //Logging.Log($"Puck was hit by \"{stick.Player.SteamId.Value} {stick.Player.Username.Value}\" (enter)!", ServerConfig);
 
@@ -652,7 +661,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (__instance) {
                         if (_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId ||
                             !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                                __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
+                                __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter)) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
                             if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && playerHasPossession)
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(stick.Player.Team), __instance);
@@ -755,7 +764,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (__instance) {
                         if (_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId ||
                             !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                                __instance.Speed, ServerConfig.PuckSpeedTippingRatio)) {
+                                __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter)) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
                             if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && playerHasPossession)
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(stick.Player.Team), __instance);
