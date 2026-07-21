@@ -1,7 +1,6 @@
 ﻿using Codebase;
 using Newtonsoft.Json;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
-using static Humanizer.In;
 using static oomtm450PuckMod_Sounds.SoundsSystem;
 
 namespace oomtm450PuckMod_Sounds {
@@ -41,6 +39,8 @@ namespace oomtm450PuckMod_Sounds {
         private static Dictionary<SoundType, string> _lastRandomSoundPerType = new Dictionary<SoundType, string>();
 
         private int _isLoadingValue = 0;
+
+        private readonly object _playLock = new object();
         #endregion
 
         #region Properties
@@ -53,7 +53,7 @@ namespace oomtm450PuckMod_Sounds {
         internal LockWeightedList<string> FirstFaceoffMusicList { get; set; } = new LockWeightedList<string>();
         internal LockWeightedList<string> SecondFaceoffMusicList { get; set; } = new LockWeightedList<string>();
         internal LockWeightedList<string> GameOverMusicList { get; set; } = new LockWeightedList<string>();
-        
+
         internal LockList<string> Errors { get; } = new LockList<string>();
 
         internal LockList<string> Warnings { get; } = new LockList<string>();
@@ -398,31 +398,36 @@ namespace oomtm450PuckMod_Sounds {
                 _soundObjects.Add(type, soundObject);
             }
 
-            AudioSource audioSource = soundObject.GetComponent<AudioSource>();
-            audioSource.clip = clip;
-            audioSource.loop = loop;
+            lock (_playLock) {
+                AudioSource audioSource = soundObject.GetComponent<AudioSource>();
+                if (audioSource.isPlaying)
+                    audioSource.Stop();
 
-            vol *= volModifier;
-            audioSource.volume = vol;
+                audioSource.clip = clip;
+                audioSource.loop = loop;
 
-            delay += delayModifier;
+                vol *= volModifier;
+                audioSource.volume = vol;
 
-            if (type == Codebase.SoundsSystem.MUSIC) {
-                _currentAudioSource = audioSource;
-                if (vol != float.MaxValue)
-                    ChangeVolume(vol);
+                delay += delayModifier;
+
+                if (type == Codebase.SoundsSystem.MUSIC) {
+                    _currentAudioSource = audioSource;
+                    if (vol != float.MaxValue)
+                        ChangeVolume(vol);
+                    else
+                        ChangeVolume(SettingsManager.GlobalVolume * SettingsManager.GameVolume * volModifier);
+                }
+                else {
+                    _currentAudioSource = null;
+                    audioSource.volume = SettingsManager.GlobalVolume * SettingsManager.GameVolume * volModifier;
+                }
+
+                if (delay <= 0)
+                    audioSource.Play();
                 else
-                    ChangeVolume(SettingsManager.GlobalVolume * SettingsManager.GameVolume * volModifier);
+                    audioSource.PlayDelayed(delay);
             }
-            else {
-                _currentAudioSource = null;
-                audioSource.volume = SettingsManager.GlobalVolume * SettingsManager.GameVolume * volModifier;
-            }
-
-            if (delay <= 0)
-                audioSource.Play();
-            else
-                audioSource.PlayDelayed(delay);
         }
 
         internal void Stop(string type) {
@@ -513,7 +518,7 @@ namespace oomtm450PuckMod_Sounds {
                 blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.RED_GOAL_HORN));
                 blueGoalAudioSource.maxDistance = 400f;
                 DEFAULT_HORN_VOLUME = blueGoalAudioSource.volume;
-                
+
                 redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUE_GOAL_HORN));
                 redGoalAudioSource.maxDistance = 400f;
 
