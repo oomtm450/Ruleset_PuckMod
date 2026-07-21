@@ -134,9 +134,9 @@ namespace oomtm450PuckMod_Ruleset {
         private static int _faceoffDuration = 3;
 
         /// <summary>
-        /// DateTime, DateTime of last faceoff.
+        /// DateTime, DateTime of last play phase start.
         /// </summary>
-        internal static DateTime LastFaceoffDateTime = DateTime.MinValue;
+        internal static DateTime LastPlayPhaseStartDateTime = DateTime.MinValue;
 
         /// <summary>
         /// LockList of PlayerIcing, positions of the players on the ice for icing logic.
@@ -1162,8 +1162,6 @@ namespace oomtm450PuckMod_Ruleset {
                         _playersWasLastRanIntoWithoutPuckTime.Clear();
                         _playersWasLastJumpedIntoWithoutPuckTime.Clear();
 
-                        LastFaceoffDateTime = DateTime.UtcNow;
-
                         if (!ServerConfig.Faceoff.UseCustomFaceoff) {
                             PenaltyModule.TeleportPlayers();
                             return;
@@ -1197,6 +1195,10 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
                     }
                     else if (newGameState.Phase == GamePhase.Play || newGameState.Phase == GamePhase.BlueScore || newGameState.Phase == GamePhase.RedScore || newGameState.Phase == GamePhase.Intermission) {
+                        if (newGameState.Phase == GamePhase.Play) {
+                            LastPlayPhaseStartDateTime = DateTime.UtcNow;
+                        }
+                        
                         _playersLastSlipDateTime.Clear();
                         _playersLastDivedIntoTime.Clear();
                         _playersWasLastHitWithoutPuckDateTime.Clear();
