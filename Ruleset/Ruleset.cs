@@ -3393,7 +3393,8 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         if (dataStr == "1" || dataStr == "2") {
-                            ServerConfigBackup = new Configs.ServerConfig(ServerConfig);
+                            if (ServerConfigBackup == null)
+                                ServerConfigBackup = new Configs.ServerConfig(ServerConfig);
 
                             ServerConfig.Offside.BlueTeam = false;
                             ServerConfig.Offside.RedTeam = false;
@@ -3415,7 +3416,8 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         
                         if (dataStr == "1" || dataStr == "3") {
-                            ServerConfigBackup = new Configs.ServerConfig(ServerConfig);
+                            if (ServerConfigBackup == null)
+                                ServerConfigBackup = new Configs.ServerConfig(ServerConfig);
 
                             ServerConfig.Penalty.Charging = false;
                             ServerConfig.Penalty.DelayOfGame = false;
