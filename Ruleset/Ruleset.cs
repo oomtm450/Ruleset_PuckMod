@@ -129,6 +129,11 @@ namespace oomtm450PuckMod_Ruleset {
         private static int _faceoffDuration = 3;
 
         /// <summary>
+        /// DateTime, DateTime of last faceoff.
+        /// </summary>
+        private static DateTime _lastFaceoffDateTime = DateTime.MinValue;
+
+        /// <summary>
         /// LockList of PlayerIcing, positions of the players on the ice for icing logic.
         /// </summary>
         private static readonly LockList<PlayerIcing> _dictPlayersPositionsForIcing = new LockList<PlayerIcing>();
@@ -1136,6 +1141,8 @@ namespace oomtm450PuckMod_Ruleset {
                         _playersLastDivedIntoTime.Clear();
                         _playersWasLastHitWithoutPuckDateTime.Clear();
                         _playersLastJumpedIntoWithoutPuckTime.Clear();
+
+                        _lastFaceoffDateTime = DateTime.UtcNow;
 
                         if (!ServerConfig.Faceoff.UseCustomFaceoff) {
                             PenaltyModule.TeleportPlayers();
