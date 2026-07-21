@@ -229,6 +229,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             try {
                 EventManager.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME,
                     new Dictionary<string, object> { { Codebase.Constants.INSTANT_FACEOFF, ((ushort)Ruleset.NextFaceoffSpot).ToString() } });
+                PenaltyModule.AddTimeToAllPenalties((long)(DateTime.UtcNow - Ruleset.LastFaceoffDateTime).TotalMilliseconds);
 
                 // Clear the flag after a short delay to allow the restart to complete.
                 StartCoroutine(ClearRestartFlagAfterDelay());

@@ -553,6 +553,11 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        internal static void AddTimeToAllPenalties(long milliseconds) {
+            foreach (Penalty penalty in GetAllPenalties())
+                penalty.Timer.AddTime(milliseconds);
+        }
+
         internal static void TeleportPlayers() {
             foreach (PlayerTeam key in new List<PlayerTeam>(PenaltyBenchPositionIsOccupied.Keys))
                 PenaltyBenchPositionIsOccupied[key] = new LockDictionary<int, bool>(PENALTY_BENCH_POSITION_DEFAULT);
