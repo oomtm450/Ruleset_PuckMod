@@ -993,8 +993,8 @@ namespace oomtm450PuckMod_Sounds {
                             if (string.IsNullOrEmpty(PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value.ToString()))
                                 break;
 
-                            Logging.Log($"Warning client {clientId} mod out of date.", ServerConfig); // TODO : Remove important part from next releases.
-                            ChatManager.Instance.Server_BroadcastChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date (THIS UPDATE IS VERY IMPORTANT). Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} and all SoundsPack in the workshop and restart your game to update.");
+                            Logging.Log($"Warning client {clientId} mod out of date.", ServerConfig);
+                            ChatManager.Instance.Server_BroadcastChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} and all SoundsPack in the workshop and restart your game to update.");
                             _sentOutOfDateMessage[clientId] = utcNow;
                         }
                         break;
