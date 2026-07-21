@@ -1459,11 +1459,11 @@ namespace oomtm450PuckMod_Ruleset {
                             content = content.Replace(@"/pen", "").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
-                            NetworkCommunication.SendData(PenaltyModule.GIVE_PENALTY_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            NetworkCommunication.SendData(Codebase.Constants.GIVE_PENALTY_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                         else if (content.StartsWith(@"/removeallpen")) {
-                            NetworkCommunication.SendData(PenaltyModule.REMOVED_ALL_PENALTIES_REFMODE_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            NetworkCommunication.SendData(Codebase.Constants.REMOVED_ALL_PENALTIES_REFMODE_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                         else if (content.StartsWith(@"/removepen")) {
@@ -1478,7 +1478,7 @@ namespace oomtm450PuckMod_Ruleset {
                             else
                                 return true;
                             
-                            NetworkCommunication.SendData(PenaltyModule.REMOVE_PENALTY_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            NetworkCommunication.SendData(Codebase.Constants.REMOVE_PENALTY_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                     }
@@ -2733,7 +2733,7 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             break;
 
-                        case PenaltyModule.REMOVE_ALL_PENALTIES_DATANAME:
+                        case Codebase.Constants.REMOVE_ALL_PENALTIES_DATANAME:
                             if (value != "1")
                                 return;
 
@@ -3195,7 +3195,7 @@ namespace oomtm450PuckMod_Ruleset {
                         StopRedRefSignals(dataStr);
                         break;
 
-                    case PenaltyModule.REMOVED_ALL_PENALTIES_DATANAME: // CLIENT-SIDE : Remove all penalty timers.
+                    case Codebase.Constants.REMOVED_ALL_PENALTIES_DATANAME: // CLIENT-SIDE : Remove all penalty timers.
                         if (dataStr != "1")
                             break;
 
@@ -3204,7 +3204,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _penaltyTimers.Clear();
                         break;
 
-                    case PenaltyModule.PENALTIES_PAUSED_DATANAME: // CLIENT-SIDE : Pause penalty timers.
+                    case Codebase.Constants.PENALTIES_PAUSED_DATANAME: // CLIENT-SIDE : Pause penalty timers.
                         if (dataStr != "1")
                             break;
 
@@ -3212,7 +3212,7 @@ namespace oomtm450PuckMod_Ruleset {
                             penaltyTimer.Timer.Pause();
                         break;
 
-                    case PenaltyModule.PENALTIES_UNPAUSED_DATANAME: // CLIENT-SIDE : Start penalty timers.
+                    case Codebase.Constants.PENALTIES_UNPAUSED_DATANAME: // CLIENT-SIDE : Start penalty timers.
                         foreach (var penaltyTimer in _penaltyTimers)
                             penaltyTimer.Timer.Reset();
                         _penaltyTimers.Clear();
@@ -3500,7 +3500,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         break;
 
-                    case PenaltyModule.GIVE_PENALTY_DATANAME: // SERVER-SIDE : Give penalty.
+                    case Codebase.Constants.GIVE_PENALTY_DATANAME: // SERVER-SIDE : Give penalty.
                         if (GameManager.Instance.Phase != GamePhase.Play && GameManager.Instance.Phase != GamePhase.FaceOff && GameManager.Instance.Phase != GamePhase.Intermission)
                             break;
 
@@ -3565,7 +3565,7 @@ namespace oomtm450PuckMod_Ruleset {
                         PenaltyModule.GivePenalty(penaltyType, penPlayer, steamIdReceivingPlayer, penReferee);
                         break;
 
-                    case PenaltyModule.REMOVED_ALL_PENALTIES_REFMODE_DATANAME: // SERVER-SIDE : Remove all penalties.
+                    case Codebase.Constants.REMOVED_ALL_PENALTIES_REFMODE_DATANAME: // SERVER-SIDE : Remove all penalties.
                         Player removeAllPenReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
                         if (removeAllPenReferee == null || !removeAllPenReferee)
                             break;
@@ -3578,7 +3578,7 @@ namespace oomtm450PuckMod_Ruleset {
                         PenaltyModule.RemoveAllPenalties();
                         break;
 
-                    case PenaltyModule.REMOVE_PENALTY_DATANAME: // SERVER-SIDE : Remove one penalty.
+                    case Codebase.Constants.REMOVE_PENALTY_DATANAME: // SERVER-SIDE : Remove one penalty.
                         Player removePenReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
                         if (removePenReferee == null || !removePenReferee)
                             break;

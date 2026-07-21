@@ -70,80 +70,90 @@ namespace oomtm450PuckMod_Stats {
         /// </summary>
         private const string BATCH_SOG = Constants.MOD_NAME + "BATCHSOG";
 
-        /*/// <summary>
+        /// <summary>
         /// Const string, data name for resetting the SOG.
         /// </summary>
-        private const string RESET_SOG = Constants.MOD_NAME + "RESETSOG";*/
+        private const string RESET_SOG = Constants.MOD_NAME + "RESETSOG";
 
         /// <summary>
         /// Const string, data name for batching the save percentage.
         /// </summary>
         private const string BATCH_SAVEPERC = Constants.MOD_NAME + "BATCHSAVEPERC";
 
-        /*/// <summary>
+        /// <summary>
         /// Const string, data name for resetting the save percentage.
         /// </summary>
-        private const string RESET_SAVEPERC = Constants.MOD_NAME + "RESETSAVEPERC";*/
+        private const string RESET_SAVEPERC = Constants.MOD_NAME + "RESETSAVEPERC";
 
-        /// <summary>
+        /*/// <summary>
         /// Const string, data name for batching the blocked shots.
         /// </summary>
         private const string BATCH_BLOCK = Constants.MOD_NAME + "BATCHBLOCK";
 
-        /*/// <summary>
+        /// <summary>
         /// Const string, data name for resetting the blocked shots.
         /// </summary>
-        private const string RESET_BLOCK = Constants.MOD_NAME + "RESETBLOCK";*/
+        private const string RESET_BLOCK = Constants.MOD_NAME + "RESETBLOCK";
 
         /// <summary>
         /// Const string, data name for batching the hits.
         /// </summary>
         private const string BATCH_HIT = Constants.MOD_NAME + "BATCHHIT";
 
-        /*/// <summary>
+        /// <summary>
         /// Const string, data name for resetting the hits.
         /// </summary>
-        private const string RESET_HIT = Constants.MOD_NAME + "RESETHIT";*/
+        private const string RESET_HIT = Constants.MOD_NAME + "RESETHIT";
 
         /// <summary>
         /// Const string, data name for batching the takeaways.
         /// </summary>
         private const string BATCH_TAKEAWAY = Constants.MOD_NAME + "BATCHTAKEAWAY";
 
-        /*/// <summary>
+        /// <summary>
         /// Const string, data name for resetting the takeaways.
         /// </summary>
-        private const string RESET_TAKEAWAY = Constants.MOD_NAME + "RESETTAKEAWAY";*/
+        private const string RESET_TAKEAWAY = Constants.MOD_NAME + "RESETTAKEAWAY";
 
         /// <summary>
         /// Const string, data name for batching the turnovers.
         /// </summary>
         private const string BATCH_TURNOVER = Constants.MOD_NAME + "BATCHTURNOVER";
 
-        /*/// <summary>
+        /// <summary>
         /// Const string, data name for resetting the turnovers.
         /// </summary>
-        private const string RESET_TURNOVER = Constants.MOD_NAME + "RESETTURNOVER";*/
+        private const string RESET_TURNOVER = Constants.MOD_NAME + "RESETTURNOVER";
 
         /// <summary>
         /// Const string, data name for batching the passes.
         /// </summary>
         private const string BATCH_PASS = Constants.MOD_NAME + "BATCHPASS";
 
-        /*/// <summary>
+        /// <summary>
         /// Const string, data name for resetting the passes.
         /// </summary>
-        private const string RESET_PASS = Constants.MOD_NAME + "RESETPASS";*/
+        private const string RESET_PASS = Constants.MOD_NAME + "RESETPASS";
 
         /// <summary>
         /// Const string, data name for batching the +/-.
         /// </summary>
         private const string BATCH_PLUSMINUS = Constants.MOD_NAME + "BATCHPLUSMINUS";
 
-        /*/// <summary>
+        /// <summary>
         /// Const string, data name for resetting the +/-.
         /// </summary>
-        private const string RESET_PLUSMINUS = Constants.MOD_NAME + "RESETPLUSMINUS";*/
+        private const string RESET_PLUSMINUS = Constants.MOD_NAME + "RESETPLUSMINUS";
+
+        /// <summary>
+        /// Const string, data name for batching the PIM.
+        /// </summary>
+        private const string BATCH_PIM = Constants.MOD_NAME + "BATCHPIM";
+
+        /// <summary>
+        /// Const string, data name for resetting the PIM.
+        /// </summary>
+        private const string RESET_PIM = Constants.MOD_NAME + "RESETPIM";*/
 
         /// <summary>
         /// Const string, data name for resetting all stats.
@@ -328,6 +338,8 @@ namespace oomtm450PuckMod_Stats {
         private static readonly LockDictionary<string, int> _plusMinus = new LockDictionary<string, int>();
 
         private static readonly LockDictionary<string, (int Count, DateTime LastPostDateTime)> _posts = new LockDictionary<string, (int, DateTime)>();
+
+        private static readonly LockDictionary<string, int> _pim = new LockDictionary<string, int>();
 
         // Client-side.
         /// <summary>
@@ -561,6 +573,9 @@ namespace oomtm450PuckMod_Stats {
 
                     // Reset posts.
                     _posts.Clear();
+
+                    // Reset PIM.
+                    _pim.Clear();
 
                     // Reset goal and assists trackers.
                     _blueGoals.Clear();
@@ -1563,6 +1578,13 @@ namespace oomtm450PuckMod_Stats {
                         case Codebase.Constants.PAUSE:
                             _paused = bool.Parse(value);
                             break;
+
+                        case Codebase.Constants.PENALIZED_PLAYER_PENDING_DATANAME:
+                            if (!_pim.TryGetValue(value, out int pim))
+                                pim = 0;
+
+                            _pim.AddOrUpdate(value, pim + int.Parse(message["pim"].ToString()));
+                            break;
                     }
                 }
             }
@@ -1666,6 +1688,7 @@ namespace oomtm450PuckMod_Stats {
                 _redAssists.Clear();
                 _plusMinus.Clear();
                 _posts.Clear();
+                _pim.Clear();
 
                 ScoreboardModifications(false);
             }
@@ -1885,6 +1908,9 @@ namespace oomtm450PuckMod_Stats {
                 if (_posts.TryGetValue(steamId, out (int Count, DateTime LastPostHit) posts))
                     starPoints[steamId] += ((double)posts.Count) * 2d;
 
+                if (_pim.TryGetValue(steamId, out int pim))
+                    starPoints[steamId] -= ((double)pim) * 0.0001d;
+
                 starPoints[steamId] *= teamModifier;
             }
 
@@ -1991,6 +2017,10 @@ namespace oomtm450PuckMod_Stats {
                 foreach (var kvp in _posts)
                     postsDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value.Count));
 
+                Dictionary<string, (string, int)> pimDict = new Dictionary<string, (string, int)>();
+                foreach (var kvp in _pim)
+                    pimDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
+
                 // Time-on-ice {steamId: (username, seconds)}, including any still-on-ice player up to now.
                 Dictionary<string, double> toiFinal = new Dictionary<string, double>();
                 foreach (var kvp in _toiSeconds)
@@ -2022,6 +2052,7 @@ namespace oomtm450PuckMod_Stats {
                     { "stars", starsDict },
                     { "plusminus", plusMinusDict },
                     { "posts", postsDict },
+                    { "pim", pimDict },
                     { "time_on_ice", timeOnIceDict },
                     { "blue_score", blueScore },
                     { "red_score", redScore },
@@ -2251,6 +2282,8 @@ namespace oomtm450PuckMod_Stats {
                         Client_ResetTurnovers();
                         Client_ResetStickSaves();
                         Client_ResetPlusMinus();
+                        Client_ResetPosts();
+                        Client_ResetPIM();
                         break;
 
                     case BATCH_SOG:
@@ -2670,6 +2703,16 @@ namespace oomtm450PuckMod_Stats {
                 Logging.Log($"playerSteamId:{playerSteamId},post:{post}", ServerConfig);
         }
 
+        /// <summary>
+        /// Method that logs the PIM in milliseconds of a player.
+        /// </summary>
+        /// <param name="playerSteamId">String, steam Id of the player.</param>
+        /// <param name="pim">Int, PIM in milliseconds.</param>
+        private static void LogPIM(string playerSteamId, int pim) {
+            if (ServerConfig.LogStats)
+                Logging.Log($"playerSteamId:{playerSteamId},pim:{pim}", ServerConfig);
+        }
+
         private static string GetGoalieSavePerc(int saves, int shots) {
             if (shots == 0)
                 return "0.000";
@@ -2752,6 +2795,16 @@ namespace oomtm450PuckMod_Stats {
         private static void Client_ResetPlusMinus() {
             foreach (string key in new List<string>(_plusMinus.Keys))
                 _plusMinus[key] = 0;
+        }
+
+        private static void Client_ResetPosts() {
+            foreach (string key in new List<string>(_posts.Keys))
+                _posts[key] = (0, DateTime.MinValue);
+        }
+
+        private static void Client_ResetPIM() {
+            foreach (string key in new List<string>(_pim.Keys))
+                _pim[key] = 0;
         }
         #endregion
 
