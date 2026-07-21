@@ -3387,7 +3387,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             return;
 
-                        if (ServerConfigBackup != null && (dataStr == "1" || dataStr == "2" || dataStr == "3")) {
+                        if (ServerConfigBackup != null && (dataStr != "0")) {
                             ServerConfig = new Configs.ServerConfig(ServerConfigBackup);
                             ServerConfigBackup = null;
                         }
