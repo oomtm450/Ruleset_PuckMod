@@ -1,4 +1,5 @@
 ﻿using Codebase;
+using GLTFast.Schema;
 using HarmonyLib;
 using Newtonsoft.Json;
 using oomtm450PuckMod_Stats.Configs;
@@ -63,6 +64,11 @@ namespace oomtm450PuckMod_Stats {
             Codebase.Constants.SAVEPERC,
             "dive",
             "duration",
+            Codebase.Constants.PENALTIES_PAUSED_DATANAME,
+            Codebase.Constants.PENALTIES_UNPAUSED_DATANAME,
+            Codebase.Constants.PAUSE,
+            Codebase.Constants.CHANGED_PHASE,
+            Codebase.Constants.REMOVED_ALL_PENALTIES_DATANAME,
         });
 
         /// <summary>
