@@ -1,4 +1,0 @@
-Copyright (c) [2026] [Mathieu Cody].
-All rights reserved.
-This source code is published publicly for review and educational purposes only.
-No license is granted to copy, modify, merge, publish, distribute, sublicense, or sell this software, or to use it for any commercial or non-commercial purpose, without the express prior written authorization of the copyright holder.
