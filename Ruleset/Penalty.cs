@@ -515,11 +515,20 @@ namespace oomtm450PuckMod_Ruleset {
             penaltyList.Add(newPenalty);
 
             int penaltyTimeMilliseconds = GetPenaltyTypeTime(penaltyType);
+
             string message = $"Penalty #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyTimeMilliseconds / 1000} seconds for {penaltyType.GetDescription("ToString")}";
+            if (!string.IsNullOrEmpty(receivingPlayerSteamId)) {
+                Player receivingPlayer = PlayerManager.Instance.GetPlayerBySteamId(receivingPlayerSteamId);
+                if (Codebase.PlayerFunc.IsPlayerPlaying(receivingPlayer))
+                    message += $" on #{receivingPlayer.Number.Value} {receivingPlayer.Username.Value}";
+            }
+
             if (referee != null)
                 message += $", called by #{referee.Number.Value} {referee.Username.Value}";
+
             Ruleset.SystemChatMessages.Add(message);
             Logging.Log(message, Ruleset.ServerConfig);
+
             // TODO : Get actual ref signal.
             Ruleset.DataToSendToAll.Add(new List<string> { RefSignals.GetSignalConstant(true, penalizedPlayer.Team), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, });
             Ruleset.DataToSendToAll.Add(new List<string> { Codebase.Constants.PENALIZED_PLAYER_PENDING_DATANAME, penalizedPlayerSteamId, Constants.FROM_SERVER_TO_CLIENT, });
