@@ -915,8 +915,10 @@ namespace oomtm450PuckMod_Ruleset {
                             _playersWasLastRanIntoWithoutPuckTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
                         }
 
-                        Logging.Log($"Current player's speed : {playerBody.Speed.Value}", ServerConfig, true); // TODO
-                        Logging.Log($"Last player's speed : {lastPlayerHit.PlayerBody.Speed.Value}", ServerConfig, true); // TODO
+                        if (playerBody.Speed.Value > 0.8)
+                            Logging.Log($"Current player's speed : {playerBody.Speed.Value}", ServerConfig, true); // TODO
+                        if (lastPlayerHit.PlayerBody.Speed.Value > 0.8)
+                            Logging.Log($"Last player's speed : {lastPlayerHit.PlayerBody.Speed.Value}", ServerConfig, true); // TODO
                         bool lastPlayerWasCharged = playerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(currentPlayerSteamId, out var currentPlayerSprintTime) && currentPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && currentPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime;
                         bool currentPlayerWasCharged = lastPlayerHit.PlayerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(lastPlayerHitSteamId, out var lastPlayerSprintTime) && lastPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && lastPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime;
 
