@@ -2966,19 +2966,20 @@ namespace oomtm450PuckMod_Ruleset {
 
                 DateTime now = DateTime.UtcNow;
 
-                if (!_playersLastSprintTime.TryGetValue(playerSteamId, out var lastSprint) || (!oldIsSprinting && newIsSprinting && (now - lastSprint.LastSprintTime).TotalMilliseconds > 200)) { // TODO : Config.
+                if (!_playersLastSprintTime.TryGetValue(playerSteamId, out var lastSprint) || (!oldIsSprinting && newIsSprinting && (now - lastSprint.LastSprintTime).TotalMilliseconds > ServerConfig.Penalty.ChargingLastSprintTimeThreshold)) {
                     _playersLastSprintTime.AddOrUpdate(playerSteamId, new PlayerSprint {
                         LastSprintTime = now,
                         TotalSprintTime = 0,
                         IsSprinting = newIsSprinting,
                     });
                 }
-                else
+                else {
                     _playersLastSprintTime.AddOrUpdate(playerSteamId, new PlayerSprint {
                         LastSprintTime = now,
-                        TotalSprintTime = (now - lastSprint.LastSprintTime).TotalMilliseconds + lastSprint.TotalSprintTime,
+                        TotalSprintTime = lastSprint.TotalSprintTime,
                         IsSprinting = newIsSprinting,
                     });
+                }
 
             }
             catch (Exception ex) {
