@@ -283,14 +283,14 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// LockDictionary of string and (PlayerTeam and DateTime), dictionary of all DateTime of every player last puck touch.
         /// </summary>
-        private static readonly LockDictionary<string, (PlayerTeam Team, DateTime LastTouchDateTime)> _playersOnPuckTipIncludedDateTime = new LockDictionary<string, (PlayerTeam, DateTime)>();
+        private static readonly LockDictionary<string, (PlayerTeam Team, DateTime LastTouchTime)> _playersOnPuckTipIncludedTime = new LockDictionary<string, (PlayerTeam, DateTime)>();
 
         /// <summary>
         /// LockDictionary of string and (PlayerTeam and DateTime), dictionary of all DateTime of every player last puck touch, without tip.
         /// </summary>
-        private static readonly LockDictionary<string, (PlayerTeam Team, DateTime LastTouchDateTime)> _playersOnPuckDateTime = new LockDictionary<string, (PlayerTeam, DateTime)>();
+        private static readonly LockDictionary<string, (PlayerTeam Team, DateTime LastTouchTime)> _playersOnPuckTime = new LockDictionary<string, (PlayerTeam, DateTime)>();
 
-        private static DateTime _puckDeflectedDateTimeSinceLastTouch = DateTime.MinValue;
+        private static DateTime _puckDeflectedTimeSinceLastTouch = DateTime.MinValue;
 
         /// <summary>
         /// LockDictionary of string and DateTime, steamId of a player that dived and when he's supposed to get up.
@@ -343,14 +343,18 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly LockDictionary<string, bool> _playersHasBlockedFromChangingTeams = new LockDictionary<string, bool>();
 
         private static readonly LockDictionary<string, DateTime> _playersLastSlipDateTime = new LockDictionary<string, DateTime>();
-        
-        private static readonly LockDictionary<string, (string, DateTime)> _playersLastDivedIntoTime = new LockDictionary<string, (string, DateTime)>();
 
-        private static readonly LockDictionary<string, (string, DateTime)> _playersWasLastHitWithoutPuckDateTime = new LockDictionary<string, (string, DateTime)>();
+        private static readonly LockDictionary<string, PlayerSprint> _playersLastSprintTime = new LockDictionary<string, PlayerSprint>();
 
-        private static readonly LockDictionary<string, (string, DateTime)> _playersWasLastRanIntoWithoutPuckTime = new LockDictionary<string, (string, DateTime)>();
+        private static readonly LockDictionary<string, (string ByPlayerSteamId, DateTime DateTime)> _playersWasLastDivedIntoTime = new LockDictionary<string, (string, DateTime)>();
 
-        private static readonly LockDictionary<string, (string, DateTime)> _playersWasLastJumpedIntoWithoutPuckTime = new LockDictionary<string, (string, DateTime)>();
+        private static readonly LockDictionary<string, (string ByPlayerSteamId, DateTime DateTime)> _playersWasLastHitWithoutPuckTime = new LockDictionary<string, (string, DateTime)>();
+
+        private static readonly LockDictionary<string, (string ByPlayerSteamId, DateTime DateTime)> _playersWasLastRanIntoWithoutPuckTime = new LockDictionary<string, (string, DateTime)>();
+
+        private static readonly LockDictionary<string, (string ByPlayerSteamId, DateTime DateTime)> _playersWasLastJumpedIntoWithoutPuckTime = new LockDictionary<string, (string, DateTime)>();
+
+        private static readonly LockDictionary<string, (string ByPlayerSteamId, DateTime DateTime)> _playersWasLastChargedTime = new LockDictionary<string, (string, DateTime)>();
 
         private static float _arenaScaleX = 1f;
         private static float _arenaScaleY = 1f;
@@ -624,7 +628,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     DateTime now = DateTime.UtcNow;
                     if (collision.gameObject.name != "Bottom Collider")
-                        _puckDeflectedDateTimeSinceLastTouch = now;
+                        _puckDeflectedTimeSinceLastTouch = now;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
@@ -637,7 +641,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _lastPlayerOnPuckTeamTipIncluded = playerBody.Player.Team;
                         _lastPlayerOnPuckTipIncludedSteamId[playerBody.Player.Team] = playerBodySteamId;
 
-                        _playersOnPuckTipIncludedDateTime.AddOrUpdate(playerBodySteamId, (playerBody.Player.Team, now));
+                        _playersOnPuckTipIncludedTime.AddOrUpdate(playerBodySteamId, (playerBody.Player.Team, now));
 
                         return;
                     }
@@ -674,7 +678,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(stick.Player.Team), __instance);
 
                             _lastPlayerOnPuckSteamId[stick.Player.Team] = currentPlayerSteamId;
-                            _playersOnPuckDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team, now));
+                            _playersOnPuckTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team, now));
 
                             _puckLastStateBeforeCall[Rule.Offside] = (__instance.Rigidbody.transform.position, _puckZone);
                         }
@@ -684,7 +688,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team] = currentPlayerSteamId;
-                    _playersOnPuckTipIncludedDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team, now));
+                    _playersOnPuckTipIncludedTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team, now));
 
                     bool isGoalie = Codebase.PlayerFunc.IsGoalie(stick.Player);
 
@@ -743,7 +747,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     DateTime now = DateTime.UtcNow;
                     if (collision.gameObject.name != "Bottom Collider")
-                        _puckDeflectedDateTimeSinceLastTouch = now;
+                        _puckDeflectedTimeSinceLastTouch = now;
 
                     //if (!__instance.IsTouchingStick)
                         //return;
@@ -777,7 +781,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(stick.Player.Team), __instance);
 
                             _lastPlayerOnPuckSteamId[stick.Player.Team] = currentPlayerSteamId;
-                            _playersOnPuckDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team, now));
+                            _playersOnPuckTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team, now));
 
                             _puckLastStateBeforeCall[Rule.Offside] = (__instance.Rigidbody.transform.position, _puckZone);
                         }
@@ -787,7 +791,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team] = currentPlayerSteamId;
-                    _playersOnPuckTipIncludedDateTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team, now));
+                    _playersOnPuckTipIncludedTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team, now));
 
                     // Icing logic.
                     bool icingPossible = false;
@@ -902,37 +906,52 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             hasOtherPlayerDived = false;
 
-                        bool lastPlayerDidntTouchPuck = !_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var lastTouchDateTimePlayerHit) || (now - lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold;
-                        bool currentPlayerDidntTouchPuck = !_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var lastTouchDateTimeOtherPlayerHit) || (now - lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold;
+                        bool lastPlayerDidntTouchPuck = !_playersOnPuckTipIncludedTime.TryGetValue(lastPlayerHitSteamId, out var lastTouchTimePlayerHit) || (now - lastTouchTimePlayerHit.LastTouchTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold;
+                        bool currentPlayerDidntTouchPuck = !_playersOnPuckTipIncludedTime.TryGetValue(currentPlayerSteamId, out var lastTouchTimeOtherPlayerHit) || (now - lastTouchTimeOtherPlayerHit.LastTouchTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold;
 
+                        // Register player was ran into.
                         if (lastPlayerDidntTouchPuck && currentPlayerDidntTouchPuck) {
-                            // Register player was ran into.
                             _playersWasLastRanIntoWithoutPuckTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
                             _playersWasLastRanIntoWithoutPuckTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
                         }
+
+                        Logging.Log($"Current player's speed : {playerBody.Speed.Value}", ServerConfig, true); // TODO
+                        Logging.Log($"Last player's speed : {lastPlayerHit.PlayerBody.Speed.Value}", ServerConfig, true); // TODO
+                        bool lastPlayerWasCharged = playerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(currentPlayerSteamId, out var currentPlayerSprintTime) && currentPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && currentPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime;
+                        bool currentPlayerWasCharged = lastPlayerHit.PlayerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(lastPlayerHitSteamId, out var lastPlayerSprintTime) && lastPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && lastPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime;
+
+                        // Register player was charged.
+                        if (lastPlayerWasCharged)
+                            _playersWasLastChargedTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
+
+                        if (currentPlayerWasCharged)
+                            _playersWasLastChargedTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
 
                         if (lastPlayerHit.PlayerBody.HasFallen.Value || lastPlayerHit.PlayerBody.HasSlipped || lastPlayerHit.PlayerBody.IsSlipping || lastPlayerHit.PlayerBody.IsSideways || lastPlayerHit.PlayerBody.HasSlipped) {
                             if (!_playersLastSlipDateTime.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitSlipTime) || (now - lastPlayerHitSlipTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceOnSamePlayerMillisecondsThreshold)
                                 hasLastPlayerBeenHit = !hasLastPlayerDived;
                         }
                         else if (hasOtherPlayerDived)
-                            _playersLastDivedIntoTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
+                            _playersWasLastDivedIntoTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
 
                         if (playerBody.Player.PlayerBody.HasFallen.Value || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping || playerBody.Player.PlayerBody.IsSideways || playerBody.Player.PlayerBody.HasSlipped) {
                             if (!_playersLastSlipDateTime.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitSlipTime) || (now - otherPlayerHitSlipTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceOnSamePlayerMillisecondsThreshold)
                                 hasOtherPlayerBeenHit = !hasOtherPlayerDived;
                         }
                         else if (hasLastPlayerDived)
-                            _playersLastDivedIntoTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
+                            _playersWasLastDivedIntoTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
 
                         if (hasLastPlayerBeenHit) {
                             if (hasOtherPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, playerBody.Player, lastPlayerHitSteamId);
                             else {
-                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var _lastTouchDateTimePlayerHit) || (now - _lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
-                                    if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var _lastTouchDateTimeOtherPlayerHit) || (now - _lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000) {
+                                if (lastPlayerWasCharged) { // If the player is too fast and was sprinting just recently.
+                                    PenaltyModule.GivePenalty(PenaltyType.Charging, playerBody.Player, lastPlayerHitSteamId);
+                                }
+                                else if (!_playersOnPuckTipIncludedTime.TryGetValue(lastPlayerHitSteamId, out var _lastTouchTimePlayerHit) || (now - _lastTouchTimePlayerHit.LastTouchTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
+                                    if (!_playersOnPuckTipIncludedTime.TryGetValue(currentPlayerSteamId, out var _lastTouchTimeOtherPlayerHit) || (now - _lastTouchTimeOtherPlayerHit.LastTouchTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000) {
                                         // Register player hit.
-                                        _playersWasLastHitWithoutPuckDateTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
+                                        _playersWasLastHitWithoutPuckTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
 
                                         if (playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY) { // If the other person jumped.
                                             _playersWasLastJumpedIntoWithoutPuckTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
@@ -947,10 +966,13 @@ namespace oomtm450PuckMod_Ruleset {
                             if (hasLastPlayerDived)
                                 PenaltyModule.GivePenalty(PenaltyType.Tripping, lastPlayerHit, currentPlayerSteamId);
                             else {
-                                if (!_playersOnPuckTipIncludedDateTime.TryGetValue(currentPlayerSteamId, out var _lastTouchDateTimeOtherPlayerHit) || (now - _lastTouchDateTimeOtherPlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
-                                    if (!_playersOnPuckTipIncludedDateTime.TryGetValue(lastPlayerHitSteamId, out var _lastTouchDateTimePlayerHit) || (now - _lastTouchDateTimePlayerHit.LastTouchDateTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000) {
+                                if (currentPlayerWasCharged) { // If the player is too fast and was sprinting just recently.
+                                    PenaltyModule.GivePenalty(PenaltyType.Charging, lastPlayerHit, currentPlayerSteamId);
+                                }
+                                else if (!_playersOnPuckTipIncludedTime.TryGetValue(currentPlayerSteamId, out var _lastTouchTimeOtherPlayerHit) || (now - _lastTouchTimeOtherPlayerHit.LastTouchTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
+                                    if (!_playersOnPuckTipIncludedTime.TryGetValue(lastPlayerHitSteamId, out var _lastTouchTimePlayerHit) || (now - _lastTouchTimePlayerHit.LastTouchTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000) {
                                         // Register player hit.
-                                        _playersWasLastHitWithoutPuckDateTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
+                                        _playersWasLastHitWithoutPuckTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
 
                                         if (lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY) { // If the other person jumped.
                                             _playersWasLastJumpedIntoWithoutPuckTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
@@ -1021,7 +1043,7 @@ namespace oomtm450PuckMod_Ruleset {
                         watch.Restart();
                     }
                     else if (hasHitterDived)
-                        _playersLastDivedIntoTime.AddOrUpdate(goalieSteamId, (hitterSteamId, now));
+                        _playersWasLastDivedIntoTime.AddOrUpdate(goalieSteamId, (hitterSteamId, now));
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(PlayerBody_OnCollisionEnter_Patch)} Postfix().\n{ex}", ServerConfig);
@@ -1125,10 +1147,10 @@ namespace oomtm450PuckMod_Ruleset {
                         foreach (PlayerTeam key in new List<PlayerTeam>(_lastPlayerOnPuckTipIncludedSteamId.Keys))
                             _lastPlayerOnPuckTipIncludedSteamId[key] = "";
 
-                        _playersOnPuckTipIncludedDateTime.Clear();
-                        _playersOnPuckDateTime.Clear();
+                        _playersOnPuckTipIncludedTime.Clear();
+                        _playersOnPuckTime.Clear();
 
-                        _puckDeflectedDateTimeSinceLastTouch = DateTime.MinValue;
+                        _puckDeflectedTimeSinceLastTouch = DateTime.MinValue;
 
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
@@ -1163,10 +1185,12 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (newGameState.Phase == GamePhase.FaceOff) {
                         _playersLastSlipDateTime.Clear();
-                        _playersLastDivedIntoTime.Clear();
-                        _playersWasLastHitWithoutPuckDateTime.Clear();
+                        _playersLastSprintTime.Clear();
+                        _playersWasLastDivedIntoTime.Clear();
+                        _playersWasLastHitWithoutPuckTime.Clear();
                         _playersWasLastRanIntoWithoutPuckTime.Clear();
                         _playersWasLastJumpedIntoWithoutPuckTime.Clear();
+                        _playersWasLastChargedTime.Clear();
 
                         if (!ServerConfig.Faceoff.UseCustomFaceoff) {
                             PenaltyModule.TeleportPlayers();
@@ -1206,10 +1230,12 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                         
                         _playersLastSlipDateTime.Clear();
-                        _playersLastDivedIntoTime.Clear();
-                        _playersWasLastHitWithoutPuckDateTime.Clear();
+                        _playersLastSprintTime.Clear();
+                        _playersWasLastDivedIntoTime.Clear();
+                        _playersWasLastHitWithoutPuckTime.Clear();
                         _playersWasLastRanIntoWithoutPuckTime.Clear();
                         _playersWasLastJumpedIntoWithoutPuckTime.Clear();
+                        _playersWasLastChargedTime.Clear();
                         PenaltyModule.TeleportPlayers();
                     }
                 }
@@ -1648,15 +1674,15 @@ namespace oomtm450PuckMod_Ruleset {
                             CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
                         else {
                             string lastPlayerOnPuckSteamId = _lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam];
-                            bool playerTouched = _playersOnPuckDateTime.TryGetValue(lastPlayerOnPuckSteamId, out var lastTouchDateTime);
+                            bool playerTouched = _playersOnPuckTime.TryGetValue(lastPlayerOnPuckSteamId, out var lastTouchTime);
                             if (!playerTouched)
-                                lastTouchDateTime = (_lastPlayerOnPuckTeam, DateTime.MinValue);
+                                lastTouchTime = (_lastPlayerOnPuckTeam, DateTime.MinValue);
 
                             PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
                             string lastPlayerOnPuckOtherTeamSteamId = _lastPlayerOnPuckSteamId[lastPlayerOnPuckOtherTeam];
-                            bool playerTouchedOtherTeam = _playersOnPuckDateTime.TryGetValue(lastPlayerOnPuckOtherTeamSteamId, out var lastTouchOtherTeamDateTime);
+                            bool playerTouchedOtherTeam = _playersOnPuckTime.TryGetValue(lastPlayerOnPuckOtherTeamSteamId, out var lastTouchOtherTeamTime);
                             if (!playerTouchedOtherTeam)
-                                lastTouchOtherTeamDateTime = (lastPlayerOnPuckOtherTeam, DateTime.MinValue);
+                                lastTouchOtherTeamTime = (lastPlayerOnPuckOtherTeam, DateTime.MinValue);
 
                             bool playerWasLastInPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == lastPlayerOnPuckSteamId;
 
@@ -1665,27 +1691,27 @@ namespace oomtm450PuckMod_Ruleset {
 
                             Logging.Log("playerWasLastInPossession : " + playerWasLastInPossession, ServerConfig, true); // TODO
 
-                            Logging.Log("_puckDeflectedDateTimeSinceLastTouch : " + _puckDeflectedDateTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                            Logging.Log("_puckDeflectedTimeSinceLastTouch : " + _puckDeflectedTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
 
                             if (playerTouched)
-                                Logging.Log("lastTouchDateTime.LastTouchDateTime : " + lastTouchDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                                Logging.Log("lastTouchTime.LastTouchTime : " + lastTouchTime.LastTouchTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
                             if (playerTouchedOtherTeam)
-                                Logging.Log("lastTouchOtherTeamDateTime.LastTouchDateTime : " + lastTouchOtherTeamDateTime.LastTouchDateTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                                Logging.Log("lastTouchOtherTeamTime.LastTouchTime : " + lastTouchOtherTeamTime.LastTouchTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
 
-                            Logging.Log($"_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime : " + (_puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime), ServerConfig, true); // TODO
+                            Logging.Log($"_puckDeflectedTimeSinceLastTouch > lastTouchTime.LastTouchTime : " + (_puckDeflectedTimeSinceLastTouch > lastTouchTime.LastTouchTime), ServerConfig, true); // TODO
 
                             bool otherTeamTouchedTooClose = false;
-                            if (playerTouchedOtherTeam && (lastTouchDateTime.LastTouchDateTime - lastTouchOtherTeamDateTime.LastTouchDateTime).TotalMilliseconds < ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)
+                            if (playerTouchedOtherTeam && (lastTouchTime.LastTouchTime - lastTouchOtherTeamTime.LastTouchTime).TotalMilliseconds < ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)
                                 otherTeamTouchedTooClose = true;
 
-                            Logging.Log($"(lastTouchDateTime.LastTouchDateTime - lastTouchOtherTeamDateTime.LastTouchDateTime).TotalMilliseconds : {(lastTouchDateTime.LastTouchDateTime - lastTouchOtherTeamDateTime.LastTouchDateTime).TotalMilliseconds}", ServerConfig, true); // TODO
+                            Logging.Log($"(lastTouchTime.LastTouchTime - lastTouchOtherTeamTime.LastTouchTime).TotalMilliseconds : {(lastTouchTime.LastTouchTime - lastTouchOtherTeamTime.LastTouchTime).TotalMilliseconds}", ServerConfig, true); // TODO
                             Logging.Log($"ServerConfig.Penalty.DelayOfGameMillisecondsThreshold : {ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}", ServerConfig, true); // TODO
                             Logging.Log("otherTeamTouchedTooClose : " + otherTeamTouchedTooClose, ServerConfig, true); // TODO
 
                             playerTouched = (playerTouched || playerWasLastInPossession);
                             if (!playerTouched ||
                                 otherTeamTouchedTooClose ||
-                                (playerTouched && _puckDeflectedDateTimeSinceLastTouch > lastTouchDateTime.LastTouchDateTime) ||
+                                (playerTouched && _puckDeflectedTimeSinceLastTouch > lastTouchTime.LastTouchTime) ||
                                 (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_Zone)) {
                                 CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
                             }
@@ -1733,16 +1759,22 @@ namespace oomtm450PuckMod_Ruleset {
                                 _playersLastSlipDateTime.AddOrUpdate(playerSteamId, now);
 
                             // Late tripping.
-                            if (_playersLastDivedIntoTime.TryGetValue(playerSteamId, out var playerLastDivedIntoTime) && playerLastDivedIntoTime.Item2 + TimeSpan.FromMilliseconds(ServerConfig.Penalty.LateInterferenceTimeThreshold) > now) {
-                                Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerLastDivedIntoTime.Item1);
-                                if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned)
+                            if (_playersWasLastDivedIntoTime.TryGetValue(playerSteamId, out var playerWasLastDivedInto) && playerWasLastDivedInto.DateTime + TimeSpan.FromMilliseconds(ServerConfig.Penalty.LateInterferenceTimeThreshold) > now) {
+                                Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerWasLastDivedInto.ByPlayerSteamId);
+                                if (Codebase.PlayerFunc.IsPlayerPlaying(penalizedPlayer))
                                     PenaltyModule.GivePenalty(PenaltyType.Tripping, penalizedPlayer, playerSteamId);
                             }
 
-                            // Late interference.
-                            if (_playersWasLastJumpedIntoWithoutPuckTime.TryGetValue(playerSteamId, out var playerLastJumpedIntoWithoutPuckTime) && playerLastJumpedIntoWithoutPuckTime.Item2 + TimeSpan.FromMilliseconds(ServerConfig.Penalty.LateInterferenceTimeThreshold) > now) {
-                                Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerLastJumpedIntoWithoutPuckTime.Item1);
-                                if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned) {
+                            // Late charging, or interference if no charging.
+                            if (_playersWasLastChargedTime.TryGetValue(playerSteamId, out var playerWasLastCharged) && playerWasLastCharged.DateTime + TimeSpan.FromMilliseconds(ServerConfig.Penalty.LateInterferenceTimeThreshold) > now) {
+                                Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerWasLastCharged.ByPlayerSteamId);
+                                if (Codebase.PlayerFunc.IsPlayerPlaying(penalizedPlayer)) {
+                                    PenaltyModule.GivePenalty(PenaltyType.Charging, penalizedPlayer, playerSteamId);
+                                }
+                            }
+                            else if (_playersWasLastJumpedIntoWithoutPuckTime.TryGetValue(playerSteamId, out var playerWasLastJumpedIntoWithoutPuck) && playerWasLastJumpedIntoWithoutPuck.DateTime + TimeSpan.FromMilliseconds(ServerConfig.Penalty.LateInterferenceTimeThreshold) > now) {
+                                Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerWasLastJumpedIntoWithoutPuck.ByPlayerSteamId);
+                                if (Codebase.PlayerFunc.IsPlayerPlaying(penalizedPlayer)) {
                                     if (Codebase.PlayerFunc.IsGoalie(player))
                                         PenaltyModule.GivePenalty(PenaltyType.GoalieInterference, penalizedPlayer, playerSteamId);
                                     else
@@ -1751,8 +1783,8 @@ namespace oomtm450PuckMod_Ruleset {
                             }
 
                             // Late roughing.
-                            if (_playersWasLastRanIntoWithoutPuckTime.TryGetValue(playerSteamId, out var playerWasLastRanIntoWithoutPuckTime) && playerWasLastRanIntoWithoutPuckTime.Item2 + TimeSpan.FromMilliseconds(ServerConfig.Penalty.LateInterferenceTimeThreshold) > now) {
-                                _playersWasLastHitWithoutPuckDateTime.AddOrUpdate(playerSteamId, (playerWasLastRanIntoWithoutPuckTime.Item1, now));
+                            if (_playersWasLastRanIntoWithoutPuckTime.TryGetValue(playerSteamId, out var playerWasLastRanIntoWithoutPuckTime) && playerWasLastRanIntoWithoutPuckTime.DateTime + TimeSpan.FromMilliseconds(ServerConfig.Penalty.LateInterferenceTimeThreshold) > now) {
+                                _playersWasLastHitWithoutPuckTime.AddOrUpdate(playerSteamId, (playerWasLastRanIntoWithoutPuckTime.ByPlayerSteamId, now));
                             }
                         }
 
@@ -2424,8 +2456,9 @@ namespace oomtm450PuckMod_Ruleset {
             PenaltyModule.ResetPenalties();
             _playersHasBlockedFromChangingTeams.Clear();
             _playersLastSlipDateTime.Clear();
-            _playersLastDivedIntoTime.Clear();
-            _playersWasLastHitWithoutPuckDateTime.Clear();
+            _playersLastSprintTime.Clear();
+            _playersWasLastDivedIntoTime.Clear();
+            _playersWasLastHitWithoutPuckTime.Clear();
             _playersWasLastRanIntoWithoutPuckTime.Clear();
             _playersWasLastJumpedIntoWithoutPuckTime.Clear();
         }
@@ -2818,7 +2851,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned && !Codebase.PlayerFunc.IsGoalie(penalizedPlayer)) {
                                     PenaltyModule.GivePenalty(PenaltyType.Embellishment, penalizedPlayer);
                                         
-                                    if (_playersWasLastHitWithoutPuckDateTime.TryGetValue(value, out (string SteamId, DateTime DateTime) playerWasHitBy) && (now - playerWasHitBy.DateTime).TotalMilliseconds < ServerConfig.Penalty.RoughingMillisecondsThreshold && new System.Random().Next(0, ServerConfig.Penalty.RoughingChancePercInverse) == 0) {
+                                    if (_playersWasLastHitWithoutPuckTime.TryGetValue(value, out (string SteamId, DateTime DateTime) playerWasHitBy) && (now - playerWasHitBy.DateTime).TotalMilliseconds < ServerConfig.Penalty.RoughingMillisecondsThreshold && new System.Random().Next(0, ServerConfig.Penalty.RoughingChancePercInverse) == 0) {
                                         if (!PenaltyModule.PenalizedPlayers.TryGetValue(playerWasHitBy.SteamId, out LockList<Penalty> penaltyList) || penaltyList.Count == 0) {
                                             Player roughingPenalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerWasHitBy.SteamId);
                                             if (Codebase.PlayerFunc.IsPlayerPlaying(roughingPenalizedPlayer) && !Codebase.PlayerFunc.IsGoalie(roughingPenalizedPlayer))
@@ -2899,7 +2932,52 @@ namespace oomtm450PuckMod_Ruleset {
                 Logging.LogError($"Error in {nameof(Event_OnClientStopped)}.\n{ex}", ClientConfig);
             }
         }
-        
+
+        /// <summary>
+        /// Method called when a player sprinting status has changed on the server-side.
+        /// </summary>
+        /// <param name="message">Dictionary of string and object, content of the event.</param>
+        public static void Event_Everyone_OnPlayerBodyIsSprintingChanged(Dictionary<string, object> message) {
+            if (NetworkManager.Singleton == null || !ServerFunc.IsDedicatedServer())
+                return;
+
+            try {
+                bool oldIsSprinting = (bool)message["oldIsSprinting"];
+                bool newIsSprinting = (bool)message["newIsSprinting"];
+
+                if (oldIsSprinting == newIsSprinting)
+                    return;
+
+                PlayerBody playerBody = (PlayerBody)message["playerBody"];
+                if (playerBody == null || !playerBody || !Codebase.PlayerFunc.IsPlayerPlaying(playerBody.Player))
+                    return;
+
+                string playerSteamId = playerBody.Player.SteamId.Value.ToString();
+                if (string.IsNullOrEmpty(playerSteamId))
+                    return;
+
+                DateTime now = DateTime.UtcNow;
+
+                if (!_playersLastSprintTime.TryGetValue(playerSteamId, out var lastSprint) || (!oldIsSprinting && newIsSprinting && (now - lastSprint.LastSprintTime).TotalMilliseconds > 200)) { // TODO : Config.
+                    _playersLastSprintTime.AddOrUpdate(playerSteamId, new PlayerSprint {
+                        LastSprintTime = now,
+                        TotalSprintTime = 0,
+                        IsSprinting = newIsSprinting,
+                    });
+                }
+                else
+                    _playersLastSprintTime.AddOrUpdate(playerSteamId, new PlayerSprint {
+                        LastSprintTime = now,
+                        TotalSprintTime = (now - lastSprint.LastSprintTime).TotalMilliseconds + lastSprint.TotalSprintTime,
+                        IsSprinting = newIsSprinting,
+                    });
+
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(Event_Everyone_OnPlayerBodyIsSprintingChanged)}.\n{ex}", ClientConfig);
+            }
+        }
+
         public static void Event_Everyone_OnPlayerGameStateChanged(Dictionary<string, object> message) { // TODO : Optimize by using another function that gets called less often.
             // Use the event to link client Ids to Steam Ids.
             Dictionary<ulong, (string SteamId, string Username)> playersInfo_ToChange = new Dictionary<ulong, (string, string)>();
@@ -4221,6 +4299,7 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.AddEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     EventManager.AddEventListener(nameof(Event_Everyone_OnPlayerBodySpawned), Event_Everyone_OnPlayerBodySpawned);
                     EventManager.AddEventListener(nameof(Event_CompetitiveAdjustments_OnArenaSync), Event_CompetitiveAdjustments_OnArenaSync);
+                    EventManager.AddEventListener(nameof(Event_Everyone_OnPlayerBodyIsSprintingChanged), Event_Everyone_OnPlayerBodyIsSprintingChanged);
 
                     if (ServerConfig.Faceoff.FreezePlayersBeforeDrop) {
                         // Create player unfreezer/tether system
@@ -4285,6 +4364,7 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.RemoveEventListener(Codebase.Constants.RULESET_MOD_NAME, Event_OnRulesetTrigger);
                     EventManager.RemoveEventListener(nameof(Event_Everyone_OnPlayerBodySpawned), Event_Everyone_OnPlayerBodySpawned);
                     EventManager.RemoveEventListener(nameof(Event_CompetitiveAdjustments_OnArenaSync), Event_CompetitiveAdjustments_OnArenaSync);
+                    EventManager.RemoveEventListener(nameof(Event_Everyone_OnPlayerBodyIsSprintingChanged), Event_Everyone_OnPlayerBodyIsSprintingChanged);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
@@ -4513,6 +4593,29 @@ namespace oomtm450PuckMod_Ruleset {
         internal bool IsBehindHashmarks => IsBehindBlueTeamHashmarks || IsBehindRedTeamHashmarks;
 
         internal bool ConsiderForIcing { get; set; }
+    }
+
+    internal class PlayerSprint {
+        private double _totalSprintTime = 0;
+        internal DateTime LastSprintTime { get; set; } = DateTime.UtcNow;
+
+        internal double TotalSprintTime {
+            get {
+                if (IsSprinting)
+                    return (DateTime.UtcNow - LastSprintTime).TotalMilliseconds + _totalSprintTime;
+                
+                return _totalSprintTime;
+            }
+            set {
+                _totalSprintTime = value;
+            }
+        }
+
+        internal bool IsSprinting { get; set; } = true;
+
+        internal bool WasSprinting(int millisecondsAgo) {
+            return IsSprinting || (DateTime.UtcNow - LastSprintTime).TotalMilliseconds < millisecondsAgo;
+        }
     }
 
     internal class IcingObject { // TODO : Change name.

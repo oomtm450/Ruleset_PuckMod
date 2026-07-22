@@ -435,6 +435,21 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, time in the box for a charging penalty in milliseconds.
         /// </summary>
         public int ChargingTime { get; set; } = PenaltyModule.LONG_PENALTY_TIME_MS;
+
+        /// <summary>
+        /// Float, skater's speed threshold to call a charging penalty.
+        /// </summary>
+        public float ChargingSpeedThreshold { get; set; } = 20f;
+
+        /// <summary>
+        /// Int, skater's last sprint timespan threshold to call a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingLastSprintTimeThreshold { get; set; } = 500;
+
+        /// <summary>
+        /// Int, skater's last sprint minimum total time to call a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingMinimumTotalSprintTime { get; set; } = 500;
         #endregion
 
         #region Constructors
