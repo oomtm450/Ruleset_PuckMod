@@ -2858,6 +2858,14 @@ namespace oomtm450PuckMod_Ruleset {
                                                 PenaltyModule.GivePenalty(PenaltyType.Roughing, roughingPenalizedPlayer, value);
                                         }
                                     }
+
+                                    if (_playersWasLastChargedTime.TryGetValue(value, out (string SteamId, DateTime DateTime) playerWasChargedBy) && (now - playerWasChargedBy.DateTime).TotalMilliseconds < ServerConfig.Penalty.RoughingMillisecondsThreshold && new System.Random().Next(0, ServerConfig.Penalty.RoughingChancePercInverse) == 0) {
+                                        if (!PenaltyModule.PenalizedPlayers.TryGetValue(playerWasChargedBy.SteamId, out LockList<Penalty> penaltyList) || penaltyList.Count == 0) {
+                                            Player roughingPenalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerWasChargedBy.SteamId);
+                                            if (Codebase.PlayerFunc.IsPlayerPlaying(roughingPenalizedPlayer) && !Codebase.PlayerFunc.IsGoalie(roughingPenalizedPlayer))
+                                                PenaltyModule.GivePenalty(PenaltyType.Roughing, roughingPenalizedPlayer, value);
+                                        }
+                                    }
                                 }
                             }
 
