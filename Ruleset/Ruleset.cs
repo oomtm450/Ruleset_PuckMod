@@ -917,6 +917,30 @@ namespace oomtm450PuckMod_Ruleset {
                             _playersWasLastRanIntoWithoutPuckTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
                         }
 
+                        /*if (playerBody.Speed.Value > 2) {
+                            Logging.Log($"currentPlayer | playerBody.Speed.Value : {playerBody.Speed.Value}", ServerConfig, true);
+                            var test1 = _playersLastSprintTime.TryGetValue(currentPlayerSteamId, out var test2);
+                            Logging.Log($"currentPlayer | _playersLastSprintTime exists : {test1}", ServerConfig, true);
+                            if (test1) {
+                                if (!test2.IsSprinting)
+                                    Logging.Log($"currentPlayer | (DateTime.UtcNow - LastSprintTime).TotalMilliseconds : {(DateTime.UtcNow - test2.LastSprintTime).TotalMilliseconds}", ServerConfig, true);
+                                Logging.Log($"currentPlayer | WasSprinting ? : {test2.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold)}", ServerConfig, true);
+                                Logging.Log($"currentPlayer | TotalSprintTim : {test2.TotalSprintTime}", ServerConfig, true);
+                            }
+                        }
+
+                        if (lastPlayerHit.PlayerBody.Speed.Value > 2) {
+                            Logging.Log($"lastPlayer | lastPlayerHit.PlayerBody.Speed.Value : {lastPlayerHit.PlayerBody.Speed.Value}", ServerConfig, true);
+                            var test1 = _playersLastSprintTime.TryGetValue(lastPlayerHitSteamId, out var test2);
+                            Logging.Log($"lastPlayer | _playersLastSprintTime exists : {test1}", ServerConfig, true);
+                            if (test1) {
+                                if (!test2.IsSprinting)
+                                    Logging.Log($"lastPlayer | (DateTime.UtcNow - LastSprintTime).TotalMilliseconds : {(DateTime.UtcNow - test2.LastSprintTime).TotalMilliseconds}", ServerConfig, true);
+                                Logging.Log($"lastPlayer | WasSprinting ? : {test2.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold)}", ServerConfig, true);
+                                Logging.Log($"lastPlayer | TotalSprintTim : {test2.TotalSprintTime}", ServerConfig, true);
+                            }
+                        }*/
+
                         bool lastPlayerWasCharged = playerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(currentPlayerSteamId, out var currentPlayerSprintTime) && currentPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && currentPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime;
                         bool currentPlayerWasCharged = lastPlayerHit.PlayerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(lastPlayerHitSteamId, out var lastPlayerSprintTime) && lastPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && lastPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime;
 
