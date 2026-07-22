@@ -69,6 +69,8 @@ namespace oomtm450PuckMod_Stats {
             Codebase.Constants.PAUSE,
             Codebase.Constants.CHANGED_PHASE,
             Codebase.Constants.REMOVED_ALL_PENALTIES_DATANAME,
+            Codebase.Constants.PENALIZED_PLAYERS_DATANAME,
+            Codebase.Constants.UNPENALIZED_PLAYER_DATANAME,
         });
 
         /// <summary>

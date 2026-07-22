@@ -99,6 +99,8 @@ namespace oomtm450PuckMod_Ruleset {
             Codebase.Constants.PAUSE,
             Codebase.Constants.CHANGED_PHASE,
             Codebase.Constants.REMOVED_ALL_PENALTIES_DATANAME,
+            Codebase.Constants.PENALIZED_PLAYERS_DATANAME,
+            Codebase.Constants.UNPENALIZED_PLAYER_DATANAME,
         });
 
         private static Dictionary<PlayerTeam, Dictionary<string, Quaternion>> POSITION_ROTATION_ON_FACEOFF = null;
