@@ -118,7 +118,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Harmony, harmony instance to patch the Puck's code.
         /// </summary>
-        private static readonly Harmony _harmony = new Harmony(Constants.MOD_NAME);
+        private static readonly Harmony _harmony = new Harmony(Constants.MOD_NAME + "_PreRelease");
 
         /// <summary>
         /// Bool, true if the mod has been patched in.
