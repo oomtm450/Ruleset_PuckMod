@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.1.0DEV";
+        private static readonly string MOD_VERSION = "1.1.0DEV2";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -1188,7 +1188,7 @@ namespace oomtm450PuckMod_Ruleset {
                         ChangedPhase = false;
 
                         if (_periodTickRemaining != -1)
-                            GameManager.Instance.Server_SetGameState(GamePhase.Play, _periodTickRemaining);
+                            GameManager.Instance.Server_SetGameState(GamePhase.Play, _periodTickRemaining); // TODO : Remove GamePhase.Play from func ?
 
                         IcingStaminaDrain();
                     }
