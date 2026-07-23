@@ -2683,7 +2683,12 @@ namespace oomtm450PuckMod_Ruleset {
             if (!IsOffsideEnabled(team))
                 return DateTime.MaxValue;
 
-            return _isOffside.Where(x => x.Value.Team == team && x.Value.IsOffside).Min(x => x.Value.Time);
+            var query = _isOffside.Where(x => x.Value.Team == team && x.Value.IsOffside);
+
+            if (!query.Any())
+                return DateTime.MaxValue;
+
+            return query.Min(x => x.Value.Time);
         }
 
         internal static bool IsOffside(PlayerTeam team) {
