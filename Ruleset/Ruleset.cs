@@ -1611,7 +1611,7 @@ namespace oomtm450PuckMod_Ruleset {
                     List<Puck> pucks = PuckManager.Instance.GetPucks();
 
                     foreach (Puck puck in pucks) {
-                        if (puck == null || !puck)
+                        if (puck == null || !puck || !puck.IsSpawned)
                             continue;
 
                         if (puck.transform.position.y < -50f) {
