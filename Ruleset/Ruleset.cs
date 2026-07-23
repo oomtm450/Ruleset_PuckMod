@@ -1613,7 +1613,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (puck == null || !puck)
                         continue;
 
-                    if (puck.transform.position.y < -50f) {
+                    if (puck.transform.position.y < -50f && puck.transform.position.y > float.MinValue + 1) {
                         puck.transform.position = new Vector3(0, ArenaOffsetY + ServerConfig.Faceoff.PuckDropHeight, 0);
                         puck.Rigidbody.linearVelocity = Vector3.zero;
                     }
