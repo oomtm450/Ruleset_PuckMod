@@ -87,6 +87,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, Y offset to use when teleporting/spawning players and pucks related to Ruleset.
         /// </summary>
         public float YOffsetForTeleport { get; } = 0.01f;
+        /// <summary>
+        /// Bool, true if the out of bounds looping bug has to be fixed.
+        /// </summary>
+        public bool FixOutOfBoundsLooping { get; } = true;
         #endregion
 
         #region Methods/Functions
@@ -221,6 +225,18 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, time in the box for a charging penalty in milliseconds.
         /// </summary>
         public int ChargingTime { get; } = 45000;
+        /// <summary>
+        /// Float, skater's speed threshold to call a charging penalty.
+        /// </summary>
+        public float ChargingSpeedThreshold { get; } = 8.7f;
+        /// <summary>
+        /// Int, skater's last sprint timespan threshold to call a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingLastSprintTimeThreshold { get; } = 500;
+        /// <summary>
+        /// Int, skater's last sprint minimum total time to call a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingMinimumTotalSprintTime { get; } = 1400;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.

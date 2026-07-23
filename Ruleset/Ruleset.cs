@@ -1600,6 +1600,43 @@ namespace oomtm450PuckMod_Ruleset {
         /// Class that patches the Update event from PhysicsManager.
         /// </summary>
         [HarmonyPatch(typeof(PhysicsManager), "Update")]
+        public class PhysicsManager_Update_PuckLoop_Patch {
+            [HarmonyPostfix]
+            public static void Postfix() {
+                // If this is not the server or game is not started, do not use the patch.
+                if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || !ServerConfig.FixOutOfBoundsLooping)
+                    return;
+
+                List<Puck> pucks = PuckManager.Instance.GetPucks();
+
+                foreach (Puck puck in pucks) {
+                    if (puck == null || !puck)
+                        continue;
+
+                    if (puck.transform.position.y < -50f) {
+                        puck.transform.position = new Vector3(0, ArenaOffsetY + ServerConfig.Faceoff.PuckDropHeight, 0);
+                        puck.Rigidbody.linearVelocity = Vector3.zero;
+                    }
+                }
+
+                List<Player> players = PlayerManager.Instance.GetSpawnedPlayers();
+
+                foreach (Player player in players) {
+                    if (!Codebase.PlayerFunc.IsPlayerPlaying(player))
+                        continue;
+
+                    if (player.transform.position.y < -50f) {
+                        player.transform.position = new Vector3(0, ArenaOffsetY + ServerConfig.YOffsetForTeleport, 0);
+                        player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Update event from PhysicsManager.
+        /// </summary>
+        [HarmonyPatch(typeof(PhysicsManager), "Update")]
         public class PhysicsManager_Update_Patch {
             [HarmonyPostfix]
             public static void Postfix() {

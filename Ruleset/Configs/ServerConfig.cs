@@ -124,6 +124,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, Y offset to use when teleporting/spawning players and pucks related to Ruleset.
         /// </summary>
         public float YOffsetForTeleport { get; set; } = 0.01f;
+
+        /// <summary>
+        /// Bool, true if the out of bounds looping bug has to be fixed.
+        /// </summary>
+        public bool FixOutOfBoundsLooping { get; set; } = true;
         #endregion
 
         #region Constructors
@@ -161,6 +166,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             LowerBarriers = serverConfig.LowerBarriers;
 
             YOffsetForTeleport = serverConfig.YOffsetForTeleport;
+
+            FixOutOfBoundsLooping = serverConfig.FixOutOfBoundsLooping;
         }
         #endregion
 
@@ -205,6 +212,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (YOffsetForTeleport == _oldConfig.YOffsetForTeleport)
                 YOffsetForTeleport = newConfig.YOffsetForTeleport;
+
+            if (FixOutOfBoundsLooping == _oldConfig.FixOutOfBoundsLooping)
+                FixOutOfBoundsLooping = newConfig.FixOutOfBoundsLooping;
 
             Offside.UpdateDefaultValues(_oldConfig.Offside);
             Icing.UpdateDefaultValues(_oldConfig.Icing);
@@ -300,6 +310,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                         },
                         LogPhaseChangeAndStoppage = config.LogPhaseChangeAndStoppage,
                         LowerBarriers = config.LowerBarriers,
+                        FixOutOfBoundsLooping = config.FixOutOfBoundsLooping,
                     };
 
                     config = defaultConfig;
@@ -435,17 +446,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, time in the box for a charging penalty in milliseconds.
         /// </summary>
         public int ChargingTime { get; set; } = PenaltyModule.LONG_PENALTY_TIME_MS;
-
         /// <summary>
         /// Float, skater's speed threshold to call a charging penalty.
         /// </summary>
         public float ChargingSpeedThreshold { get; set; } = 8.7f;
-
         /// <summary>
         /// Int, skater's last sprint timespan threshold to call a charging penalty in milliseconds.
         /// </summary>
         public int ChargingLastSprintTimeThreshold { get; set; } = 500;
-
         /// <summary>
         /// Int, skater's last sprint minimum total time to call a charging penalty in milliseconds.
         /// </summary>
@@ -497,6 +505,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             Charging = penaltyConfig.Charging;
             ChargingTime = penaltyConfig.ChargingTime;
+            ChargingSpeedThreshold = penaltyConfig.ChargingSpeedThreshold;
+            ChargingLastSprintTimeThreshold = penaltyConfig.ChargingLastSprintTimeThreshold;
+            ChargingMinimumTotalSprintTime = penaltyConfig.ChargingMinimumTotalSprintTime;
         }
         #endregion
 
@@ -599,6 +610,15 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (ChargingTime == _oldConfig.ChargingTime)
                 ChargingTime = newConfig.ChargingTime;
+
+            if (ChargingSpeedThreshold == _oldConfig.ChargingSpeedThreshold)
+                ChargingSpeedThreshold = newConfig.ChargingSpeedThreshold;
+
+            if (ChargingLastSprintTimeThreshold == _oldConfig.ChargingLastSprintTimeThreshold)
+                ChargingLastSprintTimeThreshold = newConfig.ChargingLastSprintTimeThreshold;
+
+            if (ChargingMinimumTotalSprintTime == _oldConfig.ChargingMinimumTotalSprintTime)
+                ChargingMinimumTotalSprintTime = newConfig.ChargingMinimumTotalSprintTime;
         }
     }
 
