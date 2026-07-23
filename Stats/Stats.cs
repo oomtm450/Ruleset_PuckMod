@@ -2136,7 +2136,8 @@ namespace oomtm450PuckMod_Stats {
                 return;
 
             _rulesetModEnabled = ModManager.EnabledMods.Select(x => x.Id).Contains("3501446576") ||
-                                 ModManager.EnabledMods.Select(x => x.Id).Contains("3500559233");
+                                 ModManager.EnabledMods.Select(x => x.Id).Contains("3500559233") ||
+                                 ModManager.EnabledMods.Select(x => x.Id).Contains("3770374388");
             Logging.Log($"Ruleset mod is enabled ? : {_rulesetModEnabled}.", ServerConfig, true);
         }
 
