@@ -1608,18 +1608,13 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || !ServerConfig.FixOutOfBoundsLooping)
                         return;
 
-                    if (GameManager.Instance.Phase == GamePhase.FaceOff || GameManager.Instance.Phase == GamePhase.Replay)
-                        return;
-
-                    float minValuePlus1 = float.MinValue + 1;
-
                     List<Puck> pucks = PuckManager.Instance.GetPucks();
 
                     foreach (Puck puck in pucks) {
                         if (puck == null || !puck)
                             continue;
 
-                        if (puck.transform.position.y < -50f && puck.transform.position.y > minValuePlus1) {
+                        if (puck.transform.position.y < -50f) {
                             puck.transform.position = new Vector3(0, ArenaOffsetY + ServerConfig.Faceoff.PuckDropHeight, 0);
                             puck.Rigidbody.linearVelocity = Vector3.zero;
                         }
@@ -1631,7 +1626,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!Codebase.PlayerFunc.IsPlayerPlaying(player))
                             continue;
 
-                        if (player.transform.position.y < -50f && player.transform.position.y > minValuePlus1) {
+                        if (player.transform.position.y < -50f) {
                             player.transform.position = new Vector3(0, ArenaOffsetY + ServerConfig.YOffsetForTeleport, 0);
                             player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
                         }
