@@ -146,9 +146,9 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly LockList<PlayerIcing> _dictPlayersPositionsForIcing = new LockList<PlayerIcing>();
 
         /// <summary>
-        /// LockDictionary of string and (PlayerTeam and bool), dictionary of offside status of each player with steam Id as a key.
+        /// LockDictionary of string and OffsideObject, dictionary of offside status of each player with steam Id as a key.
         /// </summary>
-        private static readonly LockDictionary<string, (PlayerTeam Team, bool IsOffside)> _isOffside = new LockDictionary<string, (PlayerTeam, bool)>();
+        private static readonly LockDictionary<string, OffsideObject> _isOffside = new LockDictionary<string, OffsideObject>();
 
         /// <summary>
         /// LockDictionary of string and bool, dictionary of number of frames since player has been in a no high stick situation with steam Id as a key.
@@ -1752,9 +1752,9 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix() 3.\n{ex}", ServerConfig);
                 }
 
-                Dictionary<PlayerTeam, bool> isTeamOffside = new Dictionary<PlayerTeam, bool> {
-                    { PlayerTeam.Blue, IsOffside(PlayerTeam.Blue) },
-                    { PlayerTeam.Red, IsOffside(PlayerTeam.Red) },
+                Dictionary<PlayerTeam, OffsideObject> isTeamOffside = new Dictionary<PlayerTeam, OffsideObject> {
+                    { PlayerTeam.Blue, new OffsideObject(PlayerTeam.Blue) },
+                    { PlayerTeam.Red, new OffsideObject(PlayerTeam.Red) },
                 };
 
                 try {
@@ -1813,7 +1813,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         if (!_isOffside.TryGetValue(playerSteamId, out _))
-                            _isOffside.Add(playerSteamId, (player.Team, false));
+                            _isOffside.Add(playerSteamId, new OffsideObject(player.Team, false));
 
                         Codebase.Zone oldPlayerZone;
                         if (!_playersZone.TryGetValue(playerSteamId, out var result)) {
@@ -1834,15 +1834,15 @@ namespace oomtm450PuckMod_Ruleset {
                         List<Codebase.Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
 
                         // Is offside.
-                        bool isPlayerTeamOffside = isTeamOffside[player.Team];
-                        if ((playerWithPossessionSteamId != playerSteamId || isPlayerTeamOffside) && (playerZoneForOffside == otherTeamZones[0] || playerZoneForOffside == otherTeamZones[1])) {
-                            if ((_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1]) || isPlayerTeamOffside)
-                                _isOffside[playerSteamId] = (player.Team, true);
+                        OffsideObject playerTeamOffside = isTeamOffside[player.Team];
+                        if ((playerWithPossessionSteamId != playerSteamId || playerTeamOffside.IsOffside) && (playerZoneForOffside == otherTeamZones[0] || playerZoneForOffside == otherTeamZones[1])) {
+                            if ((_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1]) || playerTeamOffside.IsOffside)
+                                _isOffside[playerSteamId] = new OffsideObject(player.Team, true, playerTeamOffside.Time);
                         }
 
                         // Is not offside.
                         if (playerZoneForOffside != otherTeamZones[0] && playerZoneForOffside != otherTeamZones[1])
-                            _isOffside[playerSteamId] = (player.Team, false);
+                            _isOffside[playerSteamId] = new OffsideObject(player.Team, false);
 
                         // Deferred icing logic.
                         if (ServerConfig.Icing.Deferred && !Codebase.PlayerFunc.IsGoalie(player)) {
@@ -1888,7 +1888,7 @@ namespace oomtm450PuckMod_Ruleset {
                             PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
                             foreach (string key in new List<string>(_isOffside.Keys)) {
                                 if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam)
-                                    _isOffside[key] = (lastPlayerOnPuckOtherTeam, false);
+                                    _isOffside[key] = new OffsideObject(lastPlayerOnPuckOtherTeam, false);
                             }
                         }
                     }
@@ -2016,9 +2016,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Warn or call off offsides.
                     foreach (var kvp in isTeamOffside) {
-                        if (!kvp.Value && IsOffside(kvp.Key))
+                        if (!kvp.Value.IsOffside && IsOffside(kvp.Key))
                             WarnOffside(true, kvp.Key);
-                        else if (kvp.Value && !IsOffside(kvp.Key))
+                        else if (kvp.Value.IsOffside && !IsOffside(kvp.Key))
                             WarnOffside(false, kvp.Key);
                     }
                 }
@@ -2578,7 +2578,7 @@ namespace oomtm450PuckMod_Ruleset {
             _noHighStickFrames.Clear();
         }
 
-        private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3750, int millisecondsPauseMax = 6000, bool clearViolations = true) {
+        private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3000, int millisecondsPauseMax = 5500, bool clearViolations = true) {
             if (Paused)
                 return;
 
@@ -2637,7 +2637,14 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static bool IsOffside(PlayerTeam team) {
+        internal static DateTime GetOffsideLongestTime(PlayerTeam team) {
+            if (!IsOffsideEnabled(team))
+                return DateTime.MaxValue;
+
+            return _isOffside.Where(x => x.Value.Team == team && x.Value.IsOffside).Min(x => x.Value.Time);
+        }
+
+        internal static bool IsOffside(PlayerTeam team) {
             if (!IsOffsideEnabled(team))
                 return false;
 
@@ -4121,9 +4128,18 @@ namespace oomtm450PuckMod_Ruleset {
             else if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Red])
                 CallPenalty(PlayerTeam.Red);
             else {
-                NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Offside, _puckLastStateBeforeCall[Rule.Offside]);
                 SendChat(Rule.Offside, team, true, false, referee);
-                _lastStoppageReason = Rule.Offside;
+
+                // Intentional offside.
+                if ((DateTime.UtcNow - GetOffsideLongestTime(team)).TotalMilliseconds > 5000) { // TODO : Config.
+                    NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Icing, _puckLastStateBeforeCall[Rule.Offside]);
+                    _lastStoppageReason = Rule.Icing;
+                }
+                else { // Normal offside.
+                    NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Offside, _puckLastStateBeforeCall[Rule.Offside]);
+                    _lastStoppageReason = Rule.Offside;
+                }
+
                 DoFaceoff();
             }
         }
@@ -4651,7 +4667,37 @@ namespace oomtm450PuckMod_Ruleset {
         }
     }
 
-    internal class IcingObject { // TODO : Change name.
+    internal class OffsideObject {
+        internal PlayerTeam Team { get; set; } = PlayerTeam.None;
+
+        internal bool IsOffside { get; set; } = false;
+
+        internal DateTime Time { get; set; } = DateTime.MaxValue;
+
+        internal OffsideObject() { }
+
+        internal OffsideObject(PlayerTeam team) {
+            Team = team;
+            IsOffside = Ruleset.IsOffside(team);
+            if (IsOffside)
+                Time = Ruleset.GetOffsideLongestTime(team);
+            else
+                Time = DateTime.UtcNow;
+        }
+
+        internal OffsideObject(PlayerTeam team, bool isOffside) {
+            Team = team;
+            IsOffside = isOffside;
+        }
+
+        internal OffsideObject(PlayerTeam team, bool isOffside, DateTime time) {
+            Team = team;
+            IsOffside = isOffside;
+            Time = time;
+        }
+    }
+
+    internal class IcingObject {
         internal Stopwatch Watch { get; set; } = null;
 
         internal float Delta { get; set; } = 0;
