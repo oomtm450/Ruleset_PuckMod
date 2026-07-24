@@ -1291,7 +1291,7 @@ namespace oomtm450PuckMod_Ruleset {
                     Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ, ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ);
 
                     if (ServerConfig.Faceoff.UseDefaultPuckDropHeight)
-                        position = new Vector3(dot.x, position.y, dot.z);
+                        position = new Vector3(dot.x, position.y + ArenaOffsetY, dot.z);
                     else
                         position = new Vector3(dot.x, ServerConfig.Faceoff.PuckDropHeight + ArenaOffsetY, dot.z);
 
@@ -1627,7 +1627,13 @@ namespace oomtm450PuckMod_Ruleset {
                             continue;
 
                         if (puck.transform.position.y < -50f) {
-                            puck.transform.position = new Vector3(0, ArenaOffsetY + ServerConfig.Faceoff.PuckDropHeight, 0);
+                            Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ, ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ);
+
+                            if (ServerConfig.Faceoff.UseDefaultPuckDropHeight)
+                                puck.transform.position = new Vector3(dot.x, puck.transform.position.y + ArenaOffsetY, dot.z);
+                            else
+                                puck.transform.position = new Vector3(dot.x, ServerConfig.Faceoff.PuckDropHeight + ArenaOffsetY, dot.z);
+
                             puck.Rigidbody.linearVelocity = Vector3.zero;
                         }
                     }
