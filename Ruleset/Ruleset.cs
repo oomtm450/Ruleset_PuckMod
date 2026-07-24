@@ -1284,7 +1284,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static bool Prefix(ref Vector3 position, Quaternion rotation, bool isReplay) {
                 try {
                     // If this is not the server or this is a replay or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || isReplay || !ServerConfig.Faceoff.UseCustomFaceoff || !Logic)
+                    if (!ServerFunc.IsDedicatedServer() || isReplay || !ServerConfig.Faceoff.UseCustomFaceoff || !Logic || (GameManager.Instance.Phase != GamePhase.Play && GameManager.Instance.Phase != GamePhase.FaceOff))
                         return true;
 
                     Logging.Log($"PuckManager_Server_SpawnPuck_Patch Prefix() NextFaceoffSpot : {NextFaceoffSpot.ToString()}", ServerConfig, true); // TODO
