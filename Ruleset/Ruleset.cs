@@ -1226,6 +1226,7 @@ namespace oomtm450PuckMod_Ruleset {
                             return;
                         }
 
+                        Logging.Log($"BaseGameMode_OnGameStateChanged_Patch Postfix() NextFaceoffSpot : {NextFaceoffSpot.ToString()}", ServerConfig, true); // TODO
                         Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ, ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ);
 
                         List<(string Position, bool IsPenalized)> claimedPositionsBlue = GetClaimedPositions(PlayerTeam.Blue);
@@ -1286,6 +1287,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || isReplay || !ServerConfig.Faceoff.UseCustomFaceoff || !Logic)
                         return true;
 
+                    Logging.Log($"PuckManager_Server_SpawnPuck_Patch Prefix() NextFaceoffSpot : {NextFaceoffSpot.ToString()}", ServerConfig, true); // TODO
                     Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ, ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ);
 
                     if (ServerConfig.Faceoff.UseDefaultPuckDropHeight)
@@ -2232,6 +2234,7 @@ namespace oomtm450PuckMod_Ruleset {
                     string playerSteamId = __instance.SteamId.Value.ToString();
                     if (!PenaltyModule.PenalizedPlayers.TryGetValue(playerSteamId, out LockList<Penalty> penalties) || penalties.Count == 0) {
                         string newFaceoffPosition = PenaltyModule.GetPlayerPositionForFaceoff(__instance.PlayerPosition.Name, __instance.Team, NextFaceoffSpot, GetClaimedPositions(__instance.Team));
+                        Logging.Log($"Player_Server_SpawnCharacter_Patch Postfix() NextFaceoffSpot : {NextFaceoffSpot.ToString()}", ServerConfig, true); // TODO
                         PlayerFunc.TeleportOnFaceoff(
                             __instance, Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ, ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ), NextFaceoffSpot,
                             newFaceoffPosition,
