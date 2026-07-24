@@ -1680,16 +1680,24 @@ namespace oomtm450PuckMod_Ruleset {
                         List<PlayerWithCoordinate> playersToTeleport = new List<PlayerWithCoordinate>(PlayersToTeleport);
                         PlayersToTeleport.Clear();
 
-                        foreach (PlayerWithCoordinate playerToTeleport in playersToTeleport)
-                            playerToTeleport.Player.PlayerBody?.Server_Teleport(playerToTeleport.Position, playerToTeleport.Rotation);
+                        foreach (PlayerWithCoordinate playerToTeleport in playersToTeleport) {
+                            if (Codebase.PlayerFunc.IsPlayerPlaying(playerToTeleport.Player))
+                                playerToTeleport.Player.PlayerBody?.Server_Teleport(playerToTeleport.Position, playerToTeleport.Rotation);
+                        }
                     }
 
                     if (PucksToTeleport.Count != 0) {
                         List<PuckWithCoordinate> pucksToTeleport = new List<PuckWithCoordinate>(PucksToTeleport);
                         PucksToTeleport.Clear();
 
-                        foreach (PuckWithCoordinate puckToTeleport in pucksToTeleport)
-                            puckToTeleport.Puck.transform.position = puckToTeleport.Position;
+                        foreach (PuckWithCoordinate puckToTeleport in pucksToTeleport) {
+                            if (puckToTeleport.Puck) {
+                                if (puckToTeleport.Puck.IsSpawned)
+                                    puckToTeleport.Puck.transform.position = puckToTeleport.Position;
+                                else
+                                    PucksToTeleport.Add(puckToTeleport);
+                            }
+                        }
                     }
 
                     if (PenaltyTimersElapsed.Count != 0) {
