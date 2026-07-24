@@ -124,5 +124,16 @@
         /// Const string, data name for telling Ruleset to do a faceoff now.
         /// </summary>
         public const string INSTANT_FACEOFF = "instantfaceoff";
+
+        public const string GIVE_PENALTY_DATANAME = "pen";
+        public const string REMOVE_PENALTY_DATANAME = "removepen";
+        public const string PENALIZED_PLAYER_PENDING_DATANAME = "penplayerpending";
+        public const string PENALIZED_PLAYERS_DATANAME = "penplayers";
+        public const string UNPENALIZED_PLAYER_DATANAME = "unpenplayer";
+        public const string PENALTIES_PAUSED_DATANAME = "penpaused";
+        public const string PENALTIES_UNPAUSED_DATANAME = "penunpaused";
+        public const string REMOVED_ALL_PENALTIES_DATANAME = "removedallpen";
+        public const string REMOVE_ALL_PENALTIES_DATANAME = "removeallpen";
+        public const string REMOVED_ALL_PENALTIES_REFMODE_DATANAME = REMOVED_ALL_PENALTIES_DATANAME + "ref";
     }
 }

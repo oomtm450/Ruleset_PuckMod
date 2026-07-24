@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.4.2";
+        private static readonly string MOD_VERSION = "0.4.3";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -32,6 +32,7 @@ namespace oomtm450PuckMod_Sounds {
             "0.3.0",
             "0.4.0",
             "0.4.1",
+            "0.4.2",
         });
 
         /// <summary>
@@ -773,10 +774,10 @@ namespace oomtm450PuckMod_Sounds {
                             break;
 
                         //case Codebase.SoundsSystem.CHANGE_GOAL_SONG_BLUE:
-                            //break;
+                        //break;
 
                         //case Codebase.SoundsSystem.CHANGE_GOAL_SONG_RED:
-                            //break;
+                        //break;
 
                         case Codebase.SoundsSystem.STOP_SOUND:
                             if (_soundsSystem == null)

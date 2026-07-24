@@ -29,7 +29,12 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; } = 32; // TODO : Change after release.
+        public int MaxTippedMilliseconds { get; } = 33;
+
+        /// <summary>
+        /// Float, puck speed tipping ratio.
+        /// </summary>
+        public float PuckSpeedTippingRatio { get; } = 0.025f;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.

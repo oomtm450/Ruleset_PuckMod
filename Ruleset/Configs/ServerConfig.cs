@@ -86,6 +86,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public int MaxTippedMilliseconds { get; set; } = 33;
 
         /// <summary>
+        /// Float, puck speed tipping ratio.
+        /// </summary>
+        public float PuckSpeedTippingRatio { get; set; } = 0.025f;
+
+        /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
         public int MinPossessionMilliseconds { get; set; } = 333;
@@ -114,6 +119,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if the glass barriers has to be lowered.
         /// </summary>
         public bool LowerBarriers { get; set; } = true;
+
+        /// <summary>
+        /// Float, Y offset to use when teleporting/spawning players and pucks related to Ruleset.
+        /// </summary>
+        public float YOffsetForTeleport { get; set; } = 0.01f;
+
+        /// <summary>
+        /// Bool, true if the out of bounds looping bug has to be fixed.
+        /// </summary>
+        public bool FixOutOfBoundsLooping { get; set; } = true;
         #endregion
 
         #region Constructors
@@ -138,6 +153,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             Penalty = new PenaltyConfig(serverConfig.Penalty);
 
             MaxTippedMilliseconds = serverConfig.MaxTippedMilliseconds;
+            PuckSpeedTippingRatio = serverConfig.PuckSpeedTippingRatio;
             MinPossessionMilliseconds = serverConfig.MinPossessionMilliseconds;
             MaxPossessionMilliseconds = serverConfig.MaxPossessionMilliseconds;
 
@@ -148,6 +164,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             LogPhaseChangeAndStoppage = serverConfig.LogPhaseChangeAndStoppage;
 
             LowerBarriers = serverConfig.LowerBarriers;
+
+            YOffsetForTeleport = serverConfig.YOffsetForTeleport;
+
+            FixOutOfBoundsLooping = serverConfig.FixOutOfBoundsLooping;
         }
         #endregion
 
@@ -169,6 +189,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (MaxTippedMilliseconds == _oldConfig.MaxTippedMilliseconds)
                 MaxTippedMilliseconds = newConfig.MaxTippedMilliseconds;
 
+            if (PuckSpeedTippingRatio == _oldConfig.PuckSpeedTippingRatio)
+                PuckSpeedTippingRatio = newConfig.PuckSpeedTippingRatio;
+
             if (MinPossessionMilliseconds == _oldConfig.MinPossessionMilliseconds)
                 MinPossessionMilliseconds = newConfig.MinPossessionMilliseconds;
 
@@ -186,6 +209,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (LowerBarriers == _oldConfig.LowerBarriers)
                 LowerBarriers = newConfig.LowerBarriers;
+
+            if (YOffsetForTeleport == _oldConfig.YOffsetForTeleport)
+                YOffsetForTeleport = newConfig.YOffsetForTeleport;
+
+            if (FixOutOfBoundsLooping == _oldConfig.FixOutOfBoundsLooping)
+                FixOutOfBoundsLooping = newConfig.FixOutOfBoundsLooping;
 
             Offside.UpdateDefaultValues(_oldConfig.Offside);
             Icing.UpdateDefaultValues(_oldConfig.Icing);
@@ -281,6 +310,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                         },
                         LogPhaseChangeAndStoppage = config.LogPhaseChangeAndStoppage,
                         LowerBarriers = config.LowerBarriers,
+                        FixOutOfBoundsLooping = config.FixOutOfBoundsLooping,
                     };
 
                     config = defaultConfig;
@@ -416,6 +446,18 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, time in the box for a charging penalty in milliseconds.
         /// </summary>
         public int ChargingTime { get; set; } = PenaltyModule.LONG_PENALTY_TIME_MS;
+        /// <summary>
+        /// Float, skater's speed threshold to call a charging penalty.
+        /// </summary>
+        public float ChargingSpeedThreshold { get; set; } = 8.69f;
+        /// <summary>
+        /// Int, skater's last sprint timespan threshold to call a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingLastSprintTimeThreshold { get; set; } = 500;
+        /// <summary>
+        /// Int, skater's last sprint minimum total time to call a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingMinimumTotalSprintTime { get; set; } = 1400;
         #endregion
 
         #region Constructors
@@ -463,6 +505,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             Charging = penaltyConfig.Charging;
             ChargingTime = penaltyConfig.ChargingTime;
+            ChargingSpeedThreshold = penaltyConfig.ChargingSpeedThreshold;
+            ChargingLastSprintTimeThreshold = penaltyConfig.ChargingLastSprintTimeThreshold;
+            ChargingMinimumTotalSprintTime = penaltyConfig.ChargingMinimumTotalSprintTime;
         }
         #endregion
 
@@ -565,6 +610,15 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (ChargingTime == _oldConfig.ChargingTime)
                 ChargingTime = newConfig.ChargingTime;
+
+            if (ChargingSpeedThreshold == _oldConfig.ChargingSpeedThreshold)
+                ChargingSpeedThreshold = newConfig.ChargingSpeedThreshold;
+
+            if (ChargingLastSprintTimeThreshold == _oldConfig.ChargingLastSprintTimeThreshold)
+                ChargingLastSprintTimeThreshold = newConfig.ChargingLastSprintTimeThreshold;
+
+            if (ChargingMinimumTotalSprintTime == _oldConfig.ChargingMinimumTotalSprintTime)
+                ChargingMinimumTotalSprintTime = newConfig.ChargingMinimumTotalSprintTime;
         }
     }
 
@@ -896,12 +950,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
-        public float CollisionForceThreshold { get; set; } = 0.9695f;
+        public float CollisionForceThreshold { get; set; } = 0.97f;
 
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
-        public float GoalieRadius { get; set; } = 0.81f;
+        public float GoalieRadius { get; set; } = 0.82f;
 
         #region Constructors
         /// <summary>

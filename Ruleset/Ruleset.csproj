@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>oomtm450PuckMod_Ruleset</AssemblyName>
+    <AssemblyName>oomtm450PuckMod_Ruleset_PreRelease</AssemblyName>
     <TargetFramework>net4.8</TargetFramework>
-    <Version>1.0.8</Version>
+    <Version>1.1.0</Version>
     <RootNamespace>oomtm450PuckMod_Ruleset</RootNamespace>
   </PropertyGroup>
 

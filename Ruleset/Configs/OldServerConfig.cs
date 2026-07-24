@@ -46,12 +46,17 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; } = 67; // TODO : Change after release.
+        public int MaxTippedMilliseconds { get; } = 33;
+
+        /// <summary>
+        /// Float, puck speed tipping ratio.
+        /// </summary>
+        public float PuckSpeedTippingRatio { get; } = 0.025f;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; } = 350; // TODO : Change after release.
+        public int MinPossessionMilliseconds { get; } = 333;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
@@ -77,6 +82,15 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if the glass barriers has to be lowered.
         /// </summary>
         public bool LowerBarriers { get; } = true;
+
+        /// <summary>
+        /// Float, Y offset to use when teleporting/spawning players and pucks related to Ruleset.
+        /// </summary>
+        public float YOffsetForTeleport { get; } = 0.01f;
+        /// <summary>
+        /// Bool, true if the out of bounds looping bug has to be fixed.
+        /// </summary>
+        public bool FixOutOfBoundsLooping { get; } = true;
         #endregion
 
         #region Methods/Functions
@@ -158,7 +172,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds before leaving the stick.
         /// </summary>
-        public int DelayOfGameMillisecondsThreshold { get; } = 120; // TODO : Change after release.
+        public int DelayOfGameMillisecondsThreshold { get; } = 25;
 
         /// <summary>
         /// Bool, true if faceoff violation penalty is enabled.
@@ -211,6 +225,18 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, time in the box for a charging penalty in milliseconds.
         /// </summary>
         public int ChargingTime { get; } = 45000;
+        /// <summary>
+        /// Float, skater's speed threshold to call a charging penalty.
+        /// </summary>
+        public float ChargingSpeedThreshold { get; } = 8.7f;
+        /// <summary>
+        /// Int, skater's last sprint timespan threshold to call a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingLastSprintTimeThreshold { get; } = 500;
+        /// <summary>
+        /// Int, skater's last sprint minimum total time to call a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingMinimumTotalSprintTime { get; } = 1400;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -268,28 +294,28 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Double, deferred icing max possible time multiplicator.
         /// </summary>
-        public double DeferredMaxPossibleTimeMultiplicator { get; } = 280d; // TODO : Change after release.
+        public double DeferredMaxPossibleTimeMultiplicator { get; } = 300d;
 
         /// <summary>
         /// Double, deferred icing max possible time addition (after multiplicator).
         /// </summary>
-        public double DeferredMaxPossibleTimeAddition { get; } = 9750d; // TODO : Change after release.
+        public double DeferredMaxPossibleTimeAddition { get; } = 9850d;
 
         /// <summary>
         /// Float, deferred icing max possible time substraction depending of players distance to puck (after addition).
         /// </summary>
-        public float DeferredMaxPossibleTimeDistanceDelta { get; } = 250f; // TODO : Change after release.
+        public float DeferredMaxPossibleTimeDistanceDelta { get; } = 200f;
 
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
-        public Dictionary<Codebase.Zone, float> MaxPossibleTime { get; } = new Dictionary<Codebase.Zone, float> { // TODO : Change after release.
-            { Codebase.Zone.BlueTeam_BehindGoalLine, 9500f },
-            { Codebase.Zone.RedTeam_BehindGoalLine, 9500f },
-            { Codebase.Zone.BlueTeam_Zone, 7750f },
-            { Codebase.Zone.RedTeam_Zone, 7750f },
-            { Codebase.Zone.BlueTeam_Center, 5500f },
-            { Codebase.Zone.RedTeam_Center, 5500f },
+        public Dictionary<Codebase.Zone, float> MaxPossibleTime { get; } = new Dictionary<Codebase.Zone, float> {
+            { Codebase.Zone.BlueTeam_BehindGoalLine, 9850f },
+            { Codebase.Zone.RedTeam_BehindGoalLine, 9850f },
+            { Codebase.Zone.BlueTeam_Zone, 8125f },
+            { Codebase.Zone.RedTeam_Zone, 8125f },
+            { Codebase.Zone.BlueTeam_Center, 5800f },
+            { Codebase.Zone.RedTeam_Center, 5800f },
         };
 
         /// <summary>
@@ -300,12 +326,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, delta used to calculate the dynamic icing possible times.
         /// </summary>
-        public float Delta { get; } = 21.75f; // TODO : Change after release.
+        public float Delta { get; } = 22f;
 
         /// <summary>
         /// Float, max height before deferred icing does not check for possibility that the other team touches the puck before icing.
         /// </summary>
-        public float DeferredMaxHeight { get; } = 0.85f; // TODO : Change after release.
+        public float DeferredMaxHeight { get; } = 0.8f;
 
         /// <summary>
         /// Bool, true if icing team stamina has to be drained.
@@ -403,12 +429,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
-        public float CollisionForceThreshold { get; } = 0.9695f;
+        public float CollisionForceThreshold { get; } = 0.9695f;  // TODO : Change after release.
 
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
-        public float GoalieRadius { get; } = 0.81f;
+        public float GoalieRadius { get; } = 0.81f;  // TODO : Change after release.
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
