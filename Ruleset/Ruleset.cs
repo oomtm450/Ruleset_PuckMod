@@ -1283,7 +1283,7 @@ namespace oomtm450PuckMod_Ruleset {
             public static bool Prefix(ref Vector3 position, Quaternion rotation, bool isReplay, Puck __result) {
                 try {
                     // If this is not the server or this is a replay or game is not started, do not use the patch.
-                    if (!ServerFunc.IsDedicatedServer() || isReplay || !ServerConfig.Faceoff.UseCustomFaceoff || (GameManager.Instance.Phase != GamePhase.Play && GameManager.Instance.Phase != GamePhase.FaceOff) || !Logic)
+                    if (!ServerFunc.IsDedicatedServer() || isReplay || !ServerConfig.Faceoff.UseCustomFaceoff || !Logic)
                         return true;
 
                     Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ, ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ);
