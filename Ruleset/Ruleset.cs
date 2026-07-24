@@ -2346,15 +2346,13 @@ namespace oomtm450PuckMod_Ruleset {
                         NextFaceoffSpot = FaceoffSpot.Center;
                     }
 
-                    if (phase == GamePhase.PreGame) {
-                        _lastStoppageReason = Rule.None;
+                    _lastStoppageReason = Rule.None;
 
-                        foreach (PlayerTeam key in new List<PlayerTeam>(_lastIcing.Keys))
-                            _lastIcing[key] = int.MaxValue;
+                    foreach (PlayerTeam key in new List<PlayerTeam>(_lastIcing.Keys))
+                        _lastIcing[key] = int.MaxValue;
 
-                        foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
-                            _icingStaminaDrainPenaltyAmount[key] = 0;
-                    }
+                    foreach (PlayerTeam key in new List<PlayerTeam>(_icingStaminaDrainPenaltyAmount.Keys))
+                        _icingStaminaDrainPenaltyAmount[key] = 0;
 
                     _sentOutOfDateMessage.Clear();
                 }
