@@ -494,10 +494,10 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         internal static LockList<PlayerWithCoordinate> PlayersToTeleport { get; } = new LockList<PlayerWithCoordinate>();
 
-        /// <summary>
+        /*/// <summary>
         /// LockList of PuckWithCoordinate, pucks to teleport next frame.
         /// </summary>
-        internal static LockList<PuckWithCoordinate> PucksToTeleport { get; } = new LockList<PuckWithCoordinate>();
+        internal static LockList<PuckWithCoordinate> PucksToTeleport { get; } = new LockList<PuckWithCoordinate>();*/
 
         /// <summary>
         /// Bool, true if the mod's logic has to be runned.
@@ -1293,10 +1293,10 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         position = new Vector3(dot.x, ServerConfig.Faceoff.PuckDropHeight + ArenaOffsetY, dot.z);
 
-                    PucksToTeleport.Add(new PuckWithCoordinate {
+                    /*PucksToTeleport.Add(new PuckWithCoordinate {
                         Position = position,
                         Puck = __result,
-                    });
+                    });*/
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(PuckManager_Server_SpawnPuck_Patch)} Prefix().\n{ex}", ServerConfig);
@@ -1686,7 +1686,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
 
-                    if (PucksToTeleport.Count != 0) {
+                    /*if (PucksToTeleport.Count != 0) {
                         List<PuckWithCoordinate> pucksToTeleport = new List<PuckWithCoordinate>(PucksToTeleport);
                         PucksToTeleport.Clear();
 
@@ -1698,7 +1698,7 @@ namespace oomtm450PuckMod_Ruleset {
                                     PucksToTeleport.Add(puckToTeleport);
                             }
                         }
-                    }
+                    }*/
 
                     if (PenaltyTimersElapsed.Count != 0) {
                         List<Penalty> penaltyTimersElapsed = new List<Penalty>(PenaltyTimersElapsed);
@@ -4802,11 +4802,11 @@ namespace oomtm450PuckMod_Ruleset {
         internal Quaternion Rotation { get; set; }
     }
 
-    internal class PuckWithCoordinate {
+    /*internal class PuckWithCoordinate {
         internal Puck Puck { get; set; }
 
         internal Vector3 Position { get; set; }
-    }
+    }*/
 
     public static class EnumExtensions {
         public static string GetDescription(this Enum enumValue, string category = "") {
