@@ -495,6 +495,11 @@ namespace oomtm450PuckMod_Ruleset {
         internal static LockList<PlayerWithCoordinate> PlayersToTeleport { get; } = new LockList<PlayerWithCoordinate>();
 
         /// <summary>
+        /// LockList of PuckWithCoordinate, pucks to teleport next frame.
+        /// </summary>
+        internal static LockList<PuckWithCoordinate> PucksToTeleport { get; } = new LockList<PuckWithCoordinate>();
+
+        /// <summary>
         /// Bool, true if the mod's logic has to be runned.
         /// </summary>
         internal static bool Logic { get; set; } = true;
@@ -1275,7 +1280,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(PuckManager), nameof(PuckManager.Server_SpawnPuck))]
         public class PuckManager_Server_SpawnPuck_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(ref Vector3 position, Quaternion rotation, bool isReplay) {
+            public static bool Prefix(ref Vector3 position, Quaternion rotation, bool isReplay, Puck __result) {
                 try {
                     // If this is not the server or this is a replay or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || isReplay || !ServerConfig.Faceoff.UseCustomFaceoff || (GameManager.Instance.Phase != GamePhase.Play && GameManager.Instance.Phase != GamePhase.FaceOff) || !Logic)
@@ -1287,6 +1292,11 @@ namespace oomtm450PuckMod_Ruleset {
                         position = new Vector3(dot.x, position.y, dot.z);
                     else
                         position = new Vector3(dot.x, ServerConfig.Faceoff.PuckDropHeight + ArenaOffsetY, dot.z);
+
+                    PucksToTeleport.Add(new PuckWithCoordinate {
+                        Position = position,
+                        Puck = __result,
+                    });
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(PuckManager_Server_SpawnPuck_Patch)} Prefix().\n{ex}", ServerConfig);
@@ -1672,6 +1682,14 @@ namespace oomtm450PuckMod_Ruleset {
 
                         foreach (PlayerWithCoordinate playerToTeleport in playersToTeleport)
                             playerToTeleport.Player.PlayerBody?.Server_Teleport(playerToTeleport.Position, playerToTeleport.Rotation);
+                    }
+
+                    if (PucksToTeleport.Count != 0) {
+                        List<PuckWithCoordinate> pucksToTeleport = new List<PuckWithCoordinate>(PucksToTeleport);
+                        PucksToTeleport.Clear();
+
+                        foreach (PuckWithCoordinate puckToTeleport in pucksToTeleport)
+                            puckToTeleport.Puck.transform.position = puckToTeleport.Position;
                     }
 
                     if (PenaltyTimersElapsed.Count != 0) {
@@ -4774,6 +4792,12 @@ namespace oomtm450PuckMod_Ruleset {
         internal Vector3 Position { get; set; }
 
         internal Quaternion Rotation { get; set; }
+    }
+
+    internal class PuckWithCoordinate {
+        internal Puck Puck { get; set; }
+
+        internal Vector3 Position { get; set; }
     }
 
     public static class EnumExtensions {
