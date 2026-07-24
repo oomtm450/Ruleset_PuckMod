@@ -1280,7 +1280,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(PuckManager), nameof(PuckManager.Server_SpawnPuck))]
         public class PuckManager_Server_SpawnPuck_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(ref Vector3 position, Quaternion rotation, bool isReplay, Puck __result) {
+            public static bool Prefix(ref Vector3 position, Quaternion rotation, bool isReplay) {
                 try {
                     // If this is not the server or this is a replay or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || isReplay || !ServerConfig.Faceoff.UseCustomFaceoff || !Logic)
