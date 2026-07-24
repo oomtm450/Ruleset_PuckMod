@@ -428,40 +428,42 @@ namespace oomtm450PuckMod_Ruleset {
                     return false;
             }
 
-            if ((penalizedPlayer.Team == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
-                (penalizedPlayer.Team == PlayerTeam.Red && PenalizedPlayersCountRedTeam == Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
-                (teamPlayers.Count(x => !PenalizedPlayers.TryGetValue(x.SteamId.Value.ToString(), out LockList<Penalty> penalties) || penalties.Count == 0) < Ruleset.ServerConfig.Penalty.MaximumPenaltyImmunedPlayersCountPerTeam)) {
-                bool unpenalizeOnePlayer = false;
-                if (penalizedPlayer.Team == PlayerTeam.Blue) {
-                    if (PenalizedPlayersCountBlueTeam != 0)
-                        unpenalizeOnePlayer = true;
+            if (penaltyList.Count >= Ruleset.ServerConfig.Penalty.MaxPenaltiesCountPerPlayer) {
+                if ((penalizedPlayer.Team == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam >= Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
+                    (penalizedPlayer.Team == PlayerTeam.Red && PenalizedPlayersCountRedTeam >= Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
+                    (teamPlayers.Count(x => !PenalizedPlayers.TryGetValue(x.SteamId.Value.ToString(), out LockList<Penalty> penalties) || penalties.Count == 0) < Ruleset.ServerConfig.Penalty.MaximumPenaltyImmunedPlayersCountPerTeam)) {
+                    bool unpenalizeOnePlayer = false;
+                    if (penalizedPlayer.Team == PlayerTeam.Blue) {
+                        if (PenalizedPlayersCountBlueTeam != 0)
+                            unpenalizeOnePlayer = true;
+                    }
+                    else if (penalizedPlayer.Team == PlayerTeam.Red) {
+                        if (PenalizedPlayersCountRedTeam != 0)
+                            unpenalizeOnePlayer = true;
+                    }
+
+                    if (!unpenalizeOnePlayer)
+                        return false;
+
+                    var _penaltiesLINQ = PenalizedPlayers.Where(x => x.Value.Count == 1 && x.Value.First().Team == penalizedPlayer.Team).OrderBy(x => x.Value.Min(y => y.Timer.MillisecondsLeft));
+                    if (!_penaltiesLINQ.Any())
+                        return false;
+
+                    KeyValuePair<string, LockList<Penalty>> _penalties = _penaltiesLINQ.First();
+
+                    var _playerToUnpenalizeLINQ = teamPlayers.Where(x => x.SteamId.Value.ToString() == _penalties.Key);
+                    if (!_playerToUnpenalizeLINQ.Any())
+                        return false;
+
+                    Player _playerToUnpenalize = _playerToUnpenalizeLINQ.First();
+                    if (_playerToUnpenalize == null || !_playerToUnpenalize)
+                        return false;
+
+                    if (_penalties.Value.First().Timer.MillisecondsLeft > GetPenaltyTypeTime(penaltyType))
+                        return false;
+
+                    RemoveOnePenalty(_playerToUnpenalize.Team, true);
                 }
-                else if (penalizedPlayer.Team == PlayerTeam.Red) {
-                    if (PenalizedPlayersCountRedTeam != 0)
-                        unpenalizeOnePlayer = true;
-                }
-
-                if (!unpenalizeOnePlayer)
-                    return false;
-
-                var _penaltiesLINQ = PenalizedPlayers.Where(x => x.Value.Count == 1 && x.Value.First().Team == penalizedPlayer.Team).OrderBy(x => x.Value.Min(y => y.Timer.MillisecondsLeft));
-                if (!_penaltiesLINQ.Any())
-                    return false;
-
-                KeyValuePair<string, LockList<Penalty>> _penalties = _penaltiesLINQ.First();
-
-                var _playerToUnpenalizeLINQ = teamPlayers.Where(x => x.SteamId.Value.ToString() == _penalties.Key);
-                if (!_playerToUnpenalizeLINQ.Any())
-                    return false;
-
-                Player _playerToUnpenalize = _playerToUnpenalizeLINQ.First();
-                if (_playerToUnpenalize == null || !_playerToUnpenalize)
-                    return false;
-
-                if (_penalties.Value.First().Timer.MillisecondsLeft > GetPenaltyTypeTime(penaltyType))
-                    return false;
-
-                RemoveOnePenalty(_playerToUnpenalize.Team, true);
             }
 
             // If goalie has a penalty, take another player.
