@@ -792,6 +792,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static string GetPlayerPositionForFaceoff(string position, PlayerTeam team, FaceoffSpot faceoffSpot, List<(string Position, bool IsPenalized)> claimedPositions) {
             position = FakePlayerPositionForFaceoffByAvailability(position, team, claimedPositions);
+            if (!claimedPositions.Any(x => x.Position == position && x.IsPenalized == false))
+                claimedPositions.Add((position, false));
 
             bool centerPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.CENTER_POSITION);
             bool leftDefenderPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION] && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_DEFENDER_POSITION);
