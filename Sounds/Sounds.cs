@@ -981,8 +981,8 @@ namespace oomtm450PuckMod_Sounds {
                         if (dataStr != "1")
                             break;
 
-                        //NetworkManager.Singleton.DisconnectClient(clientId,
-                        //$"Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
+                        NetworkManager.Singleton.DisconnectClient(clientId,
+                            $"{Constants.WORKSHOP_MOD_NAME} mod is out of date. Please unsubscribe in the workshop and restart your game to update.");
 
                         if (!_sentOutOfDateMessage.TryGetValue(clientId, out DateTime lastCheckTime)) {
                             lastCheckTime = DateTime.MinValue;
