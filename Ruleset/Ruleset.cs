@@ -1637,6 +1637,7 @@ namespace oomtm450PuckMod_Ruleset {
                             continue;
 
                         if (puck.transform.position.y < -50f) {
+                            Logging.Log($"PhysicsManager_Update_PuckLoop_Patch NextFaceoffSpot : {NextFaceoffSpot}", ServerConfig, true); // TODO
                             Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ, ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ);
 
                             if (ServerConfig.Faceoff.UseDefaultPuckDropHeight)
