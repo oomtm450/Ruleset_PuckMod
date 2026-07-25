@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.4.3";
+        private static readonly string MOD_VERSION = "0.4.3a";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -33,6 +33,7 @@ namespace oomtm450PuckMod_Sounds {
             "0.4.0",
             "0.4.1",
             "0.4.2",
+            "0.4.3",
         });
 
         /// <summary>
