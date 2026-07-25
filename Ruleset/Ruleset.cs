@@ -1616,19 +1616,19 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         /// <summary>
-        /// Class that patches the Update event from PhysicsManager.
+        /// Class that patches the Update event from PhysicsManager to fix pucks and players looping out of bounds.
         /// </summary>
         [HarmonyPatch(typeof(PhysicsManager), "Update")]
         public class PhysicsManager_Update_PuckLoop_Patch {
-            [HarmonyPostfix]
-            public static void Postfix() {
+            [HarmonyPrefix]
+            public static bool Prefix() {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || !ServerConfig.FixOutOfBoundsLooping)
-                        return;
+                        return true;
 
                     if ((DateTime.UtcNow - _lastFaceoffPhase).TotalSeconds < _faceoffDuration + 2)
-                        return;
+                        return true;
 
                     List<Puck> pucks = PuckManager.Instance.GetPucks();
 
@@ -1661,8 +1661,10 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_PuckLoop_Patch)} Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(PhysicsManager_Update_PuckLoop_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
+
+                return true;
             }
         }
 
