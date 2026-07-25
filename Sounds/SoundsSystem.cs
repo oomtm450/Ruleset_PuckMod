@@ -40,7 +40,7 @@ namespace oomtm450PuckMod_Sounds {
 
         private int _isLoadingValue = 0;
 
-        private readonly object _playLock = new object();
+        private readonly object _soundsLock = new object();
         #endregion
 
         #region Properties
@@ -391,14 +391,14 @@ namespace oomtm450PuckMod_Sounds {
                     return;
             }
 
-            if (!_soundObjects.TryGetValue(type, out GameObject soundObject)) {
-                soundObject = new GameObject(type);
+            if (!_soundObjects.TryGetValue(name, out GameObject soundObject)) {
+                soundObject = new GameObject(name);
                 DontDestroyOnLoad(soundObject);
                 DontDestroyOnLoad(soundObject.AddComponent<AudioSource>());
-                _soundObjects.Add(type, soundObject);
+                _soundObjects.Add(name, soundObject);
             }
 
-            lock (_playLock) {
+            lock (_soundsLock) {
                 AudioSource audioSource = soundObject.GetComponent<AudioSource>();
                 if (audioSource.isPlaying)
                     audioSource.Stop();
@@ -430,18 +430,28 @@ namespace oomtm450PuckMod_Sounds {
             }
         }
 
-        internal void Stop(string type) {
-            if (string.IsNullOrEmpty(type) || !_soundObjects.TryGetValue(type, out GameObject soundObject))
+        internal void Stop(string name) {
+            if (string.IsNullOrEmpty(name) || !_soundObjects.TryGetValue(name, out GameObject soundObject))
                 return;
-            soundObject.GetComponent<AudioSource>().Stop();
+
+            lock (_soundsLock) {
+                AudioSource audioSource = soundObject.GetComponent<AudioSource>();
+                if (audioSource.isPlaying)
+                    audioSource.Stop();
+            }
         }
 
         /// <summary>
         /// Method that stops all sound and music.
         /// </summary>
         internal void StopAll() {
-            foreach (GameObject soundObject in _soundObjects.Values)
-                soundObject.GetComponent<AudioSource>().Stop();
+            foreach (GameObject soundObject in _soundObjects.Values) {
+                lock (_soundsLock) {
+                    AudioSource audioSource = soundObject.GetComponent<AudioSource>();
+                    if (audioSource.isPlaying)
+                        audioSource.Stop();
+                }
+            }
         }
 
         internal void ChangeVolume(float vol) {

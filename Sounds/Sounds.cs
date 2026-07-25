@@ -899,8 +899,8 @@ namespace oomtm450PuckMod_Sounds {
                 if (_soundsSystem == null)
                     return;
 
-                if (!string.IsNullOrEmpty(_currentMusicPlayingType)) {
-                    _soundsSystem.Stop(_currentMusicPlayingType);
+                if (!string.IsNullOrEmpty(_currentMusicPlaying)) {
+                    _soundsSystem.Stop(_currentMusicPlaying);
                     _currentMusicPlaying = "";
                     _currentMusicPlayingType = "";
                 }
@@ -1170,8 +1170,8 @@ namespace oomtm450PuckMod_Sounds {
                         _soundsSystem.Warnings.Clear();
 
                         if (dataStr == Codebase.SoundsSystem.MUSIC) {
-                            if (!string.IsNullOrEmpty(_currentMusicPlayingType))
-                                _soundsSystem.Stop(_currentMusicPlayingType);
+                            if (!string.IsNullOrEmpty(_currentMusicPlaying))
+                                _soundsSystem.Stop(_currentMusicPlaying);
                         }
                         else if (dataStr == Codebase.SoundsSystem.ALL)
                             _soundsSystem.StopAll();
