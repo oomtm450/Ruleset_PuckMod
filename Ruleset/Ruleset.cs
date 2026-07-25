@@ -3269,6 +3269,9 @@ namespace oomtm450PuckMod_Ruleset {
                     switch (kvp.Key) {
                         case "ArenaScaleX":
                             double arenaScaleX = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            if (arenaScaleX == 0)
+                                break;
+
                             _arenaScaleX = (float)arenaScaleX;
                             if (arenaScaleX == 1)
                                 break;
@@ -3287,11 +3290,15 @@ namespace oomtm450PuckMod_Ruleset {
 
                         case "ArenaScaleZ":
                             double arenaScaleY = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            if (arenaScaleY == 0)
+                                break;
                             _arenaScaleY = (float)arenaScaleY;
                             break;
 
                         case "ArenaScaleY":
                             double arenaScaleZ = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            if (arenaScaleZ == 0)
+                                break;
                             _arenaScaleZ = (float)arenaScaleZ;
                             if (arenaScaleZ == 1)
                                 break;
