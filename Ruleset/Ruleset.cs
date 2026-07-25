@@ -237,6 +237,11 @@ namespace oomtm450PuckMod_Ruleset {
         private static float _lastPuckSpeedOnCollisionEnter = 0f;
 
         /// <summary>
+        /// DateTime, time of the last faceoff.
+        /// </summary>
+        private static DateTime _lastFaceoffPhase = DateTime.MinValue;
+
+        /// <summary>
         /// LockDictionary of string and (PlayerTeam and Zone), dictionary of all the players' zone by steam Id.
         /// </summary>
         private static readonly LockDictionary<string, (PlayerTeam Team, Codebase.Zone Zone)> _playersZone = new LockDictionary<string, (PlayerTeam, Codebase.Zone)>();
@@ -1221,6 +1226,8 @@ namespace oomtm450PuckMod_Ruleset {
                         _playersWasLastJumpedIntoWithoutPuckTime.Clear();
                         _playersWasLastChargedTime.Clear();
 
+                        _lastFaceoffPhase = DateTime.UtcNow;
+
                         if (!ServerConfig.Faceoff.UseCustomFaceoff) {
                             PenaltyModule.TeleportPlayers();
                             return;
@@ -1618,6 +1625,9 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     // If this is not the server or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || !ServerConfig.FixOutOfBoundsLooping)
+                        return;
+
+                    if ((DateTime.UtcNow - _lastFaceoffPhase).TotalSeconds < _faceoffDuration + 2)
                         return;
 
                     List<Puck> pucks = PuckManager.Instance.GetPucks();
