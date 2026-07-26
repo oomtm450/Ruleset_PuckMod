@@ -1620,10 +1620,17 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!ServerFunc.IsDedicatedServer() || PlayerManager.Instance == null || PuckManager.Instance == null || !ServerConfig.FixOutOfBoundsLooping)
                         return;
 
-                    List<Puck> pucks = PuckManager.Instance.GetPucks();
+                    List<Puck> pucks;
+                    if (GameManager.Instance.Phase == GamePhase.Warmup)
+                        pucks = PuckManager.Instance.GetPucks();
+                    else {
+                        pucks = new List<Puck> {
+                            PuckManager.Instance.GetPuck(),
+                        };
+                    }
 
                     foreach (Puck puck in pucks) {
-                        if (puck == null || !puck || !puck.IsSpawned)
+                        if (puck == null || !puck || !puck.IsSpawned || !puck.didStart || !puck.didAwake || !puck.enabled)
                             continue;
 
                         if (puck.transform.position.y < -50f) {
