@@ -494,10 +494,10 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         internal static LockList<PlayerWithCoordinate> PlayersToTeleport { get; } = new LockList<PlayerWithCoordinate>();
 
-        /*/// <summary>
+        /// <summary>
         /// LockList of PuckWithCoordinate, pucks to teleport next frame.
         /// </summary>
-        internal static LockList<PuckWithCoordinate> PucksToTeleport { get; } = new LockList<PuckWithCoordinate>();*/
+        internal static LockList<PuckWithCoordinate> PucksToTeleport { get; } = new LockList<PuckWithCoordinate>();
 
         /// <summary>
         /// Bool, true if the mod's logic has to be runned.
@@ -1281,7 +1281,7 @@ namespace oomtm450PuckMod_Ruleset {
         [HarmonyPatch(typeof(PuckManager), nameof(PuckManager.Server_SpawnPuck))]
         public class PuckManager_Server_SpawnPuck_Patch {
             [HarmonyPrefix]
-            public static bool Prefix(ref Vector3 position, Quaternion rotation, bool isReplay) {
+            public static bool Prefix(ref Vector3 position, Quaternion rotation, bool isReplay, Puck __result) {
                 try {
                     // If this is not the server or this is a replay or game is not started, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer() || isReplay || !ServerConfig.Faceoff.UseCustomFaceoff || !Logic || (GameManager.Instance.Phase != GamePhase.Play && GameManager.Instance.Phase != GamePhase.FaceOff))
@@ -1295,10 +1295,10 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         position = new Vector3(dot.x, ServerConfig.Faceoff.PuckDropHeight + ArenaOffsetY, dot.z);
 
-                    /*PucksToTeleport.Add(new PuckWithCoordinate {
+                    PucksToTeleport.Add(new PuckWithCoordinate {
                         Position = position,
                         Puck = __result,
-                    });*/
+                    });
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(PuckManager_Server_SpawnPuck_Patch)} Prefix().\n{ex}", ServerConfig);
@@ -1636,6 +1636,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 puck.transform.position = new Vector3(dot.x, ServerConfig.Faceoff.PuckDropHeight + ArenaOffsetY, dot.z);
 
                             puck.Rigidbody.linearVelocity = Vector3.zero;
+                            puck.Rigidbody.angularVelocity = Vector3.zero;
                         }
                     }
 
@@ -1648,6 +1649,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (player.transform.position.y < -50f) {
                             player.transform.position = new Vector3(0, ArenaOffsetY + ServerConfig.YOffsetForTeleport, 0);
                             player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
+                            player.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
                         }
                     }
                 }
@@ -1695,19 +1697,22 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
 
-                    /*if (PucksToTeleport.Count != 0) {
+                    if (PucksToTeleport.Count != 0) {
                         List<PuckWithCoordinate> pucksToTeleport = new List<PuckWithCoordinate>(PucksToTeleport);
                         PucksToTeleport.Clear();
 
                         foreach (PuckWithCoordinate puckToTeleport in pucksToTeleport) {
                             if (puckToTeleport.Puck) {
-                                if (puckToTeleport.Puck.IsSpawned)
+                                if (puckToTeleport.Puck.IsSpawned) {
                                     puckToTeleport.Puck.transform.position = puckToTeleport.Position;
+                                    puckToTeleport.Puck.Rigidbody.linearVelocity = Vector3.zero;
+                                    puckToTeleport.Puck.Rigidbody.angularVelocity = Vector3.zero;
+                                }
                                 else
                                     PucksToTeleport.Add(puckToTeleport);
                             }
                         }
-                    }*/
+                    }
 
                     if (PenaltyTimersElapsed.Count != 0) {
                         List<Penalty> penaltyTimersElapsed = new List<Penalty>(PenaltyTimersElapsed);
@@ -4817,11 +4822,11 @@ namespace oomtm450PuckMod_Ruleset {
         internal Quaternion Rotation { get; set; }
     }
 
-    /*internal class PuckWithCoordinate {
+    internal class PuckWithCoordinate {
         internal Puck Puck { get; set; }
 
         internal Vector3 Position { get; set; }
-    }*/
+    }
 
     public static class EnumExtensions {
         public static string GetDescription(this Enum enumValue, string category = "") {
