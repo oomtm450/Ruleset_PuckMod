@@ -2628,7 +2628,7 @@ namespace oomtm450PuckMod_Ruleset {
             _noHighStickFrames.Clear();
         }
 
-        private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3000, int millisecondsPauseMax = 5500, bool clearViolations = true) {
+        private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3200, int millisecondsPauseMax = 5600, bool clearViolations = true) {
             if (Paused)
                 return;
 
