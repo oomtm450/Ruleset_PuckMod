@@ -32,6 +32,8 @@ namespace oomtm450PuckMod_Sounds {
         private readonly LockList<AudioClip> _audioClips = new LockList<AudioClip>();
         private readonly LockDictionary<string, SoundSettings> _soundSettings = new LockDictionary<string, SoundSettings>();
 
+        private static readonly SynchronizationContext _mainThreadContext = SynchronizationContext.Current;
+
         private AudioSource _currentAudioSource = null;
 
         private static string _lastRandomSound = "";
@@ -364,6 +366,8 @@ namespace oomtm450PuckMod_Sounds {
         }
 
         internal async Awaitable PlayAsync(string name, string type, float vol = float.MaxValue, float delay = 0, bool loop = false) {
+            await Awaitable.MainThreadAsync();
+
             if (string.IsNullOrEmpty(name))
                 return;
 
@@ -391,11 +395,11 @@ namespace oomtm450PuckMod_Sounds {
                     return;
             }
 
-            if (!_soundObjects.TryGetValue(name, out GameObject soundObject)) {
-                soundObject = new GameObject(name);
+            if (!_soundObjects.TryGetValue(type, out GameObject soundObject)) {
+                soundObject = new GameObject(type);
                 DontDestroyOnLoad(soundObject);
                 DontDestroyOnLoad(soundObject.AddComponent<AudioSource>());
-                _soundObjects.Add(name, soundObject);
+                _soundObjects.Add(type, soundObject);
             }
 
             lock (_soundsLock) {
@@ -430,38 +434,42 @@ namespace oomtm450PuckMod_Sounds {
             }
         }
 
-        internal void Stop(string name) {
-            if (string.IsNullOrEmpty(name) || !_soundObjects.TryGetValue(name, out GameObject soundObject))
+        internal void Stop(string type) {
+            if (string.IsNullOrEmpty(type) || !_soundObjects.TryGetValue(type, out GameObject soundObject))
                 return;
 
-            try {
-                lock (_soundsLock) {
-                    AudioSource audioSource = soundObject.GetComponent<AudioSource>();
-                    if (audioSource.isPlaying)
-                        audioSource.Stop();
-                }
-            }
-            catch (Exception ex) {
-                Errors.Add($"Error in {nameof(SoundsSystem)}.{nameof(Stop)} ({name}).\n{ex}");
-            }
-        }
-
-        /// <summary>
-        /// Method that stops all sound and music.
-        /// </summary>
-        internal void StopAll() {
-            try {
-                foreach (GameObject soundObject in _soundObjects.Values) {
+            _mainThreadContext.Post(_ => {
+                try {
                     lock (_soundsLock) {
                         AudioSource audioSource = soundObject.GetComponent<AudioSource>();
                         if (audioSource.isPlaying)
                             audioSource.Stop();
                     }
                 }
-            }
-            catch (Exception ex) {
-                Errors.Add($"Error in {nameof(SoundsSystem)}.{nameof(StopAll)}.\n{ex}");
-            }
+                catch (Exception ex) {
+                    Errors.Add($"Error in {nameof(SoundsSystem)}.{nameof(Stop)} ({type}).\n{ex}");
+                }
+            }, null);
+        }
+
+        /// <summary>
+        /// Method that stops all sound and music.
+        /// </summary>
+        internal void StopAll() {
+            _mainThreadContext.Post(_ => {
+                try {
+                    lock (_soundsLock) {
+                        foreach (GameObject soundObject in _soundObjects.Values) {
+                            AudioSource audioSource = soundObject.GetComponent<AudioSource>();
+                            if (audioSource.isPlaying)
+                                audioSource.Stop();
+                        }
+                    }
+                }
+                catch (Exception ex) {
+                    Errors.Add($"Error in {nameof(SoundsSystem)}.{nameof(StopAll)} _mainThreadContext.Post.\n{ex}");
+                }
+            }, null);
         }
 
         internal void ChangeVolume(float vol) {
@@ -530,30 +538,32 @@ namespace oomtm450PuckMod_Sounds {
         /// Method that sets the custom goal horns.
         /// </summary>
         internal void SetGoalHorns() {
-            try {
-                (AudioSource blueGoalAudioSource, AudioSource redGoalAudioSource) = GetHornsAudioSource(Errors);
-                if (blueGoalAudioSource == null || redGoalAudioSource == null)
-                    return;
+            (AudioSource blueGoalAudioSource, AudioSource redGoalAudioSource) = GetHornsAudioSource(Errors);
+            if (blueGoalAudioSource == null || redGoalAudioSource == null)
+                return;
 
-                lock (_soundsLock) {
-                    if (blueGoalAudioSource.isPlaying)
-                        blueGoalAudioSource.Stop();
+            _mainThreadContext.Post(_ => {
+                try {
+                    lock (_soundsLock) {
+                        if (blueGoalAudioSource.isPlaying)
+                            blueGoalAudioSource.Stop();
 
-                    blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.RED_GOAL_HORN));
-                    blueGoalAudioSource.maxDistance = 400f;
-                    DEFAULT_HORN_VOLUME = blueGoalAudioSource.volume;
+                        blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.RED_GOAL_HORN));
+                        blueGoalAudioSource.maxDistance = 400f;
+                        DEFAULT_HORN_VOLUME = blueGoalAudioSource.volume;
 
-                    if (redGoalAudioSource.isPlaying)
-                        redGoalAudioSource.Stop();
-                    redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUE_GOAL_HORN));
-                    redGoalAudioSource.maxDistance = 400f;
+                        if (redGoalAudioSource.isPlaying)
+                            redGoalAudioSource.Stop();
+                        redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUE_GOAL_HORN));
+                        redGoalAudioSource.maxDistance = 400f;
 
-                    ChangeHornsVolume(Sounds.ClientConfig.HornVolume, new List<AudioSource> { blueGoalAudioSource, redGoalAudioSource, });
+                        ChangeHornsVolume(Sounds.ClientConfig.HornVolume, new List<AudioSource> { blueGoalAudioSource, redGoalAudioSource, });
+                    }
                 }
-            }
-            catch (Exception ex) {
-                Errors.Add($"Error in {nameof(SoundsSystem)}.{nameof(SetGoalHorns)}.\n{ex}");
-            }
+                catch (Exception ex) {
+                    Errors.Add($"Error in {nameof(SoundsSystem)}.{nameof(SetGoalHorns)} _mainThreadContext.Post.\n{ex}");
+                }
+            }, null);
         }
 
         internal static (AudioSource BlueGoalAudioSource, AudioSource RedGoalAudioSource) GetHornsAudioSource(LockList<string> errors = null) {
@@ -633,16 +643,32 @@ namespace oomtm450PuckMod_Sounds {
                 if (audioSource == null)
                     return;
 
-                lock (_soundsLock) {
-                    if (audioSource.isPlaying)
-                        audioSource.Stop();
-
-                    audioSource.clip = clip;
-                }
+                _mainThreadContext.Post(_ => {
+                    try {
+                        lock (_soundsLock) {
+                            if (!audioSource.isPlaying)
+                                audioSource.clip = clip;
+                            else
+                                _ = ApplyPendingClipWhenIdleAsync(audioSource, clip);
+                        }
+                    }
+                    catch (Exception ex) {
+                        Errors.Add($"Error in {nameof(SoundsSystem)}.{nameof(SetGoalHornForNext)} ({clipName}) _mainThreadContext.Post.\n{ex}");
+                    }
+                }, null);
             }
             catch (Exception ex) {
                 Errors.Add($"Error in {nameof(SoundsSystem)}.{nameof(SetGoalHornForNext)} ({clipName}).\n{ex}");
             }
+        }
+
+        private async Awaitable ApplyPendingClipWhenIdleAsync(AudioSource audioSource, AudioClip clip) {
+            await Awaitable.MainThreadAsync();
+            while (audioSource != null && audioSource.isPlaying)
+                await Awaitable.NextFrameAsync();
+
+            if (audioSource != null && clip != null)
+                audioSource.clip = clip;
         }
 
         private void ReorderAllLists() {
