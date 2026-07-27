@@ -632,12 +632,15 @@ namespace oomtm450PuckMod_Sounds {
                 if (Application.version != Codebase.Constants.CURRENT_APPLICATION_VERSION && Application.version != "897")
                     Logging.LogWarning($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION} or 897 !", ServerConfig);
 
-                var config = AudioSettings.GetConfiguration();
-                if (config.numRealVoices <= 32) {
-                    config.numRealVoices = 64;
-                    config.numVirtualVoices = 512;
-                    AudioSettings.Reset(config);
+                try {
+                    var config = AudioSettings.GetConfiguration();
+                    if (config.numRealVoices <= 32) {
+                        config.numRealVoices = 64;
+                        config.numVirtualVoices = 512;
+                        AudioSettings.Reset(config);
+                    }
                 }
+                catch { }
 
                 _harmony.PatchAll();
 
