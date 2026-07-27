@@ -420,6 +420,7 @@ namespace oomtm450PuckMod_Sounds {
                 delay += delayModifier;
 
                 if (type == Codebase.SoundsSystem.MUSIC) {
+                    audioSource.priority = 0;
                     _currentAudioSource = audioSource;
                     if (vol != float.MaxValue)
                         ChangeVolume(vol);
