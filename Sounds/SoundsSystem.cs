@@ -32,7 +32,7 @@ namespace oomtm450PuckMod_Sounds {
         private readonly LockList<AudioClip> _audioClips = new LockList<AudioClip>();
         private readonly LockDictionary<string, SoundSettings> _soundSettings = new LockDictionary<string, SoundSettings>();
 
-        private static readonly SynchronizationContext _mainThreadContext = SynchronizationContext.Current;
+        private static SynchronizationContext _mainThreadContext;
 
         private AudioSource _currentAudioSource = null;
 
@@ -72,6 +72,10 @@ namespace oomtm450PuckMod_Sounds {
         #endregion
 
         #region Methods/Functions
+        private void Awake() {
+            _mainThreadContext = SynchronizationContext.Current;
+        }
+
         internal bool LoadSounds(bool setCustomGoalHorns, string path) {
             try {
                 if (IsLoading)
@@ -438,6 +442,11 @@ namespace oomtm450PuckMod_Sounds {
             if (string.IsNullOrEmpty(type) || !_soundObjects.TryGetValue(type, out GameObject soundObject))
                 return;
 
+            if (_mainThreadContext == null) {
+                Errors.Add($"{nameof(_mainThreadContext)} was not initialized on the main thread.");
+                return;
+            }
+
             _mainThreadContext.Post(_ => {
                 try {
                     lock (_soundsLock) {
@@ -456,6 +465,11 @@ namespace oomtm450PuckMod_Sounds {
         /// Method that stops all sound and music.
         /// </summary>
         internal void StopAll() {
+            if (_mainThreadContext == null) {
+                Errors.Add($"{nameof(_mainThreadContext)} was not initialized on the main thread.");
+                return;
+            }
+
             _mainThreadContext.Post(_ => {
                 try {
                     lock (_soundsLock) {
@@ -541,6 +555,11 @@ namespace oomtm450PuckMod_Sounds {
             (AudioSource blueGoalAudioSource, AudioSource redGoalAudioSource) = GetHornsAudioSource(Errors);
             if (blueGoalAudioSource == null || redGoalAudioSource == null)
                 return;
+
+            if (_mainThreadContext == null) {
+                Errors.Add($"{nameof(_mainThreadContext)} was not initialized on the main thread.");
+                return;
+            }
 
             _mainThreadContext.Post(_ => {
                 try {
@@ -642,6 +661,11 @@ namespace oomtm450PuckMod_Sounds {
                 AudioSource audioSource = goalTransform.GetComponent<AudioSource>();
                 if (audioSource == null)
                     return;
+
+                if (_mainThreadContext == null) {
+                    Errors.Add($"{nameof(_mainThreadContext)} was not initialized on the main thread.");
+                    return;
+                }
 
                 _mainThreadContext.Post(_ => {
                     try {
