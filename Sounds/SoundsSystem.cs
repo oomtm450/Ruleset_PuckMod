@@ -687,7 +687,6 @@ namespace oomtm450PuckMod_Sounds {
         }
 
         private async Awaitable ApplyPendingClipWhenIdleAsync(AudioSource audioSource, AudioClip clip) {
-            await Awaitable.MainThreadAsync();
             while (audioSource != null && audioSource.isPlaying)
                 await Awaitable.NextFrameAsync();
 
