@@ -434,10 +434,15 @@ namespace oomtm450PuckMod_Sounds {
             if (string.IsNullOrEmpty(name) || !_soundObjects.TryGetValue(name, out GameObject soundObject))
                 return;
 
-            lock (_soundsLock) {
-                AudioSource audioSource = soundObject.GetComponent<AudioSource>();
-                if (audioSource.isPlaying)
-                    audioSource.Stop();
+            try {
+                lock (_soundsLock) {
+                    AudioSource audioSource = soundObject.GetComponent<AudioSource>();
+                    if (audioSource.isPlaying)
+                        audioSource.Stop();
+                }
+            }
+            catch (Exception ex) {
+                Errors.Add($"Error in {nameof(SoundsSystem)}.{nameof(Stop)} ({name}).\n{ex}");
             }
         }
 
@@ -445,12 +450,17 @@ namespace oomtm450PuckMod_Sounds {
         /// Method that stops all sound and music.
         /// </summary>
         internal void StopAll() {
-            foreach (GameObject soundObject in _soundObjects.Values) {
-                lock (_soundsLock) {
-                    AudioSource audioSource = soundObject.GetComponent<AudioSource>();
-                    if (audioSource.isPlaying)
-                        audioSource.Stop();
+            try {
+                foreach (GameObject soundObject in _soundObjects.Values) {
+                    lock (_soundsLock) {
+                        AudioSource audioSource = soundObject.GetComponent<AudioSource>();
+                        if (audioSource.isPlaying)
+                            audioSource.Stop();
+                    }
                 }
+            }
+            catch (Exception ex) {
+                Errors.Add($"Error in {nameof(SoundsSystem)}.{nameof(StopAll)}.\n{ex}");
             }
         }
 
@@ -525,17 +535,24 @@ namespace oomtm450PuckMod_Sounds {
                 if (blueGoalAudioSource == null || redGoalAudioSource == null)
                     return;
 
-                blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.RED_GOAL_HORN));
-                blueGoalAudioSource.maxDistance = 400f;
-                DEFAULT_HORN_VOLUME = blueGoalAudioSource.volume;
+                lock (_soundsLock) {
+                    if (blueGoalAudioSource.isPlaying)
+                        blueGoalAudioSource.Stop();
 
-                redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUE_GOAL_HORN));
-                redGoalAudioSource.maxDistance = 400f;
+                    blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.RED_GOAL_HORN));
+                    blueGoalAudioSource.maxDistance = 400f;
+                    DEFAULT_HORN_VOLUME = blueGoalAudioSource.volume;
 
-                ChangeHornsVolume(Sounds.ClientConfig.HornVolume, new List<AudioSource> { blueGoalAudioSource, redGoalAudioSource, });
+                    if (redGoalAudioSource.isPlaying)
+                        redGoalAudioSource.Stop();
+                    redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUE_GOAL_HORN));
+                    redGoalAudioSource.maxDistance = 400f;
+
+                    ChangeHornsVolume(Sounds.ClientConfig.HornVolume, new List<AudioSource> { blueGoalAudioSource, redGoalAudioSource, });
+                }
             }
             catch (Exception ex) {
-                Errors.Add(ex.ToString());
+                Errors.Add($"Error in {nameof(SoundsSystem)}.{nameof(SetGoalHorns)}.\n{ex}");
             }
         }
 
@@ -616,10 +633,15 @@ namespace oomtm450PuckMod_Sounds {
                 if (audioSource == null)
                     return;
 
-                audioSource.clip = clip;
+                lock (_soundsLock) {
+                    if (audioSource.isPlaying)
+                        audioSource.Stop();
+
+                    audioSource.clip = clip;
+                }
             }
             catch (Exception ex) {
-                Errors.Add(ex.ToString());
+                Errors.Add($"Error in {nameof(SoundsSystem)}.{nameof(SetGoalHornForNext)} ({clipName}).\n{ex}");
             }
         }
 
