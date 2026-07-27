@@ -632,16 +632,6 @@ namespace oomtm450PuckMod_Sounds {
                 if (Application.version != Codebase.Constants.CURRENT_APPLICATION_VERSION && Application.version != "897")
                     Logging.LogWarning($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION} or 897 !", ServerConfig);
 
-                try {
-                    var config = AudioSettings.GetConfiguration();
-                    if (config.numRealVoices <= 32) {
-                        config.numRealVoices = 64;
-                        config.numVirtualVoices = 512;
-                        AudioSettings.Reset(config);
-                    }
-                }
-                catch { }
-
                 _harmony.PatchAll();
 
                 Logging.Log($"Enabled.", ServerConfig, true);
@@ -655,6 +645,16 @@ namespace oomtm450PuckMod_Sounds {
                     ServerConfig = Configs.ServerConfig.ReadConfig();
                 }
                 else {
+                    try {
+                        var config = AudioSettings.GetConfiguration();
+                        if (config.numRealVoices <= 32) {
+                            config.numRealVoices = 64;
+                            config.numVirtualVoices = 512;
+                            AudioSettings.Reset(config);
+                        }
+                    }
+                    catch { }
+
                     Logging.Log("Setting client sided config.", ServerConfig, true);
                     ClientConfig = Configs.ClientConfig.ReadConfig();
                 }
