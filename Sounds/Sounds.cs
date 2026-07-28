@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.4.3c";
+        private static readonly string MOD_VERSION = "0.4.3d";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -36,6 +36,7 @@ namespace oomtm450PuckMod_Sounds {
             "0.4.3",
             "0.4.3a",
             "0.4.3b",
+            "0.4.3c",
         });
 
         /// <summary>
@@ -984,7 +985,7 @@ namespace oomtm450PuckMod_Sounds {
                             break;
 
                         ServerManager.Instance.Server_KickPlayer(PlayerManager.Instance.GetPlayerByClientId(clientId), DisconnectionCode.Kicked,
-                            $"{Constants.WORKSHOP_MOD_NAME} mod is out of date. Please unsubscribe in the workshop and restart your game to update.", false);
+                            $"{Constants.WORKSHOP_MOD_NAME} mod is out of date or was enabled manually. Disable the mod and/or unsubscribe in the workshop and restart your game to update.", false);
 
                         if (!_sentOutOfDateMessage.TryGetValue(clientId, out DateTime lastCheckTime)) {
                             lastCheckTime = DateTime.MinValue;
