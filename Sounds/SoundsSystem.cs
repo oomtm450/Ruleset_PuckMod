@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.Networking;
 using static oomtm450PuckMod_Sounds.SoundsSystem;
 
@@ -408,10 +409,7 @@ namespace oomtm450PuckMod_Sounds {
 
             lock (_soundsLock) {
                 AudioSource audioSource = soundObject.GetComponent<AudioSource>();
-                if (audioSource.isPlaying)
-                    audioSource.Stop();
 
-                audioSource.clip = clip;
                 audioSource.loop = loop;
 
                 vol *= volModifier;
@@ -432,10 +430,15 @@ namespace oomtm450PuckMod_Sounds {
                     audioSource.volume = SettingsManager.GlobalVolume * SettingsManager.GameVolume * volModifier;
                 }
 
-                if (delay <= 0)
-                    audioSource.Play();
+                if (!audioSource.isPlaying) {
+                    audioSource.clip = clip;
+                    if (delay <= 0)
+                        audioSource.Play();
+                    else
+                        audioSource.PlayDelayed(delay);
+                }
                 else
-                    audioSource.PlayDelayed(delay);
+                    _ = ApplyPendingClipWhenIdleAsync(audioSource, clip, true, delay);
             }
         }
 
@@ -565,16 +568,19 @@ namespace oomtm450PuckMod_Sounds {
             _mainThreadContext.Post(_ => {
                 try {
                     lock (_soundsLock) {
-                        if (blueGoalAudioSource.isPlaying)
-                            blueGoalAudioSource.Stop();
+                        if (!blueGoalAudioSource.isPlaying)
+                            blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUE_GOAL_HORN));
+                        else
+                            _ = ApplyPendingClipWhenIdleAsync(blueGoalAudioSource, _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUE_GOAL_HORN)));
 
-                        blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.RED_GOAL_HORN));
                         blueGoalAudioSource.maxDistance = 400f;
                         DEFAULT_HORN_VOLUME = blueGoalAudioSource.volume;
 
-                        if (redGoalAudioSource.isPlaying)
-                            redGoalAudioSource.Stop();
-                        redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUE_GOAL_HORN));
+                        if (!redGoalAudioSource.isPlaying)
+                            redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.RED_GOAL_HORN));
+                        else
+                            _ = ApplyPendingClipWhenIdleAsync(redGoalAudioSource, _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.RED_GOAL_HORN)));
+
                         redGoalAudioSource.maxDistance = 400f;
 
                         ChangeHornsVolume(Sounds.ClientConfig.HornVolume, new List<AudioSource> { blueGoalAudioSource, redGoalAudioSource, });
@@ -687,12 +693,17 @@ namespace oomtm450PuckMod_Sounds {
             }
         }
 
-        private async Awaitable ApplyPendingClipWhenIdleAsync(AudioSource audioSource, AudioClip clip) {
+        private async Awaitable ApplyPendingClipWhenIdleAsync(AudioSource audioSource, AudioClip clip, bool play = false, float delay = 0) {
             while (audioSource != null && audioSource.isPlaying)
                 await Awaitable.NextFrameAsync();
 
-            if (audioSource != null && clip != null)
+            if (audioSource != null && clip != null) {
                 audioSource.clip = clip;
+                if (delay <= 0)
+                    audioSource.Play();
+                else
+                    audioSource.PlayDelayed(delay);
+            }
         }
 
         private void ReorderAllLists() {
