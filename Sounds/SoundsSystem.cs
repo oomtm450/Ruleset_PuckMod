@@ -699,10 +699,13 @@ namespace oomtm450PuckMod_Sounds {
 
             if (audioSource != null && clip != null) {
                 audioSource.clip = clip;
-                if (delay <= 0)
-                    audioSource.Play();
-                else
-                    audioSource.PlayDelayed(delay);
+
+                if (play) {
+                    if (delay <= 0)
+                        audioSource.Play();
+                    else
+                        audioSource.PlayDelayed(delay);
+                }
             }
         }
 
