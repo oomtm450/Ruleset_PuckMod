@@ -346,6 +346,7 @@ namespace oomtm450PuckMod_Sounds {
                     AudioSource audioSource = SystemFunc.GetPrivateField<AudioSource>(typeof(SynchronizedAudio), __instance, "audioSource");
 
                     if (audioSource.name == "Blue Goal" || audioSource.name == "Red Goal") {
+                        _soundsSystem?.TryApplyPendingHorn(audioSource);
                         if (audioSource.clip == null)
                             return false;
 
