@@ -522,7 +522,7 @@ namespace oomtm450PuckMod_Sounds {
                                 if (enableWarmupMusic != null) {
                                     if (_soundsSystem != null && _soundsSystem.WarmupMusicList.Contains(_currentMusicPlaying)) {
                                         if (ClientConfig.WarmupMusic && !((bool)enableWarmupMusic))
-                                            _soundsSystem.StopAll();
+                                            _soundsSystem.Stop(Codebase.SoundsSystem.WARMUP_MUSIC);
                                         else if (!ClientConfig.WarmupMusic && (bool)enableWarmupMusic)
                                             _ = _soundsSystem.PlayAsync(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, 0, 0, true);
                                     }
