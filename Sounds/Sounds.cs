@@ -202,13 +202,11 @@ namespace oomtm450PuckMod_Sounds {
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.WARMUP_MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.WARMUP_MUSIC;
                         }
-                        else if (newGameState.Phase == GamePhase.PostGame) {
+                        else if (newGameState.Phase == GamePhase.PostGame || newGameState.Phase == GamePhase.PreGame) {
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             _currentMusicPlayingType = _currentMusicPlaying = "";
                         }
-                        else if (string.IsNullOrEmpty(_currentMusicPlayingType) || _currentMusicPlayingType == Codebase.SoundsSystem.WARMUP_MUSIC) {
-                            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-
+                        else if (string.IsNullOrEmpty(_currentMusicPlayingType)) {
                             if (newGameState.Phase == GamePhase.FaceOff) {
                                 if (!_hasPlayedLastMinuteMusic && GameManager.Instance.Tick <= 60 && GameManager.Instance.Period == 3) {
                                     _hasPlayedLastMinuteMusic = true;
