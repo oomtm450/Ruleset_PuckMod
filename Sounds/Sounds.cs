@@ -685,10 +685,18 @@ namespace oomtm450PuckMod_Sounds {
                 if (!_harmonyPatched)
                     return true;
 
-                if (_soundsSystem != null && _soundsSystem.Errors.Count != 0) {
-                    Logging.LogError($"There was an error when initializing {nameof(_soundsSystem)}.", ServerConfig);
-                    foreach (string error in _soundsSystem.Errors)
-                        Logging.LogError(error, ServerConfig);
+                if (_soundsSystem != null) {
+                    if (_soundsSystem.Errors.Count != 0) {
+                        Logging.LogError($"There was an error when initializing {nameof(_soundsSystem)}.", ServerConfig);
+                        foreach (string error in _soundsSystem.Errors)
+                            Logging.LogError(error, ServerConfig);
+                    }
+
+                    if (_soundsSystem.Warnings.Count != 0) {
+                        Logging.LogError($"There was a warning when initializing {nameof(_soundsSystem)}.", ClientConfig);
+                        foreach (string warning in _soundsSystem.Warnings)
+                            Logging.LogError(warning, ClientConfig);
+                    }
                 }
 
                 Logging.Log($"Disabling...", ServerConfig, true);
