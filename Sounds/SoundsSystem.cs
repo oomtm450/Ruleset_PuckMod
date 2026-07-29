@@ -586,11 +586,11 @@ namespace oomtm450PuckMod_Sounds {
                 return;
 
             try {
-                _pendingHornClips.AddOrUpdate("Blue Goal", _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUE_GOAL_HORN)));
+                _pendingHornClips.AddOrUpdate("Blue Goal", _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.RED_GOAL_HORN)));
                 blueGoalAudioSource.maxDistance = 400f;
                 DEFAULT_HORN_VOLUME = blueGoalAudioSource.volume;
 
-                _pendingHornClips.AddOrUpdate("Red Goal", _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.RED_GOAL_HORN)));
+                _pendingHornClips.AddOrUpdate("Red Goal", _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUE_GOAL_HORN)));
                 redGoalAudioSource.maxDistance = 400f;
 
                 ChangeHornsVolume(Sounds.ClientConfig.HornVolume, new List<AudioSource> { blueGoalAudioSource, redGoalAudioSource, });
