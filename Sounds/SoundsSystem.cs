@@ -697,15 +697,16 @@ namespace oomtm450PuckMod_Sounds {
             while (audioSource != null && audioSource.isPlaying)
                 await Awaitable.NextFrameAsync();
 
-            if (audioSource != null && clip != null) {
-                audioSource.clip = clip;
+            if (audioSource == null || clip == null)
+                return;
 
-                if (play) {
-                    if (delay <= 0)
-                        audioSource.Play();
-                    else
-                        audioSource.PlayDelayed(delay);
-                }
+            audioSource.clip = clip;
+
+            if (play) {
+                if (delay <= 0)
+                    audioSource.Play();
+                else
+                    audioSource.PlayDelayed(delay);
             }
         }
 
