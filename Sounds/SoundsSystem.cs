@@ -585,36 +585,19 @@ namespace oomtm450PuckMod_Sounds {
             if (blueGoalAudioSource == null || redGoalAudioSource == null)
                 return;
 
-            if (_mainThreadContext == null) {
-                Errors.Add($"{nameof(_mainThreadContext)} was not initialized on the main thread.");
-                return;
+            try {
+                _pendingHornClips.AddOrUpdate("Blue Goal", _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUE_GOAL_HORN)));
+                blueGoalAudioSource.maxDistance = 400f;
+                DEFAULT_HORN_VOLUME = blueGoalAudioSource.volume;
+
+                _pendingHornClips.AddOrUpdate("Red Goal", _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.RED_GOAL_HORN)));
+                redGoalAudioSource.maxDistance = 400f;
+
+                ChangeHornsVolume(Sounds.ClientConfig.HornVolume, new List<AudioSource> { blueGoalAudioSource, redGoalAudioSource, });
             }
-
-            _mainThreadContext.Post(_ => {
-                try {
-                    lock (_soundsLock) {
-                        if (!blueGoalAudioSource.isPlaying)
-                            blueGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUE_GOAL_HORN));
-                        else
-                            _ = ApplyPendingClipWhenIdleAsync(blueGoalAudioSource, _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.BLUE_GOAL_HORN)));
-
-                        blueGoalAudioSource.maxDistance = 400f;
-                        DEFAULT_HORN_VOLUME = blueGoalAudioSource.volume;
-
-                        if (!redGoalAudioSource.isPlaying)
-                            redGoalAudioSource.clip = _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.RED_GOAL_HORN));
-                        else
-                            _ = ApplyPendingClipWhenIdleAsync(redGoalAudioSource, _audioClips.FirstOrDefault(x => x.name.Contains(Codebase.SoundsSystem.RED_GOAL_HORN)));
-
-                        redGoalAudioSource.maxDistance = 400f;
-
-                        ChangeHornsVolume(Sounds.ClientConfig.HornVolume, new List<AudioSource> { blueGoalAudioSource, redGoalAudioSource, });
-                    }
-                }
-                catch (Exception ex) {
-                    Errors.Add($"Error in {nameof(SoundsSystem)}.{nameof(SetGoalHorns)} _mainThreadContext.Post.\n{ex}");
-                }
-            }, null);
+            catch (Exception ex) {
+                Errors.Add($"Error in {nameof(SoundsSystem)}.{nameof(SetGoalHorns)} _mainThreadContext.Post.\n{ex}");
+            }
         }
 
         internal static (AudioSource BlueGoalAudioSource, AudioSource RedGoalAudioSource) GetHornsAudioSource(LockList<string> errors = null) {
