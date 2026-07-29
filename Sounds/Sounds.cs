@@ -1050,6 +1050,12 @@ namespace oomtm450PuckMod_Sounds {
                             foreach (string error in _soundsSystem.Errors)
                                 Logging.LogError(error, ClientConfig);
                         }
+                        if (_soundsSystem.Warnings.Count != 0) {
+                            Logging.LogError($"There was a warning when initializing {nameof(_soundsSystem)}.", ClientConfig);
+                            foreach (string warning in _soundsSystem.Warnings)
+                                Logging.LogError(warning, ClientConfig);
+                        }
+                        _soundsSystem.Warnings.Clear();
 
                         int? seed = null;
                         string chosenSound = "";
