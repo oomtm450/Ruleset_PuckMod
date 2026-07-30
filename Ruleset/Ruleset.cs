@@ -3992,44 +3992,6 @@ namespace oomtm450PuckMod_Ruleset {
                 GameObject barrierCollider = GameObject.Find("Barrier Collider");
                 barrierCollider.transform.position = new Vector3(barrierCollider.transform.position.x, (boardWindowsDefaultHeight * arenaScaleY) + arenaOffsetY, barrierCollider.transform.position.z);
 
-                /*MeshFilter meshFilter = null;
-                try {
-                    meshFilter = barrierCollider.GetComponent<MeshFilter>();
-                    if (meshFilter == null)
-                        meshFilter = barrierCollider.AddComponent<MeshFilter>();
-                }
-                catch (Exception ex) {
-                    Logging.LogError($"1 : {ex}", ServerConfig);
-                }
-
-                MeshRenderer meshRenderer = null;
-                try {
-                    meshRenderer = barrierCollider.GetComponent<MeshRenderer>();
-                    if (meshRenderer == null)
-                        meshRenderer = barrierCollider.AddComponent<MeshRenderer>();
-                    meshRenderer.enabled = true;
-                }
-                catch (Exception ex) {
-                    Logging.LogError($"2 : {ex}", ServerConfig);
-                }
-
-                try {
-                    MeshCollider meshCollider = barrierCollider.GetComponent<MeshCollider>();
-                    if (meshCollider.sharedMesh != null) {
-                        // Duplicate or share the mesh data with the MeshFilter
-                        meshFilter.sharedMesh = meshCollider.sharedMesh;
-                    }
-
-                    // 3. Assign a default built-in material so it is visible
-                    Shader test = Shader.Find("Universal Render Pipeline/Lit");
-                    if (test == null)
-                        test = Shader.Find("HDRP/Lit");
-                    meshRenderer.material = new Material(test);
-                }
-                catch (Exception ex) {
-                    Logging.LogError($"3 : {ex}", ServerConfig);
-                }*/
-
                 /*// Custom CompAdjust rink barriers lowering.
                 for (int j = 0; j < levelManagerChild.childCount; j++) {
                     Transform rinkChild = levelManagerChild.GetChild(j);
