@@ -195,6 +195,7 @@ namespace oomtm450PuckMod_Sounds {
                     }
                     else if (!_changedPhase) {
                         if (newGameState.Phase == GamePhase.GameOver) {
+                            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.GOAL_MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.GAMEOVER_MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.GAMEOVER_MUSIC;
                         }
@@ -803,6 +804,11 @@ namespace oomtm450PuckMod_Sounds {
                                 _currentMusicPlaying = "";
                                 _currentMusicPlayingType = "";
                             }
+                            else if (value == Codebase.SoundsSystem.GOAL_MUSIC) {
+                                NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.GOAL_MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                                _currentMusicPlaying = "";
+                                _currentMusicPlayingType = "";
+                            }
                             break;
                     }
                 }
@@ -1190,6 +1196,10 @@ namespace oomtm450PuckMod_Sounds {
                         if (dataStr == Codebase.SoundsSystem.MUSIC) {
                             if (!string.IsNullOrEmpty(_currentMusicPlayingType))
                                 _soundsSystem.Stop(_currentMusicPlayingType);
+                        }
+                        else if (dataStr == Codebase.SoundsSystem.GOAL_MUSIC) {
+                            _soundsSystem.Stop(Codebase.SoundsSystem.RED_GOAL_MUSIC);
+                            _soundsSystem.Stop(Codebase.SoundsSystem.BLUE_GOAL_MUSIC);
                         }
                         else if (dataStr == Codebase.SoundsSystem.ALL)
                             _soundsSystem.StopAll();

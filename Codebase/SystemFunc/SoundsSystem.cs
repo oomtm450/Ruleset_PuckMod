@@ -16,8 +16,9 @@
         internal const string FACEOFF_MUSIC = "faceoffmusic";
         internal const string FACEOFF_MUSIC_DELAYED = FACEOFF_MUSIC + "d";
 
-        internal const string BLUE_GOAL_MUSIC = "bluegoalmusic";
-        internal const string RED_GOAL_MUSIC = "redgoalmusic";
+        internal const string GOAL_MUSIC = "goalmusic";
+        internal const string BLUE_GOAL_MUSIC = "blue" + GOAL_MUSIC;
+        internal const string RED_GOAL_MUSIC = "red" + GOAL_MUSIC;
         internal const string BETWEEN_PERIODS_MUSIC = "betweenperiodsmusic";
         internal const string WARMUP_MUSIC = "warmupmusic";
 
