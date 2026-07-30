@@ -434,9 +434,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         public int RoughingMillisecondsThreshold { get; set; } = 6500;
         /// <summary>
-        /// Int, chance for an roughing to be called. (1 is equal to 100%. 1 / 100 * 100 = 1)
+        /// Int, chance for an roughing to be called. (2 is equal to 50%. 1 / 50 * 100 = 2)
         /// </summary>
-        public int RoughingChancePercInverse { get; set; } = 1;
+        public int RoughingChancePercInverse { get; set; } = 2;
 
         /// <summary>
         /// Bool, true if charging penalty is enabled.
