@@ -1435,13 +1435,13 @@ namespace oomtm450PuckMod_Ruleset {
 
                             return false;
                         }
-                        else if (content.StartsWith(@"/board")) {
+                        /*else if (content.StartsWith(@"/board")) {
                             content = content.Replace(@"/board", "").Trim();
                             _boardWindowsDefaultHeight = float.Parse(content, CultureInfo.InvariantCulture);
                             _barriersLowered = false;
                             LowerBarriers(_boardWindowsDefaultHeight, _arenaScaleY, ArenaOffsetY);
                             return false;
-                        }
+                        }*/
                         else if (content.StartsWith(@"/offblue")) {
                             NetworkCommunication.SendData(RefSignals.OFFSIDE_LINESMAN, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
