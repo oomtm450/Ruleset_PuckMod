@@ -263,6 +263,21 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool RedTeam { get; } = true;
 
         /// <summary>
+        /// Bool, true if blue team intentional offsides are activated.
+        /// </summary>
+        public bool IntentionalOffsideBlueTeam { get; } = true;
+
+        /// <summary>
+        /// Bool, true if red team intentional offsides are activated.
+        /// </summary>
+        public bool IntentionalOffsideRedTeam { get; } = true;
+
+        /// <summary>
+        /// Int, threshold for an intentional offside to be called in milliseconds.
+        /// </summary>
+        public int IntentionalOffsideMillisecondsThreshold { get; } = 4500;
+
+        /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
         /// </summary>
         /// <param name="oldConfig">ISubConfig, config with old values.</param>

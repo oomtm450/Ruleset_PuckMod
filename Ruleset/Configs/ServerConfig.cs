@@ -636,6 +636,21 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         public bool RedTeam { get; set; } = true;
 
+        /// <summary>
+        /// Bool, true if blue team intentional offsides are activated.
+        /// </summary>
+        public bool IntentionalOffsideBlueTeam { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if red team intentional offsides are activated.
+        /// </summary>
+        public bool IntentionalOffsideRedTeam { get; set; } = true;
+
+        /// <summary>
+        /// Int, threshold for an intentional offside to be called in milliseconds.
+        /// </summary>
+        public int IntentionalOffsideMillisecondsThreshold { get; set; } = 4500;
+
         #region Constructors
         /// <summary>
         /// Default constructor of OffsideConfig.
@@ -668,6 +683,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (RedTeam == _oldConfig.RedTeam)
                 RedTeam = newConfig.RedTeam;
+
+
+            if (IntentionalOffsideBlueTeam == _oldConfig.IntentionalOffsideBlueTeam)
+                IntentionalOffsideBlueTeam = newConfig.IntentionalOffsideBlueTeam;
+
+            if (IntentionalOffsideRedTeam == _oldConfig.IntentionalOffsideRedTeam)
+                IntentionalOffsideRedTeam = newConfig.IntentionalOffsideRedTeam;
+
+            if (IntentionalOffsideMillisecondsThreshold == _oldConfig.IntentionalOffsideMillisecondsThreshold)
+                IntentionalOffsideMillisecondsThreshold = newConfig.IntentionalOffsideMillisecondsThreshold;
         }
     }
 

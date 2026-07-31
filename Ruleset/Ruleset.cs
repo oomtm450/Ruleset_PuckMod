@@ -4156,7 +4156,9 @@ namespace oomtm450PuckMod_Ruleset {
                 CallPenalty(PlayerTeam.Red);
             else {
                 // Intentional offside.
-                if ((DateTime.UtcNow - GetOffsideLongestTime(team)).TotalMilliseconds > 4500) { // TODO : Config.
+                if (((team == PlayerTeam.Blue && ServerConfig.Offside.IntentionalOffsideBlueTeam) ||
+                    (team == PlayerTeam.Red && ServerConfig.Offside.IntentionalOffsideRedTeam)) &&
+                    (DateTime.UtcNow - GetOffsideLongestTime(team)).TotalMilliseconds > ServerConfig.Offside.IntentionalOffsideMillisecondsThreshold) {
                     SendChat(Rule.Offside, team, true, false, referee, "INTENTIONAL ");
                     NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Icing, _puckLastStateBeforeCall[Rule.Offside]);
                     IcingStaminaDrainLogic(team);
