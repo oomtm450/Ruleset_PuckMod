@@ -137,7 +137,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _images.Add(fileName, image);
                     }
                     catch (Exception ex) {
-                        Errors.Add(ex.ToString());
+                        Errors.Add($"Error in {nameof(RefSignals)}.{nameof(GetSprites)}.\n{ex}");
                     }
                 }
             }
