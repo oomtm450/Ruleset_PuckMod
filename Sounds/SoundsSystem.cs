@@ -401,7 +401,7 @@ namespace oomtm450PuckMod_Sounds {
             if (string.IsNullOrEmpty(name))
                 return;
 
-            if (type == Codebase.SoundsSystem.MUSIC && !Sounds.ClientConfig.Music)
+            if ((type == Codebase.SoundsSystem.MUSIC || type == Codebase.SoundsSystem.GOAL_MUSIC) && !Sounds.ClientConfig.Music)
                 return;
 
             SoundSettings soundSettings = null;
@@ -442,7 +442,7 @@ namespace oomtm450PuckMod_Sounds {
 
                 delay += delayModifier;
 
-                if (type == Codebase.SoundsSystem.MUSIC) {
+                if (type == Codebase.SoundsSystem.MUSIC || type == Codebase.SoundsSystem.GOAL_MUSIC) {
                     audioSource.priority = 0;
                     _currentAudioSource = audioSource;
                     if (vol != float.MaxValue)

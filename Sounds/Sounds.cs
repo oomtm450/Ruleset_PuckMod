@@ -180,14 +180,14 @@ namespace oomtm450PuckMod_Sounds {
                         return true;
 
                     if (newGameState.Phase == GamePhase.BlueScore) {
-                        _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.BLUE_GOAL_MUSIC;
+                        _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.GOAL_MUSIC;
                         string donorSong = DonorPrefs.GetSong(_lastGoalScorerSteamId);
-                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlayingType, donorSong), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.BLUE_GOAL_MUSIC, donorSong), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
                     else if (newGameState.Phase == GamePhase.RedScore) {
-                        _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.RED_GOAL_MUSIC;
+                        _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.GOAL_MUSIC;
                         string donorSong = DonorPrefs.GetSong(_lastGoalScorerSteamId);
-                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlayingType, donorSong), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.RED_GOAL_MUSIC, donorSong), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                     }
                     else if (newGameState.Phase == GamePhase.Intermission) {
                         _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC;
@@ -195,11 +195,12 @@ namespace oomtm450PuckMod_Sounds {
                     }
                     else if (!_changedPhase) {
                         if (newGameState.Phase == GamePhase.GameOver) {
-                            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.GOAL_MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.GAMEOVER_MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.GAMEOVER_MUSIC;
                         }
                         else if (newGameState.Phase == GamePhase.Warmup) {
+                            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.WARMUP_MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.WARMUP_MUSIC;
                         }
@@ -799,16 +800,13 @@ namespace oomtm450PuckMod_Sounds {
 
                             if (value == Codebase.SoundsSystem.ALL)
                                 NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                            else if (value == Codebase.SoundsSystem.MUSIC) {
+                            else if (value == Codebase.SoundsSystem.MUSIC)
                                 NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                                _currentMusicPlaying = "";
-                                _currentMusicPlayingType = "";
-                            }
-                            else if (value == Codebase.SoundsSystem.GOAL_MUSIC) {
+                            else if (value == Codebase.SoundsSystem.GOAL_MUSIC)
                                 NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.GOAL_MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                                _currentMusicPlaying = "";
-                                _currentMusicPlayingType = "";
-                            }
+
+                            _currentMusicPlaying = "";
+                            _currentMusicPlayingType = "";
                             break;
                     }
                 }
@@ -1094,22 +1092,22 @@ namespace oomtm450PuckMod_Sounds {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BlueGoalMusicList, SoundsSystem.SoundType.BlueGoal, seed);
 
-                            _currentMusicPlayingType = Codebase.SoundsSystem.MUSIC;
-                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GoalMusicVolume, 2.25f);
+                            _currentMusicPlayingType = Codebase.SoundsSystem.GOAL_MUSIC;
+                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, _currentMusicPlayingType, ClientConfig.MusicVolume * ClientConfig.GoalMusicVolume, 2.25f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.RED_GOAL_MUSIC) {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.RedGoalMusicList, SoundsSystem.SoundType.RedGoal, seed);
 
-                            _currentMusicPlayingType = Codebase.SoundsSystem.MUSIC;
-                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GoalMusicVolume, 2.25f);
+                            _currentMusicPlayingType = Codebase.SoundsSystem.GOAL_MUSIC;
+                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, _currentMusicPlayingType, ClientConfig.MusicVolume * ClientConfig.GoalMusicVolume, 2.25f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.BETWEEN_PERIODS_MUSIC) {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.BetweenPeriodsMusicList, SoundsSystem.SoundType.BetweenPeriods, seed);
 
                             _currentMusicPlayingType = Codebase.SoundsSystem.MUSIC;
-                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.BetweenPeriodsMusicVolume, 1.5f);
+                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, _currentMusicPlayingType, ClientConfig.MusicVolume * ClientConfig.BetweenPeriodsMusicVolume, 1.5f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.WARMUP_MUSIC) {
                             if (string.IsNullOrEmpty(chosenSound))
@@ -1117,7 +1115,7 @@ namespace oomtm450PuckMod_Sounds {
 
                             if (ClientConfig.WarmupMusic) {
                                 _currentMusicPlayingType = Codebase.SoundsSystem.MUSIC;
-                                _ = _soundsSystem.PlayAsync(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.WarmupMusicVolume, 0, true);
+                                _ = _soundsSystem.PlayAsync(_currentMusicPlaying, _currentMusicPlayingType, ClientConfig.MusicVolume * ClientConfig.WarmupMusicVolume, 0, true);
                             }
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.LAST_MINUTE_MUSIC) {
@@ -1164,7 +1162,7 @@ namespace oomtm450PuckMod_Sounds {
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.GameOverMusicList, SoundsSystem.SoundType.None, seed);
 
                             _currentMusicPlayingType = Codebase.SoundsSystem.MUSIC;
-                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.GameOverMusicVolume, 0.5f);
+                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, _currentMusicPlayingType, ClientConfig.MusicVolume * ClientConfig.GameOverMusicVolume, 0.5f);
                         }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.WHISTLE)
                             _ = _soundsSystem.PlayAsync(Codebase.SoundsSystem.WHISTLE, "");
@@ -1174,7 +1172,7 @@ namespace oomtm450PuckMod_Sounds {
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.FaceoffMusicList, SoundsSystem.SoundType.Faceoff, seed);
 
                             _currentMusicPlayingType = Codebase.SoundsSystem.MUSIC;
-                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, Codebase.SoundsSystem.MUSIC, ClientConfig.MusicVolume * ClientConfig.FaceoffMusicVolume, delay);
+                            _ = _soundsSystem.PlayAsync(_currentMusicPlaying, _currentMusicPlayingType, ClientConfig.MusicVolume * ClientConfig.FaceoffMusicVolume, delay);
                         }
                         break;
 
@@ -1198,7 +1196,7 @@ namespace oomtm450PuckMod_Sounds {
                                 _soundsSystem.Stop(_currentMusicPlayingType);
                         }
                         else if (dataStr == Codebase.SoundsSystem.GOAL_MUSIC) {
-                            _soundsSystem.Stop(Codebase.SoundsSystem.MUSIC);
+                            _soundsSystem.Stop(Codebase.SoundsSystem.GOAL_MUSIC);
                         }
                         else if (dataStr == Codebase.SoundsSystem.ALL)
                             _soundsSystem.StopAll();

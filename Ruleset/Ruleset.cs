@@ -3231,7 +3231,7 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.Log($"kvp.Key : {kvp.Key}", ServerConfig, true);
                     Logging.Log($"kvp.Value : {kvp.Value}", ServerConfig, true);
                     switch (kvp.Key) {
-                        case "ArenaScaleX":
+                        case "ArenaScaleWorldX":
                             double arenaScaleX = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
                             if (arenaScaleX == 0)
                                 break;
@@ -3252,14 +3252,14 @@ namespace oomtm450PuckMod_Ruleset {
                             PenaltyModule.ScaleXCoordinates(_arenaScaleX);
                             break;
 
-                        case "ArenaScaleZ":
+                        case "ArenaScaleWorldY":
                             double arenaScaleY = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
                             if (arenaScaleY == 0)
                                 break;
                             _arenaScaleY = (float)arenaScaleY;
                             break;
 
-                        case "ArenaScaleY":
+                        case "ArenaScaleWorldZ":
                             double arenaScaleZ = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
                             if (arenaScaleZ == 0)
                                 break;
