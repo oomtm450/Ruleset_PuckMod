@@ -3219,7 +3219,7 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             try {
-                //Logging.Log("Event_CompetitiveAdjustments_OnArenaSync !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
+                Logging.Log("Event_CompetitiveAdjustments_OnArenaSync !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
                 PenaltyModule.ResetCoordinates();
                 _barriersLowered = false;
 
@@ -3228,6 +3228,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                 // Do the scaling first.
                 foreach (KeyValuePair<string, object> kvp in message) {
+                    Logging.Log($"kvp.Key : {kvp.Key}", ServerConfig, true);
+                    Logging.Log($"kvp.Value : {kvp.Value}", ServerConfig, true);
                     switch (kvp.Key) {
                         case "ArenaScaleX":
                             double arenaScaleX = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
@@ -3991,6 +3993,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 GameObject barrierCollider = GameObject.Find("Barrier Collider");
                 barrierCollider.transform.position = new Vector3(barrierCollider.transform.position.x, (boardWindowsDefaultHeight * arenaScaleY) + arenaOffsetY, barrierCollider.transform.position.z);
+                Logging.Log($"Lowered Barrier Collider to {(boardWindowsDefaultHeight * arenaScaleY) + arenaOffsetY} (arenaScaleY {arenaScaleY}) (arenaOffsetY {arenaOffsetY})", ServerConfig, true);
 
                 /*// Custom CompAdjust rink barriers lowering.
                 for (int j = 0; j < levelManagerChild.childCount; j++) {
