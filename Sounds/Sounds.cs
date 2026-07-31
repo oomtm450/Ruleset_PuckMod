@@ -195,12 +195,12 @@ namespace oomtm450PuckMod_Sounds {
                     }
                     else if (!_changedPhase) {
                         if (newGameState.Phase == GamePhase.GameOver) {
-                            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.GAMEOVER_MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.GAMEOVER_MUSIC;
                         }
                         else if (newGameState.Phase == GamePhase.Warmup) {
-                            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.WARMUP_MUSIC), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.WARMUP_MUSIC;
                         }
