@@ -4366,8 +4366,6 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.Log("Setting client sided config.", ServerConfig, true);
                     ClientConfig = Configs.ClientConfig.ReadConfig();
 
-                    AddPenaltiesLabel(UIManager.Instance.Hud);
-
                     //_getStickLocation = new InputAction(binding: "<keyboard>/#(o)");
                     //_getStickLocation.Enable();
                 }
@@ -4583,6 +4581,8 @@ namespace oomtm450PuckMod_Ruleset {
                 _refSignalsRedTeam = refSignalsRedTeamGameObject.AddComponent<RefSignals>();
                 _refSignalsRedTeam.LoadImages(PlayerTeam.Red);
             }
+
+            AddPenaltiesLabel(UIManager.Instance.Hud);
         }
 
         private static void GetAllLayersName() {
