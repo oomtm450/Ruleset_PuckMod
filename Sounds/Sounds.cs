@@ -1198,8 +1198,7 @@ namespace oomtm450PuckMod_Sounds {
                                 _soundsSystem.Stop(_currentMusicPlayingType);
                         }
                         else if (dataStr == Codebase.SoundsSystem.GOAL_MUSIC) {
-                            _soundsSystem.Stop(Codebase.SoundsSystem.RED_GOAL_MUSIC);
-                            _soundsSystem.Stop(Codebase.SoundsSystem.BLUE_GOAL_MUSIC);
+                            _soundsSystem.Stop(Codebase.SoundsSystem.MUSIC);
                         }
                         else if (dataStr == Codebase.SoundsSystem.ALL)
                             _soundsSystem.StopAll();
