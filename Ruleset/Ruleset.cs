@@ -917,30 +917,6 @@ namespace oomtm450PuckMod_Ruleset {
                             _playersWasLastRanIntoWithoutPuckTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
                         }
 
-                        /*if (playerBody.Speed.Value > 2) {
-                            Logging.Log($"currentPlayer | playerBody.Speed.Value : {playerBody.Speed.Value}", ServerConfig, true);
-                            var test1 = _playersLastSprintTime.TryGetValue(currentPlayerSteamId, out var test2);
-                            Logging.Log($"currentPlayer | _playersLastSprintTime exists : {test1}", ServerConfig, true);
-                            if (test1) {
-                                if (!test2.IsSprinting)
-                                    Logging.Log($"currentPlayer | (DateTime.UtcNow - LastSprintTime).TotalMilliseconds : {(DateTime.UtcNow - test2.LastSprintTime).TotalMilliseconds}", ServerConfig, true);
-                                Logging.Log($"currentPlayer | WasSprinting ? : {test2.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold)}", ServerConfig, true);
-                                Logging.Log($"currentPlayer | TotalSprintTim : {test2.TotalSprintTime}", ServerConfig, true);
-                            }
-                        }
-
-                        if (lastPlayerHit.PlayerBody.Speed.Value > 2) {
-                            Logging.Log($"lastPlayer | lastPlayerHit.PlayerBody.Speed.Value : {lastPlayerHit.PlayerBody.Speed.Value}", ServerConfig, true);
-                            var test1 = _playersLastSprintTime.TryGetValue(lastPlayerHitSteamId, out var test2);
-                            Logging.Log($"lastPlayer | _playersLastSprintTime exists : {test1}", ServerConfig, true);
-                            if (test1) {
-                                if (!test2.IsSprinting)
-                                    Logging.Log($"lastPlayer | (DateTime.UtcNow - LastSprintTime).TotalMilliseconds : {(DateTime.UtcNow - test2.LastSprintTime).TotalMilliseconds}", ServerConfig, true);
-                                Logging.Log($"lastPlayer | WasSprinting ? : {test2.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold)}", ServerConfig, true);
-                                Logging.Log($"lastPlayer | TotalSprintTim : {test2.TotalSprintTime}", ServerConfig, true);
-                            }
-                        }*/
-
                         bool lastPlayerWasCharged = playerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(currentPlayerSteamId, out var currentPlayerSprintTime) && currentPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && currentPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime;
                         bool currentPlayerWasCharged = lastPlayerHit.PlayerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(lastPlayerHitSteamId, out var lastPlayerSprintTime) && lastPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && lastPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime;
 
@@ -2772,7 +2748,6 @@ namespace oomtm450PuckMod_Ruleset {
                                 continue;
 
                             float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * ServerConfig.Icing.DeferredMaxPossibleTimeMultiplicator) + ServerConfig.Icing.DeferredMaxPossibleTimeAddition)) - (Math.Abs(player.PlayerBody.transform.position.z) * ServerConfig.Icing.DeferredMaxPossibleTimeDistanceDelta);
-                            //Logging.Log($"Possible time is : {maxPossibleTime}. Limit is : {maxPossibleTimeLimit}. Puck Y is : {puck.Rigidbody.transform.position.y}.", ServerConfig, true);
 
                             if (maxPossibleTime >= maxPossibleTimeLimit) {
                                 _isIcingPossible[team] = new IcingObject();
@@ -3219,7 +3194,6 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             try {
-                Logging.Log("Event_CompetitiveAdjustments_OnArenaSync !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
                 PenaltyModule.ResetCoordinates();
                 _barriersLowered = false;
 
@@ -3228,8 +3202,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                 // Do the scaling first.
                 foreach (KeyValuePair<string, object> kvp in message) {
-                    Logging.Log($"kvp.Key : {kvp.Key}", ServerConfig, true);
-                    Logging.Log($"kvp.Value : {kvp.Value}", ServerConfig, true);
                     switch (kvp.Key) {
                         case "ArenaScaleWorldX":
                             double arenaScaleX = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
@@ -3346,14 +3318,10 @@ namespace oomtm450PuckMod_Ruleset {
         public static void ReceiveData(ulong clientId, FastBufferReader reader) {
             try {
                 string dataName, dataStr;
-                if (clientId == NetworkManager.ServerClientId) { // If client Id is 0, we received data from the server, so we are client-sided.
-                    //Logging.Log("ReceiveData", ClientConfig);
+                if (clientId == NetworkManager.ServerClientId) // If client Id is 0, we received data from the server, so we are client-sided.
                     (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, ClientConfig);
-                }
-                else {
-                    //Logging.Log("ReceiveData", ServerConfig);
+                else
                     (dataName, dataStr) = NetworkCommunication.GetData(clientId, reader, ServerConfig);
-                }
 
                 if (string.IsNullOrEmpty(dataStr))
                     return;
@@ -3995,44 +3963,6 @@ namespace oomtm450PuckMod_Ruleset {
                 barrierCollider.transform.position = new Vector3(barrierCollider.transform.position.x, (boardWindowsDefaultHeight * arenaScaleY) + arenaOffsetY, barrierCollider.transform.position.z);
                 Logging.Log($"Lowered Barrier Collider to {(boardWindowsDefaultHeight * arenaScaleY) + arenaOffsetY} (arenaScaleY {arenaScaleY}) (arenaOffsetY {arenaOffsetY})", ServerConfig, true);
 
-                /*// Custom CompAdjust rink barriers lowering.
-                for (int j = 0; j < levelManagerChild.childCount; j++) {
-                    Transform rinkChild = levelManagerChild.GetChild(j);
-
-                    if (rinkChild.gameObject.name != "CustomArenaAndColliders")
-                        continue;
-
-                    Logging.Log("Found CustomArenaAndColliders !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
-                    for (int k = 0; k < rinkChild.childCount; k++) {
-                        Transform customArenaAndCollidersChild = rinkChild.GetChild(k);
-
-                        if (customArenaAndCollidersChild.gameObject.name != "Colliders")
-                            continue;
-
-                        Logging.Log("Found Colliders !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
-
-                        Collider[] colliders = customArenaAndCollidersChild.GetComponentsInChildren<Collider>();
-                        for (int l = 0; l < colliders.Length; l++) {
-                            Transform collidersChild = colliders[l].transform;
-
-                            if (collidersChild.gameObject.name.ToLower().Contains("front") || collidersChild.gameObject.name.ToLower().Contains("back") ||
-                                collidersChild.gameObject.name.ToLower().Contains("left") || collidersChild.gameObject.name.ToLower().Contains("right")) {
-                                collidersChild.position = new Vector3(collidersChild.position.x, (4.9f * arenaScaleY) + arenaOffsetY, collidersChild.position.z);
-                                Logging.Log("Found a collider !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
-                                continue;
-                            }
-
-                            if (collidersChild.gameObject.name.ToLower().Contains("barrier")) {
-                                collidersChild.position = new Vector3(collidersChild.position.x, (-19.05f * arenaScaleY) + arenaOffsetY, collidersChild.position.z);
-                                Logging.Log("Found a barrier  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ServerConfig, true);
-                                continue;
-                            }
-                        }
-                        break;
-                    }
-                    break;
-                }*/
-
                 _barriersLowered = true;
             }
             catch (Exception ex) {
@@ -4585,29 +4515,11 @@ namespace oomtm450PuckMod_Ruleset {
             AddPenaltiesLabel(UIManager.Instance.Hud);
         }
 
-        private static void GetAllLayersName() {
-            for (int i = 0; i < 32; i++) {
-                Logging.Log($"Layer {i} name : {LayerMask.LayerToName(i)}.", ServerConfig, true);
-            }
-        }
-
-        private static bool AreBothNegativeOrPositive(float num1, float num2) {
-            return (num1 <= 0 && num2 <= 0) || (num1 >= 0 && num2 >= 0);
-        }
-
         public static float GetDistance(float x1, float z1, float x2, float z2) {
             Vector2 vector1 = new Vector2(x1, z1);
             Vector2 vector2 = new Vector2(x2, z2);
 
             return Vector2.Distance(vector1, vector2);
-        }
-
-        private static void CleanupClientIds() {
-            foreach (ulong clientId in new List<ulong>(PlayerFunc.Players_ClientId_SteamId.Keys)) {
-                Player _player = PlayerManager.Instance.GetPlayerByClientId(clientId);
-                if (_player == null || _player.Equals(default(Player)) || !_player)
-                    PlayerFunc.Players_ClientId_SteamId.Remove(clientId);
-            }
         }
         #endregion
 
