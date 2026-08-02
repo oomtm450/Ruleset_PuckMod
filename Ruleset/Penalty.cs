@@ -464,8 +464,11 @@ namespace oomtm450PuckMod_Ruleset {
                 RemoveOnePenalty(_playerToUnpenalize.Team, true);
             }
 
+            Player penalizedGoalie = null;
             // If goalie has a penalty, take another player.
             if (Codebase.PlayerFunc.IsGoalie(penalizedPlayer) || penalizedPlayer.PlayerPosition.Name == Codebase.PlayerFunc.GOALIE_POSITION) {
+                penalizedGoalie = penalizedPlayer;
+
                 List<Player> possiblePlayersToPenalize = new List<Player>();
                 foreach (Player teamPlayer in teamPlayers) {
                     if (!Codebase.PlayerFunc.IsPlayerPlaying(teamPlayer))
@@ -516,7 +519,13 @@ namespace oomtm450PuckMod_Ruleset {
 
             int penaltyTimeMilliseconds = GetPenaltyTypeTime(penaltyType);
 
-            string message = $"Penalty #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {penaltyTimeMilliseconds / 1000} seconds for {penaltyType.GetDescription("ToString")}";
+            string message;
+            if (penalizedGoalie != null)
+                message = $"Penalty #{penalizedGoalie.Number.Value} {penalizedGoalie.Username.Value} (served by #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value})";
+            else
+                message = $"Penalty #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}";
+
+            message += $", {penaltyTimeMilliseconds / 1000} seconds for {penaltyType.GetDescription("ToString")}";
             if (!string.IsNullOrEmpty(receivingPlayerSteamId)) {
                 Player receivingPlayer = PlayerManager.Instance.GetPlayerBySteamId(receivingPlayerSteamId);
                 if (Codebase.PlayerFunc.IsPlayerPlaying(receivingPlayer))
