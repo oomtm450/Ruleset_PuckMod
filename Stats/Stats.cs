@@ -1020,7 +1020,7 @@ namespace oomtm450PuckMod_Stats {
         /// Class that patches the OnCollisionStay event from Puck.
         /// </summary>
         [HarmonyPatch(typeof(Puck), "OnCollisionStay")]
-        public class Puck_OnCollisionStay_Patch { // TODO : Fix System.Collections.Generic.KeyNotFoundException: The given key 'None' was not present in the dictionary.
+        public class Puck_OnCollisionStay_Patch {
             [HarmonyPostfix]
             public static void Postfix(Puck __instance, Collision collision) {
                 try {
