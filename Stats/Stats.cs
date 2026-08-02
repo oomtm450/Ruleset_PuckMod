@@ -945,9 +945,10 @@ namespace oomtm450PuckMod_Stats {
                         _lastPossession = new Possession();
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(player.Team);
+                    bool isGoalie = PlayerFunc.IsGoalie(player);
 
                     if (_puckRaycast.PuckIsGoingToNet[player.Team]) {
-                        if (PlayerFunc.IsGoalie(player) && Math.Abs(player.PlayerBody.Rigidbody.transform.position.z) > 13.5) {
+                        if (isGoalie && Math.Abs(player.PlayerBody.Rigidbody.transform.position.z) > 13.5) { // TODO : Cpnfig.
                             PlayerTeam shooterTeam = otherTeam;
                             string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam].SteamId;
                             if (!string.IsNullOrEmpty(shooterSteamId)) {
@@ -972,7 +973,7 @@ namespace oomtm450PuckMod_Stats {
                         }
                     }
                     else {
-                        if (_lastTeamOnPuckTipIncluded == otherTeam && PlayerFunc.IsGoalie(player) && Math.Abs(player.PlayerBody.Rigidbody.transform.position.z) > 13.5) {
+                        if (_lastTeamOnPuckTipIncluded == otherTeam && isGoalie && Math.Abs(player.PlayerBody.Rigidbody.transform.position.z) > 13.5) { // TODO : Config.
                             if ((player.Team == PlayerTeam.Blue && _puckZCoordinateDifference > ServerConfig.GoalieSaveCreaseSystemZDelta) || (player.Team == PlayerTeam.Red && _puckZCoordinateDifference < -ServerConfig.GoalieSaveCreaseSystemZDelta)) {
                                 (double startX, double endX) = (0, 0);
                                 (double startZ, double endZ) = (0, 0);
@@ -1061,7 +1062,7 @@ namespace oomtm450PuckMod_Stats {
                     if (currentPlayerSteamId != lastPlayerOnPuckTipIncluded) {
                         if (!string.IsNullOrEmpty(lastPlayerOnPuckTipIncluded) && _lastTeamOnPuckTipIncluded == player.Team) {
                             double timeSinceLastTouchMs = (DateTime.UtcNow - _lastPlayerOnPuckTipIncludedSteamId[player.Team].Time).TotalMilliseconds;
-                            if (timeSinceLastTouchMs < 5000 && timeSinceLastTouchMs > 80) {
+                            if (timeSinceLastTouchMs < 5000 && timeSinceLastTouchMs > 80) { // TODO : Config.
                                 if (!_passes.TryGetValue(lastPlayerOnPuckTipIncluded, out int _))
                                     _passes.Add(lastPlayerOnPuckTipIncluded, 0);
 
@@ -1079,7 +1080,8 @@ namespace oomtm450PuckMod_Stats {
 
                     if (_lastPlayerOnPuckSteamId[_lastTeamOnPuck].SteamId == currentPlayerSteamId ||
                         !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                            __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter)) {
+                            __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter, PlayerFunc.IsGoalie(stick.Player),
+                            __instance.Rigidbody.transform.position.y, 0.205f)) {
                         _lastTeamOnPuck = player.Team;
                         _lastPlayerOnPuckSteamId[player.Team] = (currentPlayerSteamId, DateTime.UtcNow);
                     }
@@ -1129,7 +1131,8 @@ namespace oomtm450PuckMod_Stats {
 
                     if (_lastPlayerOnPuckSteamId[_lastTeamOnPuck].SteamId == currentPlayerSteamId ||
                         !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                            __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter)) {
+                            __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter, PlayerFunc.IsGoalie(stick.Player),
+                            __instance.Rigidbody.transform.position.y, 0.205f)) { // TODO : Config.
                         _lastTeamOnPuck = stick.Player.Team;
                         _lastPlayerOnPuckSteamId[stick.Player.Team] = (currentPlayerSteamId, DateTime.UtcNow);
                     }
@@ -1468,8 +1471,11 @@ namespace oomtm450PuckMod_Stats {
                 // Do the scaling first.
                 foreach (KeyValuePair<string, object> kvp in message) {
                     switch (kvp.Key) {
-                        case "ArenaScaleX":
+                        case "ArenaScaleWorldX":
                             double arenaScaleX = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            if (arenaScaleX == 0)
+                                break;
+
                             _arenaScaleX = (float)arenaScaleX;
                             if (arenaScaleX == 1)
                                 break;
@@ -1484,13 +1490,17 @@ namespace oomtm450PuckMod_Stats {
                             ZoneFunc.ICE_X_POSITIONS = new ReadOnlyDictionary<IceElement, (double, double)>(newIceXPositions);
                             break;
 
-                        case "ArenaScaleZ":
+                        case "ArenaScaleWorldY":
                             double arenaScaleY = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            if (arenaScaleY == 0)
+                                break;
                             _arenaScaleY = (float)arenaScaleY;
                             break;
 
-                        case "ArenaScaleY":
+                        case "ArenaScaleWorldZ":
                             double arenaScaleZ = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            if (arenaScaleZ == 0)
+                                break;
                             _arenaScaleZ = (float)arenaScaleZ;
                             if (arenaScaleZ == 1)
                                 break;
@@ -1529,10 +1539,13 @@ namespace oomtm450PuckMod_Stats {
                         case "ArenaOffsetY":
                             double arenaOffsetY = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
                             ArenaOffsetY = (float)arenaOffsetY;
+                            if (arenaOffsetY == 0)
+                                break;
                             break;
 
                         case "ArenaOffsetZ":
                             double arenaOffsetZ = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
+                            _arenaOffsetZ = (float)arenaOffsetZ;
                             if (arenaOffsetZ == 0)
                                 break;
 
