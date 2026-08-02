@@ -1882,6 +1882,9 @@ namespace oomtm450PuckMod_Stats {
                     continue;
 
                 string steamId = player.SteamId.Value.ToString();
+                if (string.IsNullOrEmpty(steamId))
+                    continue;
+
                 starPoints.Add(steamId, 0);
 
                 double gwgModifier = gwgSteamId == steamId ? 0.5d : 0;
