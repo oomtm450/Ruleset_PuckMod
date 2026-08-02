@@ -1029,6 +1029,7 @@ namespace oomtm450PuckMod_Stats {
                         return;
 
                     Player player;
+                    bool hitStick = true;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
@@ -1037,6 +1038,7 @@ namespace oomtm450PuckMod_Stats {
                             return;
 
                         player = playerBody.Player;
+                        hitStick = false;
                     }
                     else {
                         if (!stick.Player)
@@ -1079,9 +1081,9 @@ namespace oomtm450PuckMod_Stats {
                     _lastTeamOnPuckTipIncluded = player.Team;
 
                     if (_lastPlayerOnPuckSteamId[_lastTeamOnPuck].SteamId == currentPlayerSteamId ||
-                        !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                            __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter, PlayerFunc.IsGoalie(stick.Player),
-                            __instance.Rigidbody.transform.position.y, 0.205f)) {
+                        (hitStick && !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
+                            __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter, PlayerFunc.IsGoalie(player),
+                            __instance.Rigidbody.transform.position.y, 0.205f))) {
                         _lastTeamOnPuck = player.Team;
                         _lastPlayerOnPuckSteamId[player.Team] = (currentPlayerSteamId, DateTime.UtcNow);
                     }
