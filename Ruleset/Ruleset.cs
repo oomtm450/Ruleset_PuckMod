@@ -671,12 +671,15 @@ namespace oomtm450PuckMod_Ruleset {
 
                     var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
 
+                    bool isGoalie = Codebase.PlayerFunc.IsGoalie(stick.Player);
+
                     if (__instance) {
                         if (_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId ||
                             !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                                __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter)) {
+                                __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter, isGoalie, __instance.Rigidbody.transform.position.y,
+                                ServerConfig.Faceoff.PuckIceContactHeight)) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
-                            if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && playerHasPossession)
+                            if (!isGoalie && playerHasPossession)
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(stick.Player.Team), __instance);
 
                             _lastPlayerOnPuckSteamId[stick.Player.Team] = currentPlayerSteamId;
@@ -691,8 +694,6 @@ namespace oomtm450PuckMod_Ruleset {
                     _lastPlayerOnPuckTeamTipIncluded = stick.Player.Team;
                     _lastPlayerOnPuckTipIncludedSteamId[stick.Player.Team] = currentPlayerSteamId;
                     _playersOnPuckTipIncludedTime.AddOrUpdate(currentPlayerSteamId, (stick.Player.Team, now));
-
-                    bool isGoalie = Codebase.PlayerFunc.IsGoalie(stick.Player);
 
                     if (!isGoalie && PenaltyModule.PenaltyToBeCalled[stick.Player.Team]) {
                         if (playerHasPossession) {
@@ -774,12 +775,15 @@ namespace oomtm450PuckMod_Ruleset {
 
                     lastTimeCollisionWatch.Restart();
 
+                    bool isGoalie = Codebase.PlayerFunc.IsGoalie(stick.Player);
+
                     if (__instance) {
                         if (_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId ||
                             !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
-                                __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter)) {
+                                __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter, isGoalie, __instance.Rigidbody.transform.position.y,
+                                ServerConfig.Faceoff.PuckIceContactHeight)) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
-                            if (!Codebase.PlayerFunc.IsGoalie(stick.Player) && playerHasPossession)
+                            if (!isGoalie && playerHasPossession)
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(stick.Player.Team), __instance);
 
                             _lastPlayerOnPuckSteamId[stick.Player.Team] = currentPlayerSteamId;
@@ -810,7 +814,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // High stick logic.
                     if (IsHighStickEnabled(stick.Player.Team) && __instance &&
-                        !Codebase.PlayerFunc.IsGoalie(stick.Player) &&
+                        !isGoalie &&
                         !playerHasPossession &&
                         __instance.Rigidbody.transform.position.y > ServerConfig.HighStick.MaxHeight + ArenaOffsetY) {
                         if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {

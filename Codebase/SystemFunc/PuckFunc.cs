@@ -6,7 +6,11 @@ namespace Codebase {
     /// </summary>
     public class PuckFunc {
         public static bool PuckIsTipped(string playerSteamId, int maxTippedMilliseconds, LockDictionary<string, Stopwatch> playersCurrentPuckTouch,
-            LockDictionary<string, Stopwatch> lastTimeOnCollisionStayOrExitWasCalled, float puckSpeed, float puckSpeedRatio, float puckSpeedOnEnter) {
+            LockDictionary<string, Stopwatch> lastTimeOnCollisionStayOrExitWasCalled, float puckSpeed, float puckSpeedRatio, float puckSpeedOnEnter,
+            bool playerIsGoalie = false, float puckY = 0, float puckYThresholdGoalie = 0) {
+            if (playerIsGoalie && puckY > puckYThresholdGoalie)
+                return true;
+
             if (puckSpeedOnEnter >= puckSpeed)
                 return true;
 
