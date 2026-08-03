@@ -1878,7 +1878,7 @@ namespace oomtm450PuckMod_Stats {
 
             Dictionary<string, double> starPoints = new Dictionary<string, double>();
             foreach (Player player in PlayerManager.Instance.GetPlayers()) {
-                if (!PlayerFunc.IsPlayerPlaying(player) || (player.Team != PlayerTeam.Blue && player.Team != PlayerTeam.Red) || player.PlayerPosition == null || !player.PlayerPosition ||
+                if (!player || player.Role == PlayerRole.None || (player.Team != PlayerTeam.Blue && player.Team != PlayerTeam.Red) || player.PlayerPosition == null || !player.PlayerPosition ||
                     string.IsNullOrEmpty(player.PlayerPosition.Name))
                     continue;
 
