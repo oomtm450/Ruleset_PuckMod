@@ -1564,6 +1564,14 @@ namespace oomtm450PuckMod_Ruleset {
                             NetworkCommunication.SendData(Codebase.Constants.REF_UNPAUSE_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
+                        else if (content.StartsWith(@"/refnextfaceoffspot")) {
+                            content = content.Replace(@"/refnextfaceoffspot", "").Trim().ToLower();
+                            if (string.IsNullOrEmpty(content))
+                                return true;
+
+                            NetworkCommunication.SendData(Codebase.Constants.REF_NEXTFACEOFFSPOT_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
+                        }
                     }
                 }
                 catch (Exception ex) {
@@ -3868,7 +3876,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(PlayerTeam.None, Rule.None, _puckLastStateBeforeCall[Rule.None]);
                         SystemChatMessages.Add("REF CALLED THE PLAY DEAD");
-                        _lastStoppageReason = Rule.GoalieInt;
+                        _lastStoppageReason = Rule.None;
                         DoFaceoff("", "", int.MaxValue, int.MaxValue);
                         break;
 
@@ -3895,6 +3903,40 @@ namespace oomtm450PuckMod_Ruleset {
                             Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT, ServerConfig);
 
                         _doFaceoff = true;
+                        break;
+
+                    case Codebase.Constants.REF_NEXTFACEOFFSPOT_DATANAME: // SERVER-SIDE : Changed next faceoff spot by human ref.
+                        if (GameManager.Instance.Phase != GamePhase.Play)
+                            break;
+
+                        Player nextFaceoffSpotReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (nextFaceoffSpotReferee == null || !nextFaceoffSpotReferee)
+                            break;
+
+                        string nextFaceoffSpotRefereeSteamId = nextFaceoffSpotReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(nextFaceoffSpotRefereeSteamId) && !_currentRefsSteamId.Contains(nextFaceoffSpotRefereeSteamId))
+                            break;
+
+                        if (dataStr == "c")
+                            NextFaceoffSpot = FaceoffSpot.Center;
+                        else if (dataStr.Contains("bbll"))
+                            NextFaceoffSpot = FaceoffSpot.BlueTeamBLLeft;
+                        else if (dataStr.Contains("bblr"))
+                            NextFaceoffSpot = FaceoffSpot.BlueTeamBLRight;
+                        else if (dataStr.Contains("rbll"))
+                            NextFaceoffSpot = FaceoffSpot.RedTeamBLLeft;
+                        else if (dataStr.Contains("rblr"))
+                            NextFaceoffSpot = FaceoffSpot.RedTeamBLRight;
+                        else if (dataStr.Contains("bdzl"))
+                            NextFaceoffSpot = FaceoffSpot.BlueTeamDZoneLeft;
+                        else if (dataStr.Contains("bdzr"))
+                            NextFaceoffSpot = FaceoffSpot.BlueTeamDZoneRight;
+                        else if (dataStr.Contains("rdzl"))
+                            NextFaceoffSpot = FaceoffSpot.RedTeamDZoneLeft;
+                        else if (dataStr.Contains("rdzr"))
+                            NextFaceoffSpot = FaceoffSpot.RedTeamDZoneRight;
+
                         break;
 
                     case TOGGLE_HIGHSTICK_DATANAME: // SERVER-SIDE : Toggle high stick rule.
@@ -4260,15 +4302,15 @@ namespace oomtm450PuckMod_Ruleset {
                 NextFaceoffSpot = FaceoffSpot.Center;
             else if (team == PlayerTeam.Blue) {
                 if (_puckLastStateBeforeCall[Rule.Offside].Position.x > 0)
-                    NextFaceoffSpot = FaceoffSpot.BlueteamDZoneRight;
+                    NextFaceoffSpot = FaceoffSpot.BlueTeamDZoneRight;
                 else
-                    NextFaceoffSpot = FaceoffSpot.BlueteamDZoneLeft;
+                    NextFaceoffSpot = FaceoffSpot.BlueTeamDZoneLeft;
             }
             else if (team == PlayerTeam.Red) {
                 if (_puckLastStateBeforeCall[Rule.Offside].Position.x > 0)
-                    NextFaceoffSpot = FaceoffSpot.RedteamDZoneRight;
+                    NextFaceoffSpot = FaceoffSpot.RedTeamDZoneRight;
                 else
-                    NextFaceoffSpot = FaceoffSpot.RedteamDZoneLeft;
+                    NextFaceoffSpot = FaceoffSpot.RedTeamDZoneLeft;
             }
             else
                 NextFaceoffSpot = FaceoffSpot.Center;

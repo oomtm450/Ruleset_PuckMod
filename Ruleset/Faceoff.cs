@@ -22,13 +22,13 @@ namespace oomtm450PuckMod_Ruleset {
 
             if (puckLastState.Position.x < 0) {
                 if (rule == Rule.Icing)
-                    return FaceoffSpot.BlueteamDZoneLeft + teamOffset;
+                    return FaceoffSpot.BlueTeamDZoneLeft + teamOffset;
                 else
                     return SetNextFaceoffPositionFromLastTouch(team, true, puckLastState, rule);
             }
             else {
                 if (rule == Rule.Icing)
-                    return FaceoffSpot.BlueteamDZoneRight + teamOffset;
+                    return FaceoffSpot.BlueTeamDZoneRight + teamOffset;
                 else
                     return SetNextFaceoffPositionFromLastTouch(team, false, puckLastState, rule);
             }
@@ -48,42 +48,42 @@ namespace oomtm450PuckMod_Ruleset {
             if (puckZone == Codebase.Zone.BlueTeam_BehindGoalLine || puckZone == Codebase.Zone.BlueTeam_Zone) {
                 if (team == PlayerTeam.Blue || rule == Rule.DelayOfGame || rule == Rule.None) {
                     if (left)
-                        return FaceoffSpot.BlueteamDZoneLeft;
+                        return FaceoffSpot.BlueTeamDZoneLeft;
                     else
-                        return FaceoffSpot.BlueteamDZoneRight;
+                        return FaceoffSpot.BlueTeamDZoneRight;
                 }
                 else {
                     if (left)
-                        return FaceoffSpot.BlueteamBLLeft;
+                        return FaceoffSpot.BlueTeamBLLeft;
                     else
-                        return FaceoffSpot.BlueteamBLRight;
+                        return FaceoffSpot.BlueTeamBLRight;
                 }
             }
             else if (puckZone == Codebase.Zone.RedTeam_BehindGoalLine || puckZone == Codebase.Zone.RedTeam_Zone) {
                 if (team == PlayerTeam.Red || rule == Rule.DelayOfGame || rule == Rule.None) {
                     if (left)
-                        return FaceoffSpot.RedteamDZoneLeft;
+                        return FaceoffSpot.RedTeamDZoneLeft;
                     else
-                        return FaceoffSpot.RedteamDZoneRight;
+                        return FaceoffSpot.RedTeamDZoneRight;
                 }
                 else {
                     if (left)
-                        return FaceoffSpot.RedteamBLLeft;
+                        return FaceoffSpot.RedTeamBLLeft;
                     else
-                        return FaceoffSpot.RedteamBLRight;
+                        return FaceoffSpot.RedTeamBLRight;
                 }
             }
             else if (puckZone == Codebase.Zone.BlueTeam_Center) {
                 if (left)
-                    return FaceoffSpot.BlueteamBLLeft;
+                    return FaceoffSpot.BlueTeamBLLeft;
                 else
-                    return FaceoffSpot.BlueteamBLRight;
+                    return FaceoffSpot.BlueTeamBLRight;
             }
             else if (puckZone == Codebase.Zone.RedTeam_Center) {
                 if (left)
-                    return FaceoffSpot.RedteamBLLeft;
+                    return FaceoffSpot.RedTeamBLLeft;
                 else
-                    return FaceoffSpot.RedteamBLRight;
+                    return FaceoffSpot.RedTeamBLRight;
             }
 
             return FaceoffSpot.Center;
@@ -101,28 +101,28 @@ namespace oomtm450PuckMod_Ruleset {
         /// <returns>Vector3, position of the faceoff dot.</returns>
         internal static Vector3 GetFaceoffDot(FaceoffSpot faceoffSpot, float arenaScaleX = 1f, float arenaScaleZ = 1f, float arenaOffsetX = 0, float arenaOffsetY = 0, float arenaOffsetZ = 0) {
             switch (faceoffSpot) {
-                case FaceoffSpot.BlueteamBLLeft:
+                case FaceoffSpot.BlueTeamBLLeft:
                     return new Vector3((-9.97f * arenaScaleX) + arenaOffsetX, arenaOffsetY, (11f * arenaScaleZ) + arenaOffsetZ);
 
-                case FaceoffSpot.BlueteamBLRight:
+                case FaceoffSpot.BlueTeamBLRight:
                     return new Vector3((9.97f * arenaScaleX) + arenaOffsetX, arenaOffsetY, (11f * arenaScaleZ) + arenaOffsetZ);
 
-                case FaceoffSpot.RedteamBLLeft:
+                case FaceoffSpot.RedTeamBLLeft:
                     return new Vector3((-9.97f * arenaScaleX) + arenaOffsetX, arenaOffsetY, (-11f * arenaScaleZ) + arenaOffsetZ);
 
-                case FaceoffSpot.RedteamBLRight:
+                case FaceoffSpot.RedTeamBLRight:
                     return new Vector3((9.97f * arenaScaleX) + arenaOffsetX, arenaOffsetY, (-11f * arenaScaleZ) + arenaOffsetZ);
 
-                case FaceoffSpot.BlueteamDZoneLeft:
+                case FaceoffSpot.BlueTeamDZoneLeft:
                     return new Vector3((-9.95f * arenaScaleX) + arenaOffsetX, arenaOffsetY, (29.75f * arenaScaleZ) + arenaOffsetZ);
 
-                case FaceoffSpot.BlueteamDZoneRight:
+                case FaceoffSpot.BlueTeamDZoneRight:
                     return new Vector3((9.95f * arenaScaleX) + arenaOffsetX, arenaOffsetY, (29.75f * arenaScaleZ) + arenaOffsetZ);
 
-                case FaceoffSpot.RedteamDZoneLeft:
+                case FaceoffSpot.RedTeamDZoneLeft:
                     return new Vector3((-9.95f * arenaScaleX) + arenaOffsetX, arenaOffsetY, (-29.75f * arenaScaleZ) + arenaOffsetZ);
 
-                case FaceoffSpot.RedteamDZoneRight:
+                case FaceoffSpot.RedTeamDZoneRight:
                     return new Vector3((9.95f * arenaScaleX) + arenaOffsetX, arenaOffsetY, (-29.75f * arenaScaleZ) + arenaOffsetZ);
 
                 default:

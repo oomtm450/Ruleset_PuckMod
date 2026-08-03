@@ -821,11 +821,11 @@ namespace oomtm450PuckMod_Ruleset {
                         return Codebase.PlayerFunc.CENTER_POSITION;
 
                     if (team == PlayerTeam.Blue) {
-                        if (centerPositionIsOpen && (faceoffSpot == FaceoffSpot.BlueteamBLLeft || faceoffSpot == FaceoffSpot.RedteamBLLeft || faceoffSpot == FaceoffSpot.BlueteamDZoneLeft || faceoffSpot == FaceoffSpot.RedteamDZoneLeft || faceoffSpot == FaceoffSpot.Center))
+                        if (centerPositionIsOpen && (faceoffSpot == FaceoffSpot.BlueTeamBLLeft || faceoffSpot == FaceoffSpot.RedTeamBLLeft || faceoffSpot == FaceoffSpot.BlueTeamDZoneLeft || faceoffSpot == FaceoffSpot.RedTeamDZoneLeft || faceoffSpot == FaceoffSpot.Center))
                             return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
                     }
                     else {
-                        if (centerPositionIsOpen && (faceoffSpot == FaceoffSpot.BlueteamBLRight || faceoffSpot == FaceoffSpot.RedteamBLRight || faceoffSpot == FaceoffSpot.BlueteamDZoneRight || faceoffSpot == FaceoffSpot.RedteamDZoneRight || faceoffSpot == FaceoffSpot.Center))
+                        if (centerPositionIsOpen && (faceoffSpot == FaceoffSpot.BlueTeamBLRight || faceoffSpot == FaceoffSpot.RedTeamBLRight || faceoffSpot == FaceoffSpot.BlueTeamDZoneRight || faceoffSpot == FaceoffSpot.RedTeamDZoneRight || faceoffSpot == FaceoffSpot.Center))
                             return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
                     }
 

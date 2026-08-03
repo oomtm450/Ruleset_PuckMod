@@ -37,7 +37,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 case LEFT_WINGER_POSITION:
                     zOffset = 1.5f;
-                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team == PlayerTeam.Blue))
+                    if ((faceoffSpot == FaceoffSpot.RedTeamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && player.Team == PlayerTeam.Blue))
                         xOffset = 6.5f;
                     else
                         xOffset = 9f;
@@ -45,7 +45,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 case RIGHT_WINGER_POSITION:
                     zOffset = 1.5f;
-                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team == PlayerTeam.Blue))
+                    if ((faceoffSpot == FaceoffSpot.RedTeamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneRight && player.Team == PlayerTeam.Blue))
                         xOffset = -6.5f;
                     else
                         xOffset = -9f;
@@ -56,7 +56,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if ((ushort)faceoffSpot >= 5)
                         zOffset -= 1f;
 
-                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team == PlayerTeam.Blue)) {
+                    if ((faceoffSpot == FaceoffSpot.RedTeamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneRight && player.Team == PlayerTeam.Blue)) {
                         zOffset = 1.5f;
                         xOffset = -9f;
                         if (player.Team == PlayerTeam.Red)
@@ -73,7 +73,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if ((ushort)faceoffSpot >= 5)
                         zOffset -= 1f;
 
-                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team == PlayerTeam.Blue)) {
+                    if ((faceoffSpot == FaceoffSpot.RedTeamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && player.Team == PlayerTeam.Blue)) {
                         zOffset = 1.5f;
                         xOffset = 9f;
                         if (player.Team == PlayerTeam.Red)
@@ -92,11 +92,11 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (player.Team == PlayerTeam.Red) {
                         zOffset *= -1f;
-                        if (faceoffSpot == FaceoffSpot.RedteamDZoneLeft) {
+                        if (faceoffSpot == FaceoffSpot.RedTeamDZoneLeft) {
                             xOffset *= -1f;
                             rotation = Quaternion.Euler(0, -1 * quaternionY, 0);
                         }
-                        else if (faceoffSpot == FaceoffSpot.RedteamDZoneRight) {
+                        else if (faceoffSpot == FaceoffSpot.RedTeamDZoneRight) {
                             rotation = Quaternion.Euler(0, quaternionY, 0);
                         }
                         else {
@@ -105,11 +105,11 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
                     else {
-                        if (faceoffSpot == FaceoffSpot.BlueteamDZoneLeft) {
+                        if (faceoffSpot == FaceoffSpot.BlueTeamDZoneLeft) {
                             xOffset *= -1f;
                             rotation = Quaternion.Euler(0, quaternionY - 180, 0);
                         }
-                        else if (faceoffSpot == FaceoffSpot.BlueteamDZoneRight)
+                        else if (faceoffSpot == FaceoffSpot.BlueTeamDZoneRight)
                             rotation = Quaternion.Euler(0, 180 - quaternionY, 0);
                         else {
                             zOffset = 0;

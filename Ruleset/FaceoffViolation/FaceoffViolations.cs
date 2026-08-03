@@ -86,9 +86,9 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             string positionName = PenaltyModule.GetPlayerPositionForFaceoff(playerBody.Player.PlayerPosition.Name, team, currentFaceoffSpot, claimedPositions,
                 Ruleset.GetFakedClaimedPositions(team, claimedPositions));
 
-            if (positionName == "LD" && (team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft || team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedteamDZoneRight))
+            if (positionName == "LD" && (team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft || team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight))
                 positionName = "RW";
-            else if (positionName == "RD" && (team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueteamDZoneRight || team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedteamDZoneLeft))
+            else if (positionName == "RD" && (team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight || team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft))
                 positionName = "LW";
 
             // Create tether with role-specific restrictions
@@ -119,12 +119,12 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 case "RW": // Right Wing
                     return Ruleset.ServerConfig.Faceoff.WingerMaxForward;
                 case "LD": // Left Defense
-                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneRight && team == PlayerTeam.Red))
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxForward;
                     else
                         return Ruleset.ServerConfig.Faceoff.DefenseMaxForward;
                 case "RD": // Right Defense
-                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && team == PlayerTeam.Red))
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxForward;
                     else
                         return Ruleset.ServerConfig.Faceoff.DefenseMaxForward;
@@ -143,12 +143,12 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 case "RW": // Right Wing
                     return Ruleset.ServerConfig.Faceoff.WingerMaxBackward;
                 case "LD": // Left Defense
-                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneRight && team == PlayerTeam.Red))
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxBackward;
                     else
                         return Ruleset.ServerConfig.Faceoff.DefenseMaxBackward;
                 case "RD": // Right Defense
-                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && team == PlayerTeam.Red))
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxBackward;
                     else
                         return Ruleset.ServerConfig.Faceoff.DefenseMaxBackward;
@@ -170,12 +170,12 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 case "RW": // Right winger can't move much left (toward center)
                     return Ruleset.ServerConfig.Faceoff.WingerMaxToward;
                 case "LD": // Left Defense
-                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneRight && team == PlayerTeam.Red))
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxAway;
                     else
                         return Ruleset.ServerConfig.Faceoff.DefenseMaxAway;
                 case "RD": // Right Defense
-                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && team == PlayerTeam.Red))
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxToward;
                     else
                         return Ruleset.ServerConfig.Faceoff.DefenseMaxToward;
@@ -195,12 +195,12 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 case "RW": // Right winger can move right more (away from center toward boards)
                     return Ruleset.ServerConfig.Faceoff.WingerMaxAway;
                 case "LD": // Left Defense
-                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneRight && team == PlayerTeam.Red))
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxToward;
                     else
                         return Ruleset.ServerConfig.Faceoff.DefenseMaxToward;
                 case "RD": // Right Defense
-                    if ((currentFaceoffSpot == FaceoffSpot.BlueteamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedteamDZoneLeft && team == PlayerTeam.Red))
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxAway;
                     else
                         return Ruleset.ServerConfig.Faceoff.DefenseMaxAway;
