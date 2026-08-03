@@ -4477,7 +4477,7 @@ namespace oomtm450PuckMod_Ruleset {
             _paused = false;
         }
 
-        internal static List<(string Position, bool IsPenalized)> GetClaimedPositions(PlayerTeam team) {
+        internal static List<(string Position, bool IsPenalized)> GetClaimedPositions(PlayerTeam team, bool getFakedPositionForFaceoff = true) {
             List<PlayerPosition> positions = new List<PlayerPosition>();
             Dictionary<PlayerPosition, VisualElement> playerPositions = SystemFunc.GetPrivateField<Dictionary<PlayerPosition, VisualElement>>(typeof(UIPositionSelect), UIManager.Instance.PositionSelect, "playerPositionVisualElementMap");
 
@@ -4490,10 +4490,23 @@ namespace oomtm450PuckMod_Ruleset {
             foreach (PlayerPosition playerPosition in positions) {
                 if (playerPosition.IsClaimed) {
                     string playerSteamId = playerPosition.ClaimedByPlayer.SteamId.Value.ToString();
-                    if (PenaltyModule.PenalizedPlayers.Any(x => x.Key == playerSteamId) && PenaltyModule.PenalizedPlayers[playerSteamId].Count != 0)
-                        claimedPositions.Add((playerPosition.Name, true));
-                    else
+                    if (!PenaltyModule.PenalizedPlayers.Any(x => x.Key == playerSteamId) || PenaltyModule.PenalizedPlayers[playerSteamId].Count == 0)
                         claimedPositions.Add((playerPosition.Name, false));
+                    else
+                        claimedPositions.Add((playerPosition.Name, true));
+                }
+            }
+
+            if (getFakedPositionForFaceoff) {
+                foreach (PlayerPosition playerPosition in positions) {
+                    if (playerPosition.IsClaimed) {
+                        string playerSteamId = playerPosition.ClaimedByPlayer.SteamId.Value.ToString();
+                        if (!PenaltyModule.PenalizedPlayers.Any(x => x.Key == playerSteamId) || PenaltyModule.PenalizedPlayers[playerSteamId].Count == 0) {
+                            string positionName = PenaltyModule.FakePlayerPositionForFaceoffByAvailability(playerPosition.Name, team, claimedPositions);
+                            if (!claimedPositions.Any(x => x.Position == positionName && x.IsPenalized == false))
+                                claimedPositions.Add((positionName, false));
+                        }
+                    }
                 }
             }
 
