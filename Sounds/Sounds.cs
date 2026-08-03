@@ -1077,8 +1077,6 @@ namespace oomtm450PuckMod_Sounds {
                         else
                             _currentMusicPlaying = chosenSound = playSoundDataStrSplitted[1];
 
-                        _currentMusicPlayingType = playSoundDataStrSplitted[0];
-
                         bool isFaceoffMusic = false;
                         float delay = 0;
                         if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.FACEOFF_MUSIC) {
