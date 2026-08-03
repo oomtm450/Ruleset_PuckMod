@@ -209,6 +209,7 @@ namespace oomtm450PuckMod_Ruleset {
         };
 
         private static readonly LockDictionary<Rule, (Vector3 Position, Codebase.Zone Zone)> _puckLastStateBeforeCall = new LockDictionary<Rule, (Vector3, Codebase.Zone)> {
+            { Rule.None, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
             { Rule.Offside, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
             { Rule.Icing, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
             { Rule.HighStick, (Vector3.zero, ZoneFunc.DEFAULT_ZONE) },
@@ -1734,6 +1735,7 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     oldZone = _puckZone;
                     _puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, oldZone, PuckRadius);
+                    _puckLastStateBeforeCall[Rule.None] = (puck.Rigidbody.transform.position, _puckZone);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix() 2.\n{ex}", ServerConfig);
@@ -3861,7 +3863,9 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!IsAdmin(pauseRefereeSteamId) && !_currentRefsSteamId.Contains(pauseRefereeSteamId))
                             break;
 
+                        NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(PlayerTeam.None, Rule.None, _puckLastStateBeforeCall[Rule.None]);
                         SystemChatMessages.Add("REF CALLED THE PLAY DEAD");
+                        _lastStoppageReason = Rule.GoalieInt;
                         DoFaceoff("", "", int.MaxValue, int.MaxValue);
                         break;
 

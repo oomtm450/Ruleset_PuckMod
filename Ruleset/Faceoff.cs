@@ -46,7 +46,7 @@ namespace oomtm450PuckMod_Ruleset {
             Codebase.Zone puckZone = ZoneFunc.GetZone(puckLastState.Position, puckLastState.Zone, Ruleset.PuckRadius);
 
             if (puckZone == Codebase.Zone.BlueTeam_BehindGoalLine || puckZone == Codebase.Zone.BlueTeam_Zone) {
-                if (team == PlayerTeam.Blue || rule == Rule.DelayOfGame) {
+                if (team == PlayerTeam.Blue || rule == Rule.DelayOfGame || rule == Rule.None) {
                     if (left)
                         return FaceoffSpot.BlueteamDZoneLeft;
                     else
@@ -60,7 +60,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
             else if (puckZone == Codebase.Zone.RedTeam_BehindGoalLine || puckZone == Codebase.Zone.RedTeam_Zone) {
-                if (team == PlayerTeam.Red || rule == Rule.DelayOfGame) {
+                if (team == PlayerTeam.Red || rule == Rule.DelayOfGame || rule == Rule.None) {
                     if (left)
                         return FaceoffSpot.RedteamDZoneLeft;
                     else
