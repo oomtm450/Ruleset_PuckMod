@@ -3861,6 +3861,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!IsAdmin(pauseRefereeSteamId) && !_currentRefsSteamId.Contains(pauseRefereeSteamId))
                             break;
 
+                        SystemChatMessages.Add("REF CALLED THE PLAY DEAD");
                         DoFaceoff("", "", int.MaxValue, int.MaxValue);
                         break;
 
