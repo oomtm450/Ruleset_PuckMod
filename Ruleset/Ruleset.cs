@@ -3875,7 +3875,8 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(PlayerTeam.None, Rule.None, _puckLastStateBeforeCall[Rule.None]);
-                        SystemChatMessages.Add("REF CALLED THE PLAY DEAD");
+                        SystemChatMessages.Add($"#{pauseReferee.Number.Value} {pauseReferee.Username.Value} CALLED THE PLAY DEAD");
+                        SystemChatMessages.Add("NEXT FACEOFF {NextFaceoffSpot}");
                         _lastStoppageReason = Rule.None;
                         DoFaceoff("", "", int.MaxValue, int.MaxValue);
                         break;
@@ -3936,7 +3937,10 @@ namespace oomtm450PuckMod_Ruleset {
                             NextFaceoffSpot = FaceoffSpot.RedTeamDZoneLeft;
                         else if (dataStr.Contains("rdzr"))
                             NextFaceoffSpot = FaceoffSpot.RedTeamDZoneRight;
+                        else
+                            break;
 
+                        SystemChatMessages.Add($"#{nextFaceoffSpotReferee.Number.Value} {nextFaceoffSpotReferee.Username.Value} CHANGED FACEOFF TO {NextFaceoffSpot}");
                         break;
 
                     case TOGGLE_HIGHSTICK_DATANAME: // SERVER-SIDE : Toggle high stick rule.
