@@ -3876,7 +3876,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(PlayerTeam.None, Rule.None, _puckLastStateBeforeCall[Rule.None]);
                         SystemChatMessages.Add($"#{pauseReferee.Number.Value} {pauseReferee.Username.Value} CALLED THE PLAY DEAD");
-                        SystemChatMessages.Add("NEXT FACEOFF {NextFaceoffSpot}");
+                        SystemChatMessages.Add($"NEXT FACEOFF {NextFaceoffSpot}");
                         _lastStoppageReason = Rule.None;
                         DoFaceoff("", "", int.MaxValue, int.MaxValue);
                         break;
