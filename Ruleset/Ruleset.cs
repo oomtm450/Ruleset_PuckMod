@@ -3854,6 +3854,9 @@ namespace oomtm450PuckMod_Ruleset {
                         if (Paused)
                             break;
 
+                        if (GameManager.Instance.Phase != GamePhase.Play)
+                            break;
+
                         Player pauseReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
                         if (pauseReferee == null || !pauseReferee)
                             break;
@@ -3874,6 +3877,9 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         if (!Paused)
+                            break;
+
+                        if (GameManager.Instance.Phase != GamePhase.Play)
                             break;
 
                         Player unpauseReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
