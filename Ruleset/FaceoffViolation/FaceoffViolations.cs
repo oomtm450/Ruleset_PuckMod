@@ -82,8 +82,9 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             // Get player role and position AFTER ruleset has positioned them
             PlayerTeam team = playerBody.Player.Team;
-
-            string positionName = PenaltyModule.GetPlayerPositionForFaceoff(playerBody.Player.PlayerPosition.Name, team, currentFaceoffSpot, Ruleset.GetClaimedPositions(team));
+            List<(string Position, bool IsPenalized)> claimedPositions = Ruleset.GetClaimedPositions(team);
+            string positionName = PenaltyModule.GetPlayerPositionForFaceoff(playerBody.Player.PlayerPosition.Name, team, currentFaceoffSpot, claimedPositions,
+                Ruleset.GetFakedClaimedPositions(team, claimedPositions));
 
             if (positionName == "LD" && (team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueteamDZoneLeft || team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedteamDZoneRight))
                 positionName = "RW";

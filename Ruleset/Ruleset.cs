@@ -1203,8 +1203,11 @@ namespace oomtm450PuckMod_Ruleset {
 
                         Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ, ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ);
 
-                        List<(string Position, bool IsPenalized)> claimedPositionsBlue = GetClaimedPositions(PlayerTeam.Blue);
-                        List<(string Position, bool IsPenalized)> claimedPositionsRed = GetClaimedPositions(PlayerTeam.Red);
+                        var claimedPositionsBlue = GetClaimedPositions(PlayerTeam.Blue);
+                        var fakedClaimedPositionsBlue = GetFakedClaimedPositions(PlayerTeam.Blue, claimedPositionsBlue);
+
+                        var claimedPositionsRed = GetClaimedPositions(PlayerTeam.Red);
+                        var fakedClaimedPositionsRed = GetFakedClaimedPositions(PlayerTeam.Red, claimedPositionsRed);
 
                         List<Player> players = PlayerManager.Instance.GetPlayers();
                         foreach (Player player in players) {
@@ -1212,12 +1215,17 @@ namespace oomtm450PuckMod_Ruleset {
                                 continue;
 
                             List<(string Position, bool IsPenalized)> claimedPositions;
-                            if (player.Team == PlayerTeam.Blue)
+                            List<(string Position, bool IsPenalized)> fakedClaimedPositions;
+                            if (player.Team == PlayerTeam.Blue) {
                                 claimedPositions = claimedPositionsBlue;
-                            else
+                                fakedClaimedPositions = fakedClaimedPositionsBlue;
+                            }
+                            else {
                                 claimedPositions = claimedPositionsRed;
+                                fakedClaimedPositions = fakedClaimedPositionsRed;
+                            }
 
-                            string newFaceoffPosition = PenaltyModule.GetPlayerPositionForFaceoff(player.PlayerPosition.Name, player.Team, NextFaceoffSpot, claimedPositions);
+                            string newFaceoffPosition = PenaltyModule.GetPlayerPositionForFaceoff(player.PlayerPosition.Name, player.Team, NextFaceoffSpot, claimedPositions, fakedClaimedPositions);
                             PlayerFunc.TeleportOnFaceoff(
                                 player, dot, NextFaceoffSpot,
                                 newFaceoffPosition,
@@ -2195,7 +2203,9 @@ namespace oomtm450PuckMod_Ruleset {
                     // Reteleport player on faceoff to the correct faceoff.
                     string playerSteamId = __instance.SteamId.Value.ToString();
                     if (!PenaltyModule.PenalizedPlayers.TryGetValue(playerSteamId, out LockList<Penalty> penalties) || penalties.Count == 0) {
-                        string newFaceoffPosition = PenaltyModule.GetPlayerPositionForFaceoff(__instance.PlayerPosition.Name, __instance.Team, NextFaceoffSpot, GetClaimedPositions(__instance.Team));
+                        var claimedPositions = GetClaimedPositions(__instance.Team);
+                        string newFaceoffPosition = PenaltyModule.GetPlayerPositionForFaceoff(__instance.PlayerPosition.Name, __instance.Team, NextFaceoffSpot,
+                            claimedPositions, GetFakedClaimedPositions(__instance.Team, claimedPositions));
                         PlayerFunc.TeleportOnFaceoff(
                             __instance, Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ, ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ), NextFaceoffSpot,
                             newFaceoffPosition,
@@ -4477,7 +4487,7 @@ namespace oomtm450PuckMod_Ruleset {
             _paused = false;
         }
 
-        internal static List<(string Position, bool IsPenalized)> GetClaimedPositions(PlayerTeam team, bool getFakedPositionForFaceoff = true) {
+        private static List<PlayerPosition> GetPositions(PlayerTeam team) {
             List<PlayerPosition> positions = new List<PlayerPosition>();
             Dictionary<PlayerPosition, VisualElement> playerPositions = SystemFunc.GetPrivateField<Dictionary<PlayerPosition, VisualElement>>(typeof(UIPositionSelect), UIManager.Instance.PositionSelect, "playerPositionVisualElementMap");
 
@@ -4485,6 +4495,12 @@ namespace oomtm450PuckMod_Ruleset {
                 if (ppos.Team == team)
                     positions.Add(ppos);
             }
+
+            return positions;
+        }
+
+        internal static List<(string Position, bool IsPenalized)> GetClaimedPositions(PlayerTeam team) {
+            List<PlayerPosition> positions = GetPositions(team);
 
             List<(string Position, bool IsPenalized)> claimedPositions = new List<(string, bool)>();
             foreach (PlayerPosition playerPosition in positions) {
@@ -4497,20 +4513,26 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
 
-            if (getFakedPositionForFaceoff) {
-                foreach (PlayerPosition playerPosition in positions) {
-                    if (playerPosition.IsClaimed) {
-                        string playerSteamId = playerPosition.ClaimedByPlayer.SteamId.Value.ToString();
-                        if (!PenaltyModule.PenalizedPlayers.Any(x => x.Key == playerSteamId) || PenaltyModule.PenalizedPlayers[playerSteamId].Count == 0) {
-                            string positionName = PenaltyModule.FakePlayerPositionForFaceoffByAvailability(playerPosition.Name, team, claimedPositions);
-                            if (!claimedPositions.Any(x => x.Position == positionName && x.IsPenalized == false))
-                                claimedPositions.Add((positionName, false));
-                        }
+            return claimedPositions;
+        }
+
+        internal static List<(string Position, bool IsPenalized)> GetFakedClaimedPositions(PlayerTeam team, List<(string Position, bool IsPenalized)> claimedPositions) {
+            List<(string Position, bool IsPenalized)> fakedClaimedPositions = new List<(string Position, bool IsPenalized)>(claimedPositions);
+
+            List<PlayerPosition> positions = GetPositions(team);
+
+            foreach (PlayerPosition playerPosition in positions) {
+                if (playerPosition.IsClaimed) {
+                    string playerSteamId = playerPosition.ClaimedByPlayer.SteamId.Value.ToString();
+                    if (!PenaltyModule.PenalizedPlayers.Any(x => x.Key == playerSteamId) || PenaltyModule.PenalizedPlayers[playerSteamId].Count == 0) {
+                        string positionName = PenaltyModule.FakePlayerPositionForFaceoffByAvailability(playerPosition.Name, team, fakedClaimedPositions);
+                        if (!fakedClaimedPositions.Any(x => x.Position == positionName && x.IsPenalized == false))
+                            fakedClaimedPositions.Add((positionName, false));
                     }
                 }
             }
 
-            return claimedPositions;
+            return fakedClaimedPositions;
         }
 
         /// <summary>

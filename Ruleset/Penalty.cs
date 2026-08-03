@@ -799,11 +799,12 @@ namespace oomtm450PuckMod_Ruleset {
             return position;
         }
 
-        internal static string GetPlayerPositionForFaceoff(string position, PlayerTeam team, FaceoffSpot faceoffSpot, List<(string Position, bool IsPenalized)> claimedPositions) {
+        internal static string GetPlayerPositionForFaceoff(string position, PlayerTeam team, FaceoffSpot faceoffSpot,
+            List<(string Position, bool IsPenalized)> claimedPositions, List<(string Position, bool IsPenalized)> fakedClaimedPositions) {
             position = FakePlayerPositionForFaceoffByAvailability(position, team, claimedPositions);
 
-            bool centerPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.CENTER_POSITION);
-            bool leftDefenderPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION] && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_DEFENDER_POSITION);
+            bool centerPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && !fakedClaimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.CENTER_POSITION);
+            bool leftDefenderPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION] && !fakedClaimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_DEFENDER_POSITION);
 
             switch (position) {
                 case Codebase.PlayerFunc.LEFT_WINGER_POSITION:
@@ -814,7 +815,7 @@ namespace oomtm450PuckMod_Ruleset {
                     break;
 
                 case Codebase.PlayerFunc.RIGHT_WINGER_POSITION:
-                    bool leftWingerPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_WINGER_POSITION] && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_WINGER_POSITION);
+                    bool leftWingerPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_WINGER_POSITION] && !fakedClaimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_WINGER_POSITION);
 
                     if (centerPositionIsOpen && leftWingerPositionIsOpen)
                         return Codebase.PlayerFunc.CENTER_POSITION;
@@ -828,7 +829,7 @@ namespace oomtm450PuckMod_Ruleset {
                             return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
                     }
 
-                    bool rightDefenderPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION] && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION);
+                    bool rightDefenderPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION] && !fakedClaimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION);
 
                     if (rightDefenderPositionIsOpen)
                         return Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION;
