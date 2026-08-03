@@ -131,7 +131,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                     return Ruleset.ServerConfig.Faceoff.GoalieMaxForward;
                 default:
                     return 0f;
-                }
+            }
         }
 
         private float GetMaxBackwardDistance(string positionName, PlayerTeam team, FaceoffSpot currentFaceoffSpot) {

@@ -184,7 +184,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             ServerConfig newConfig = new Configs.ServerConfig();
 
             //if (LogInfo == _oldConfig.LogInfo)
-                //LogInfo = newConfig.LogInfo;
+            //LogInfo = newConfig.LogInfo;
 
             if (MaxTippedMilliseconds == _oldConfig.MaxTippedMilliseconds)
                 MaxTippedMilliseconds = newConfig.MaxTippedMilliseconds;

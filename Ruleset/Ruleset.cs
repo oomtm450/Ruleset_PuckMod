@@ -153,7 +153,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// LockDictionary of string and bool, dictionary of number of frames since player has been in a no high stick situation with steam Id as a key.
         /// </summary>
-        private static readonly LockDictionary<string,  int> _noHighStickFrames = new LockDictionary<string, int>();
+        private static readonly LockDictionary<string, int> _noHighStickFrames = new LockDictionary<string, int>();
 
         /// <summary>
         /// LockDictionary of PlayerTeam and bool, dictionary for teams if high stick has to be called next frame.
@@ -454,7 +454,7 @@ namespace oomtm450PuckMod_Ruleset {
             set {
                 _paused = value;
                 try {
-                    EventManager.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object>{ { Codebase.Constants.PAUSE, _paused.ToString() } });
+                    EventManager.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object> { { Codebase.Constants.PAUSE, _paused.ToString() } });
                     if (!NetworkCommunication.GetDataNamesToIgnore().Contains(Codebase.Constants.PAUSE))
                         Logging.Log($"Sent data \"{Codebase.Constants.PAUSE}\" to {Codebase.Constants.RULESET_MOD_NAME}.", ServerConfig);
                 }
@@ -581,7 +581,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                     else if (lastTimeCollisionExitWatch.ElapsedMilliseconds > ServerConfig.MaxPossessionMilliseconds || (!string.IsNullOrEmpty(lastPlayerOnPuckSteamId) && lastPlayerOnPuckSteamId != currentPlayerSteamId)) {
                         //if (lastPlayerOnPuckTipIncludedSteamId == currentPlayerSteamId || string.IsNullOrEmpty(lastPlayerOnPuckTipIncludedSteamId))
-                            //Logging.Log($"{stick.Player.Username.Value} had the puck for {((double)(watch.ElapsedMilliseconds - lastTimeCollisionExitWatch.ElapsedMilliseconds)) / 1000d} seconds.", ServerConfig);
+                        //Logging.Log($"{stick.Player.Username.Value} had the puck for {((double)(watch.ElapsedMilliseconds - lastTimeCollisionExitWatch.ElapsedMilliseconds)) / 1000d} seconds.", ServerConfig);
                         watch.Restart();
 
                         if (!string.IsNullOrEmpty(lastPlayerOnPuckSteamId) && lastPlayerOnPuckSteamId != currentPlayerSteamId) {
@@ -753,7 +753,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _puckDeflectedTimeSinceLastTouch = now;
 
                     //if (!__instance.IsTouchingStick)
-                        //return;
+                    //return;
 
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick)
@@ -835,7 +835,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
                 }
-                catch (Exception ex)  {
+                catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(Puck_OnCollisionExit_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
@@ -1232,7 +1232,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (newGameState.Phase == GamePhase.Play) {
                             LastPlayPhaseStartDateTime = DateTime.UtcNow;
                         }
-                        
+
                         _playersLastSlipDateTime.Clear();
                         _playersLastSprintTime.Clear();
                         _playersWasLastDivedIntoTime.Clear();
@@ -1291,7 +1291,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (PenaltyModule.PenalizedPlayers.TryGetValue(player.SteamId.Value.ToString(), out LockList<Penalty> penalties) && penalties.Count != 0)
                         return false;
                 }
-                catch (Exception ex)  {
+                catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(PlayerPosition_Server_Claim_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
@@ -1389,7 +1389,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // If this is the server, do not use the patch.
                     if (ServerFunc.IsDedicatedServer())
                         return true;
-                    
+
                     if (content.StartsWith(@"/")) {
                         content = content.ToLowerInvariant();
 
@@ -1543,7 +1543,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 content = "r";
                             else
                                 return true;
-                            
+
                             NetworkCommunication.SendData(Codebase.Constants.REMOVE_PENALTY_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
@@ -2771,7 +2771,7 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool IsGoalieInt(PlayerTeam team) {
             if (!IsGoalieIntEnabled(team))
                 return false;
-            
+
             Stopwatch watch = _goalieIntTimer[team];
             if (watch == null)
                 return false;
@@ -2804,7 +2804,7 @@ namespace oomtm450PuckMod_Ruleset {
                             collisionToRemove.Add(collision);
                     }
                 }
-                
+
                 foreach (NetworkObjectCollision collision in collisionToRemove)
                     buffer.Remove(collision);
             }
@@ -2860,7 +2860,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     key = messageKvp.Key;
                     value = messageKvp.Value.ToString();
-                    
+
                     if (!NetworkCommunication.GetDataNamesToIgnore().Contains(key))
                         Logging.Log($"Received data {key}. Content : {value}", ServerConfig);
 
@@ -2915,7 +2915,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(value);
                                 if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned && !Codebase.PlayerFunc.IsGoalie(penalizedPlayer)) {
                                     PenaltyModule.GivePenalty(PenaltyType.Embellishment, penalizedPlayer);
-                                        
+
                                     if (_playersWasLastHitWithoutPuckTime.TryGetValue(value, out (string SteamId, DateTime DateTime) playerWasHitBy) && (now - playerWasHitBy.DateTime).TotalMilliseconds < ServerConfig.Penalty.RoughingMillisecondsThreshold && new System.Random().Next(0, ServerConfig.Penalty.RoughingChancePercInverse) == 0) {
                                         if (!PenaltyModule.PenalizedPlayers.TryGetValue(playerWasHitBy.SteamId, out LockList<Penalty> penaltyList) || penaltyList.Count == 0) {
                                             Player roughingPenalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerWasHitBy.SteamId);
@@ -3060,7 +3060,7 @@ namespace oomtm450PuckMod_Ruleset {
                     Player player = PlayerManager.Instance.GetPlayerByClientId(kvp.Key);
                     playersInfo_ToChange.Add(kvp.Key, (player.SteamId.Value.ToString(), player.Username.Value.ToString()));
                 }
-                    
+
             }
 
             foreach (var kvp in playersInfo_ToChange) {
@@ -3568,7 +3568,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 return;
                             }
                         }
-                        
+
                         if (dataStr == "1" || dataStr == "3") {
                             if (ServerConfigBackup == null)
                                 ServerConfigBackup = new Configs.ServerConfig(ServerConfig);
@@ -4305,7 +4305,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 Logging.Log("Subscribing to events.", ServerConfig, true);
-                
+
                 if (ServerFunc.IsDedicatedServer()) {
                     EventManager.AddEventListener(nameof(Event_Everyone_OnClientConnected), Event_Everyone_OnClientConnected);
                     EventManager.AddEventListener(nameof(Event_Everyone_OnClientDisconnected), Event_Everyone_OnClientDisconnected);
@@ -4601,7 +4601,7 @@ namespace oomtm450PuckMod_Ruleset {
             get {
                 if (IsSprinting)
                     return (DateTime.UtcNow - LastSprintTime).TotalMilliseconds + _totalSprintTime;
-                
+
                 return _totalSprintTime;
             }
             set {

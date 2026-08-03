@@ -1,5 +1,4 @@
-﻿using Codebase;
-using Codebase.Configs;
+﻿using Codebase.Configs;
 using System.Collections.Generic;
 
 namespace oomtm450PuckMod_Ruleset.Configs {
@@ -517,7 +516,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
         // Center position settings
         public float CenterMaxForward { get; } = 0;       // Centers can't move forward at all
-        public float CenterMaxBackward { get;} = 2f;    // Backward wall
+        public float CenterMaxBackward { get; } = 2f;    // Backward wall
         public float CenterMaxLeft { get; } = 1f;        // Limited side movement
         public float CenterMaxRight { get; } = 1f;
 

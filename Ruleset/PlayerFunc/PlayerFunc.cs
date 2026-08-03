@@ -1,6 +1,6 @@
 ﻿using Codebase;
-using static Codebase.PlayerFunc;
 using UnityEngine;
+using static Codebase.PlayerFunc;
 
 namespace oomtm450PuckMod_Ruleset {
     internal class PlayerFunc {
