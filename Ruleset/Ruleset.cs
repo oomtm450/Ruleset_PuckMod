@@ -1555,6 +1555,14 @@ namespace oomtm450PuckMod_Ruleset {
                             NetworkCommunication.SendData(Codebase.Constants.REMOVE_PENALTY_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
+                        else if (content.StartsWith(@"/refpause")) {
+                            NetworkCommunication.SendData(Codebase.Constants.REF_PAUSE_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/refunpause")) {
+                            NetworkCommunication.SendData(Codebase.Constants.REF_UNPAUSE_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
+                        }
                     }
                 }
                 catch (Exception ex) {
@@ -2652,10 +2660,12 @@ namespace oomtm450PuckMod_Ruleset {
 
             PauseGame();
 
-            _ = Task.Run(() => {
-                Thread.Sleep(new System.Random().Next(millisecondsPauseMin, millisecondsPauseMax + 1));
-                _doFaceoff = true;
-            });
+            if (millisecondsPauseMin != int.MaxValue && millisecondsPauseMax != int.MaxValue) {
+                _ = Task.Run(() => {
+                    Thread.Sleep(new System.Random().Next(millisecondsPauseMin, millisecondsPauseMax + 1));
+                    _doFaceoff = true;
+                });
+            }
         }
 
         private static void PostDoFaceoff() {
@@ -3833,6 +3843,47 @@ namespace oomtm450PuckMod_Ruleset {
                             PenaltyModule.RemoveOnePenalty(PlayerTeam.Blue);
                         else if (dataStr == "r")
                             PenaltyModule.RemoveOnePenalty(PlayerTeam.Red);
+                        break;
+
+                    case Codebase.Constants.REF_PAUSE_DATANAME: // SERVER-SIDE : Pause the game by human ref.
+                        if (dataStr != "1")
+                            break;
+
+                        if (Paused)
+                            break;
+
+                        Player pauseReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (pauseReferee == null || !pauseReferee)
+                            break;
+
+                        string pauseRefereeSteamId = pauseReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(pauseRefereeSteamId) && !_currentRefsSteamId.Contains(pauseRefereeSteamId))
+                            break;
+
+                        DoFaceoff("", "", int.MaxValue, int.MaxValue);
+                        break;
+
+                    case Codebase.Constants.REF_UNPAUSE_DATANAME: // SERVER-SIDE : Unpause the game by human ref.
+                        if (dataStr != "1")
+                            break;
+
+                        if (!Paused)
+                            break;
+
+                        Player unpauseReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (unpauseReferee == null || !unpauseReferee)
+                            break;
+
+                        string unpauseRefereeSteamId = unpauseReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(unpauseRefereeSteamId) && !_currentRefsSteamId.Contains(unpauseRefereeSteamId))
+                            break;
+
+                        NetworkCommunication.SendDataToAll(SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(SoundsSystem.WHISTLE),
+                            Codebase.Constants.SOUNDS_FROM_SERVER_TO_CLIENT, ServerConfig);
+
+                        _doFaceoff = true;
                         break;
 
                     case TOGGLE_HIGHSTICK_DATANAME: // SERVER-SIDE : Toggle high stick rule.
