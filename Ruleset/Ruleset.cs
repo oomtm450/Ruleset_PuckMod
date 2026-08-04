@@ -1619,13 +1619,13 @@ namespace oomtm450PuckMod_Ruleset {
                         if (puck == null || !puck || !puck.IsSpawned)
                             continue;
 
-                        if (puck.transform.position.y < -50f) {
+                        if (puck.Rigidbody.transform.position.y < -50f) {
                             Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ, ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ);
 
                             if (ServerConfig.Faceoff.UseDefaultPuckDropHeight)
-                                puck.transform.position = new Vector3(dot.x, puck.transform.position.y + ArenaOffsetY, dot.z);
+                                puck.Rigidbody.transform.position = new Vector3(dot.x, puck.Rigidbody.transform.position.y + ArenaOffsetY, dot.z);
                             else
-                                puck.transform.position = new Vector3(dot.x, ServerConfig.Faceoff.PuckDropHeight + ArenaOffsetY, dot.z);
+                                puck.Rigidbody.transform.position = new Vector3(dot.x, ServerConfig.Faceoff.PuckDropHeight + ArenaOffsetY, dot.z);
 
                             puck.Rigidbody.linearVelocity = Vector3.zero;
                             puck.Rigidbody.angularVelocity = Vector3.zero;
@@ -1638,8 +1638,8 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!Codebase.PlayerFunc.IsPlayerPlaying(player))
                             continue;
 
-                        if (player.transform.position.y < -50f) {
-                            player.transform.position = new Vector3(0, ArenaOffsetY + ServerConfig.YOffsetForTeleport, 0);
+                        if (player.PlayerBody.transform.position.y < -50f) {
+                            player.PlayerBody.Server_Teleport(new Vector3(0, ArenaOffsetY + ServerConfig.YOffsetForTeleport, 0), player.PlayerBody.transform.rotation);
                             player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
                             player.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
                         }
