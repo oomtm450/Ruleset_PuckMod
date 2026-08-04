@@ -2766,7 +2766,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (!checkPossibleTime)
                 return true;
             else {
-                float maxPossibleTime = ServerConfig.Icing.MaxPossibleTime[_puckZoneLastTouched] * icingObj.Delta;
+                float maxPossibleTime = (ServerConfig.Icing.MaxPossibleTime[_puckZoneLastTouched] * _arenaScaleZ) * icingObj.Delta;
 
                 if (!icingObj.DeltaHasBeenChecked && ++icingObj.FrameCheck > ((float)ServerManager.Instance.ServerConfig.tickRate)) {
                     icingObj.DeltaHasBeenChecked = true;
@@ -2781,7 +2781,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (player == null || !player || !player.IsCharacterSpawned)
                                 continue;
 
-                            float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * ServerConfig.Icing.DeferredMaxPossibleTimeMultiplicator) + ServerConfig.Icing.DeferredMaxPossibleTimeAddition)) - (Math.Abs(player.PlayerBody.transform.position.z) * ServerConfig.Icing.DeferredMaxPossibleTimeDistanceDelta);
+                            float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * (ServerConfig.Icing.DeferredMaxPossibleTimeMultiplicator * _arenaScaleZ)) + (ServerConfig.Icing.DeferredMaxPossibleTimeAddition * _arenaScaleZ))) - (Math.Abs(player.PlayerBody.transform.position.z) * (ServerConfig.Icing.DeferredMaxPossibleTimeDistanceDelta * _arenaScaleZ));
 
                             if (maxPossibleTime >= maxPossibleTimeLimit) {
                                 _isIcingPossible[team] = new IcingObject();
@@ -4375,7 +4375,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
             else if (!_isIcingActive[team] && IsIcingPossible(puck, team) && _puckZone == ZoneFunc.GetTeamZones(otherTeam)[1]) {
                 _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
-                _isIcingActiveTimers[team].Change(ServerConfig.Icing.MaxActiveTime, Timeout.Infinite);
+                _isIcingActiveTimers[team].Change((int)(ServerConfig.Icing.MaxActiveTime * _arenaScaleZ), Timeout.Infinite);
                 icingHasToBeWarned[team] = true;
                 _isIcingActive[team] = true;
             }
