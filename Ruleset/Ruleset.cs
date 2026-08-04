@@ -1228,7 +1228,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                             string newFaceoffPosition = PenaltyModule.GetPlayerPositionForFaceoff(player.PlayerPosition.Name, player.Team, NextFaceoffSpot, claimedPositions, fakedClaimedPositions);
                             PlayerFunc.TeleportOnFaceoff(
-                                player, dot, NextFaceoffSpot,
+                                player, dot, NextFaceoffSpot, _arenaScaleX, _arenaScaleZ,
                                 newFaceoffPosition,
                                 POSITION_ROTATION_ON_FACEOFF[player.Team][newFaceoffPosition]
                             );
@@ -2226,6 +2226,7 @@ namespace oomtm450PuckMod_Ruleset {
                             claimedPositions, GetFakedClaimedPositions(__instance.Team, claimedPositions));
                         PlayerFunc.TeleportOnFaceoff(
                             __instance, Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ, ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ), NextFaceoffSpot,
+                            _arenaScaleX, _arenaScaleZ,
                             newFaceoffPosition,
                             POSITION_ROTATION_ON_FACEOFF[__instance.Team][newFaceoffPosition]);
                     }

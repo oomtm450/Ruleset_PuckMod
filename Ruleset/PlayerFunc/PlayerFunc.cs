@@ -18,8 +18,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// <param name="player">Player, player to teleport.</param>
         /// <param name="faceoffDot">Vector3, position of the faceoff dot.</param>
         /// <param name="faceoffSpot">FaceoffSpot, location of the faceoff.</param>
+        /// <param name="arenaScaleX">Float, scale of the arena X coordinate.</param>
+        /// <param name="arenaScaleZ">Float, scale of the arena X coordinate.</param>
         /// <param name="playerPosition">String, player's position.</param>
-        public static void TeleportOnFaceoff(Player player, Vector3 faceoffDot, FaceoffSpot faceoffSpot, string playerPosition = "", Quaternion rotation = default) {
+        /// <param name="rotation">Quaternion, player's rotation.</param>
+        public static void TeleportOnFaceoff(Player player, Vector3 faceoffDot, FaceoffSpot faceoffSpot, float arenaScaleX = 1f, float arenaScaleZ = 1f,
+            string playerPosition = "", Quaternion rotation = default) {
             if (!IsPlayerPlaying(player))
                 return;
 
@@ -117,7 +121,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
 
-                    Vector3 teleportPosition = new Vector3(player.PlayerBody.transform.position.x + xOffset + Ruleset.ArenaOffsetX, player.PlayerBody.transform.position.y + Ruleset.ArenaOffsetY + Ruleset.ServerConfig.YOffsetForTeleport, player.PlayerBody.transform.position.z + zOffset + Ruleset.ArenaOffsetZ);
+                    Vector3 teleportPosition = new Vector3(player.PlayerBody.transform.position.x + (xOffset * arenaScaleX) + Ruleset.ArenaOffsetX, faceoffDot.y + Ruleset.ServerConfig.YOffsetForTeleport, player.PlayerBody.transform.position.z + (zOffset * arenaScaleZ) + Ruleset.ArenaOffsetZ);
                     player.PlayerBody.Server_Teleport(teleportPosition, rotation);
                     Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = player, Position = teleportPosition, Rotation = rotation, });
                     break;
@@ -138,7 +142,7 @@ namespace oomtm450PuckMod_Ruleset {
                         zOffset *= 0.8f;
                 }
 
-                Vector3 teleportPosition = new Vector3(faceoffDot.x + xOffset + Ruleset.ArenaOffsetX, faceoffDot.y + Ruleset.ArenaOffsetY + Ruleset.ServerConfig.YOffsetForTeleport, faceoffDot.z + zOffset + Ruleset.ArenaOffsetZ);
+                Vector3 teleportPosition = new Vector3(faceoffDot.x + (xOffset * arenaScaleX), faceoffDot.y + Ruleset.ServerConfig.YOffsetForTeleport, faceoffDot.z + (zOffset * arenaScaleZ));
                 player.PlayerBody.Server_Teleport(teleportPosition, rotation);
                 Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = player, Position = teleportPosition, Rotation = rotation, });
             }
