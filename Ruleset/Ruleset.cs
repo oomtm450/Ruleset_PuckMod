@@ -1620,12 +1620,10 @@ namespace oomtm450PuckMod_Ruleset {
                             continue;
 
                         if (puck.Rigidbody.transform.position.y < -50f) {
-                            Vector3 dot = Faceoff.GetFaceoffDot(NextFaceoffSpot, _arenaScaleX, _arenaScaleZ, ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ);
-
                             if (ServerConfig.Faceoff.UseDefaultPuckDropHeight)
-                                puck.Rigidbody.transform.position = new Vector3(dot.x, puck.Rigidbody.transform.position.y + ArenaOffsetY, dot.z);
+                                puck.Rigidbody.transform.position = new Vector3(ArenaOffsetX, puck.Rigidbody.transform.position.y + ArenaOffsetY, ArenaOffsetZ);
                             else
-                                puck.Rigidbody.transform.position = new Vector3(dot.x, ServerConfig.Faceoff.PuckDropHeight + ArenaOffsetY, dot.z);
+                                puck.Rigidbody.transform.position = new Vector3(ArenaOffsetX, ServerConfig.Faceoff.PuckDropHeight + ArenaOffsetY, ArenaOffsetZ);
 
                             puck.Rigidbody.linearVelocity = Vector3.zero;
                             puck.Rigidbody.angularVelocity = Vector3.zero;
@@ -1639,7 +1637,7 @@ namespace oomtm450PuckMod_Ruleset {
                             continue;
 
                         if (player.PlayerBody.transform.position.y < -50f) {
-                            player.PlayerBody.Server_Teleport(new Vector3(0, ArenaOffsetY + ServerConfig.YOffsetForTeleport, 0), player.PlayerBody.transform.rotation);
+                            player.PlayerBody.Server_Teleport(new Vector3(ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ), player.PlayerBody.transform.rotation);
                             player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
                             player.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
                         }
