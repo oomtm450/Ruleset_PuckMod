@@ -1210,7 +1210,7 @@ namespace oomtm450PuckMod_Ruleset {
                         var claimedPositionsRed = GetClaimedPositions(PlayerTeam.Red);
                         var fakedClaimedPositionsRed = GetFakedClaimedPositions(PlayerTeam.Red, claimedPositionsRed);
 
-                        List<Player> players = PlayerManager.Instance.GetPlayers();
+                        List<Player> players = PlayerManager.Instance.GetSpawnedPlayers();
                         foreach (Player player in players) {
                             if (!Codebase.PlayerFunc.IsPlayerPlaying(player) || player.Team == PlayerTeam.Spectator || player.Team == PlayerTeam.None || PenaltyModule.PositionIsPenalized[player.Team][player.PlayerPosition.Name])
                                 continue;
