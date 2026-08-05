@@ -45,7 +45,7 @@ namespace oomtm450PuckMod_Ruleset {
                 case LEFT_WINGER_POSITION:
                     zOffset = 1.5f;
                     if ((faceoffSpot == FaceoffSpot.RedTeamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && player.Team == PlayerTeam.Blue))
-                        xOffset = 9.5f;
+                        xOffset = 9.75f;
                     else
                         xOffset = 9f;
                     break;
@@ -53,7 +53,7 @@ namespace oomtm450PuckMod_Ruleset {
                 case RIGHT_WINGER_POSITION:
                     zOffset = 1.5f;
                     if ((faceoffSpot == FaceoffSpot.RedTeamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneRight && player.Team == PlayerTeam.Blue))
-                        xOffset = -9.5f;
+                        xOffset = -9.75f;
                     else
                         xOffset = -9f;
                     break;
@@ -61,7 +61,7 @@ namespace oomtm450PuckMod_Ruleset {
                 case LEFT_DEFENDER_POSITION:
                     if ((faceoffSpot == FaceoffSpot.RedTeamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneRight && player.Team == PlayerTeam.Blue)) {
                         zOffset = 1.5f;
-                        xOffset = -6.5f;
+                        xOffset = -7f;
                         if (player.Team == PlayerTeam.Red)
                             rotation = Quaternion.Euler(0, -90, 0);
                         else
@@ -84,7 +84,7 @@ namespace oomtm450PuckMod_Ruleset {
                 case RIGHT_DEFENDER_POSITION:
                     if ((faceoffSpot == FaceoffSpot.RedTeamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && player.Team == PlayerTeam.Blue)) {
                         zOffset = 1.5f;
-                        xOffset = 6.5f;
+                        xOffset = 7f;
                         if (player.Team == PlayerTeam.Red)
                             rotation = Quaternion.Euler(0, 90, 0);
                         else
