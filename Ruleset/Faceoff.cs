@@ -24,13 +24,13 @@ namespace oomtm450PuckMod_Ruleset {
                 if (rule == Rule.Icing)
                     return FaceoffSpot.BlueTeamDZoneLeft + teamOffset;
                 else
-                    return SetNextFaceoffPositionFromLastTouch(team, true, puckLastState, rule);
+                    return SetNextFaceoffPositionFromLastTouch(team, true, puckLastState.Zone, rule);
             }
             else {
                 if (rule == Rule.Icing)
                     return FaceoffSpot.BlueTeamDZoneRight + teamOffset;
                 else
-                    return SetNextFaceoffPositionFromLastTouch(team, false, puckLastState, rule);
+                    return SetNextFaceoffPositionFromLastTouch(team, false, puckLastState.Zone, rule);
             }
         }
 
@@ -39,14 +39,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         /// <param name="team">PlayerTeam, team linked to the faceoff being called.</param>
         /// <param name="left">Bool, true if the faceoff has to be on the left.</param>
-        /// <param name="puckLastState">(Vector3, Zone), puck's last position and zone.</param>
+        /// <param name="puckZone">Zone, puck's last zone.</param>
         /// <param name="rule">Rule, rule called for the faceoff.</param>
         /// <returns>FaceoffSpot, next faceoff position.</returns>
-        private static FaceoffSpot SetNextFaceoffPositionFromLastTouch(PlayerTeam team, bool left, (Vector3 Position, Codebase.Zone Zone) puckLastState, Rule rule) {
-            Codebase.Zone puckZone = ZoneFunc.GetZone(puckLastState.Position, puckLastState.Zone, Ruleset.PuckRadius);
-
+        private static FaceoffSpot SetNextFaceoffPositionFromLastTouch(PlayerTeam team, bool left, Codebase.Zone puckZone, Rule rule) {
             if (puckZone == Codebase.Zone.BlueTeam_BehindGoalLine || puckZone == Codebase.Zone.BlueTeam_Zone) {
-                if (team == PlayerTeam.Blue || rule == Rule.DelayOfGame || rule == Rule.None || rule == Rule.Offside || rule == Rule.HighStick) {
+                if (team == PlayerTeam.Blue || rule == Rule.DelayOfGame || rule == Rule.None) {
                     if (left)
                         return FaceoffSpot.BlueTeamDZoneLeft;
                     else
@@ -60,7 +58,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
             else if (puckZone == Codebase.Zone.RedTeam_BehindGoalLine || puckZone == Codebase.Zone.RedTeam_Zone) {
-                if (team == PlayerTeam.Red || rule == Rule.DelayOfGame || rule == Rule.None || rule == Rule.Offside || rule == Rule.HighStick) {
+                if (team == PlayerTeam.Red || rule == Rule.DelayOfGame || rule == Rule.None) {
                     if (left)
                         return FaceoffSpot.RedTeamDZoneLeft;
                     else

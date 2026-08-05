@@ -3493,6 +3493,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!int.TryParse(dataStr, out int highStickTeamInt))
                             break;
 
+                        _puckLastStateBeforeCall[Rule.HighStick] = _puckLastStateBeforeCall[Rule.Offside];
                         CallHighStick((PlayerTeam)highStickTeamInt, highStickReferee);
                         break;
 
