@@ -727,8 +727,8 @@ namespace oomtm450PuckMod_Ruleset {
                         if (IsIcing(stick.Player.Team)) {
                             NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, stick.Player.Team), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send stop icing signal for client-side UI.
                             SendChat(Rule.Icing, stick.Player.Team, true, true);
+                            ResetIcings();
                         }
-                        ResetIcings();
                     }
                 }
                 catch (Exception ex) {
