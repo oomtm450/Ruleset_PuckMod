@@ -2127,7 +2127,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         if (IsOffside(byTeam)) {
-                            CallOffside(byTeam);
+                            CallOffside(byTeam, null, false);
                             return false;
                         }
 
@@ -4170,14 +4170,15 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void CallOffside(PlayerTeam team, Player referee = null) {
+        private static void CallOffside(PlayerTeam team, Player referee = null, bool intentionalOffsides = true) {
             if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Blue])
                 CallPenalty(PlayerTeam.Blue);
             else if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Red])
                 CallPenalty(PlayerTeam.Red);
             else {
                 // Intentional offside.
-                if (((team == PlayerTeam.Blue && ServerConfig.Offside.IntentionalOffsideBlueTeam) ||
+                if (intentionalOffsides &&
+                    ((team == PlayerTeam.Blue && ServerConfig.Offside.IntentionalOffsideBlueTeam) ||
                     (team == PlayerTeam.Red && ServerConfig.Offside.IntentionalOffsideRedTeam)) &&
                     (DateTime.UtcNow - GetOffsideLongestTime(team)).TotalMilliseconds > ServerConfig.Offside.IntentionalOffsideMillisecondsThreshold) {
                     SendChat(Rule.Offside, team, true, false, referee, "INTENTIONAL ");
