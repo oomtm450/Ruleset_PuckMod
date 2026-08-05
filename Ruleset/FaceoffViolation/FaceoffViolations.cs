@@ -24,11 +24,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         internal static HashSet<Player> PenalizedPlayers { get; } = new HashSet<Player>();
 
         private void Awake() {
-            EventManager.AddEventListener("Event_Everyone_OnGameStateChanged", Event_Everyone_OnGameStateChanged);
+            EventManager.AddEventListener(nameof(Event_Everyone_OnGameStateChanged), Event_Everyone_OnGameStateChanged);
         }
 
         private void OnDestroy() {
-            EventManager.RemoveEventListener("Event_Everyone_OnGameStateChanged", Event_Everyone_OnGameStateChanged);
+            EventManager.RemoveEventListener(nameof(Event_Everyone_OnGameStateChanged), Event_Everyone_OnGameStateChanged);
         }
 
         private void Event_Everyone_OnGameStateChanged(Dictionary<string, object> message) {
@@ -86,10 +86,10 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             string positionName = PenaltyModule.GetPlayerPositionForFaceoff(playerBody.Player.PlayerPosition.Name, team, currentFaceoffSpot, claimedPositions,
                 Ruleset.GetFakedClaimedPositions(team, claimedPositions));
 
-            if (positionName == "LD" && (team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft || team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight))
-                positionName = "RW";
-            else if (positionName == "RD" && (team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight || team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft))
-                positionName = "LW";
+            if (positionName == Codebase.PlayerFunc.LEFT_DEFENDER_POSITION && (team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft || team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight))
+                positionName = Codebase.PlayerFunc.RIGHT_WINGER_POSITION;
+            else if (positionName == Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION && (team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight || team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft))
+                positionName = Codebase.PlayerFunc.LEFT_WINGER_POSITION;
 
             // Create tether with role-specific restrictions
             PlayerTether tether = new PlayerTether {
@@ -101,7 +101,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 MaxRightDistance = GetMaxRightDistance(positionName, playerBody.Player.Team, currentFaceoffSpot, arenaScaleX),
             };
 
-            if (positionName != "G" && currentFaceoffSpot == FaceoffSpot.Center) {
+            if (positionName != Codebase.PlayerFunc.GOALIE_POSITION && currentFaceoffSpot == FaceoffSpot.Center) {
                 tether.MaxForwardDistance *= 1.9f;
                 tether.MaxBackwardDistance *= 1.9f;
                 tether.MaxLeftDistance *= 1.9f;
@@ -116,22 +116,22 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 arenaScaleZ = 1f;
 
             switch (positionName) {
-                case "C": // Center
+                case Codebase.PlayerFunc.CENTER_POSITION: // Center
                     return Ruleset.ServerConfig.Faceoff.CenterMaxForward * arenaScaleZ;
-                case "LW": // Left Wing
-                case "RW": // Right Wing
+                case Codebase.PlayerFunc.LEFT_WINGER_POSITION: // Left Wing
+                case Codebase.PlayerFunc.RIGHT_WINGER_POSITION: // Right Wing
                     return Ruleset.ServerConfig.Faceoff.WingerMaxForward * arenaScaleZ;
-                case "LD": // Left Defense
+                case Codebase.PlayerFunc.LEFT_DEFENDER_POSITION: // Left Defense
                     if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxForward * arenaScaleZ;
                     else
                         return Ruleset.ServerConfig.Faceoff.DefenseMaxForward * arenaScaleZ;
-                case "RD": // Right Defense
+                case Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION: // Right Defense
                     if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxForward * arenaScaleZ;
                     else
                         return Ruleset.ServerConfig.Faceoff.DefenseMaxForward * arenaScaleZ;
-                case "G": // Goalie
+                case Codebase.PlayerFunc.GOALIE_POSITION: // Goalie
                     return Ruleset.ServerConfig.Faceoff.GoalieMaxForward * arenaScaleZ;
                 default:
                     return 0 * arenaScaleZ;
@@ -143,22 +143,22 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 arenaScaleZ = 1f;
 
             switch (positionName) {
-                case "C": // Center
+                case Codebase.PlayerFunc.CENTER_POSITION: // Center
                     return Ruleset.ServerConfig.Faceoff.CenterMaxBackward * arenaScaleZ;
-                case "LW": // Left Wing
-                case "RW": // Right Wing
+                case Codebase.PlayerFunc.LEFT_WINGER_POSITION: // Left Wing
+                case Codebase.PlayerFunc.RIGHT_WINGER_POSITION: // Right Wing
                     return Ruleset.ServerConfig.Faceoff.WingerMaxBackward * arenaScaleZ;
-                case "LD": // Left Defense
+                case Codebase.PlayerFunc.LEFT_DEFENDER_POSITION: // Left Defense
                     if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxBackward * arenaScaleZ;
                     else
                         return Ruleset.ServerConfig.Faceoff.DefenseMaxBackward * arenaScaleZ;
-                case "RD": // Right Defense
+                case Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION: // Right Defense
                     if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxBackward * arenaScaleZ;
                     else
                         return Ruleset.ServerConfig.Faceoff.DefenseMaxBackward * arenaScaleZ;
-                case "G": // Goalie
+                case Codebase.PlayerFunc.GOALIE_POSITION: // Goalie
                     return Ruleset.ServerConfig.Faceoff.GoalieMaxBackward * arenaScaleZ;
                 default:
                     return 2f * arenaScaleZ;
@@ -170,20 +170,20 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 arenaScaleX = 1f;
 
             switch (positionName) {
-                case "C": // Center - limited side movement
+                case Codebase.PlayerFunc.CENTER_POSITION: // Center - limited side movement
                     return Ruleset.ServerConfig.Faceoff.CenterMaxLeft * arenaScaleX;
-                case "G": // Goalie
+                case Codebase.PlayerFunc.GOALIE_POSITION: // Goalie
                     return Ruleset.ServerConfig.Faceoff.GoalieMaxLeft * arenaScaleX;
-                case "LW": // Left winger can move left more (away from center toward boards)
+                case Codebase.PlayerFunc.LEFT_WINGER_POSITION: // Left winger can move left more (away from center toward boards)
                     return Ruleset.ServerConfig.Faceoff.WingerMaxAway * arenaScaleX;
-                case "RW": // Right winger can't move much left (toward center)
+                case Codebase.PlayerFunc.RIGHT_WINGER_POSITION: // Right winger can't move much left (toward center)
                     return Ruleset.ServerConfig.Faceoff.WingerMaxToward * arenaScaleX;
-                case "LD": // Left Defense
+                case Codebase.PlayerFunc.LEFT_DEFENDER_POSITION: // Left Defense
                     if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxAway * arenaScaleX;
                     else
                         return Ruleset.ServerConfig.Faceoff.DefenseMaxAway * arenaScaleX;
-                case "RD": // Right Defense
+                case Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION: // Right Defense
                     if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxToward * arenaScaleX;
                     else
@@ -198,20 +198,20 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 arenaScaleX = 1f;
 
             switch (positionName) {
-                case "C": // Center - limited side movement
+                case Codebase.PlayerFunc.CENTER_POSITION: // Center - limited side movement
                     return Ruleset.ServerConfig.Faceoff.CenterMaxRight * arenaScaleX;
-                case "G": // Goalie
+                case Codebase.PlayerFunc.GOALIE_POSITION: // Goalie
                     return Ruleset.ServerConfig.Faceoff.GoalieMaxRight * arenaScaleX;
-                case "LW": // Left winger can't move much right (toward center)
+                case Codebase.PlayerFunc.LEFT_WINGER_POSITION: // Left winger can't move much right (toward center)
                     return Ruleset.ServerConfig.Faceoff.WingerMaxToward * arenaScaleX;
-                case "RW": // Right winger can move right more (away from center toward boards)
+                case Codebase.PlayerFunc.RIGHT_WINGER_POSITION: // Right winger can move right more (away from center toward boards)
                     return Ruleset.ServerConfig.Faceoff.WingerMaxAway * arenaScaleX;
-                case "LD": // Left Defense
+                case Codebase.PlayerFunc.LEFT_DEFENDER_POSITION: // Left Defense
                     if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxToward * arenaScaleX;
                     else
                         return Ruleset.ServerConfig.Faceoff.DefenseMaxToward * arenaScaleX;
-                case "RD": // Right Defense
+                case Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION: // Right Defense
                     if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft && team == PlayerTeam.Red))
                         return Ruleset.ServerConfig.Faceoff.WingerMaxAway * arenaScaleX;
                     else
