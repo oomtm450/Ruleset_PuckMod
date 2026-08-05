@@ -27,6 +27,9 @@ namespace oomtm450PuckMod_Ruleset {
             if (!IsPlayerPlaying(player))
                 return;
 
+            arenaScaleX = arenaScaleX > 1f ? 1f : arenaScaleX;
+            arenaScaleZ = arenaScaleZ > 1f ? 1f : arenaScaleZ;
+
             if (string.IsNullOrEmpty(playerPosition))
                 playerPosition = player.PlayerPosition.Name;
 
