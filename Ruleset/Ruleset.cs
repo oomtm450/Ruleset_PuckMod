@@ -2002,48 +2002,15 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                             else {
                                 PlayerTeam closestPlayerToEndBoardOtherTeam = TeamFunc.GetOtherTeam(closestPlayerToPuckTeam);
-                                if (IsIcing(closestPlayerToEndBoardOtherTeam)) {
-                                    SendChat(Rule.Icing, closestPlayerToEndBoardOtherTeam, true);
-
-                                    int remainingPlayTime = GameManager.Instance.Tick;
-                                    if (_lastStoppageReason == Rule.Icing && _lastIcing[closestPlayerToEndBoardOtherTeam] > _lastIcing[closestPlayerToEndBoardOtherTeam] && _lastIcing[closestPlayerToEndBoardOtherTeam] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
-                                        _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] += 1;
-                                    else
-                                        _icingStaminaDrainPenaltyAmount[closestPlayerToEndBoardOtherTeam] = 0;
-
-                                    _lastStoppageReason = Rule.Icing;
-                                    _lastIcing[closestPlayerToEndBoardOtherTeam] = remainingPlayTime;
-                                    DoFaceoff();
-                                }
+                                if (IsIcing(closestPlayerToEndBoardOtherTeam))
+                                    CallIcing(closestPlayerToEndBoardOtherTeam);
                             }
                         }
                         else {
-                            if (IsIcing(PlayerTeam.Blue)) {
-                                SendChat(Rule.Icing, PlayerTeam.Blue, true);
-
-                                int remainingPlayTime = GameManager.Instance.Tick;
-                                if (_lastStoppageReason == Rule.Icing && _lastIcing[PlayerTeam.Blue] > _lastIcing[PlayerTeam.Blue] && _lastIcing[PlayerTeam.Blue] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
-                                    _icingStaminaDrainPenaltyAmount[PlayerTeam.Blue] += 1;
-                                else
-                                    _icingStaminaDrainPenaltyAmount[PlayerTeam.Blue] = 0;
-
-                                _lastStoppageReason = Rule.Icing;
-                                _lastIcing[PlayerTeam.Blue] = remainingPlayTime;
-                                DoFaceoff();
-                            }
-                            else if (IsIcing(PlayerTeam.Red)) {
-                                SendChat(Rule.Icing, PlayerTeam.Red, true);
-
-                                int remainingPlayTime = GameManager.Instance.Tick;
-                                if (_lastStoppageReason == Rule.Icing && _lastIcing[PlayerTeam.Red] > _lastIcing[PlayerTeam.Red] && _lastIcing[PlayerTeam.Red] - remainingPlayTime <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
-                                    _icingStaminaDrainPenaltyAmount[PlayerTeam.Red] += 1;
-                                else
-                                    _icingStaminaDrainPenaltyAmount[PlayerTeam.Red] = 0;
-
-                                _lastStoppageReason = Rule.Icing;
-                                _lastIcing[PlayerTeam.Red] = remainingPlayTime;
-                                DoFaceoff();
-                            }
+                            if (IsIcing(PlayerTeam.Blue))
+                                CallIcing(PlayerTeam.Blue);
+                            else if (IsIcing(PlayerTeam.Red))
+                                CallIcing(PlayerTeam.Red);
                         }
                     }
                 }
