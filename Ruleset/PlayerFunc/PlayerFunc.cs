@@ -137,7 +137,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 if (faceoffSpot == FaceoffSpot.Center && playerPosition != CENTER_POSITION) {
-                    xOffset *= 2;
+                    xOffset *= 1.9f;
 
                     if (playerPosition != LEFT_DEFENDER_POSITION && playerPosition != RIGHT_DEFENDER_POSITION)
                         zOffset *= 1.9f;

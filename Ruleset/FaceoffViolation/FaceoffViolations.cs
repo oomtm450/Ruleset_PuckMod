@@ -59,7 +59,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
         }
 
-        internal void RegisterPlayer(PlayerBody playerBody, FaceoffSpot currentFaceoffSpot) {
+        internal void RegisterPlayer(PlayerBody playerBody, FaceoffSpot currentFaceoffSpot, float arenaScaleX = 1f, float arenaScaleZ = 1f) {
             if (playerBody == null || !playerBody.Player)
                 return;
 
@@ -67,10 +67,10 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 return;
 
             // Delay registration to allow Ruleset mod to position players first
-            StartCoroutine(RegisterPlayerDelayed(playerBody, currentFaceoffSpot));
+            StartCoroutine(RegisterPlayerDelayed(playerBody, currentFaceoffSpot, arenaScaleX, arenaScaleZ));
         }
 
-        private System.Collections.IEnumerator RegisterPlayerDelayed(PlayerBody playerBody, FaceoffSpot currentFaceoffSpot) {
+        private System.Collections.IEnumerator RegisterPlayerDelayed(PlayerBody playerBody, FaceoffSpot currentFaceoffSpot, float arenaScaleX = 1f, float arenaScaleZ = 1f) {
             // Wait for Ruleset mod to finish positioning players
             yield return new WaitForSeconds(0.1f);
 
@@ -95,117 +95,129 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             PlayerTether tether = new PlayerTether {
                 PlayerBody = playerBody,
                 SpawnPosition = playerBody.transform.position,
-                MaxForwardDistance = GetMaxForwardDistance(positionName, playerBody.Player.Team, currentFaceoffSpot),
-                MaxBackwardDistance = GetMaxBackwardDistance(positionName, playerBody.Player.Team, currentFaceoffSpot),
-                MaxLeftDistance = GetMaxLeftDistance(positionName, playerBody.Player.Team, currentFaceoffSpot),
-                MaxRightDistance = GetMaxRightDistance(positionName, playerBody.Player.Team, currentFaceoffSpot),
+                MaxForwardDistance = GetMaxForwardDistance(positionName, playerBody.Player.Team, currentFaceoffSpot, arenaScaleZ),
+                MaxBackwardDistance = GetMaxBackwardDistance(positionName, playerBody.Player.Team, currentFaceoffSpot, arenaScaleZ),
+                MaxLeftDistance = GetMaxLeftDistance(positionName, playerBody.Player.Team, currentFaceoffSpot, arenaScaleX),
+                MaxRightDistance = GetMaxRightDistance(positionName, playerBody.Player.Team, currentFaceoffSpot, arenaScaleX),
             };
 
             if (positionName != "G" && currentFaceoffSpot == FaceoffSpot.Center) {
-                tether.MaxForwardDistance *= 2;
-                tether.MaxBackwardDistance *= 2;
-                tether.MaxLeftDistance *= 2;
-                tether.MaxRightDistance *= 2;
+                tether.MaxForwardDistance *= 1.9f;
+                tether.MaxBackwardDistance *= 1.9f;
+                tether.MaxLeftDistance *= 1.9f;
+                tether.MaxRightDistance *= 1.9f;
             }
 
             _playerTethers.Add(tether);
         }
 
-        private float GetMaxForwardDistance(string positionName, PlayerTeam team, FaceoffSpot currentFaceoffSpot) {
-            switch (positionName) {
-                case "C": // Center - NO forward movement at all
-                    return Ruleset.ServerConfig.Faceoff.CenterMaxForward;
-                case "LW": // Left Wing
-                case "RW": // Right Wing
-                    return Ruleset.ServerConfig.Faceoff.WingerMaxForward;
-                case "LD": // Left Defense
-                    if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight && team == PlayerTeam.Red))
-                        return Ruleset.ServerConfig.Faceoff.WingerMaxForward;
-                    else
-                        return Ruleset.ServerConfig.Faceoff.DefenseMaxForward;
-                case "RD": // Right Defense
-                    if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft && team == PlayerTeam.Red))
-                        return Ruleset.ServerConfig.Faceoff.WingerMaxForward;
-                    else
-                        return Ruleset.ServerConfig.Faceoff.DefenseMaxForward;
-                case "G": // Goalie
-                    return Ruleset.ServerConfig.Faceoff.GoalieMaxForward;
-                default:
-                    return 0f;
-            }
-        }
+        private float GetMaxForwardDistance(string positionName, PlayerTeam team, FaceoffSpot currentFaceoffSpot, float arenaScaleZ = 1f) {
+            if (arenaScaleZ > 1f)
+                arenaScaleZ = 1f;
 
-        private float GetMaxBackwardDistance(string positionName, PlayerTeam team, FaceoffSpot currentFaceoffSpot) {
             switch (positionName) {
                 case "C": // Center
-                    return Ruleset.ServerConfig.Faceoff.CenterMaxBackward;
+                    return Ruleset.ServerConfig.Faceoff.CenterMaxForward * arenaScaleZ;
                 case "LW": // Left Wing
                 case "RW": // Right Wing
-                    return Ruleset.ServerConfig.Faceoff.WingerMaxBackward;
+                    return Ruleset.ServerConfig.Faceoff.WingerMaxForward * arenaScaleZ;
                 case "LD": // Left Defense
                     if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight && team == PlayerTeam.Red))
-                        return Ruleset.ServerConfig.Faceoff.WingerMaxBackward;
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxForward * arenaScaleZ;
                     else
-                        return Ruleset.ServerConfig.Faceoff.DefenseMaxBackward;
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxForward * arenaScaleZ;
                 case "RD": // Right Defense
                     if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft && team == PlayerTeam.Red))
-                        return Ruleset.ServerConfig.Faceoff.WingerMaxBackward;
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxForward * arenaScaleZ;
                     else
-                        return Ruleset.ServerConfig.Faceoff.DefenseMaxBackward;
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxForward * arenaScaleZ;
                 case "G": // Goalie
-                    return Ruleset.ServerConfig.Faceoff.GoalieMaxBackward;
+                    return Ruleset.ServerConfig.Faceoff.GoalieMaxForward * arenaScaleZ;
                 default:
-                    return 2f;
+                    return 0 * arenaScaleZ;
             }
         }
 
-        private float GetMaxLeftDistance(string positionName, PlayerTeam team, FaceoffSpot currentFaceoffSpot) {
+        private float GetMaxBackwardDistance(string positionName, PlayerTeam team, FaceoffSpot currentFaceoffSpot, float arenaScaleZ = 1f) {
+            if (arenaScaleZ > 1f)
+                arenaScaleZ = 1f;
+
+            switch (positionName) {
+                case "C": // Center
+                    return Ruleset.ServerConfig.Faceoff.CenterMaxBackward * arenaScaleZ;
+                case "LW": // Left Wing
+                case "RW": // Right Wing
+                    return Ruleset.ServerConfig.Faceoff.WingerMaxBackward * arenaScaleZ;
+                case "LD": // Left Defense
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight && team == PlayerTeam.Red))
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxBackward * arenaScaleZ;
+                    else
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxBackward * arenaScaleZ;
+                case "RD": // Right Defense
+                    if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft && team == PlayerTeam.Red))
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxBackward * arenaScaleZ;
+                    else
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxBackward * arenaScaleZ;
+                case "G": // Goalie
+                    return Ruleset.ServerConfig.Faceoff.GoalieMaxBackward * arenaScaleZ;
+                default:
+                    return 2f * arenaScaleZ;
+            }
+        }
+
+        private float GetMaxLeftDistance(string positionName, PlayerTeam team, FaceoffSpot currentFaceoffSpot, float arenaScaleX = 1f) {
+            if (arenaScaleX > 1f)
+                arenaScaleX = 1f;
+
             switch (positionName) {
                 case "C": // Center - limited side movement
-                    return Ruleset.ServerConfig.Faceoff.CenterMaxLeft;
+                    return Ruleset.ServerConfig.Faceoff.CenterMaxLeft * arenaScaleX;
                 case "G": // Goalie
-                    return Ruleset.ServerConfig.Faceoff.GoalieMaxLeft;
+                    return Ruleset.ServerConfig.Faceoff.GoalieMaxLeft * arenaScaleX;
                 case "LW": // Left winger can move left more (away from center toward boards)
-                    return Ruleset.ServerConfig.Faceoff.WingerMaxAway;
+                    return Ruleset.ServerConfig.Faceoff.WingerMaxAway * arenaScaleX;
                 case "RW": // Right winger can't move much left (toward center)
-                    return Ruleset.ServerConfig.Faceoff.WingerMaxToward;
+                    return Ruleset.ServerConfig.Faceoff.WingerMaxToward * arenaScaleX;
                 case "LD": // Left Defense
                     if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight && team == PlayerTeam.Red))
-                        return Ruleset.ServerConfig.Faceoff.WingerMaxAway;
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxAway * arenaScaleX;
                     else
-                        return Ruleset.ServerConfig.Faceoff.DefenseMaxAway;
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxAway * arenaScaleX;
                 case "RD": // Right Defense
                     if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft && team == PlayerTeam.Red))
-                        return Ruleset.ServerConfig.Faceoff.WingerMaxToward;
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxToward * arenaScaleX;
                     else
-                        return Ruleset.ServerConfig.Faceoff.DefenseMaxToward;
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxToward * arenaScaleX;
                 default:
-                    return 2f;
+                    return 2f * arenaScaleX;
             }
         }
 
-        private float GetMaxRightDistance(string positionName, PlayerTeam team, FaceoffSpot currentFaceoffSpot) {
+        private float GetMaxRightDistance(string positionName, PlayerTeam team, FaceoffSpot currentFaceoffSpot, float arenaScaleX = 1f) {
+            if (arenaScaleX > 1f)
+                arenaScaleX = 1f;
+
             switch (positionName) {
                 case "C": // Center - limited side movement
-                    return Ruleset.ServerConfig.Faceoff.CenterMaxRight;
+                    return Ruleset.ServerConfig.Faceoff.CenterMaxRight * arenaScaleX;
                 case "G": // Goalie
-                    return Ruleset.ServerConfig.Faceoff.GoalieMaxRight;
+                    return Ruleset.ServerConfig.Faceoff.GoalieMaxRight * arenaScaleX;
                 case "LW": // Left winger can't move much right (toward center)
-                    return Ruleset.ServerConfig.Faceoff.WingerMaxToward;
+                    return Ruleset.ServerConfig.Faceoff.WingerMaxToward * arenaScaleX;
                 case "RW": // Right winger can move right more (away from center toward boards)
-                    return Ruleset.ServerConfig.Faceoff.WingerMaxAway;
+                    return Ruleset.ServerConfig.Faceoff.WingerMaxAway * arenaScaleX;
                 case "LD": // Left Defense
                     if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight && team == PlayerTeam.Red))
-                        return Ruleset.ServerConfig.Faceoff.WingerMaxToward;
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxToward * arenaScaleX;
                     else
-                        return Ruleset.ServerConfig.Faceoff.DefenseMaxToward;
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxToward * arenaScaleX;
                 case "RD": // Right Defense
                     if ((currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight && team == PlayerTeam.Blue) || (currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft && team == PlayerTeam.Red))
-                        return Ruleset.ServerConfig.Faceoff.WingerMaxAway;
+                        return Ruleset.ServerConfig.Faceoff.WingerMaxAway * arenaScaleX;
                     else
-                        return Ruleset.ServerConfig.Faceoff.DefenseMaxAway;
+                        return Ruleset.ServerConfig.Faceoff.DefenseMaxAway * arenaScaleX;
                 default:
-                    return 2f;
+                    return 2f * arenaScaleX;
             }
         }
 
