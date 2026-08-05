@@ -45,7 +45,7 @@ namespace oomtm450PuckMod_Ruleset {
                 case LEFT_WINGER_POSITION:
                     zOffset = 1.5f;
                     if ((faceoffSpot == FaceoffSpot.RedTeamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && player.Team == PlayerTeam.Blue))
-                        xOffset = 6.5f;
+                        xOffset = 9.5f;
                     else
                         xOffset = 9f;
                     break;
@@ -53,43 +53,55 @@ namespace oomtm450PuckMod_Ruleset {
                 case RIGHT_WINGER_POSITION:
                     zOffset = 1.5f;
                     if ((faceoffSpot == FaceoffSpot.RedTeamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneRight && player.Team == PlayerTeam.Blue))
-                        xOffset = -6.5f;
+                        xOffset = -9.5f;
                     else
                         xOffset = -9f;
                     break;
 
                 case LEFT_DEFENDER_POSITION:
-                    zOffset = 13.75f;
-                    if ((ushort)faceoffSpot >= 5)
-                        zOffset -= 1f;
-
                     if ((faceoffSpot == FaceoffSpot.RedTeamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneRight && player.Team == PlayerTeam.Blue)) {
                         zOffset = 1.5f;
-                        xOffset = -9f;
+                        xOffset = -6.5f;
                         if (player.Team == PlayerTeam.Red)
                             rotation = Quaternion.Euler(0, -90, 0);
                         else
                             rotation = Quaternion.Euler(0, 90, 0);
                     }
-                    else
+                    else {
+                        zOffset = 13.75f;
+                        if ((ushort)faceoffSpot >= 5)
+                            zOffset -= 1f;
+
                         xOffset = 4.5f;
+
+                        if ((faceoffSpot == FaceoffSpot.RedTeamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && player.Team == PlayerTeam.Blue)) {
+                            zOffset -= 1f;
+                            xOffset += 0.5f;
+                        }
+                    }
                     break;
 
                 case RIGHT_DEFENDER_POSITION:
-                    zOffset = 13.75f;
-                    if ((ushort)faceoffSpot >= 5)
-                        zOffset -= 1f;
-
                     if ((faceoffSpot == FaceoffSpot.RedTeamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && player.Team == PlayerTeam.Blue)) {
                         zOffset = 1.5f;
-                        xOffset = 9f;
+                        xOffset = 6.5f;
                         if (player.Team == PlayerTeam.Red)
                             rotation = Quaternion.Euler(0, 90, 0);
                         else
                             rotation = Quaternion.Euler(0, -90, 0);
                     }
-                    else
+                    else {
+                        zOffset = 13.75f;
+                        if ((ushort)faceoffSpot >= 5)
+                            zOffset -= 1f;
+
                         xOffset = -4.5f;
+
+                        if ((faceoffSpot == FaceoffSpot.RedTeamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneRight && player.Team == PlayerTeam.Blue)) {
+                            zOffset -= 1f;
+                            xOffset -= 0.5f;
+                        }
+                    }
                     break;
 
                 case GOALIE_POSITION:
