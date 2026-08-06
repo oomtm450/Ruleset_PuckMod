@@ -1895,9 +1895,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if ((_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1]) || playerTeamOffside.IsOffside)
                                 _isOffside[playerSteamId] = new OffsideObject(player.Team, true, playerTeamOffside.Time);
                         }
-
-                        // Is not offside.
-                        if (playerZoneForOffside != otherTeamZones[0] && playerZoneForOffside != otherTeamZones[1])
+                        else if (playerZoneForOffside != otherTeamZones[0] && playerZoneForOffside != otherTeamZones[1]) // Is not offside.
                             _isOffside[playerSteamId] = new OffsideObject(player.Team, false);
 
                         // Deferred icing logic.
