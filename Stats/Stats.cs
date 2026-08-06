@@ -799,7 +799,7 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix() {
                 try {
                     // If this is the server, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer())
+                    if (ServerFunc.IsDedicatedServer() || NetworkManager.Singleton == null || NetworkManager.Singleton.CustomMessagingManager == null)
                         return;
 
                     if (!_hasRegisteredWithNamedMessageHandler || !_serverHasResponded) {
