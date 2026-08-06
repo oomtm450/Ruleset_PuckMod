@@ -520,28 +520,28 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float FreezeBeforeDropTime { get; } = 2f;
 
         // Center position settings
-        public float CenterMaxForward { get; } = 0;       // Centers can't move forward at all
-        public float CenterMaxBackward { get; } = 2f;    // Backward wall
-        public float CenterMaxLeft { get; } = 1f;        // Limited side movement
-        public float CenterMaxRight { get; } = 1f;
+        public float CenterMaxForward { get; } = 0;       // Centers can't move forward at all // TODO : Change after release.
+        public float CenterMaxBackward { get; } = 2f;    // Backward wall // TODO : Change after release.
+        public float CenterMaxLeft { get; } = 1f;        // Limited side movement // TODO : Change after release.
+        public float CenterMaxRight { get; } = 1f; // TODO : Change after release.
 
         // Winger settings
-        public float WingerMaxForward { get; } = 1f;     // Wingers can move forward a bit
-        public float WingerMaxBackward { get; } = 2f;    // Backward wall
-        public float WingerMaxToward { get; } = 0;      // Limited movement toward center (inward wall)
-        public float WingerMaxAway { get; } = 5f;       // More movement away from center (outward wall toward boards)
+        public float WingerMaxForward { get; } = 1f;     // Wingers can move forward a bit // TODO : Change after release.
+        public float WingerMaxBackward { get; } = 2f;    // Backward wall // TODO : Change after release.
+        public float WingerMaxToward { get; } = 0;      // Limited movement toward center (inward wall) // TODO : Change after release.
+        public float WingerMaxAway { get; } = 5f;       // More movement away from center (outward wall toward boards) // TODO : Change after release.
 
         // Defense settings
-        public float DefenseMaxForward { get; } = 0;      // Defense can't move forward at all
-        public float DefenseMaxBackward { get; } = 0f;   // Backward wall
-        public float DefenseMaxToward { get; } = 5f;     // Movement toward center
-        public float DefenseMaxAway { get; } = 5f;      // Movement away from center (toward boards)
+        public float DefenseMaxForward { get; } = 0;      // Defense can't move forward at all // TODO : Change after release.
+        public float DefenseMaxBackward { get; } = 0f;   // Backward wall // TODO : Change after release.
+        public float DefenseMaxToward { get; } = 5f;     // Movement toward center // TODO : Change after release.
+        public float DefenseMaxAway { get; } = 5f;      // Movement away from center (toward boards) // TODO : Change after release.
 
         // Goalie settings
-        public float GoalieMaxForward { get; } = 2f;     // Minimal forward movement
-        public float GoalieMaxBackward { get; } = 2f;    // Backward wall
-        public float GoalieMaxLeft { get; } = 2f;
-        public float GoalieMaxRight { get; } = 2f;
+        public float GoalieMaxForward { get; } = 2f; // TODO : Change after release.
+        public float GoalieMaxBackward { get; } = 2f; // TODO : Change after release.
+        public float GoalieMaxLeft { get; } = 2f; // TODO : Change after release.
+        public float GoalieMaxRight { get; } = 2f; // TODO : Change after release.
 
         public bool ResetPlayersOnFaceoff { get; } = true;
 
