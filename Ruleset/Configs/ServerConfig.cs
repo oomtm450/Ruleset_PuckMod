@@ -1110,9 +1110,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
         // Goalie settings
         public float GoalieMaxForward { get; set; } = 2f;
-        public float GoalieMaxBackward { get; set; } = 2f;
-        public float GoalieMaxLeft { get; set; } = 2f;
-        public float GoalieMaxRight { get; set; } = 2f;
+        public float GoalieMaxBackward { get; set; } = 2.1f;
+        public float GoalieMaxLeft { get; set; } = 2.2f;
+        public float GoalieMaxRight { get; set; } = 2.2f;
 
         /// <summary>
         /// Bool, reset some values on faceoff, like stamina.
