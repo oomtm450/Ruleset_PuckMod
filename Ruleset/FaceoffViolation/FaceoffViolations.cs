@@ -102,8 +102,8 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             };
 
             if (positionName != Codebase.PlayerFunc.GOALIE_POSITION && currentFaceoffSpot == FaceoffSpot.Center) {
-                tether.MaxForwardDistance *= 1.9f;
-                tether.MaxBackwardDistance *= 1.9f;
+                tether.MaxForwardDistance *= 2f;
+                tether.MaxBackwardDistance *= 1.8f;
                 tether.MaxLeftDistance *= 1.8f;
                 tether.MaxRightDistance *= 1.8f;
             }
