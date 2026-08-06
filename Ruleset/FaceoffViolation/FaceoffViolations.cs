@@ -86,9 +86,9 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             string positionName = PenaltyModule.GetPlayerPositionForFaceoff(playerBody.Player.PlayerPosition.Name, team, currentFaceoffSpot, claimedPositions,
                 Ruleset.GetFakedClaimedPositions(team, claimedPositions));
 
-            if (positionName == Codebase.PlayerFunc.LEFT_DEFENDER_POSITION && (team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft || team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight))
+            if (positionName == Codebase.PlayerFunc.LEFT_DEFENDER_POSITION && ((team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneLeft) || (team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedTeamDZoneRight)))
                 positionName = Codebase.PlayerFunc.RIGHT_WINGER_POSITION;
-            else if (positionName == Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION && (team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight || team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft))
+            else if (positionName == Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION && ((team == PlayerTeam.Blue && currentFaceoffSpot == FaceoffSpot.BlueTeamDZoneRight) || (team == PlayerTeam.Red && currentFaceoffSpot == FaceoffSpot.RedTeamDZoneLeft)))
                 positionName = Codebase.PlayerFunc.LEFT_WINGER_POSITION;
 
             // Create tether with role-specific restrictions
@@ -104,8 +104,8 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             if (positionName != Codebase.PlayerFunc.GOALIE_POSITION && currentFaceoffSpot == FaceoffSpot.Center) {
                 tether.MaxForwardDistance *= 1.9f;
                 tether.MaxBackwardDistance *= 1.9f;
-                tether.MaxLeftDistance *= 1.9f;
-                tether.MaxRightDistance *= 1.9f;
+                tether.MaxLeftDistance *= 1.8f;
+                tether.MaxRightDistance *= 1.8f;
             }
 
             _playerTethers.Add(tether);
