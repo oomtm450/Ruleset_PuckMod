@@ -487,7 +487,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, maximum height for the puck to be touched on faceoff.
         /// </summary>
-        public float PuckIceContactHeight { get; } = 0.3f;
+        public float PuckIceContactHeight { get; } = 0.205f;
 
         /// <summary>
         /// Int, maximum of faceoff violations before getting penalized.
@@ -505,14 +505,19 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float PenaltyFreezeDuration { get; } = 5f;
 
         /// <summary>
-        /// Bool, true if players has to be freezed before puck drops.
+        /// Bool, true if skaters has to be freezed before puck drops.
         /// </summary>
-        public bool FreezePlayersBeforeDrop { get; } = true;
+        public bool FreezeSkatersBeforeDrop { get; } = true;
+
+        /// <summary>
+        /// Bool, true if goalies has to be freezed before puck drops.
+        /// </summary>
+        public bool FreezeGoaliesBeforeDrop { get; } = false;
 
         /// <summary>
         /// Float, number of seconds to freeze players before faceoff ends.
         /// </summary>
-        public float FreezeBeforeDropTime { get; } = 2.999f;
+        public float FreezeBeforeDropTime { get; } = 2f;
 
         // Center position settings
         public float CenterMaxForward { get; } = 0;       // Centers can't move forward at all

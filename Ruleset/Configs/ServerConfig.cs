@@ -303,7 +303,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                         },
                         Faceoff = new FaceoffConfig {
                             EnableViolations = config.Faceoff.EnableViolations,
-                            FreezePlayersBeforeDrop = config.Faceoff.FreezePlayersBeforeDrop,
+                            FreezeSkatersBeforeDrop = config.Faceoff.FreezeSkatersBeforeDrop,
+                            FreezeGoaliesBeforeDrop = config.Faceoff.FreezeGoaliesBeforeDrop,
                             UseCustomFaceoff = config.Faceoff.UseCustomFaceoff,
                             UseDefaultPuckDropHeight = config.Faceoff.UseDefaultPuckDropHeight,
                             ResetPlayersOnFaceoff = config.Faceoff.ResetPlayersOnFaceoff,
@@ -1075,9 +1076,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float PenaltyFreezeDuration { get; set; } = 5f;
 
         /// <summary>
-        /// Bool, true if players has to be freezed before puck drops.
+        /// Bool, true if skaters has to be freezed before puck drops.
         /// </summary>
-        public bool FreezePlayersBeforeDrop { get; set; } = true;
+        public bool FreezeSkatersBeforeDrop { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if goalies has to be freezed before puck drops.
+        /// </summary>
+        public bool FreezeGoaliesBeforeDrop { get; set; } = false;
 
         /// <summary>
         /// Float, number of seconds to freeze players before faceoff ends.
@@ -1133,7 +1139,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             MaxViolationsBeforePenalty = faceoffConfig.MaxViolationsBeforePenalty;
             PenaltyFreezeDistance = faceoffConfig.PenaltyFreezeDistance;
             PenaltyFreezeDuration = faceoffConfig.PenaltyFreezeDuration;
-            FreezePlayersBeforeDrop = faceoffConfig.FreezePlayersBeforeDrop;
+            FreezeSkatersBeforeDrop = faceoffConfig.FreezeSkatersBeforeDrop;
+            FreezeGoaliesBeforeDrop = faceoffConfig.FreezeGoaliesBeforeDrop;
             FreezeBeforeDropTime = faceoffConfig.FreezeBeforeDropTime;
 
             CenterMaxForward = faceoffConfig.CenterMaxForward;
@@ -1195,8 +1202,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (PenaltyFreezeDuration == _oldConfig.PenaltyFreezeDuration)
                 PenaltyFreezeDuration = newConfig.PenaltyFreezeDuration;
 
-            if (FreezePlayersBeforeDrop == _oldConfig.FreezePlayersBeforeDrop)
-                FreezePlayersBeforeDrop = newConfig.FreezePlayersBeforeDrop;
+            if (FreezeSkatersBeforeDrop == _oldConfig.FreezeSkatersBeforeDrop)
+                FreezeSkatersBeforeDrop = newConfig.FreezeSkatersBeforeDrop;
+
+            if (FreezeGoaliesBeforeDrop == _oldConfig.FreezeGoaliesBeforeDrop)
+                FreezeGoaliesBeforeDrop = newConfig.FreezeGoaliesBeforeDrop;
 
             if (FreezeBeforeDropTime == _oldConfig.FreezeBeforeDropTime)
                 FreezeBeforeDropTime = newConfig.FreezeBeforeDropTime;

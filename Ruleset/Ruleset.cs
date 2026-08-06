@@ -3183,6 +3183,10 @@ namespace oomtm450PuckMod_Ruleset {
                     PlayerBody playerBody = (PlayerBody)message["playerBody"];
                     if (PenaltyModule.PenalizedPlayers.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out LockList<Penalty> penalties) && penalties.Count != 0)
                         return;
+                    if (Codebase.PlayerFunc.IsGoalie(playerBody.Player) && !ServerConfig.Faceoff.FreezeGoaliesBeforeDrop)
+                        return;
+                    if (!Codebase.PlayerFunc.IsGoalie(playerBody.Player) && !ServerConfig.Faceoff.FreezeSkatersBeforeDrop)
+                        return;
                     _playerUnfreezer?.RegisterPlayer(playerBody, NextFaceoffSpot, _arenaScaleX, _arenaScaleZ);
                 }
             }
@@ -4404,7 +4408,7 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.AddEventListener(nameof(Event_CompetitiveAdjustments_OnArenaSync), Event_CompetitiveAdjustments_OnArenaSync);
                     EventManager.AddEventListener(nameof(Event_Everyone_OnPlayerBodyIsSprintingChanged), Event_Everyone_OnPlayerBodyIsSprintingChanged);
 
-                    if (ServerConfig.Faceoff.FreezePlayersBeforeDrop) {
+                    if (ServerConfig.Faceoff.FreezeSkatersBeforeDrop || ServerConfig.Faceoff.FreezeGoaliesBeforeDrop) {
                         // Create player unfreezer/tether system
                         GameObject playerUnfreezerObj = new GameObject("FaceOffPlayerUnfreezer");
                         _playerUnfreezer = playerUnfreezerObj.AddComponent<FaceOffPlayerUnfreezer>();
