@@ -101,11 +101,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 MaxRightDistance = GetMaxRightDistance(positionName, playerBody.Player.Team, currentFaceoffSpot, arenaScaleX),
             };
 
-            if (positionName != Codebase.PlayerFunc.GOALIE_POSITION && currentFaceoffSpot == FaceoffSpot.Center) {
+            if (positionName != Codebase.PlayerFunc.GOALIE_POSITION && positionName != Codebase.PlayerFunc.CENTER_POSITION && currentFaceoffSpot == FaceoffSpot.Center) {
                 tether.MaxForwardDistance *= 2f;
-                tether.MaxBackwardDistance *= 1.8f;
-                tether.MaxLeftDistance *= 1.8f;
-                tether.MaxRightDistance *= 1.8f;
+                tether.MaxBackwardDistance *= 2f;
+                tether.MaxLeftDistance *= 2f;
+                tether.MaxRightDistance *= 2f;
             }
 
             _playerTethers.Add(tether);

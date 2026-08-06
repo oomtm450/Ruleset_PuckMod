@@ -1086,25 +1086,25 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
         // Center position settings
         public float CenterMaxForward { get; set; } = 0;      // Centers can't move forward at all
-        public float CenterMaxBackward { get; set; } = 2f;    // Backward wall
+        public float CenterMaxBackward { get; set; } = 1.8f;    // Backward wall
         public float CenterMaxLeft { get; set; } = 1f;        // Limited side movement
         public float CenterMaxRight { get; set; } = 1f;
 
         // Winger settings
-        public float WingerMaxForward { get; set; } = 0.5f;     // Wingers can move forward a bit
-        public float WingerMaxBackward { get; set; } = 2f;    // Backward wall
+        public float WingerMaxForward { get; set; } = 0.6f;     // Wingers can move forward a bit
+        public float WingerMaxBackward { get; set; } = 1.8f;    // Backward wall
         public float WingerMaxToward { get; set; } = 0;       // Limited movement toward center (inward wall)
-        public float WingerMaxAway { get; set; } = 2.5f;      // More movement away from center (outward wall toward boards)
+        public float WingerMaxAway { get; set; } = 2.3f;      // More movement away from center (outward wall toward boards)
 
         // Defense settings
         public float DefenseMaxForward { get; set; } = 0;     // Defense can't move forward at all
         public float DefenseMaxBackward { get; set; } = 0;    // Backward wall
-        public float DefenseMaxToward { get; set; } = 2.5f;   // Movement toward center
-        public float DefenseMaxAway { get; set; } = 2.5f;     // Movement away from center (toward boards)
+        public float DefenseMaxToward { get; set; } = 2.4f;   // Movement toward center
+        public float DefenseMaxAway { get; set; } = 2.4f;     // Movement away from center (toward boards)
 
         // Goalie settings
-        public float GoalieMaxForward { get; set; } = 2f;     // Minimal forward movement
-        public float GoalieMaxBackward { get; set; } = 2f;    // Backward wall
+        public float GoalieMaxForward { get; set; } = 2f;
+        public float GoalieMaxBackward { get; set; } = 2f;
         public float GoalieMaxLeft { get; set; } = 2f;
         public float GoalieMaxRight { get; set; } = 2f;
 
