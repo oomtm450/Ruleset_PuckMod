@@ -138,5 +138,6 @@
         public const string REF_PAUSE_DATANAME = "refpause";
         public const string REF_UNPAUSE_DATANAME = "refunpause";
         public const string REF_NEXTFACEOFFSPOT_DATANAME = "refnextfaceoffspot";
+        public const string REF_REVERTTOLASTFACEOFF_DATANAME = "refreverttolastfaceoff";
     }
 }

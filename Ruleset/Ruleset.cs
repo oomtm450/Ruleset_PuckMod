@@ -337,6 +337,8 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, 0 },
         };
 
+        private static readonly LockList<FaceoffState> _lastFaceoffs = new LockList<FaceoffState>();
+
         private static FaceOffPlayerUnfreezer _playerUnfreezer = null;
 
         private static FaceOffPuckValidator _puckValidator = null;
@@ -1201,6 +1203,10 @@ namespace oomtm450PuckMod_Ruleset {
                         _playersWasLastJumpedIntoWithoutPuckTime.Clear();
                         _playersWasLastChargedTime.Clear();
 
+                        _lastFaceoffs.Add(
+                            new FaceoffState(_periodTickRemaining, NextFaceoffSpot, newGameState.BlueScore, newGameState.RedScore, newGameState.Period, newGameState.IsOvertime)
+                        );
+
                         if (!ServerConfig.Faceoff.UseCustomFaceoff) {
                             PenaltyModule.TeleportPlayers();
                             return;
@@ -1574,6 +1580,14 @@ namespace oomtm450PuckMod_Ruleset {
                                 return true;
 
                             NetworkCommunication.SendData(Codebase.Constants.REF_NEXTFACEOFFSPOT_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/refreverttolastfaceoff")) {
+                            content = content.Replace(@"/refreverttolastfaceoff", "").Trim().ToLower();
+                            if (string.IsNullOrEmpty(content))
+                                content = "1";
+
+                            NetworkCommunication.SendData(Codebase.Constants.REF_REVERTTOLASTFACEOFF_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                     }
@@ -2608,7 +2622,8 @@ namespace oomtm450PuckMod_Ruleset {
             _noHighStickFrames.Clear();
         }
 
-        private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3200, int millisecondsPauseMax = 5600, bool clearViolations = true) {
+        private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3200, int millisecondsPauseMax = 5600, bool clearViolations = true,
+            bool setRemainingPeriodTick = true) {
             if (Paused)
                 return;
 
@@ -2635,7 +2650,8 @@ namespace oomtm450PuckMod_Ruleset {
                 Logging.LogError(ex.ToString(), ServerConfig);
             }
 
-            _periodTickRemaining = GameManager.Instance.Tick;
+            if (setRemainingPeriodTick)
+                _periodTickRemaining = GameManager.Instance.Tick;
 
             if (ServerConfig.LogPhaseChangeAndStoppage)
                 Logging.Log($"Time remaining : {_periodTickRemaining}, stoppage on, reason ruleset_faceoff, B {GameManager.Instance.GameState.Value.BlueScore} - R {GameManager.Instance.GameState.Value.RedScore}, P{GameManager.Instance.Period}", ServerConfig);
@@ -3915,7 +3931,50 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             break;
 
+                        if (_lastFaceoffs.Count != 0 && Paused) {
+                            FaceoffState lastFaceoffState = _lastFaceoffs.Last();
+                            lastFaceoffState.FaceoffSpot = NextFaceoffSpot;
+                        }
+
                         SystemChatMessages.Add($"#{nextFaceoffSpotReferee.Number.Value} {nextFaceoffSpotReferee.Username.Value} CHANGED FACEOFF TO {NextFaceoffSpot}");
+                        break;
+
+                    case Codebase.Constants.REF_REVERTTOLASTFACEOFF_DATANAME: // SERVER-SIDE : Redo last faceoff.
+                        if (GameManager.Instance.Phase != GamePhase.Play || Paused)
+                            break;
+
+                        Player revertToLastFaceoffReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (revertToLastFaceoffReferee == null || !revertToLastFaceoffReferee)
+                            break;
+
+                        string revertToLastFaceoffRefereeSteamId = revertToLastFaceoffReferee.SteamId.Value.ToString();
+
+                        if (!IsAdmin(revertToLastFaceoffRefereeSteamId) && !_currentRefsSteamId.Contains(revertToLastFaceoffRefereeSteamId))
+                            break;
+
+                        if (!int.TryParse(dataStr, out int lastFaceoffCount))
+                            break;
+
+                        if (_lastFaceoffs.Count < lastFaceoffCount)
+                            break;
+
+                        List<FaceoffState> lastFaceoffsReversed = new List<FaceoffState>(_lastFaceoffs);
+                        lastFaceoffsReversed.Reverse();
+                        FaceoffState lastFaceoff = lastFaceoffsReversed.ElementAt(lastFaceoffCount - 1);
+                        while (true) {
+                            FaceoffState lastFaceoffToRemove = _lastFaceoffs.Last();
+                            if (lastFaceoffToRemove != lastFaceoff)
+                                _lastFaceoffs.Remove(lastFaceoffToRemove);
+                            else
+                                break;
+                        }
+                        _lastFaceoffs.Remove(lastFaceoff);
+
+                        NextFaceoffSpot = lastFaceoff.FaceoffSpot;
+                        _periodTickRemaining = lastFaceoff.PeriodTickRemaining;
+                        SystemChatMessages.Add($"#{revertToLastFaceoffReferee.Number.Value} {revertToLastFaceoffReferee.Username.Value} REVERTED TO LAST FACEOFF");
+                        GameManager.Instance.Server_SetGameState(null, null, lastFaceoff.Period, lastFaceoff.BlueScore, lastFaceoff.RedScore, lastFaceoff.IsOvertime);
+                        DoFaceoff("", "", 2000, 2500, true, false); // TODO : Config.
                         break;
 
                     case TOGGLE_HIGHSTICK_DATANAME: // SERVER-SIDE : Toggle high stick rule.
@@ -4791,6 +4850,29 @@ namespace oomtm450PuckMod_Ruleset {
         internal Vector3 Position { get; set; }
 
         internal Quaternion Rotation { get; set; }
+    }
+
+    internal class FaceoffState {
+        internal int PeriodTickRemaining { get; set; } = 0;
+
+        internal FaceoffSpot FaceoffSpot { get; set; } = FaceoffSpot.Center;
+
+        internal int BlueScore { get; set; } = 0;
+
+        internal int RedScore { get; set; } = 0;
+
+        internal int Period { get; set; } = 1;
+
+        internal bool IsOvertime { get; set; } = false;
+
+        internal FaceoffState(int periodTickRemaining, FaceoffSpot faceoffSpot, int blueScore, int redScore, int period, bool isOvertime) {
+            PeriodTickRemaining = periodTickRemaining;
+            FaceoffSpot = faceoffSpot;
+            BlueScore = blueScore;
+            RedScore = redScore;
+            Period = period;
+            IsOvertime = isOvertime;
+        }
     }
 
     public static class EnumExtensions {
