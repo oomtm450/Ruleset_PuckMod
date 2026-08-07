@@ -323,6 +323,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static float _puckScale = 1f;
 
+        private static float _puckScaleYHalf = 1f;
+
         private static Rule _lastStoppageReason = Rule.None;
 
         private static readonly LockDictionary<PlayerTeam, int> _lastIcing = new LockDictionary<PlayerTeam, int> {
@@ -521,6 +523,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                 try {
                     _puckScale = (__instance.transform.localScale.x + __instance.transform.localScale.z) / 2;
+                    _puckScaleYHalf = 1f + ((__instance.transform.localScale.y - 1f) / 2f);
+
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
                         PlayerBody playerBody = SystemFunc.GetPlayerBody(collision.gameObject);
@@ -667,7 +671,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int _))
                         _noHighStickFrames.Add(currentPlayerSteamId, int.MaxValue);
 
-                    if (__instance && __instance.Rigidbody.transform.position.y <= ServerConfig.HighStick.MaxHeight + ArenaOffsetY)
+                    if (__instance && __instance.Rigidbody.transform.position.y <= (ServerConfig.HighStick.MaxHeight * _puckScaleYHalf) + ArenaOffsetY)
                         _noHighStickFrames[currentPlayerSteamId] = 0;
 
                     var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
@@ -678,7 +682,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId ||
                             !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
                                 __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter, isGoalie, __instance.Rigidbody.transform.position.y,
-                                ServerConfig.Faceoff.PuckIceContactHeight)) {
+                                ServerConfig.Faceoff.PuckIceContactHeight * _puckScaleYHalf)) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
                             if (!isGoalie && playerHasPossession)
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(stick.Player.Team), __instance);
@@ -782,7 +786,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId ||
                             !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
                                 __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter, isGoalie, __instance.Rigidbody.transform.position.y,
-                                ServerConfig.Faceoff.PuckIceContactHeight)) {
+                                ServerConfig.Faceoff.PuckIceContactHeight * _puckScaleYHalf)) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
                             if (!isGoalie && playerHasPossession)
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(stick.Player.Team), __instance);
@@ -817,7 +821,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsHighStickEnabled(stick.Player.Team) && __instance &&
                         !isGoalie &&
                         !playerHasPossession &&
-                        __instance.Rigidbody.transform.position.y > ServerConfig.HighStick.MaxHeight + ArenaOffsetY) {
+                        __instance.Rigidbody.transform.position.y > (ServerConfig.HighStick.MaxHeight * _puckScaleYHalf) + ArenaOffsetY) {
                         if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
                             noHighStickFrames = int.MaxValue;
                             _noHighStickFrames.Add(currentPlayerSteamId, noHighStickFrames);
