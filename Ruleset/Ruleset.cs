@@ -1205,9 +1205,11 @@ namespace oomtm450PuckMod_Ruleset {
                         _playersWasLastJumpedIntoWithoutPuckTime.Clear();
                         _playersWasLastChargedTime.Clear();
 
-                        _lastFaceoffs.Add(
-                            new FaceoffState(_periodTickRemaining, NextFaceoffSpot, newGameState.BlueScore, newGameState.RedScore, newGameState.Period, newGameState.IsOvertime)
-                        );
+                        if (_periodTickRemaining != -1) {
+                            _lastFaceoffs.Add(
+                                new FaceoffState(_periodTickRemaining, NextFaceoffSpot, newGameState.BlueScore, newGameState.RedScore, newGameState.Period, newGameState.IsOvertime)
+                            );
+                        }
 
                         if (!ServerConfig.Faceoff.UseCustomFaceoff) {
                             PenaltyModule.TeleportPlayers();
@@ -1719,7 +1721,7 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.LogError($"Error in {nameof(PhysicsManager_Update_Patch)} Postfix() 0.\n{ex}", ServerConfig);
                 }
 
-                if (GameManager.Instance.Phase != GamePhase.Play || !Logic)
+                if (!Logic)
                     return;
 
                 Puck puck = null;
@@ -1731,6 +1733,17 @@ namespace oomtm450PuckMod_Ruleset {
                 };
 
                 try {
+                    // If game was paused by the mod, don't do anything if faceoff hasn't being set yet.
+                    if (Paused && !_doFaceoff)
+                        return;
+
+                    // Unpause game and set faceoff.
+                    if (_doFaceoff)
+                        PostDoFaceoff();
+
+                    if (GameManager.Instance.Phase != GamePhase.Play)
+                        return;
+
                     // Check if high stick has been called by an event that cannot call it off by itself.
                     foreach (PlayerTeam callHighStickTeam in new List<PlayerTeam>(_callHighStickNextFrame.Keys)) {
                         if (!_callHighStickNextFrame[callHighStickTeam])
@@ -1739,14 +1752,6 @@ namespace oomtm450PuckMod_Ruleset {
                         CallHighStick(callHighStickTeam);
                         break;
                     }
-
-                    // If game was paused by the mod, don't do anything if faceoff hasn't being set yet.
-                    if (Paused && !_doFaceoff)
-                        return;
-
-                    // Unpause game and set faceoff.
-                    if (_doFaceoff)
-                        PostDoFaceoff();
 
                     players = PlayerManager.Instance.GetPlayers();
                     puck = PuckManager.Instance.GetPuck();
@@ -2510,6 +2515,8 @@ namespace oomtm450PuckMod_Ruleset {
         private static void ResetGame(bool resetRefSteamIds = true) {
             NextFaceoffSpot = FaceoffSpot.Center;
             _lastStoppageReason = Rule.None;
+            _periodTickRemaining = -1;
+            _lastFaceoffs.Clear();
 
             foreach (PlayerTeam key in new List<PlayerTeam>(_lastIcing.Keys))
                 _lastIcing[key] = int.MaxValue;
@@ -3941,8 +3948,8 @@ namespace oomtm450PuckMod_Ruleset {
                         SystemChatMessages.Add($"#{nextFaceoffSpotReferee.Number.Value} {nextFaceoffSpotReferee.Username.Value} CHANGED FACEOFF TO {NextFaceoffSpot}");
                         break;
 
-                    case Codebase.Constants.REF_REVERTTOLASTFACEOFF_DATANAME: // SERVER-SIDE : Redo last faceoff.
-                        if (GameManager.Instance.Phase != GamePhase.Play || Paused)
+                    case Codebase.Constants.REF_REVERTTOLASTFACEOFF_DATANAME: // SERVER-SIDE : Redo last x faceoff.
+                        if ((GameManager.Instance.Phase != GamePhase.Play && GameManager.Instance.Phase != GamePhase.FaceOff) || Paused)
                             break;
 
                         Player revertToLastFaceoffReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
@@ -3974,8 +3981,23 @@ namespace oomtm450PuckMod_Ruleset {
 
                         NextFaceoffSpot = lastFaceoff.FaceoffSpot;
                         _periodTickRemaining = lastFaceoff.PeriodTickRemaining;
-                        SystemChatMessages.Add($"#{revertToLastFaceoffReferee.Number.Value} {revertToLastFaceoffReferee.Username.Value} REVERTED TO LAST FACEOFF");
-                        GameManager.Instance.Server_SetGameState(null, null, lastFaceoff.Period, lastFaceoff.BlueScore, lastFaceoff.RedScore, lastFaceoff.IsOvertime);
+
+                        if (dataStr == "1")
+                            SystemChatMessages.Add($"#{revertToLastFaceoffReferee.Number.Value} {revertToLastFaceoffReferee.Username.Value} REVERTED TO LAST FACEOFF");
+                        else {
+                            char lastFaceoffCountLastChar = dataStr.Last();
+                            if (lastFaceoffCountLastChar == '1')
+                                SystemChatMessages.Add($"#{revertToLastFaceoffReferee.Number.Value} {revertToLastFaceoffReferee.Username.Value} REVERTED TO {dataStr}ST FACEOFF");
+                            else if (lastFaceoffCountLastChar == '2')
+                                SystemChatMessages.Add($"#{revertToLastFaceoffReferee.Number.Value} {revertToLastFaceoffReferee.Username.Value} REVERTED TO {dataStr}ND LAST FACEOFF");
+                            else if (lastFaceoffCountLastChar == '3')
+                                SystemChatMessages.Add($"#{revertToLastFaceoffReferee.Number.Value} {revertToLastFaceoffReferee.Username.Value} REVERTED TO {dataStr}RD LAST FACEOFF");
+                            else
+                                SystemChatMessages.Add($"#{revertToLastFaceoffReferee.Number.Value} {revertToLastFaceoffReferee.Username.Value} REVERTED TO {dataStr}TH LAST FACEOFF");
+                        }
+
+                        GameManager.Instance.Server_SetGameState(GamePhase.Play, _periodTickRemaining, lastFaceoff.Period, lastFaceoff.BlueScore, lastFaceoff.RedScore, lastFaceoff.IsOvertime);
+                        _paused = false;
                         DoFaceoff("", "", 2000, 2500, true, false); // TODO : Config.
                         break;
 
