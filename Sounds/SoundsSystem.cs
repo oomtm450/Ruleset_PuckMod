@@ -323,7 +323,7 @@ namespace oomtm450PuckMod_Sounds {
                 }
 
                 if (webRequest.result != UnityWebRequest.Result.Success)
-                    Warnings.Add(webRequest.error);
+                    Warnings.Add($"WebRequestAudioClipAsync {nameof(webRequest)}.{nameof(webRequest.result)} was not a success. ({filePath}, {new Uri(filePath).AbsolutePath})\n{webRequest.error}");
                 else {
                     try {
                         AudioClip clip = downloadHandler.audioClip;
