@@ -1103,10 +1103,12 @@ namespace oomtm450PuckMod_Ruleset {
 
                         NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
-                        if (PenaltyModule.PenalizedPlayersCountBlueTeam != PenaltyModule.PenalizedPlayersCountRedTeam) {
-                            if (newGameState.Phase == GamePhase.BlueScore)
+                        if (newGameState.Phase == GamePhase.BlueScore) {
+                            if (PenaltyModule.PenalizedPlayersCountRedTeam > PenaltyModule.PenalizedPlayersCountBlueTeam)
                                 PenaltyModule.RemoveOnePenalty(PlayerTeam.Red, true);
-                            else if (newGameState.Phase == GamePhase.RedScore)
+                        }  
+                        else if (newGameState.Phase == GamePhase.RedScore) {
+                            if (PenaltyModule.PenalizedPlayersCountBlueTeam > PenaltyModule.PenalizedPlayersCountRedTeam)
                                 PenaltyModule.RemoveOnePenalty(PlayerTeam.Blue, true);
                         }
                     }
