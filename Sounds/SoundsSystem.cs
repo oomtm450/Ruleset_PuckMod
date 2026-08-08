@@ -298,13 +298,13 @@ namespace oomtm450PuckMod_Sounds {
             if (!AudioHasToBePreloaded(clipName))
                 return;
 
-            await WebRequestAudioClipAsync(clipName, new Uri(clipSettings.FilePath).AbsoluteUri, cancellationToken);
+            await WebRequestAudioClipAsync(clipName, new Uri(clipSettings.FilePath), cancellationToken);
         }
 
-        private async Awaitable WebRequestAudioClipAsync(string clipName, string filePath, CancellationToken cancellationToken = default) {
+        private async Awaitable WebRequestAudioClipAsync(string clipName, Uri fileUri, CancellationToken cancellationToken = default) {
             await Awaitable.MainThreadAsync();
 
-            using (UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(filePath, AudioType.OGGVORBIS)) {
+            using (UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(fileUri, AudioType.OGGVORBIS)) {
                 DownloadHandlerAudioClip downloadHandler = (DownloadHandlerAudioClip)webRequest.downloadHandler;
 
                 downloadHandler.streamAudio = true;
@@ -323,7 +323,7 @@ namespace oomtm450PuckMod_Sounds {
                 }
 
                 if (webRequest.result != UnityWebRequest.Result.Success)
-                    Warnings.Add($"{nameof(WebRequestAudioClipAsync)} {nameof(webRequest)}.{nameof(webRequest.result)} was not a success. ({filePath})\n{webRequest.error}");
+                    Warnings.Add($"{nameof(WebRequestAudioClipAsync)} {nameof(webRequest)}.{nameof(webRequest.result)} was not {nameof(UnityWebRequest.Result.Success)}. ({fileUri.AbsoluteUri})\n{webRequest.error}");
                 else {
                     try {
                         AudioClip clip = downloadHandler.audioClip;
@@ -419,7 +419,7 @@ namespace oomtm450PuckMod_Sounds {
                 if (!Sounds.ClientConfig.LazyLoading)
                     return;
 
-                await WebRequestAudioClipAsync(name, new Uri(soundSettings.FilePath).AbsoluteUri);
+                await WebRequestAudioClipAsync(name, new Uri(soundSettings.FilePath));
                 clip = _audioClips.FirstOrDefault(x => x.name == name);
                 if (clip == null)
                     return;
