@@ -98,7 +98,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private IEnumerator GetSprites(string path, PlayerTeam team) {
             foreach (string file in Directory.GetFiles(path, "*" + IMAGE_EXTENSION, SearchOption.AllDirectories)) {
-                string filePath = new Uri(Path.GetFullPath(file)).AbsolutePath;
+                string filePath = new Uri(Path.GetFullPath(file)).AbsoluteUri;
                 UnityWebRequest webRequest = UnityWebRequestTexture.GetTexture(filePath);
                 yield return webRequest.SendWebRequest();
 
