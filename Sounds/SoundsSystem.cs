@@ -298,7 +298,7 @@ namespace oomtm450PuckMod_Sounds {
             if (!AudioHasToBePreloaded(clipName))
                 return;
 
-            await WebRequestAudioClipAsync(clipName, clipSettings.FilePath, cancellationToken);
+            await WebRequestAudioClipAsync(clipName, new Uri(clipSettings.FilePath).AbsoluteUri, cancellationToken);
         }
 
         private async Awaitable WebRequestAudioClipAsync(string clipName, string filePath, CancellationToken cancellationToken = default) {
@@ -323,7 +323,7 @@ namespace oomtm450PuckMod_Sounds {
                 }
 
                 if (webRequest.result != UnityWebRequest.Result.Success)
-                    Warnings.Add($"WebRequestAudioClipAsync {nameof(webRequest)}.{nameof(webRequest.result)} was not a success. ({filePath}, {new Uri(filePath).AbsolutePath})\n{webRequest.error}");
+                    Warnings.Add($"{nameof(WebRequestAudioClipAsync)} {nameof(webRequest)}.{nameof(webRequest.result)} was not a success. ({filePath})\n{webRequest.error}");
                 else {
                     try {
                         AudioClip clip = downloadHandler.audioClip;
@@ -419,7 +419,7 @@ namespace oomtm450PuckMod_Sounds {
                 if (!Sounds.ClientConfig.LazyLoading)
                     return;
 
-                await WebRequestAudioClipAsync(name, soundSettings.FilePath);
+                await WebRequestAudioClipAsync(name, new Uri(soundSettings.FilePath).AbsoluteUri);
                 clip = _audioClips.FirstOrDefault(x => x.name == name);
                 if (clip == null)
                     return;
