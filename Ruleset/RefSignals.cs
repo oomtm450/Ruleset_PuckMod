@@ -103,7 +103,7 @@ namespace oomtm450PuckMod_Ruleset {
                 yield return webRequest.SendWebRequest();
 
                 if (webRequest.result != UnityWebRequest.Result.Success)
-                    Errors.Add(webRequest.error);
+                    Errors.Add($"Error in {nameof(GetSprites)}. {nameof(webRequest)}.{nameof(webRequest.result)} is not {nameof(UnityWebRequest.Result.Success)} ({filePath}).\n{webRequest.error}");
                 else {
                     try {
                         string fileName = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(IMAGE_EXTENSION, "");
