@@ -395,6 +395,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds on the other team.
         /// </summary>
         public int DelayOfGameMillisecondsThreshold { get; set; } = 25;
+        /// <summary>
+        /// Int, delay of game can be called after this number of milliseconds after a faceoff since the last touch.
+        /// </summary>
+        public int DelayOfGameFaceoffProtectionMilliseconds { get; set; } = 2000;
 
         /// <summary>
         /// Bool, true if faceoff violation penalty is enabled.
@@ -490,6 +494,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             DelayOfGameTime = penaltyConfig.DelayOfGameTime;
             DelayOfGameZDelta = penaltyConfig.DelayOfGameZDelta;
             DelayOfGameMillisecondsThreshold = penaltyConfig.DelayOfGameMillisecondsThreshold;
+            DelayOfGameFaceoffProtectionMilliseconds = penaltyConfig.DelayOfGameFaceoffProtectionMilliseconds;
 
             FaceoffViolation = penaltyConfig.FaceoffViolation;
             FaceoffViolationTime = penaltyConfig.FaceoffViolationTime;
@@ -571,6 +576,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (DelayOfGameMillisecondsThreshold == _oldConfig.DelayOfGameMillisecondsThreshold)
                 DelayOfGameMillisecondsThreshold = newConfig.DelayOfGameMillisecondsThreshold;
+
+            if (DelayOfGameFaceoffProtectionMilliseconds == _oldConfig.DelayOfGameFaceoffProtectionMilliseconds)
+                DelayOfGameFaceoffProtectionMilliseconds = newConfig.DelayOfGameFaceoffProtectionMilliseconds;
 
 
             if (FaceoffViolation == _oldConfig.FaceoffViolation)

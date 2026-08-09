@@ -1823,10 +1823,12 @@ namespace oomtm450PuckMod_Ruleset {
                             Logging.Log($"(lastTouchTime.LastTouchTime - lastTouchOtherTeamTime.LastTouchTime).TotalMilliseconds : {(lastTouchTime.LastTouchTime - lastTouchOtherTeamTime.LastTouchTime).TotalMilliseconds}", ServerConfig, true); // TODO
                             Logging.Log($"ServerConfig.Penalty.DelayOfGameMillisecondsThreshold : {ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}", ServerConfig, true); // TODO
                             Logging.Log("otherTeamTouchedTooClose : " + otherTeamTouchedTooClose, ServerConfig, true); // TODO
+                            Logging.Log("ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (_lastFaceoffs.Last().DateTime - DateTime.UtcNow).TotalMilliseconds - (_faceoffDuration * 1000) : " + (ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (_lastFaceoffs.Last().DateTime - DateTime.UtcNow).TotalMilliseconds - (_faceoffDuration * 1000)), ServerConfig, true); // TODO
 
                             playerTouched = (playerTouched || playerWasLastInPossession);
                             if (!playerTouched ||
                                 otherTeamTouchedTooClose ||
+                                ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (_lastFaceoffs.Last().DateTime - DateTime.UtcNow).TotalMilliseconds - (_faceoffDuration * 1000) ||
                                 (playerTouched && _puckDeflectedTimeSinceLastTouch > lastTouchTime.LastTouchTime) ||
                                 (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_Zone)) {
                                 CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
