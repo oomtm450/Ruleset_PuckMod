@@ -537,19 +537,15 @@ namespace oomtm450PuckMod_Ruleset {
 
                         PlayerTeam playerOtherTeam = TeamFunc.GetOtherTeam(playerBody.Player.Team);
                         if (IsIcingPossible(__instance, playerOtherTeam)) {
-                            if (IsIcing(playerOtherTeam)) {
-                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerOtherTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send stop icing signal for client-side UI.
-                                SendChat(Rule.Icing, playerOtherTeam, true, true);
-                            }
+                            if (IsIcing(playerOtherTeam))
+                                WarnIcing(false, playerOtherTeam);
                             ResetIcings();
                         }
                         else if (IsIcingPossible(__instance, playerBody.Player.Team)) {
                             if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var playerZone)) {
                                 if (ZoneFunc.GetTeamZones(playerOtherTeam, true).Any(x => x == playerZone.Zone)) {
-                                    if (IsIcing(playerBody.Player.Team)) {
-                                        NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, playerBody.Player.Team), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send stop icing signal for client-side UI.
-                                        SendChat(Rule.Icing, playerBody.Player.Team, true, true);
-                                    }
+                                    if (IsIcing(playerBody.Player.Team))
+                                        WarnIcing(false, playerBody.Player.Team);
                                 }
                             }
                             ResetIcings();
@@ -613,8 +609,7 @@ namespace oomtm450PuckMod_Ruleset {
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(stick.Player.Team);
                     if (IsHighStick(otherTeam)) {
                         _isHighStickActive[otherTeam] = false;
-                        NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, otherTeam), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                        SendChat(Rule.HighStick, otherTeam, true, true);
+                        WarnHighStick(false, otherTeam);
                     }
                 }
                 catch (Exception ex) {
@@ -724,16 +719,13 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!isGoalie)
                             CallIcing(otherTeam);
                         else {
-                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, otherTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send stop icing signal for client-side UI.
-                            SendChat(Rule.Icing, otherTeam, true, true);
+                            WarnIcing(false, otherTeam);
                             ResetIcings();
                         }
                     }
                     else {
-                        if (IsIcing(stick.Player.Team)) {
-                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, stick.Player.Team), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send stop icing signal for client-side UI.
-                            SendChat(Rule.Icing, stick.Player.Team, true, true);
-                        }
+                        if (IsIcing(stick.Player.Team))
+                            WarnIcing(false, stick.Player.Team);
                         ResetIcings();
                     }
                 }
@@ -836,8 +828,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (!IsHighStick(stick.Player.Team)) {
                                 _isHighStickActive[stick.Player.Team] = true;
                                 _puckLastStateBeforeCall[Rule.HighStick] = (__instance.Rigidbody.transform.position, _puckZone);
-                                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, stick.Player.Team), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                                SendChat(Rule.HighStick, stick.Player.Team, false);
+                                WarnHighStick(true, stick.Player.Team);
                             }
                         }
                     }
@@ -1594,6 +1585,18 @@ namespace oomtm450PuckMod_Ruleset {
                             NetworkCommunication.SendData(Codebase.Constants.REF_REVERTTOLASTFACEOFF_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
+                        else if (content.StartsWith(@"/refcallpending")) {
+                            content = content.Replace(@"/refcallpending", "").Trim().ToLower();
+                            if (string.IsNullOrEmpty(content))
+                                return false;
+
+                            content = content.Trim();
+                            if (content.Split(' ').Length != 3)
+                                return false;
+
+                            NetworkCommunication.SendData(Codebase.Constants.REF_CALLPENDING_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
+                        }
                     }
                 }
                 catch (Exception ex) {
@@ -2018,10 +2021,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (closestPlayerToPuckTeam != PlayerTeam.None) {
                             if (IsIcing(closestPlayerToPuckTeam)) {
-                                if (icingHasToBeWarned[closestPlayerToPuckTeam] == null) {
-                                    NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, closestPlayerToPuckTeam), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send stop icing signal for client-side UI
-                                    SendChat(Rule.Icing, closestPlayerToPuckTeam, true, true);
-                                }
+                                if (icingHasToBeWarned[closestPlayerToPuckTeam] == null)
+                                    WarnIcing(false, closestPlayerToPuckTeam);
                                 else
                                     icingHasToBeWarned[closestPlayerToPuckTeam] = false;
                             }
@@ -2058,8 +2059,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // Warn icings.
                     foreach (var kvp in icingHasToBeWarned) {
                         if (kvp.Value != null && (bool)kvp.Value) {
-                            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, kvp.Key), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send show icing signal for client-side UI.
-                            SendChat(Rule.Icing, kvp.Key, false);
+                            WarnIcing(true, kvp.Key);
                             break;
                         }
                     }
@@ -2569,18 +2569,40 @@ namespace oomtm450PuckMod_Ruleset {
             SystemChatMessages.Add($"{prepend}{ruleStr}{teamPart}" + (called ? (" CALLED" + (off ? " OFF" : "")) : "") + (referee != null ? $" BY #{referee.Number.Value} {referee.Username.Value}" : ""));
         }
 
+        private static void WarnCall(bool active, PlayerTeam team, Rule rule) {
+            string signal;
+            if (rule == Rule.Icing)
+                signal = RefSignals.ICING_LINESMAN;
+            else if (rule == Rule.Offside)
+                signal = RefSignals.OFFSIDE_LINESMAN;
+            else if (rule == Rule.HighStick)
+                signal = RefSignals.HIGHSTICK_LINESMAN;
+            else
+                return;
+
+            NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(active, team), signal, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+            SendChat(rule, team, !active, !active);
+        }
+
         private static void WarnOffside(bool active, PlayerTeam team) {
             if (!IsOffsideEnabled(team))
                 return;
 
-            if (active) {
-                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(true, team), RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send show offside signal for client-side UI.
-                SendChat(Rule.Offside, team, false);
-            }
-            else {
-                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.OFFSIDE_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send show offside signal for client-side UI.
-                SendChat(Rule.Offside, team, true, true);
-            }
+            WarnCall(active, team, Rule.Offside);
+        }
+
+        private static void WarnIcing(bool active, PlayerTeam team) {
+            if (!IsIcingEnabled(team))
+                return;
+
+            WarnCall(active, team, Rule.Icing);
+        }
+
+        private static void WarnHighStick(bool active, PlayerTeam team) {
+            if (!IsHighStickEnabled(team))
+                return;
+
+            WarnCall(active, team, Rule.HighStick);
         }
 
         private static void ResetIcings() {
@@ -3497,12 +3519,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         Player offsideReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
-                        if (offsideReferee == null || !offsideReferee)
-                            break;
-
-                        string offsideRefereeSteamId = offsideReferee.SteamId.Value.ToString();
-
-                        if (!IsAdmin(offsideRefereeSteamId) && !_currentRefsSteamId.Contains(offsideRefereeSteamId))
+                        if (!HasRefPowers(offsideReferee))
                             break;
 
                         if (!int.TryParse(dataStr, out int offsideTeamInt))
@@ -3516,12 +3533,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         Player highStickReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
-                        if (highStickReferee == null || !highStickReferee)
-                            break;
-
-                        string highStickRefereeSteamId = highStickReferee.SteamId.Value.ToString();
-
-                        if (!IsAdmin(highStickRefereeSteamId) && !_currentRefsSteamId.Contains(highStickRefereeSteamId))
+                        if (!HasRefPowers(highStickReferee))
                             break;
 
                         if (!int.TryParse(dataStr, out int highStickTeamInt))
@@ -3537,12 +3549,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         Player icingReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
-                        if (icingReferee == null || !icingReferee)
-                            break;
-
-                        string icingRefereeSteamId = icingReferee.SteamId.Value.ToString();
-
-                        if (!IsAdmin(icingRefereeSteamId) && !_currentRefsSteamId.Contains(icingRefereeSteamId))
+                        if (!HasRefPowers(icingReferee))
                             break;
 
                         if (!int.TryParse(dataStr, out int icingTeamInt))
@@ -3556,12 +3563,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         Player gintReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
-                        if (gintReferee == null || !gintReferee)
-                            break;
-
-                        string gintRefereeSteamId = gintReferee.SteamId.Value.ToString();
-
-                        if (!IsAdmin(gintRefereeSteamId) && !_currentRefsSteamId.Contains(gintRefereeSteamId))
+                        if (!HasRefPowers(gintReferee))
                             break;
 
                         if (!int.TryParse(dataStr, out int gIntStoppageTeamInt))
@@ -3572,7 +3574,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     case "refmode": // SERVER-SIDE : Remove rules to make the server reffable. // TODO : Constant.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
-                            return;
+                            break;
 
                         if (ServerConfigBackup != null && (dataStr != "0")) {
                             ServerConfig = new Configs.ServerConfig(ServerConfigBackup);
@@ -3598,7 +3600,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 Logging.Log($"Ref mode has been enabled. (Linesman only)", ServerConfig);
                                 SystemChatMessages.Add("Ref mode has been enabled. (Linesman only)");
 
-                                return;
+                                break;
                             }
                         }
 
@@ -3621,7 +3623,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 Logging.Log($"Ref mode has been enabled. (Referee only)", ServerConfig);
                                 SystemChatMessages.Add("Ref mode has been enabled. (Referee only)");
 
-                                return;
+                                break;
                             }
                         }
 
@@ -3631,7 +3633,7 @@ namespace oomtm450PuckMod_Ruleset {
                             Logging.Log($"Ref mode has been enabled. (Hybrid)", ServerConfig);
                             SystemChatMessages.Add("Ref mode has been enabled. (Hybrid)");
 
-                            return;
+                            break;
                         }
 
                         if (dataStr == "0") {
@@ -3642,14 +3644,14 @@ namespace oomtm450PuckMod_Ruleset {
                                 Logging.Log($"Ref mode has been disabled.", ServerConfig);
                                 SystemChatMessages.Add("Ref mode has been disabled.");
 
-                                return;
+                                break;
                             }
                         }
                         break;
 
                     case "addrefsteamid": // SERVER-SIDE : Add a ref for a game. // TODO : Constant.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
-                            return;
+                            break;
 
                         _currentRefsSteamId.Add(dataStr);
 
@@ -3668,7 +3670,7 @@ namespace oomtm450PuckMod_Ruleset {
                         PuckManager.Instance.Server_SpawnPuck(PenaltyModule.DELAY_OF_GAME_CORNER_TOP_RIGHT_LINE_2_POSITION_2, Quaternion.identity, Vector3.zero).Server_Freeze();*/
 
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
-                            return;
+                            break;
 
                         _currentRefsSteamId.Add(dataStr);
                         _permaRefsSteamId.Add(dataStr);
@@ -3682,7 +3684,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     case "removerefsteamid": // SERVER-SIDE : Remove a ref. // TODO : Constant.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
-                            return;
+                            break;
 
                         _currentRefsSteamId.Remove(dataStr);
 
@@ -3695,7 +3697,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     case "rule": // SERVER-SIDE : Change rule. // TODO : Constant.
                         if (!IsAdmin(clientId))
-                            return;
+                            break;
 
                         if (dataStr.Contains("offside")) {
                             string[] splittedDataStrOff = dataStr.Replace("offside", "").Trim().Split(' ');
@@ -3768,12 +3770,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         Player penReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
-                        if (penReferee == null || !penReferee)
-                            break;
-
-                        string penRefereeSteamId = penReferee.SteamId.Value.ToString();
-
-                        if (string.IsNullOrEmpty(penRefereeSteamId) || (!IsAdmin(penRefereeSteamId) && !_currentRefsSteamId.Contains(penRefereeSteamId)))
+                        if (!HasRefPowers(penReferee))
                             break;
 
                         PenaltyType penaltyType;
@@ -3830,12 +3827,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     case Codebase.Constants.REMOVED_ALL_PENALTIES_REFMODE_DATANAME: // SERVER-SIDE : Remove all penalties.
                         Player removeAllPenReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
-                        if (removeAllPenReferee == null || !removeAllPenReferee)
-                            break;
-
-                        string removeAllPenRefereeSteamId = removeAllPenReferee.SteamId.Value.ToString();
-
-                        if (!IsAdmin(removeAllPenRefereeSteamId) && !_currentRefsSteamId.Contains(removeAllPenRefereeSteamId))
+                        if (!HasRefPowers(removeAllPenReferee))
                             break;
 
                         PenaltyModule.RemoveAllPenalties();
@@ -3843,12 +3835,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     case Codebase.Constants.REMOVE_PENALTY_DATANAME: // SERVER-SIDE : Remove one penalty.
                         Player removePenReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
-                        if (removePenReferee == null || !removePenReferee)
-                            break;
-
-                        string removePenRefereeSteamId = removePenReferee.SteamId.Value.ToString();
-
-                        if (!IsAdmin(removePenRefereeSteamId) && !_currentRefsSteamId.Contains(removePenRefereeSteamId))
+                        if (!HasRefPowers(removePenReferee))
                             break;
 
                         dataStr = dataStr.Trim();
@@ -3869,12 +3856,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         Player pauseReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
-                        if (pauseReferee == null || !pauseReferee)
-                            break;
-
-                        string pauseRefereeSteamId = pauseReferee.SteamId.Value.ToString();
-
-                        if (!IsAdmin(pauseRefereeSteamId) && !_currentRefsSteamId.Contains(pauseRefereeSteamId))
+                        if (!HasRefPowers(pauseReferee))
                             break;
 
                         NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(PlayerTeam.None, Rule.None, _puckLastStateBeforeCall[Rule.None]);
@@ -3895,12 +3877,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         Player unpauseReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
-                        if (unpauseReferee == null || !unpauseReferee)
-                            break;
-
-                        string unpauseRefereeSteamId = unpauseReferee.SteamId.Value.ToString();
-
-                        if (!IsAdmin(unpauseRefereeSteamId) && !_currentRefsSteamId.Contains(unpauseRefereeSteamId))
+                        if (!HasRefPowers(unpauseReferee))
                             break;
 
                         NetworkCommunication.SendDataToAll(SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(SoundsSystem.WHISTLE),
@@ -3914,12 +3891,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         Player nextFaceoffSpotReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
-                        if (nextFaceoffSpotReferee == null || !nextFaceoffSpotReferee)
-                            break;
-
-                        string nextFaceoffSpotRefereeSteamId = nextFaceoffSpotReferee.SteamId.Value.ToString();
-
-                        if (!IsAdmin(nextFaceoffSpotRefereeSteamId) && !_currentRefsSteamId.Contains(nextFaceoffSpotRefereeSteamId))
+                        if (!HasRefPowers(nextFaceoffSpotReferee))
                             break;
 
                         if (dataStr == "c")
@@ -3956,12 +3928,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         Player revertToLastFaceoffReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
-                        if (revertToLastFaceoffReferee == null || !revertToLastFaceoffReferee)
-                            break;
-
-                        string revertToLastFaceoffRefereeSteamId = revertToLastFaceoffReferee.SteamId.Value.ToString();
-
-                        if (!IsAdmin(revertToLastFaceoffRefereeSteamId) && !_currentRefsSteamId.Contains(revertToLastFaceoffRefereeSteamId))
+                        if (!HasRefPowers(revertToLastFaceoffReferee))
                             break;
 
                         if (!int.TryParse(dataStr, out int lastFaceoffCount))
@@ -4002,6 +3969,38 @@ namespace oomtm450PuckMod_Ruleset {
                         GameManager.Instance.Server_SetGameState(GamePhase.Play, _periodTickRemaining, lastFaceoff.Period, lastFaceoff.BlueScore, lastFaceoff.RedScore, lastFaceoff.IsOvertime);
                         _paused = false;
                         DoFaceoff("", "", 2000, 2500, true, false); // TODO : Config.
+                        break;
+
+                    case Codebase.Constants.REF_CALLPENDING_DATANAME: // SERVER-SIDE : Ref call pending.
+                        if (Paused || GameManager.Instance.Phase != GamePhase.Play)
+                            break;
+
+                        Player callPendingReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (!HasRefPowers(callPendingReferee))
+                            break;
+
+                        string[] callPendingDataStrSplitted = dataStr.Split(' ');
+
+                        if (callPendingDataStrSplitted.Length != 3)
+                            break;
+
+                        bool activePendingCall;
+                        if (callPendingDataStrSplitted[0] == "1" || callPendingDataStrSplitted[0] == "true")
+                            activePendingCall = true;
+                        else
+                            activePendingCall = false;
+
+                        if (!int.TryParse(callPendingDataStrSplitted[1], out int callpendingTeamInt))
+                            break;
+
+                        PlayerTeam callpendingTeam = (PlayerTeam)callpendingTeamInt;
+
+                        if (callPendingDataStrSplitted[2].Contains("off"))
+                            WarnOffside(activePendingCall, callpendingTeam);
+                        else if (callPendingDataStrSplitted[2].Contains("ic"))
+                            WarnIcing(activePendingCall, callpendingTeam);
+                        else if (callPendingDataStrSplitted[2].Contains("hs") || callPendingDataStrSplitted[2].Contains("high"))
+                            WarnHighStick(activePendingCall, callpendingTeam);
                         break;
 
                     case TOGGLE_HIGHSTICK_DATANAME: // SERVER-SIDE : Toggle high stick rule.
@@ -4135,6 +4134,21 @@ namespace oomtm450PuckMod_Ruleset {
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(ReceiveData)}.\n{ex}", ServerConfig);
             }
+        }
+
+        private static bool HasRefPowers(Player player) {
+            if (player == null || !player)
+                return false;
+
+            string playerSteamId = player.SteamId.Value.ToString();
+
+            if (string.IsNullOrEmpty(playerSteamId))
+                return false;
+
+            if (!IsAdmin(playerSteamId) && !_currentRefsSteamId.Contains(playerSteamId))
+                return false;
+
+            return true;
         }
 
         private static void LowerBarriers(float boardWindowsDefaultHeight, float arenaScaleY, float arenaOffsetY) {
@@ -4432,8 +4446,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             if (!IsIcingPossible(puck, team, false) && _isIcingActive[team]) {
                 _isIcingActive[team] = false;
-                NetworkCommunication.SendDataToAll(RefSignals.GetSignalConstant(false, team), RefSignals.ICING_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, ServerConfig); // Send stop icing signal for client-side UI.
-                SendChat(Rule.Icing, team, true, true);
+                WarnIcing(false, team);
             }
             else if (!_isIcingActive[team] && IsIcingPossible(puck, team) && _puckZone == ZoneFunc.GetTeamZones(otherTeam)[1]) {
                 _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);

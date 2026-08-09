@@ -139,5 +139,6 @@
         public const string REF_UNPAUSE_DATANAME = "refunpause";
         public const string REF_NEXTFACEOFFSPOT_DATANAME = "refnextfaceoffspot";
         public const string REF_REVERTTOLASTFACEOFF_DATANAME = "refreverttolastfaceoff";
+        public const string REF_CALLPENDING_DATANAME = "refcallpending";
     }
 }
