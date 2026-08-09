@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Configuration;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -134,6 +135,11 @@ namespace oomtm450PuckMod_Ruleset {
         /// Int, duration of a faceoff.
         /// </summary>
         private static int _faceoffDuration = 3;
+
+        /// <summary>
+        /// Int, duration of a period.
+        /// </summary>
+        private static int _playDuration = 299;
 
         /// <summary>
         /// DateTime, DateTime of last play phase start.
@@ -1196,11 +1202,12 @@ namespace oomtm450PuckMod_Ruleset {
                         _playersWasLastJumpedIntoWithoutPuckTime.Clear();
                         _playersWasLastChargedTime.Clear();
 
-                        if (_periodTickRemaining != -1) {
-                            _lastFaceoffs.Add(
-                                new FaceoffState(_periodTickRemaining, NextFaceoffSpot, newGameState.BlueScore, newGameState.RedScore, newGameState.Period, newGameState.IsOvertime)
-                            );
-                        }
+                        if (_periodTickRemaining == -1)
+                            _periodTickRemaining = _playDuration;
+
+                        _lastFaceoffs.Add(
+                            new FaceoffState(_periodTickRemaining, NextFaceoffSpot, newGameState.BlueScore, newGameState.RedScore, newGameState.Period, newGameState.IsOvertime)
+                        );
 
                         if (!ServerConfig.Faceoff.UseCustomFaceoff) {
                             PenaltyModule.TeleportPlayers();
@@ -1383,6 +1390,7 @@ namespace oomtm450PuckMod_Ruleset {
                     ResetGame(false);
 
                     _faceoffDuration = __instance.Config.phaseDurationMap[GamePhase.FaceOff];
+                    _playDuration = __instance.Config.phaseDurationMap[GamePhase.Play];
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(StandardGameMode_OnPreGameTimedOut_Patch)} Prefix().\n{ex}", ServerConfig);
@@ -3915,11 +3923,6 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             break;
 
-                        if (_lastFaceoffs.Count != 0 && Paused) {
-                            FaceoffState lastFaceoffState = _lastFaceoffs.Last();
-                            lastFaceoffState.FaceoffSpot = NextFaceoffSpot;
-                        }
-
                         SystemChatMessages.Add($"#{nextFaceoffSpotReferee.Number.Value} {nextFaceoffSpotReferee.Username.Value} CHANGED FACEOFF TO {NextFaceoffSpot}");
                         break;
 
@@ -4910,6 +4913,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal bool IsOvertime { get; set; } = false;
 
+        internal DateTime DateTime { get; }
+
         internal FaceoffState(int periodTickRemaining, FaceoffSpot faceoffSpot, int blueScore, int redScore, int period, bool isOvertime) {
             PeriodTickRemaining = periodTickRemaining;
             FaceoffSpot = faceoffSpot;
@@ -4917,6 +4922,8 @@ namespace oomtm450PuckMod_Ruleset {
             RedScore = redScore;
             Period = period;
             IsOvertime = isOvertime;
+
+            DateTime = DateTime.UtcNow;
         }
     }
 
