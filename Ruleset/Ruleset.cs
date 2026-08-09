@@ -1588,11 +1588,11 @@ namespace oomtm450PuckMod_Ruleset {
                         else if (content.StartsWith(@"/refcallpending")) {
                             content = content.Replace(@"/refcallpending", "").Trim().ToLower();
                             if (string.IsNullOrEmpty(content))
-                                return false;
+                                return true;
 
                             content = content.Trim();
                             if (content.Split(' ').Length != 3)
-                                return false;
+                                return true;
 
                             NetworkCommunication.SendData(Codebase.Constants.REF_CALLPENDING_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
@@ -3990,7 +3990,12 @@ namespace oomtm450PuckMod_Ruleset {
                         else
                             activePendingCall = false;
 
-                        if (!int.TryParse(callPendingDataStrSplitted[1], out int callpendingTeamInt))
+                        int callpendingTeamInt;
+                        if (callPendingDataStrSplitted[1].StartsWith("b"))
+                            callpendingTeamInt = 1;
+                        else if (callPendingDataStrSplitted[1].StartsWith("r"))
+                            callpendingTeamInt = 2;
+                        if (!int.TryParse(callPendingDataStrSplitted[1], out callpendingTeamInt))
                             break;
 
                         PlayerTeam callpendingTeam = (PlayerTeam)callpendingTeamInt;
