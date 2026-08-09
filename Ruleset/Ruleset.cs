@@ -2308,10 +2308,13 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     if (ServerConfig.LogPhaseChangeAndStoppage && tick != null) {
-                        if (phase == GamePhase.Play || _periodTickRemaining == -1)
-                            Logging.Log($"Time remaining : {tick}, stoppage off, reason {phase}, B {GameManager.Instance.GameState.Value.BlueScore} - R {GameManager.Instance.GameState.Value.RedScore}, P{GameManager.Instance.Period}", ServerConfig);
+                        int tickToUse;
+                        if (_periodTickRemaining == -1)
+                            tickToUse = (int)tick;
                         else
-                            Logging.Log($"Time remaining : {_periodTickRemaining}, stoppage on, reason {phase}, B {GameManager.Instance.GameState.Value.BlueScore} - R {GameManager.Instance.GameState.Value.RedScore}, P{GameManager.Instance.Period}", ServerConfig);
+                            tickToUse = _periodTickRemaining;
+
+                        Logging.Log($"Time remaining : {tickToUse}, stoppage {(phase == GamePhase.Play ? "off" : "on")}, reason {phase}, B {GameManager.Instance.GameState.Value.BlueScore} - R {GameManager.Instance.GameState.Value.RedScore}, P{GameManager.Instance.Period}", ServerConfig);
                     }
 
                     if (phase != GamePhase.PreGame)
