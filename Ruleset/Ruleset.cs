@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Configuration;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -1103,7 +1102,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (newGameState.Phase == GamePhase.BlueScore) {
                             if (PenaltyModule.PenalizedPlayersCountRedTeam > PenaltyModule.PenalizedPlayersCountBlueTeam)
                                 PenaltyModule.RemoveOnePenalty(PlayerTeam.Red, true);
-                        }  
+                        }
                         else if (newGameState.Phase == GamePhase.RedScore) {
                             if (PenaltyModule.PenalizedPlayersCountBlueTeam > PenaltyModule.PenalizedPlayersCountRedTeam)
                                 PenaltyModule.RemoveOnePenalty(PlayerTeam.Blue, true);
@@ -3247,7 +3246,7 @@ namespace oomtm450PuckMod_Ruleset {
                     PlayerBody playerBody = (PlayerBody)message["playerBody"];
                     if (PenaltyModule.PenalizedPlayers.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out LockList<Penalty> penalties) && penalties.Count != 0)
                         return;
-                    
+
                     _playerUnfreezer?.RegisterPlayer(playerBody, NextFaceoffSpot, _arenaScaleX, _arenaScaleZ);
                 }
             }
