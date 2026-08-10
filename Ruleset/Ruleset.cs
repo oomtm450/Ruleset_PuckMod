@@ -3295,6 +3295,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (arenaScaleY == 0)
                                 break;
                             _arenaScaleY = (float)arenaScaleY;
+
                             break;
 
                         case "ArenaScaleWorldZ":
@@ -3302,6 +3303,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (arenaScaleZ == 0)
                                 break;
                             _arenaScaleZ = (float)arenaScaleZ;
+
                             if (arenaScaleZ == 1)
                                 break;
 
