@@ -1340,7 +1340,7 @@ namespace oomtm450PuckMod_Stats {
         [HarmonyPatch(typeof(GameManager), nameof(GameManager.Server_StartTicking))]
         public class GameManager_Server_StartTicking_Patch {
             [HarmonyPostfix]
-            public static void Postfix(GameManager __instance) {
+            public static void Postfix() {
                 try {
                     // If this is not the server, do not use the patch.
                     if (!ServerFunc.IsDedicatedServer())
