@@ -3991,12 +3991,20 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!ServerConfig.RefMode)
                             return;
 
+                        Player removeRefLocalPlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (removeRefLocalPlayer == null || !removeRefLocalPlayer)
+                            break;
+
+                        string removeRefLocalPlayerSteamId = removeRefLocalPlayer.SteamId.Value.ToString();
+
+                        if (dataStr == "-100" && CurrentRefsSteamId.Contains(removeRefLocalPlayerSteamId)) {
+                            RefVote.RemoveRef(removeRefLocalPlayerSteamId);
+                            break;
+                        }
+
                         if (RefVote.RemoveRefVotingInProgress)
                             RefVote.RemoveRefVote(clientId);
                         else {
-                            if (dataStr == "-100")
-                                break;
-
                             Player removeRefPlayer;
 
                             if (long.TryParse(dataStr, out long removeRefPlayerIdentifier)) {
