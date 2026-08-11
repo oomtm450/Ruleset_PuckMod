@@ -3986,7 +3986,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 break;
                             }
 
-                            RefVote.StartAddRefVote(20000, ((PlayerManager.Instance.GetPlayers().Count + 2) / 2) + 1, addRefPlayer);
+                            RefVote.StartAddRefVote(25000, ((PlayerManager.Instance.GetPlayers().Count + 2) / 2) + 1, addRefPlayer);
                         }
                         break;
 
@@ -4022,7 +4022,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (removeRefPlayer == null || !removeRefPlayer)
                                 break;
 
-                            RefVote.StartRemoveRefVote(30000, (PlayerManager.Instance.GetPlayers().Count - 1) / 2, removeRefPlayer);
+                            RefVote.StartRemoveRefVote(30000, (PlayerManager.Instance.GetPlayers().Count - 2) / 2, removeRefPlayer);
                         }
                         break;
 
@@ -4935,9 +4935,9 @@ namespace oomtm450PuckMod_Ruleset {
             if (votesNeeded < ADD_REF_MINIMUM_VOTES)
                 votesNeeded = ADD_REF_MINIMUM_VOTES;
 
-            _addRefVotePlayer = player;
-
             StopAddRef();
+
+            _addRefVotePlayer = player;
 
             _addRefTimer = new Timer((_) => {
                 StopAddRef();
@@ -5004,10 +5004,10 @@ namespace oomtm450PuckMod_Ruleset {
             if (votesNeeded < REMOVE_REF_MINIMUM_VOTES)
                 votesNeeded = REMOVE_REF_MINIMUM_VOTES;
 
+            StopRemoveRef();
+
             _removeRefVotePlayer = player;
             _removeRefVotePlayerSteamId = playerSteamId;
-
-            StopRemoveRef();
 
             _removeRefTimer = new Timer((_) => {
                 StopRemoveRef();
