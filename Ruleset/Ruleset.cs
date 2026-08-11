@@ -1840,6 +1840,9 @@ namespace oomtm450PuckMod_Ruleset {
                             Logging.Log($"ServerConfig.Penalty.DelayOfGameMillisecondsThreshold : {ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}", ServerConfig, true); // TODO
                             Logging.Log("otherTeamTouchedTooClose : " + otherTeamTouchedTooClose, ServerConfig, true); // TODO
                             Logging.Log("ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (_lastFaceoffs.Last().DateTime - DateTime.UtcNow).TotalMilliseconds - (_faceoffDuration * 1000) : " + (ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (_lastFaceoffs.Last().DateTime - DateTime.UtcNow).TotalMilliseconds - (_faceoffDuration * 1000)), ServerConfig, true); // TODO
+                            Logging.Log("ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds : " + ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds, ServerConfig, true); // TODO
+                            Logging.Log("(_lastFaceoffs.Last().DateTime - DateTime.UtcNow).TotalMilliseconds : " + (_lastFaceoffs.Last().DateTime - DateTime.UtcNow).TotalMilliseconds, ServerConfig, true); // TODO
+                            Logging.Log("_faceoffDuration * 1000 : " + (_faceoffDuration * 1000), ServerConfig, true); // TODO
 
                             playerTouched = (playerTouched || playerWasLastInPossession);
                             if (!playerTouched ||
