@@ -998,7 +998,7 @@ namespace oomtm450PuckMod_Sounds {
                             break;
 
                         ServerManager.Instance.Server_KickPlayer(PlayerManager.Instance.GetPlayerByClientId(clientId), DisconnectionCode.Kicked,
-                            $"{Constants.WORKSHOP_MOD_NAME} mod is out of date or was enabled manually. Disable the mod and/or unsubscribe in the workshop and restart your game to update.", false);
+                            $"{Constants.WORKSHOP_MOD_NAME} mod is out of date. Unsubscribe in the workshop and restart your game to update.", false);
 
                         if (!_sentOutOfDateMessage.TryGetValue(clientId, out DateTime lastCheckTime)) {
                             lastCheckTime = DateTime.MinValue;
