@@ -3417,7 +3417,6 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (MOD_VERSION == dataStr)
                             break;
-
                         else if (OLD_MOD_VERSIONS.Contains(dataStr)) {
                             _addServerModVersionOutOfDateMessage = true;
                             break;
