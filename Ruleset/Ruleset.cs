@@ -3133,6 +3133,14 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        public static void Event_Server_OnPlayerRequestTeam(Dictionary<string, object> message) {
+            Player player = (Player)message["player"];
+            PlayerTeam team = (PlayerTeam)message["team"];
+
+            if (team != PlayerTeam.Spectator)
+                RefVote.RemoveRef(player.SteamId.Value.ToString());
+        }
+
         public static void Event_Everyone_OnPlayerGameStateChanged(Dictionary<string, object> message) { // TODO : Optimize by using another function that gets called less often.
             // Use the event to link client Ids to Steam Ids.
             Dictionary<ulong, (string SteamId, string Username)> playersInfo_ToChange = new Dictionary<ulong, (string, string)>();
@@ -4592,6 +4600,7 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.AddEventListener(nameof(Event_Everyone_OnPlayerBodySpawned), Event_Everyone_OnPlayerBodySpawned);
                     EventManager.AddEventListener(nameof(Event_CompetitiveAdjustments_OnArenaSync), Event_CompetitiveAdjustments_OnArenaSync);
                     EventManager.AddEventListener(nameof(Event_Everyone_OnPlayerBodyIsSprintingChanged), Event_Everyone_OnPlayerBodyIsSprintingChanged);
+                    EventManager.AddEventListener(nameof(Event_Server_OnPlayerRequestTeam), Event_Server_OnPlayerRequestTeam);
 
                     if (ServerConfig.Faceoff.FreezeSkatersBeforeDrop || ServerConfig.Faceoff.FreezeGoaliesBeforeDrop) {
                         // Create player unfreezer/tether system
@@ -4657,6 +4666,7 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.RemoveEventListener(nameof(Event_Everyone_OnPlayerBodySpawned), Event_Everyone_OnPlayerBodySpawned);
                     EventManager.RemoveEventListener(nameof(Event_CompetitiveAdjustments_OnArenaSync), Event_CompetitiveAdjustments_OnArenaSync);
                     EventManager.RemoveEventListener(nameof(Event_Everyone_OnPlayerBodyIsSprintingChanged), Event_Everyone_OnPlayerBodyIsSprintingChanged);
+                    EventManager.RemoveEventListener(nameof(Event_Server_OnPlayerRequestTeam), Event_Server_OnPlayerRequestTeam);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
