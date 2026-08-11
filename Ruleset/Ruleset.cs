@@ -4002,7 +4002,7 @@ namespace oomtm450PuckMod_Ruleset {
                                     removeRefPlayer = PlayerManager.Instance.GetPlayerBySteamId(removeRefPlayerIdentifier.ToString());
                             }
                             else
-                                removeRefPlayer = PlayerManager.Instance.GetPlayerByUsername(removeRefPlayerIdentifier.ToString());
+                                removeRefPlayer = PlayerManager.Instance.GetPlayerByUsername(dataStr);
 
                             if (removeRefPlayer == null || !removeRefPlayer)
                                 break;
@@ -4956,7 +4956,7 @@ namespace oomtm450PuckMod_Ruleset {
                 AddRef(_addRefVotePlayer.SteamId.Value.ToString());
             }
             else
-                Ruleset.SystemChatMessages.Add($"Add referee #{_addRefVotePlayer.Number.Value} {_addRefVotePlayer.Username.Value} votes needed {_addRefVotes}/{_addRefVotesNeeded}.");
+                Ruleset.SystemChatMessages.Add($"Add referee #{_addRefVotePlayer.Number.Value} {_addRefVotePlayer.Username.Value} votes needed {_addRefVotes}/{_addRefVotesNeeded}. (/voteref)");
         }
 
         internal static void AddRef(string steamId) {
@@ -4975,11 +4975,16 @@ namespace oomtm450PuckMod_Ruleset {
             if (!Ruleset.ServerConfig.RefMode)
                 return;
 
+            string playerSteamId = _removeRefVotePlayer.SteamId.Value.ToString();
+
+            if (!Ruleset.CurrentRefsSteamId.Contains(playerSteamId))
+                return;
+
             if (votesNeeded < MINIMUM_VOTES)
                 votesNeeded = MINIMUM_VOTES;
 
             _removeRefVotePlayer = player;
-            _removeRefVotePlayerSteamId = _removeRefVotePlayer.SteamId.Value.ToString();
+            _removeRefVotePlayerSteamId = playerSteamId;
 
             StopRemoveRef();
 
@@ -5016,7 +5021,7 @@ namespace oomtm450PuckMod_Ruleset {
                 RemoveRef(_removeRefVotePlayerSteamId);
             }
             else
-                Ruleset.SystemChatMessages.Add($"Remove referee #{_removeRefVotePlayer.Number.Value} {_removeRefVotePlayer.Username.Value} votes needed {_removeRefVotes}/{_removeRefVotesNeeded}.");
+                Ruleset.SystemChatMessages.Add($"Remove referee #{_removeRefVotePlayer.Number.Value} {_removeRefVotePlayer.Username.Value} votes needed {_removeRefVotes}/{_removeRefVotesNeeded}. (/voteremoveref)");
         }
 
         internal static void RemoveRef(string steamId) {
