@@ -140,5 +140,7 @@
         public const string REF_NEXTFACEOFFSPOT_DATANAME = "refnextfaceoffspot";
         public const string REF_REVERTTOLASTFACEOFF_DATANAME = "refreverttolastfaceoff";
         public const string REF_CALLPENDING_DATANAME = "refcallpending";
+        public const string REF_VOTE_DATANAME = "refvote";
+        public const string REF_VOTEREMOVE_DATANAME = "refvoteremove";
     }
 }
