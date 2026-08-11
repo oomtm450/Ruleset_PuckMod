@@ -349,7 +349,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, max height before deferred icing does not check for possibility that the other team touches the puck before icing.
         /// </summary>
-        public float DeferredMaxHeight { get; } = 0.8f;
+        public float DeferredMaxHeight { get; } = 0.8f; // TODO : Change after release.
 
         /// <summary>
         /// Bool, true if icing team stamina has to be drained.

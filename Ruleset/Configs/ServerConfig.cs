@@ -737,7 +737,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, deferred icing max possible time substraction depending of players distance to puck (after addition).
         /// </summary>
-        public float DeferredMaxPossibleTimeDistanceDelta { get; set; } = 175f;
+        public float DeferredMaxPossibleTimeDistanceDelta { get; set; } = 170f;
 
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
@@ -764,7 +764,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, max height before deferred icing does not check for possibility that the other team touches the puck before icing.
         /// </summary>
-        public float DeferredMaxHeight { get; set; } = 0.8f;
+        public float DeferredMaxHeight { get; set; } = 0.75f;
 
         /// <summary>
         /// Bool, true if icing team stamina has to be drained.
