@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.1.0DEV4";
+        private static readonly string MOD_VERSION = "1.1.0DEV5";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -1605,18 +1605,13 @@ namespace oomtm450PuckMod_Ruleset {
                             return false;
                         }
                         else if (content.StartsWith(@"/voteref")) {
-                            if (PlayerManager.Instance.GetLocalPlayer().Team != PlayerTeam.Spectator) {
-                                SystemFunc.AddClientChatMessage("Only spectators can become referees.");
-                                return false;
-                            }
-
                             NetworkCommunication.SendData(Codebase.Constants.REF_VOTE_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                         else if (content.StartsWith(@"/voteremoveref")) {
                             content = content.Replace(@"/voteremoveref", "").Trim().ToLower();
                             if (string.IsNullOrEmpty(content))
-                                return true;
+                                content = "-100";
 
                             NetworkCommunication.SendData(Codebase.Constants.REF_VOTEREMOVE_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
@@ -3982,8 +3977,10 @@ namespace oomtm450PuckMod_Ruleset {
                             if (addRefPlayer == null || !addRefPlayer)
                                 break;
 
-                            if (addRefPlayer.Team != PlayerTeam.Spectator)
+                            if (addRefPlayer.Team != PlayerTeam.Spectator) {
+                                SystemFunc.SendChatMessageToClients("Only spectators can become referees.");
                                 break;
+                            }
 
                             RefVote.StartAddRefVote(20000, ((PlayerManager.Instance.GetPlayers().Count + 2) / 2) + 1, addRefPlayer);
                         }
@@ -3996,6 +3993,9 @@ namespace oomtm450PuckMod_Ruleset {
                         if (RefVote.RemoveRefVotingInProgress)
                             RefVote.RemoveRefVote(clientId);
                         else {
+                            if (dataStr == "-100")
+                                break;
+
                             Player removeRefPlayer;
 
                             if (long.TryParse(dataStr, out long removeRefPlayerIdentifier)) {

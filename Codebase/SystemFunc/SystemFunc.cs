@@ -26,6 +26,20 @@ namespace Codebase {
             ChatManager.Instance.AddChatMessage(chatMsg);
         }
 
+        public static void SendChatMessageToClients(string message, params ulong[] clientIds) {
+            ChatMessage chatMsg = new ChatMessage {
+                SteamID = null,
+                Username = null,
+                Team = null,
+                Content = message,
+                Timestamp = Utils.GetTimestamp(),
+                IsQuickChat = false,
+                IsTeamChat = false,
+                IsSystem = true,
+            };
+            ChatManager.Instance.Server_SendChatMessage(chatMsg, clientIds);
+        }
+
         /// <summary>
         /// Function that returns a Stick instance from a GameObject.
         /// </summary>
