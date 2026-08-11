@@ -4955,7 +4955,7 @@ namespace oomtm450PuckMod_Ruleset {
             _addRefVoteClientIds.Add(clientId);
 
             Interlocked.Increment(ref _addRefVotes);
-            if (_addRefVotes > _addRefVotesNeeded) {
+            if (_addRefVotes >= _addRefVotesNeeded) {
                 StopAddRef();
                 if (_addRefVotePlayer == null || !_addRefVotePlayer)
                     return;
@@ -5030,7 +5030,7 @@ namespace oomtm450PuckMod_Ruleset {
             _removeRefVoteClientIds.Add(clientId);
 
             Interlocked.Increment(ref _removeRefVotes);
-            if (_removeRefVotes > _removeRefVotesNeeded)
+            if (_removeRefVotes >= _removeRefVotesNeeded)
                 RemoveRef(_removeRefVotePlayerSteamId);
             else
                 Ruleset.SystemChatMessages.Add($"Remove referee #{_removeRefVotePlayer.Number.Value} {_removeRefVotePlayer.Username.Value} votes needed {_removeRefVotes}/{_removeRefVotesNeeded}. (/voteremoveref)");
