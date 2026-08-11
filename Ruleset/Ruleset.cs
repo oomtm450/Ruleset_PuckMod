@@ -3969,6 +3969,9 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case Codebase.Constants.REF_VOTE_DATANAME: // SERVER-SIDE : Start a vote to become ref or vote for the current vote.
+                        if (!ServerConfig.RefMode)
+                            return;
+
                         if (RefVote.AddRefVotingInProgress)
                             RefVote.AddRefVote(clientId);
                         else {
@@ -3984,6 +3987,9 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case Codebase.Constants.REF_VOTEREMOVE_DATANAME: // SERVER-SIDE : Start a vote to remove a ref.
+                        if (!ServerConfig.RefMode)
+                            return;
+
                         if (RefVote.RemoveRefVotingInProgress)
                             RefVote.RemoveRefVote(clientId);
                         else {
@@ -4904,6 +4910,9 @@ namespace oomtm450PuckMod_Ruleset {
         internal static bool RemoveRefVotingInProgress => _removeRefTimer != null;
 
         internal static void StartAddRefVote(int timeForVote, int votesNeeded, Player player) {
+            if (!Ruleset.ServerConfig.RefMode)
+                return;
+
             if (votesNeeded < MINIMUM_VOTES)
                 votesNeeded = MINIMUM_VOTES;
 
@@ -4963,6 +4972,9 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void StartRemoveRefVote(int timeForVote, int votesNeeded, Player player) {
+            if (!Ruleset.ServerConfig.RefMode)
+                return;
+
             if (votesNeeded < MINIMUM_VOTES)
                 votesNeeded = MINIMUM_VOTES;
 
