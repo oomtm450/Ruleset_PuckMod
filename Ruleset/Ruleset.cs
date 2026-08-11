@@ -3421,6 +3421,8 @@ namespace oomtm450PuckMod_Ruleset {
                             _addServerModVersionOutOfDateMessage = true;
                             break;
                         }
+                        else if (MOD_VERSION == "1.0.8") // TODO : Remove for release.
+                            break;
 
                         _askForModOutOfDateWarning = true;
                         break;
