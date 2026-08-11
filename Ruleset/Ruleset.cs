@@ -3982,7 +3982,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 break;
 
                             if (addRefPlayer.Team != PlayerTeam.Spectator) {
-                                SystemFunc.SendChatMessageToClients("Only spectators can become referees.");
+                                SystemFunc.SendChatMessageToClients("Only spectators can become referees.", clientId);
                                 break;
                             }
 
