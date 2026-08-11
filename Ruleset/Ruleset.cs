@@ -5040,15 +5040,21 @@ namespace oomtm450PuckMod_Ruleset {
             if (!Ruleset.CurrentRefsSteamId.Contains(steamId))
                 return;
 
+            Player removeRefVotePlayer = _removeRefVotePlayer;
             if (_removeRefVotePlayerSteamId == steamId)
                 StopRemoveRef();
+            else {
+                removeRefVotePlayer = PlayerManager.Instance.GetPlayerBySteamId(steamId);
+                if (!removeRefVotePlayer)
+                    removeRefVotePlayer = null;
+            }
 
-            Ruleset.CurrentRefsSteamId.Remove(steamId);
+                Ruleset.CurrentRefsSteamId.Remove(steamId);
             if (Ruleset.CurrentRefsSteamId.Count == 0)
                 Ruleset.ChangeRefMode(RefMode.AI);
 
-            Ruleset.SystemChatMessages.Add($"#{_removeRefVotePlayer?.Number.Value} {_removeRefVotePlayer?.Username.Value} is not a referee anymore.");
-            Logging.Log($"Removed #{_removeRefVotePlayer?.Number.Value} {_removeRefVotePlayer?.Username.Value} [{_removeRefVotePlayerSteamId}] as a referee.", Ruleset.ServerConfig);
+            Ruleset.SystemChatMessages.Add($"#{removeRefVotePlayer?.Number.Value} {removeRefVotePlayer?.Username.Value} is not a referee anymore.");
+            Logging.Log($"Removed #{removeRefVotePlayer?.Number.Value} {removeRefVotePlayer?.Username.Value} [{steamId}] as a referee.", Ruleset.ServerConfig);
         }
 
         internal static void RemoveAllRefs() {
