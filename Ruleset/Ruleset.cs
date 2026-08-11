@@ -3982,7 +3982,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (addRefPlayer.Team != PlayerTeam.Spectator)
                                 break;
 
-                            RefVote.StartAddRefVote(20, ((PlayerManager.Instance.GetPlayers().Count + 2) / 2) + 1, addRefPlayer);
+                            RefVote.StartAddRefVote(20000, ((PlayerManager.Instance.GetPlayers().Count + 2) / 2) + 1, addRefPlayer);
                         }
                         break;
 
@@ -4007,7 +4007,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (removeRefPlayer == null || !removeRefPlayer)
                                 break;
 
-                            RefVote.StartRemoveRefVote(30, (PlayerManager.Instance.GetPlayers().Count - 1) / 2, removeRefPlayer);
+                            RefVote.StartRemoveRefVote(30000, (PlayerManager.Instance.GetPlayers().Count - 1) / 2, removeRefPlayer);
                         }
                         break;
 
@@ -4909,7 +4909,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static bool RemoveRefVotingInProgress => _removeRefTimer != null;
 
-        internal static void StartAddRefVote(int timeForVote, int votesNeeded, Player player) {
+        internal static void StartAddRefVote(int timeForVoteMilliseconds, int votesNeeded, Player player) {
             if (!Ruleset.ServerConfig.RefMode)
                 return;
 
@@ -4924,7 +4924,7 @@ namespace oomtm450PuckMod_Ruleset {
                 StopAddRef();
                 Ruleset.SystemChatMessages.Add($"Add referee #{_addRefVotePlayer.Number.Value} {_addRefVotePlayer.Username.Value} vote expired.");
             },
-            null, timeForVote, Timeout.Infinite);
+            null, timeForVoteMilliseconds, Timeout.Infinite);
 
             _addRefVotesNeeded = votesNeeded;
             AddRefVote(player.OwnerClientId);
@@ -4971,7 +4971,7 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log($"Added #{_addRefVotePlayer.Number.Value} {_addRefVotePlayer.Username.Value} [{_addRefVotePlayer.SteamId.Value}] as a referee for a game.", Ruleset.ServerConfig);
         }
 
-        internal static void StartRemoveRefVote(int timeForVote, int votesNeeded, Player player) {
+        internal static void StartRemoveRefVote(int timeForVoteMilliseconds, int votesNeeded, Player player) {
             if (!Ruleset.ServerConfig.RefMode)
                 return;
 
@@ -4987,7 +4987,7 @@ namespace oomtm450PuckMod_Ruleset {
                 StopRemoveRef();
                 Ruleset.SystemChatMessages.Add($"Remove referee #{_removeRefVotePlayer.Number.Value} {_removeRefVotePlayer.Username.Value} vote expired.");
             },
-            null, timeForVote, Timeout.Infinite);
+            null, timeForVoteMilliseconds, Timeout.Infinite);
 
             _removeRefVotesNeeded = votesNeeded;
             RemoveRefVote(player.OwnerClientId);
