@@ -28,7 +28,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.1.0DEV6";
+        private static readonly string MOD_VERSION = "1.1.0DEV7";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -3617,13 +3617,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             break;
 
-                        CurrentRefsSteamId.Add(dataStr);
-
-                        Player addedRefSteamIdPlayer = PlayerManager.Instance.GetPlayerBySteamId(dataStr);
-                        if (addedRefSteamIdPlayer != null && addedRefSteamIdPlayer) {
-                            SystemChatMessages.Add($"#{addedRefSteamIdPlayer.Number.Value} {addedRefSteamIdPlayer.Username.Value} is now a referee for a game.");
-                            Logging.Log($"Added #{addedRefSteamIdPlayer.Number.Value} {addedRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee for a game.", ServerConfig);
-                        }
+                        RefVote.AddRef(dataStr);
                         break;
 
                     case "addpermrefsteamid": // SERVER-SIDE : Add a permanent ref (until server restarts). // TODO : Constant.
@@ -3638,7 +3632,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         Player addedPermaRefSteamIdPlayer = PlayerManager.Instance.GetPlayerBySteamId(dataStr);
                         if (addedPermaRefSteamIdPlayer != null && addedPermaRefSteamIdPlayer) {
-                            CurrentRefsSteamId.Add(dataStr);
+                            RefVote.AddRef(dataStr, false);
                             _permaRefsSteamId.Add(dataStr);
 
                             SystemChatMessages.Add($"#{addedPermaRefSteamIdPlayer.Number.Value} {addedPermaRefSteamIdPlayer.Username.Value} is now a referee until server restart.");
@@ -3650,13 +3644,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             break;
 
-                        CurrentRefsSteamId.Remove(dataStr);
-
-                        Player removedRefSteamIdPlayer = PlayerManager.Instance.GetPlayerBySteamId(dataStr);
-                        if (removedRefSteamIdPlayer != null && removedRefSteamIdPlayer) {
-                            SystemChatMessages.Add($"#{removedRefSteamIdPlayer.Number.Value} {removedRefSteamIdPlayer.Username.Value} is not a referee anymore.");
-                            Logging.Log($"Removed #{removedRefSteamIdPlayer.Number.Value} {removedRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee.", ServerConfig);
-                        }
+                        RefVote.RemoveRef(dataStr);
                         break;
 
                     case "rule": // SERVER-SIDE : Change rule. // TODO : Constant.
@@ -3913,6 +3901,8 @@ namespace oomtm450PuckMod_Ruleset {
 
                         if (dataStr == "1")
                             SystemChatMessages.Add($"#{revertToLastFaceoffReferee.Number.Value} {revertToLastFaceoffReferee.Username.Value} REVERTED TO LAST FACEOFF");
+                        else if (dataStr == "11" || dataStr == "12" || dataStr == "13")
+                            SystemChatMessages.Add($"#{revertToLastFaceoffReferee.Number.Value} {revertToLastFaceoffReferee.Username.Value} REVERTED TO {dataStr}TH LAST FACEOFF");
                         else {
                             char lastFaceoffCountLastChar = dataStr.Last();
                             if (lastFaceoffCountLastChar == '1')
