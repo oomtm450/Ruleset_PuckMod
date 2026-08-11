@@ -1640,7 +1640,7 @@ namespace oomtm450PuckMod_Ruleset {
                         content = content.ToLowerInvariant();
 
                         if (content.StartsWith(@"/help"))
-                            SystemFunc.AddClientChatMessage("Ruleset commands:\n* <b>/refscale</b> - Change the scale of the 2D refs images (0.0-2.0)\n* <b>/voteref</b> - Vote to become ref\n* <b>/voteremoveref</b> - Vote to remove a ref (number, name or SteamId)\n");
+                            SystemFunc.AddClientChatMessage("Ruleset commands:\n* <b>/refscale</b> - Change the scale of the 2D refs images (0.0-2.0)\n* <b>/voteref</b> - Vote to become ref\n* <b>/voteremoveref</b> - Vote to remove a ref (number, name or SteamId)\n* <b>REF UI</b> - F8 to open\n");
                     }
                 }
                 catch (Exception ex) {
