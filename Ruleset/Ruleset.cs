@@ -3515,7 +3515,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         ServerManager.Instance.Server_KickPlayer(PlayerManager.Instance.GetPlayerByClientId(clientId), DisconnectionCode.Kicked,
-                            $"{Constants.WORKSHOP_MOD_NAME} mod is out of date. Unsubscribe in the workshop and restart your game to update.", false);
+                            $"PRERELEASE - {Constants.WORKSHOP_MOD_NAME} mod is out of date. Unsubscribe in the workshop and restart your game to update.", false); // TODO : Remove PRERELEASE -
 
                         if (!_sentOutOfDateMessage.TryGetValue(clientId, out DateTime lastCheckTime)) {
                             lastCheckTime = DateTime.MinValue;
