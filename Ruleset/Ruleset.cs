@@ -3987,14 +3987,14 @@ namespace oomtm450PuckMod_Ruleset {
 
                         string removeRefLocalPlayerSteamId = removeRefLocalPlayer.SteamId.Value.ToString();
 
-                        if (dataStr == "-100" && CurrentRefsSteamId.Contains(removeRefLocalPlayerSteamId)) {
-                            RefVote.RemoveRef(removeRefLocalPlayerSteamId);
-                            break;
-                        }
-
                         if (RefVote.RemoveRefVotingInProgress)
-                            RefVote.RemoveRefVote(clientId);
+                            RefVote.RemoveRefVote(clientId, removeRefLocalPlayerSteamId);
                         else {
+                            if (dataStr == "-100" && CurrentRefsSteamId.Contains(removeRefLocalPlayerSteamId)) {
+                                RefVote.RemoveRef(removeRefLocalPlayerSteamId);
+                                break;
+                            }
+
                             Player removeRefPlayer;
 
                             if (long.TryParse(dataStr, out long removeRefPlayerIdentifier)) {
@@ -5013,7 +5013,12 @@ namespace oomtm450PuckMod_Ruleset {
             Interlocked.Exchange(ref _removeRefVotes, 0);
         }
 
-        internal static void RemoveRefVote(ulong clientId) {
+        internal static void RemoveRefVote(ulong clientId, string voterSteamId = "") {
+            if (!string.IsNullOrEmpty(voterSteamId) && _removeRefVotePlayerSteamId == voterSteamId) {
+                RemoveRef(_removeRefVotePlayerSteamId);
+                return;
+            }
+
             if (_removeRefVoteClientIds.Contains(clientId))
                 return;
 
