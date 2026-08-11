@@ -4888,13 +4888,15 @@ namespace oomtm450PuckMod_Ruleset {
     }
 
     internal static class RefVote {
-        private const int MINIMUM_VOTES = 3;
+        private const int ADD_REF_MINIMUM_VOTES = 3;
+
+        private const int REMOVE_REF_MINIMUM_VOTES = 1;
 
         private static Timer _addRefTimer = null;
 
         private static int _addRefVotes = 0;
 
-        private static int _addRefVotesNeeded = MINIMUM_VOTES;
+        private static int _addRefVotesNeeded = ADD_REF_MINIMUM_VOTES;
 
         private static Player _addRefVotePlayer = null;
 
@@ -4904,7 +4906,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static int _removeRefVotes = 0;
 
-        private static int _removeRefVotesNeeded = MINIMUM_VOTES;
+        private static int _removeRefVotesNeeded = REMOVE_REF_MINIMUM_VOTES;
 
         private static Player _removeRefVotePlayer = null;
 
@@ -4920,8 +4922,8 @@ namespace oomtm450PuckMod_Ruleset {
             if (!Ruleset.ServerConfig.RefMode)
                 return;
 
-            if (votesNeeded < MINIMUM_VOTES)
-                votesNeeded = MINIMUM_VOTES;
+            if (votesNeeded < ADD_REF_MINIMUM_VOTES)
+                votesNeeded = ADD_REF_MINIMUM_VOTES;
 
             _addRefVotePlayer = player;
 
@@ -4989,8 +4991,8 @@ namespace oomtm450PuckMod_Ruleset {
             if (!Ruleset.CurrentRefsSteamId.Contains(playerSteamId))
                 return;
 
-            if (votesNeeded < MINIMUM_VOTES)
-                votesNeeded = MINIMUM_VOTES;
+            if (votesNeeded < REMOVE_REF_MINIMUM_VOTES)
+                votesNeeded = REMOVE_REF_MINIMUM_VOTES;
 
             _removeRefVotePlayer = player;
             _removeRefVotePlayerSteamId = playerSteamId;
