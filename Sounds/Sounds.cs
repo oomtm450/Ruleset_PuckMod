@@ -559,7 +559,7 @@ namespace oomtm450PuckMod_Sounds {
                         content = content.ToLowerInvariant();
 
                         if (content.StartsWith(@"/help"))
-                            SystemFunc.AddClientChatMessage("Sounds commands:\n* <b>/musicvol</b> - Adjust music volume (0.0-1.0)\n* <b>/hornvol</b> - Adjust horn volume (0.0-1.0)\n* <b>/faceoffvol /warmupvol /goalvol /betweenperiodsvol /gameovervol</b> - Adjust specific music volume (0.0-1.0)\n* <b>/warmupmusic</b> - Disable or enable warmup music (false-true)\n");
+                            SystemFunc.AddClientChatMessage("Sounds commands:\n<b>/musicvol</b> - Adjust music volume (0.0-1.0)\n<b>/hornvol</b> - Adjust horn volume (0.0-1.0)\n<b>/faceoffvol /warmupvol /goalvol /betweenperiodsvol /gameovervol</b> - Adjust specific music volume (0.0-1.0)\n<b>/warmupmusic</b> - Disable or enable warmup music (false-true)\n");
                     }
                 }
                 catch (Exception ex) {
