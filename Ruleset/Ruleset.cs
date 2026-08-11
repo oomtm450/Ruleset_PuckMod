@@ -2,6 +2,7 @@
 using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.FaceoffViolation;
+using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -2552,9 +2553,10 @@ namespace oomtm450PuckMod_Ruleset {
                 _icingStaminaDrainPenaltyAmount[key] = 0;
 
             if (resetRefSteamIds) {
-                CurrentRefsSteamId.Clear();
+                RefVote.RemoveAllRefs();
+
                 foreach (string permaRefSteamId in _permaRefsSteamId)
-                    CurrentRefsSteamId.Add(permaRefSteamId);
+                    RefVote.AddRef(permaRefSteamId, false);
             }
 
             PenaltyModule.ResetPenalties();
@@ -4962,7 +4964,7 @@ namespace oomtm450PuckMod_Ruleset {
                 Ruleset.SystemChatMessages.Add($"Add referee #{_addRefVotePlayer.Number.Value} {_addRefVotePlayer.Username.Value} votes needed {_addRefVotes}/{_addRefVotesNeeded}. (/voteref)");
         }
 
-        internal static void AddRef(string steamId) {
+        internal static void AddRef(string steamId, bool showMessage = true) {
             if (Ruleset.CurrentRefsSteamId.Contains(steamId))
                 return;
 
@@ -4970,8 +4972,10 @@ namespace oomtm450PuckMod_Ruleset {
             if (Ruleset.CurrentRefsSteamId.Count == 1)
                 Ruleset.ChangeRefMode(RefMode.Hybrid);
 
-            Ruleset.SystemChatMessages.Add($"#{_addRefVotePlayer.Number.Value} {_addRefVotePlayer.Username.Value} is now a referee for a game.");
-            Logging.Log($"Added #{_addRefVotePlayer.Number.Value} {_addRefVotePlayer.Username.Value} [{_addRefVotePlayer.SteamId.Value}] as a referee for a game.", Ruleset.ServerConfig);
+            if (showMessage) {
+                Ruleset.SystemChatMessages.Add($"#{_addRefVotePlayer.Number.Value} {_addRefVotePlayer.Username.Value} is now a referee for a game.");
+                Logging.Log($"Added #{_addRefVotePlayer.Number.Value} {_addRefVotePlayer.Username.Value} [{_addRefVotePlayer.SteamId.Value}] as a referee for a game.", Ruleset.ServerConfig);
+            }
         }
 
         internal static void StartRemoveRefVote(int timeForVoteMilliseconds, int votesNeeded, Player player) {
@@ -5037,6 +5041,11 @@ namespace oomtm450PuckMod_Ruleset {
 
             Ruleset.SystemChatMessages.Add($"#{_removeRefVotePlayer?.Number.Value} {_removeRefVotePlayer?.Username.Value} is not a referee anymore.");
             Logging.Log($"Removed #{_removeRefVotePlayer?.Number.Value} {_removeRefVotePlayer?.Username.Value} [{_removeRefVotePlayerSteamId}] as a referee.", Ruleset.ServerConfig);
+        }
+
+        internal static void RemoveAllRefs() {
+            Ruleset.CurrentRefsSteamId.Clear();
+            Ruleset.ChangeRefMode(RefMode.AI);
         }
     }
 
