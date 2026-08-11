@@ -175,7 +175,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, delay of game can be called after this number of milliseconds after a faceoff since the last touch.
         /// </summary>
-        public int DelayOfGameFaceoffProtectionMilliseconds { get; } = 2000;
+        public int DelayOfGameFaceoffProtectionMilliseconds { get; } = 2250;
 
         /// <summary>
         /// Bool, true if faceoff violation penalty is enabled.
