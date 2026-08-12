@@ -3949,7 +3949,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 SystemChatMessages.Add($"#{revertToLastFaceoffReferee.Number.Value} {revertToLastFaceoffReferee.Username.Value} REVERTED TO {dataStr}TH LAST FACEOFF");
                         }
 
-                        RefCallFaceoff(_periodTickRemaining, lastFaceoff.Period, lastFaceoff.BlueScore, lastFaceoff.RedScore, lastFaceoff.IsOvertime);
+                        RefCallFaceoff(_periodTickRemaining, lastFaceoff.Period, lastFaceoff.BlueScore, lastFaceoff.RedScore, lastFaceoff.IsOvertime, true);
                         break;
 
                     case Codebase.Constants.REF_CALLPENDING_DATANAME: // SERVER-SIDE : Ref call pending.
@@ -4220,14 +4220,15 @@ namespace oomtm450PuckMod_Ruleset {
             return true;
         }
 
-        private static void RefCallFaceoff(int tick, int period, int blueScore, int redScore, bool isOvertime) {
+        private static void RefCallFaceoff(int tick, int period, int blueScore, int redScore, bool isOvertime, bool ignoreIsPaused = false) {
             if (GameManager.Instance.Phase == GamePhase.Replay) {
                 GameManager.Instance.Server_SetGameState(null, null, period, blueScore, redScore, isOvertime);
                 ChangedPhase = true;
             }
             else {
                 GameManager.Instance.Server_SetGameState(GamePhase.Play, tick, period, blueScore, redScore, isOvertime);
-                _paused = false;
+                if (ignoreIsPaused)
+                    _paused = false;
                 DoFaceoff("", "", 2000, 2500, true, false); // TODO : Config.
             }
         }
