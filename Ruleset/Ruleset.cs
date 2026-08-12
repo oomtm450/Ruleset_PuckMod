@@ -4060,8 +4060,8 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         PlayerTeam disallowedGoalTeam = (PlayerTeam)disallowedGoalTeamInt;
-                        DisallowLastGoal(disallowedGoalTeam);
-                        SystemChatMessages.Add($"#{disallowGoalReferee.Number.Value} {disallowGoalReferee.Username.Value} DISALLOWED {disallowedGoalTeam.ToString().ToUpper()} TEAM GOAL");
+                        if (DisallowLastGoal(disallowedGoalTeam))
+                            SystemChatMessages.Add($"#{disallowGoalReferee.Number.Value} {disallowGoalReferee.Username.Value} DISALLOWED {disallowedGoalTeam.ToString().ToUpper()} TEAM GOAL");
                         break;
 
                     case TOGGLE_HIGHSTICK_DATANAME: // SERVER-SIDE : Toggle high stick rule.
@@ -4197,9 +4197,9 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void DisallowLastGoal(PlayerTeam team) {
+        private static bool DisallowLastGoal(PlayerTeam team) {
             if (_goals[team].Count == 0)
-                return;
+                return false;
 
             FaceoffState lastGoal = _goals[team].Last();
             _goals[team].Remove(lastGoal);
@@ -4207,12 +4207,9 @@ namespace oomtm450PuckMod_Ruleset {
             NextFaceoffSpot = lastGoal.FaceoffSpot;
             _periodTickRemaining = lastGoal.PeriodTickRemaining;
 
-            if (team == PlayerTeam.Blue)
-                lastGoal.BlueScore -= 1;
-            else if (team == PlayerTeam.Red)
-                lastGoal.RedScore -= 1;
-
             RefCallFaceoff(lastGoal.PeriodTickRemaining, lastGoal.Period, lastGoal.BlueScore, lastGoal.RedScore, lastGoal.IsOvertime);
+
+            return true;
         }
 
         private static void RefCallFaceoff(int tick, int period, int blueScore, int redScore, bool isOvertime) {
