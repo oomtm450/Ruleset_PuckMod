@@ -15,7 +15,8 @@ namespace oomtm450PuckMod_Ruleset {
     /// </summary>
     internal class RefSignals : MonoBehaviour {
         #region Constants
-        private const string IMAGES_FOLDER_PATH = "images\\refsignals";
+        private const string IMAGES_FOLDER_PATH_1 = "images";
+        private const string IMAGES_FOLDER_PATH_2 = "refsignals";
         private const string IMAGE_EXTENSION = ".png";
 
         private const string REF_SIGNAL = "refsignal";
@@ -75,7 +76,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 DontDestroyOnLoad(gameObject);
 
-                string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), IMAGES_FOLDER_PATH);
+                string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), IMAGES_FOLDER_PATH_1, IMAGES_FOLDER_PATH_2);
 
                 if (!Directory.Exists(fullPath)) {
                     Logging.LogError($"Images not found at: {fullPath}", Ruleset.ClientConfig);

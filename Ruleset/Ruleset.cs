@@ -2,6 +2,7 @@
 using HarmonyLib;
 using oomtm450PuckMod_Ruleset.Configs;
 using oomtm450PuckMod_Ruleset.FaceoffViolation;
+using oomtm450PuckMod_Ruleset.UI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -28,7 +29,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "1.1.0DEV7";
+        private static readonly string MOD_VERSION = "1.1.0DEV8";
 
         /// <summary>
         /// ReadOnlyCollection of string, last released versions of the mod.
@@ -114,8 +115,6 @@ namespace oomtm450PuckMod_Ruleset {
         private const string TOGGLE_DEFERRED_ICING_DATANAME = Constants.MOD_NAME + "toggledeficing";
         private const string TOGGLE_OFFSIDE_DATANAME = Constants.MOD_NAME + "toggleoff";
         private const string TOGGLE_GINTERFERENCE_DATANAME = Constants.MOD_NAME + "togglegint";
-
-        private const int MAX_PENALTY_TIMER_LABELS = 6;
         #endregion
 
         #region Fields
@@ -390,10 +389,6 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static Label _penaltiesLabelRed = null;
 
-        private static readonly LockList<(string SteamId, PausableTimer Timer)> _penaltyTimers = new LockList<(string SteamId, PausableTimer Timer)>();
-
-        private static Timer _penaltiesLabelTimer = null;
-
         private static RefSignals _refSignalsBlueTeam = null;
 
         private static RefSignals _refSignalsRedTeam = null;
@@ -468,7 +463,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static bool Paused {
+        internal static bool Paused {
             get { return _paused; }
             set {
                 _paused = value;
@@ -2430,7 +2425,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (ServerFunc.IsDedicatedServer())
                         return true;
 
-                    if (_penaltyTimers.Select(x => x.SteamId).Contains(PlayerManager.Instance.GetLocalPlayer().SteamId.Value.ToString()))
+                    if (PenLabelUI.PenaltyTimers.Select(x => x.SteamId).Contains(PlayerManager.Instance.GetLocalPlayer().SteamId.Value.ToString()))
                         return false;
                 }
                 catch (Exception ex) {
@@ -2453,7 +2448,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (ServerFunc.IsDedicatedServer())
                         return true;
 
-                    if (_penaltyTimers.Select(x => x.SteamId).Contains(PlayerManager.Instance.GetLocalPlayer().SteamId.Value.ToString()))
+                    if (PenLabelUI.PenaltyTimers.Select(x => x.SteamId).Contains(PlayerManager.Instance.GetLocalPlayer().SteamId.Value.ToString()))
                         return false;
                 }
                 catch (Exception ex) {
@@ -2476,7 +2471,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (ServerFunc.IsDedicatedServer())
                         return true;
 
-                    if (_penaltyTimers.Select(x => x.SteamId).Contains(PlayerManager.Instance.GetLocalPlayer().SteamId.Value.ToString()))
+                    if (PenLabelUI.PenaltyTimers.Select(x => x.SteamId).Contains(PlayerManager.Instance.GetLocalPlayer().SteamId.Value.ToString()))
                         return false;
                 }
                 catch (Exception ex) {
@@ -3102,6 +3097,8 @@ namespace oomtm450PuckMod_Ruleset {
                     _refSignalsRedTeam.DestroyGameObjects();
                     _refSignalsRedTeam = null;
                 }
+
+                PenLabelUI.Dispose();
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(Event_OnClientStopped)}.\n{ex}", ClientConfig);
@@ -3511,36 +3508,36 @@ namespace oomtm450PuckMod_Ruleset {
                         if (dataStr != "1")
                             break;
 
-                        foreach (var penaltyTimer in _penaltyTimers)
+                        foreach (var penaltyTimer in PenLabelUI.PenaltyTimers)
                             penaltyTimer.Timer.Reset();
-                        _penaltyTimers.Clear();
+                        PenLabelUI.PenaltyTimers.Clear();
                         break;
 
                     case Codebase.Constants.PENALTIES_PAUSED_DATANAME: // CLIENT-SIDE : Pause penalty timers.
                         if (dataStr != "1")
                             break;
 
-                        foreach (var penaltyTimer in _penaltyTimers)
+                        foreach (var penaltyTimer in PenLabelUI.PenaltyTimers)
                             penaltyTimer.Timer.Pause();
                         break;
 
                     case Codebase.Constants.PENALTIES_UNPAUSED_DATANAME: // CLIENT-SIDE : Start penalty timers.
-                        foreach (var penaltyTimer in _penaltyTimers)
+                        foreach (var penaltyTimer in PenLabelUI.PenaltyTimers)
                             penaltyTimer.Timer.Reset();
-                        _penaltyTimers.Clear();
+                        PenLabelUI.PenaltyTimers.Clear();
 
                         string[] dataStrSplittedUnpausedPenalties = dataStr.Split(';');
                         foreach (string playerPenaltyTimer in dataStrSplittedUnpausedPenalties) {
                             string[] playerPenaltyTimerSplitted = playerPenaltyTimer.Split('!');
                             PausableTimer newTimer = new PausableTimer(() => {
-                                _penaltyTimers.Remove(_penaltyTimers.First(x => x.SteamId == playerPenaltyTimerSplitted[0] && x.Timer.TimerEnded()));
-                                if (_penaltyTimers.Count(x => x.SteamId == playerPenaltyTimerSplitted[0]) != 0)
-                                    _penaltyTimers.First().Timer.Start();
+                                PenLabelUI.PenaltyTimers.Remove(PenLabelUI.PenaltyTimers.First(x => x.SteamId == playerPenaltyTimerSplitted[0] && x.Timer.TimerEnded()));
+                                if (PenLabelUI.PenaltyTimers.Count(x => x.SteamId == playerPenaltyTimerSplitted[0]) != 0)
+                                    PenLabelUI.PenaltyTimers.First().Timer.Start();
                             }, long.Parse(playerPenaltyTimerSplitted[1]));
                             if (playerPenaltyTimerSplitted[2] == "1")
                                 newTimer.Start();
 
-                            _penaltyTimers.Add((playerPenaltyTimerSplitted[0], newTimer));
+                            PenLabelUI.PenaltyTimers.Add((playerPenaltyTimerSplitted[0], newTimer));
                         }
                         break;
 
@@ -4360,115 +4357,6 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void AddPenaltiesLabel(UIHUD uiHUD) {
-            try {
-                if (_penaltiesLabelBlue != null)
-                    return;
-
-                Label speedLabel = SystemFunc.GetPrivateField<Label>(typeof(UIHUD), uiHUD, "speedLabel");
-
-                VisualElement container = uiHUD.View; // TODO : Create a new container for the labels (like ref UI).
-
-                _penaltiesLabelBlue = new Label {
-                    name = "PenaltiesLabelBlue",
-                    visible = true,
-                };
-                SetPenaltiesLabel(_penaltiesLabelBlue, speedLabel, true);
-                container.Add(_penaltiesLabelBlue);
-
-                _penaltiesLabelRed = new Label {
-                    name = "PenaltiesLabelRed",
-                    visible = true,
-                };
-                SetPenaltiesLabel(_penaltiesLabelRed, speedLabel, false);
-                container.Add(_penaltiesLabelRed);
-
-                _penaltiesLabelTimer = new Timer(PenaltiesLabelTimerCallback, null, 0, 1000);
-            }
-            catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(AddPenaltiesLabel)}.\n{ex}", ClientConfig);
-            }
-        }
-
-        private static void SetPenaltiesLabel(Label penaltiesLabel, Label referenceLabel, bool blue) {
-            try {
-                if (blue)
-                    penaltiesLabel.style.color = new StyleColor(Color.blue);
-                else
-                    penaltiesLabel.style.color = new StyleColor(Color.red);
-
-                penaltiesLabel.style.fontSize = referenceLabel.resolvedStyle.fontSize;
-                penaltiesLabel.style.unityFont = referenceLabel.resolvedStyle.unityFont;
-                penaltiesLabel.style.unityFontDefinition = referenceLabel.resolvedStyle.unityFontDefinition;
-                penaltiesLabel.style.unityFontStyleAndWeight = referenceLabel.resolvedStyle.unityFontStyleAndWeight;
-                penaltiesLabel.style.position = referenceLabel.resolvedStyle.position;
-                penaltiesLabel.style.justifyContent = Justify.FlexEnd;
-                penaltiesLabel.style.flexDirection = FlexDirection.Column;
-                penaltiesLabel.style.backgroundColor = referenceLabel.resolvedStyle.backgroundColor;
-                penaltiesLabel.style.unityTextOutlineColor = referenceLabel.resolvedStyle.unityTextOutlineColor;
-                penaltiesLabel.style.unityTextOutlineWidth = referenceLabel.resolvedStyle.unityTextOutlineWidth;
-                penaltiesLabel.style.textShadow = new StyleTextShadow(StyleKeyword.Auto);
-
-                penaltiesLabel.style.top = new Length(99.3f - (MAX_PENALTY_TIMER_LABELS * 3), LengthUnit.Percent);
-                if (!blue)
-                    penaltiesLabel.style.marginLeft = new Length(100f - ClientConfig.RedTeamPenaltyTimerXOffset, LengthUnit.Percent);
-                else
-                    penaltiesLabel.style.marginLeft = new Length(6.5f, LengthUnit.Percent);
-            }
-            catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(SetPenaltiesLabel)}.\n{ex}", ClientConfig);
-            }
-        }
-
-        private static void PenaltiesLabelTimerCallback(object stateInfo) {
-            try {
-                if (Paused || _penaltiesLabelBlue == null || _penaltiesLabelRed == null)
-                    return;
-
-                List<(string PlayerIdentity, PausableTimer Timer)> penaltyTimers = new List<(string, PausableTimer)>(_penaltyTimers);
-
-                // Blue team.
-                string penaltyTimersTextBlueTeam = "";
-                var bluePenaltyTimers = penaltyTimers.Where(x => x.PlayerIdentity.StartsWith("B"));
-
-                foreach (var timer in bluePenaltyTimers) {
-                    TimeSpan ts = TimeSpan.FromMilliseconds(timer.Timer.MillisecondsLeft);
-                    penaltyTimersTextBlueTeam += $"{timer.PlayerIdentity.Remove(0, 2)} {string.Format("{0}:{1:00}", (int)ts.TotalMinutes, ts.Seconds)}\n";
-                }
-
-                if (!string.IsNullOrEmpty(penaltyTimersTextBlueTeam))
-                    penaltyTimersTextBlueTeam = penaltyTimersTextBlueTeam.Remove(penaltyTimersTextBlueTeam.Length - 1);
-
-                var redPenaltyTimers = penaltyTimers.Where(x => x.PlayerIdentity.StartsWith("R"));
-                int penaltyNewLineUICount = MAX_PENALTY_TIMER_LABELS - redPenaltyTimers.Count() - bluePenaltyTimers.Count();
-                for (int i = 0; i < penaltyNewLineUICount; i++) {
-                    penaltyTimersTextBlueTeam = "\n" + penaltyTimersTextBlueTeam;
-                }
-
-                _penaltiesLabelBlue.text = penaltyTimersTextBlueTeam;
-
-                // Red team.
-                string penaltyTimersTextRedTeam = "";
-                foreach (var timer in redPenaltyTimers) {
-                    TimeSpan ts = TimeSpan.FromMilliseconds(timer.Timer.MillisecondsLeft);
-                    penaltyTimersTextRedTeam += $"{timer.PlayerIdentity.Remove(0, 2)} {string.Format("{0}:{1:00}", (int)ts.TotalMinutes, ts.Seconds)}\n";
-                }
-
-                if (!string.IsNullOrEmpty(penaltyTimersTextRedTeam))
-                    penaltyTimersTextRedTeam = penaltyTimersTextRedTeam.Remove(penaltyTimersTextRedTeam.Length - 1);
-
-                penaltyNewLineUICount = MAX_PENALTY_TIMER_LABELS - redPenaltyTimers.Count();
-                for (int i = 0; i < penaltyNewLineUICount; i++) {
-                    penaltyTimersTextRedTeam = "\n" + penaltyTimersTextRedTeam;
-                }
-
-                _penaltiesLabelRed.text = penaltyTimersTextRedTeam;
-            }
-            catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(PenaltiesLabelTimerCallback)}.\n{ex}", ClientConfig);
-            }
-        }
-
         private static void CallOffside(PlayerTeam team, Player referee = null, bool intentionalOffsides = true) {
             if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Blue])
                 CallPenalty(PlayerTeam.Blue);
@@ -4793,6 +4681,8 @@ namespace oomtm450PuckMod_Ruleset {
                     _refSignalsRedTeam = null;
                 }
 
+                PenLabelUI.Dispose();
+
                 if (_playerUnfreezer != null) {
                     UnityEngine.Object.Destroy(_playerUnfreezer.gameObject);
                     _playerUnfreezer = null;
@@ -4929,7 +4819,7 @@ namespace oomtm450PuckMod_Ruleset {
                 _refSignalsRedTeam.LoadImages(PlayerTeam.Red);
             }
 
-            AddPenaltiesLabel(UIManager.Instance.Hud);
+            PenLabelUI.AddPenaltiesLabel();
         }
 
         public static float GetDistance(float x1, float z1, float x2, float z2) {
