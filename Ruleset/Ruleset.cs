@@ -4204,10 +4204,10 @@ namespace oomtm450PuckMod_Ruleset {
             FaceoffState lastGoal = _goals[team].Last();
             _goals[team].Remove(lastGoal);
 
+            RefCallFaceoff(lastGoal.PeriodTickRemaining, lastGoal.Period, lastGoal.BlueScore, lastGoal.RedScore, lastGoal.IsOvertime);
+
             NextFaceoffSpot = lastGoal.FaceoffSpot;
             _periodTickRemaining = lastGoal.PeriodTickRemaining;
-
-            RefCallFaceoff(lastGoal.PeriodTickRemaining, lastGoal.Period, lastGoal.BlueScore, lastGoal.RedScore, lastGoal.IsOvertime);
 
             return true;
         }
