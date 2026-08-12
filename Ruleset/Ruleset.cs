@@ -2213,7 +2213,8 @@ namespace oomtm450PuckMod_Ruleset {
                                 secondAssistPlayer = null;
                         }
                         SendSOGDuringGoal(goalPlayer);
-                        RecordGoalStatus(byTeam, puck, GameManager.Instance.Tick, GameManager.Instance.Period, GameManager.Instance.IsOvertime);
+                        RecordGoalStatus(byTeam, puck, GameManager.Instance.Tick, GameManager.Instance.Period, GameManager.Instance.BlueScore, GameManager.Instance.RedScore,
+                            GameManager.Instance.IsOvertime);
                         return true;
                     }
 
@@ -2225,7 +2226,8 @@ namespace oomtm450PuckMod_Ruleset {
                     if (goalPlayer != null)
                         SendSOGDuringGoal(goalPlayer);
 
-                    RecordGoalStatus(byTeam, puck, GameManager.Instance.Tick, GameManager.Instance.Period, GameManager.Instance.IsOvertime);
+                    RecordGoalStatus(byTeam, puck, GameManager.Instance.Tick, GameManager.Instance.Period, GameManager.Instance.BlueScore, GameManager.Instance.RedScore,
+                        GameManager.Instance.IsOvertime);
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(BaseGameMode_ScoreGoal_Patch)} Prefix().\n{ex}", ServerConfig);
@@ -4044,7 +4046,9 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case Codebase.Constants.REF_DISALLOWGOAL_DATANAME: // SERVER-SIDE : Disallow last team goal.
-                        if (GameManager.Instance.Phase != GamePhase.Play && GameManager.Instance.Phase != GamePhase.FaceOff && GameManager.Instance.Phase != GamePhase.Intermission && GameManager.Instance.Phase != GamePhase.Replay)
+                        if (GameManager.Instance.Phase != GamePhase.Play && GameManager.Instance.Phase != GamePhase.FaceOff &&
+                            GameManager.Instance.Phase != GamePhase.Intermission && GameManager.Instance.Phase != GamePhase.Replay &&
+                            GameManager.Instance.Phase != GamePhase.RedScore && GameManager.Instance.Phase != GamePhase.BlueScore)
                             break;
 
                         Player disallowGoalReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
@@ -4202,12 +4206,16 @@ namespace oomtm450PuckMod_Ruleset {
                 return false;
 
             FaceoffState lastGoal = _goals[team].Last();
-            _goals[team].Remove(lastGoal);
 
-            RefCallFaceoff(lastGoal.PeriodTickRemaining, lastGoal.Period, lastGoal.BlueScore, lastGoal.RedScore, lastGoal.IsOvertime);
+            if (lastGoal.IsOvertime && GameManager.Instance.Phase == GamePhase.Replay)
+                return false;
+
+            _goals[team].Remove(lastGoal);
 
             NextFaceoffSpot = lastGoal.FaceoffSpot;
             _periodTickRemaining = lastGoal.PeriodTickRemaining;
+
+            RefCallFaceoff(lastGoal.PeriodTickRemaining, lastGoal.Period, lastGoal.BlueScore, lastGoal.RedScore, lastGoal.IsOvertime);
 
             return true;
         }
@@ -4224,20 +4232,20 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void RecordGoalStatus(PlayerTeam byTeam, Puck puck, int tick, int period, bool isOvertime) {
+        private static void RecordGoalStatus(PlayerTeam byTeam, Puck puck, int tick, int period, int blueScore, int redScore, bool isOvertime) {
             FaceoffSpot faceoffSpot = FaceoffSpot.Center;
 
             if (byTeam == PlayerTeam.Red) {
                 if (puck.Rigidbody.transform.position.x > 0)
-                    NextFaceoffSpot = FaceoffSpot.BlueTeamDZoneRight;
+                    faceoffSpot = FaceoffSpot.BlueTeamDZoneRight;
                 else
-                    NextFaceoffSpot = FaceoffSpot.BlueTeamDZoneLeft;
+                    faceoffSpot = FaceoffSpot.BlueTeamDZoneLeft;
             }
             else if (byTeam == PlayerTeam.Blue) {
                 if (puck.Rigidbody.transform.position.x > 0)
-                    NextFaceoffSpot = FaceoffSpot.RedTeamDZoneRight;
+                    faceoffSpot = FaceoffSpot.RedTeamDZoneRight;
                 else
-                    NextFaceoffSpot = FaceoffSpot.RedTeamDZoneRight;
+                    faceoffSpot = FaceoffSpot.RedTeamDZoneRight;
             }
 
             _goals[byTeam].Add(new FaceoffState {
@@ -4245,6 +4253,8 @@ namespace oomtm450PuckMod_Ruleset {
                 Period = period,
                 PeriodTickRemaining = tick,
                 IsOvertime = isOvertime,
+                BlueScore = blueScore,
+                RedScore = redScore,
             });
         }
 
