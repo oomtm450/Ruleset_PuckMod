@@ -142,5 +142,6 @@
         public const string REF_CALLPENDING_DATANAME = "refcallpending";
         public const string REF_VOTE_DATANAME = "refvote";
         public const string REF_VOTEREMOVE_DATANAME = "refvoteremove";
+        public const string REF_DISALLOWGOAL_DATANAME = "refdisallowgoal";
     }
 }
