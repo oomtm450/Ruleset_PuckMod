@@ -1491,7 +1491,7 @@ namespace oomtm450PuckMod_Ruleset {
                             content = content.Replace(@"/refmode", "").Replace("true", "1").Replace("false", "0").Trim();
                             if (string.IsNullOrEmpty(content))
                                 return true;
-                            NetworkCommunication.SendData("refmode", content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            NetworkCommunication.SendData(Codebase.Constants.REFMODE_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                         else if (content.StartsWith(@"/togglehighstick")) {
@@ -3632,7 +3632,7 @@ namespace oomtm450PuckMod_Ruleset {
                         CallGoalieInt((PlayerTeam)gIntStoppageTeamInt, gintReferee);
                         break;
 
-                    case "refmode": // SERVER-SIDE : Remove rules to make the server reffable. // TODO : Constant.
+                    case Codebase.Constants.REFMODE_DATANAME: // SERVER-SIDE : Remove rules to make the server reffable.
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             break;
 
