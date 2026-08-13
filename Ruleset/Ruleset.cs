@@ -4007,7 +4007,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 break;
                             }
 
-                            RefVote.StartAddRefVote(25000, ((PlayerManager.Instance.GetPlayers().Count + 1) / 2) + 1, addRefPlayer);
+                            RefVote.StartAddRefVote(30000, ((PlayerManager.Instance.GetPlayers().Count + 1) / 2) + 1, addRefPlayer);
                         }
                         break;
 
@@ -4043,7 +4043,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (removeRefPlayer == null || !removeRefPlayer)
                                 break;
 
-                            RefVote.StartRemoveRefVote(30000, (PlayerManager.Instance.GetPlayers().Count - 2) / 2, removeRefPlayer);
+                            RefVote.StartRemoveRefVote(35000, (PlayerManager.Instance.GetPlayers().Count - 2) / 2, removeRefPlayer);
                         }
                         break;
 
