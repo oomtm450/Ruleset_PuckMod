@@ -3633,7 +3633,11 @@ namespace oomtm450PuckMod_Ruleset {
                         break;
 
                     case Codebase.Constants.REFMODE_DATANAME: // SERVER-SIDE : Remove rules to make the server reffable.
-                        if (!ServerConfig.RefMode || !IsAdmin(clientId))
+                        if (!ServerConfig.RefMode)
+                            break;
+
+                        Player refModeReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (!HasRefPowers(refModeReferee))
                             break;
 
                         if (!int.TryParse(dataStr, out int refModeInt))
