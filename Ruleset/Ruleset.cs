@@ -4007,7 +4007,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 break;
                             }
 
-                            RefVote.StartAddRefVote(25000, ((PlayerManager.Instance.GetPlayers().Count + 2) / 2) + 1, addRefPlayer);
+                            RefVote.StartAddRefVote(25000, ((PlayerManager.Instance.GetPlayers().Count + 1) / 2) + 1, addRefPlayer);
                         }
                         break;
 
