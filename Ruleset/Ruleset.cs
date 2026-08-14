@@ -3671,7 +3671,7 @@ namespace oomtm450PuckMod_Ruleset {
                             RefVote.AddRef(dataStr, false);
                             _permaRefsSteamId.Add(dataStr);
 
-                            SystemChatMessages.Add($"#{addedPermaRefSteamIdPlayer.Number.Value} {addedPermaRefSteamIdPlayer.Username.Value} is now a referee until server restart.");
+                            SystemChatMessages.Add($"#{addedPermaRefSteamIdPlayer.Number.Value} {addedPermaRefSteamIdPlayer.Username.Value} is now a referee until server restart. (F7 for UI)");
                             Logging.Log($"Added #{addedPermaRefSteamIdPlayer.Number.Value} {addedPermaRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee until server restart.", ServerConfig);
                         }
                         break;
@@ -4977,13 +4977,17 @@ namespace oomtm450PuckMod_Ruleset {
             if (Ruleset.CurrentRefsSteamId.Contains(steamId))
                 return;
 
+            Player newRef = PlayerManager.Instance.GetPlayerBySteamId(steamId);
+            if (newRef == null || !newRef || newRef.Team != PlayerTeam.Spectator)
+                return;
+
             Ruleset.CurrentRefsSteamId.Add(steamId);
             if (Ruleset.CurrentRefsSteamId.Count == 1)
                 Ruleset.ChangeRefMode(RefMode.Hybrid);
 
             if (showMessage) {
-                Ruleset.SystemChatMessages.Add($"#{_addRefVotePlayer.Number.Value} {_addRefVotePlayer.Username.Value} is now a referee for a game.");
-                Logging.Log($"Added #{_addRefVotePlayer.Number.Value} {_addRefVotePlayer.Username.Value} [{_addRefVotePlayer.SteamId.Value}] as a referee for a game.", Ruleset.ServerConfig);
+                Ruleset.SystemChatMessages.Add($"#{newRef.Number.Value} {newRef.Username.Value} is now a referee for a game. (F7 for UI)");
+                Logging.Log($"Added #{newRef.Number.Value} {newRef.Username.Value} [{newRef.SteamId.Value}] as a referee for a game.", Ruleset.ServerConfig);
             }
         }
 
@@ -5056,12 +5060,15 @@ namespace oomtm450PuckMod_Ruleset {
                     removeRefVotePlayer = null;
             }
 
-                Ruleset.CurrentRefsSteamId.Remove(steamId);
+            Ruleset.CurrentRefsSteamId.Remove(steamId);
             if (Ruleset.CurrentRefsSteamId.Count == 0)
                 Ruleset.ChangeRefMode(RefMode.AI);
 
-            Ruleset.SystemChatMessages.Add($"#{removeRefVotePlayer?.Number.Value} {removeRefVotePlayer?.Username.Value} is not a referee anymore.");
-            Logging.Log($"Removed #{removeRefVotePlayer?.Number.Value} {removeRefVotePlayer?.Username.Value} [{steamId}] as a referee.", Ruleset.ServerConfig);
+            if (removeRefVotePlayer == null || !removeRefVotePlayer)
+                return;
+
+            Ruleset.SystemChatMessages.Add($"#{removeRefVotePlayer.Number.Value} {removeRefVotePlayer.Username.Value} is not a referee anymore.");
+            Logging.Log($"Removed #{removeRefVotePlayer.Number.Value} {removeRefVotePlayer.Username.Value} [{steamId}] as a referee.", Ruleset.ServerConfig);
         }
 
         internal static void RemoveAllRefs() {
