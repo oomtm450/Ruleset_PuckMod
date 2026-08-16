@@ -4022,7 +4022,7 @@ namespace oomtm450PuckMod_Ruleset {
                         string removeRefLocalPlayerSteamId = removeRefLocalPlayer.SteamId.Value.ToString();
 
                         if (RefVote.RemoveRefVotingInProgress)
-                            RefVote.RemoveRefVote(clientId, removeRefLocalPlayerSteamId);
+                            RefVote.RemoveRefVote(clientId);
                         else {
                             if (dataStr == "-100" && CurrentRefsSteamId.Contains(removeRefLocalPlayerSteamId)) {
                                 RefVote.RemoveRef(removeRefLocalPlayerSteamId);
@@ -4995,7 +4995,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (!Ruleset.ServerConfig.RefMode)
                 return;
 
-            string playerSteamId = _removeRefVotePlayer.SteamId.Value.ToString();
+            string playerSteamId = player.SteamId.Value.ToString();
 
             if (!Ruleset.CurrentRefsSteamId.Contains(playerSteamId))
                 return;
@@ -5029,12 +5029,7 @@ namespace oomtm450PuckMod_Ruleset {
             Interlocked.Exchange(ref _removeRefVotes, 0);
         }
 
-        internal static void RemoveRefVote(ulong clientId, string voterSteamId = "") {
-            if (!string.IsNullOrEmpty(voterSteamId) && _removeRefVotePlayerSteamId == voterSteamId) {
-                RemoveRef(_removeRefVotePlayerSteamId);
-                return;
-            }
-
+        internal static void RemoveRefVote(ulong clientId) {
             if (_removeRefVoteClientIds.Contains(clientId))
                 return;
 
