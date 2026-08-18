@@ -3590,7 +3590,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 break;
 
                             Logging.Log($"Warning client {clientId} mod out of date.", ServerConfig);
-                            SystemChatMessages.Add($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : PRERELEASE - {Constants.WORKSHOP_MOD_NAME} Mod is out of date or was enabled manually. Disable the mod and/or unsubscribe from PRERELEASE - {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update."); // TODO : Remove PRERELEASE -
+                            SystemChatMessages.Add($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : PRERELEASE - {Constants.WORKSHOP_MOD_NAME} Mod is out of date or was enabled manually. Disable all Rulesets and/or unsubscribe from PRERELEASE - {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update."); // TODO : Remove PRERELEASE -
                             _sentOutOfDateMessage[clientId] = utcNow;
                         }
                         break;
