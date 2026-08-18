@@ -4674,20 +4674,20 @@ namespace oomtm450PuckMod_Ruleset {
 
                 if (ServerFunc.IsDedicatedServer()) {
                     if (!ServerConfig.FixOutOfBoundsLooping)
-                        _harmony.Unpatch(typeof(PhysicsManager).GetMethod("Update"), typeof(PhysicsManager_Update_PuckLoop_Patch).GetMethod("Postfix"));
+                        _harmony.Unpatch(typeof(PhysicsManager).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance), typeof(PhysicsManager_Update_PuckLoop_Patch).GetMethod("Postfix"));
 
                     if (!ServerConfig.Faceoff.UseCustomFaceoff) {
                         _harmony.Unpatch(typeof(PuckManager).GetMethod(nameof(PuckManager.Server_SpawnPuck)), typeof(PuckManager_Server_SpawnPuck_Patch).GetMethod("Prefix"));
                         _harmony.Unpatch(typeof(Player).GetMethod(nameof(Player.Server_SpawnCharacter)), typeof(Player_Server_SpawnCharacter_Patch).GetMethod("Postfix"));
                     }
 
-                    _harmony.Unpatch(typeof(PhysicsManager).GetMethod("Update"), typeof(PhysicsManager_Update_ClientPatch).GetMethod("Postfix"));
+                    _harmony.Unpatch(typeof(PhysicsManager).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance), typeof(PhysicsManager_Update_ClientPatch).GetMethod("Postfix"));
                 }
                 else {
-                    _harmony.Unpatch(typeof(PhysicsManager).GetMethod("Update"), typeof(PhysicsManager_Update_PuckLoop_Patch).GetMethod("Postfix"));
-                    _harmony.Unpatch(typeof(PhysicsManager).GetMethod("Update"), typeof(PhysicsManager_Update_Patch).GetMethod("Postfix"));
-                    _harmony.Unpatch(typeof(BaseGameMode<BaseGameModeConfig>).GetMethod("OnGameStateChanged"), typeof(BaseGameMode_OnGameStateChanged_Patch).GetMethod("Prefix"));
-                    _harmony.Unpatch(typeof(BaseGameMode<BaseGameModeConfig>).GetMethod("OnGameStateChanged"), typeof(BaseGameMode_OnGameStateChanged_Patch).GetMethod("Postfix"));
+                    _harmony.Unpatch(typeof(PhysicsManager).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance), typeof(PhysicsManager_Update_PuckLoop_Patch).GetMethod("Postfix"));
+                    _harmony.Unpatch(typeof(PhysicsManager).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance), typeof(PhysicsManager_Update_Patch).GetMethod("Postfix"));
+                    _harmony.Unpatch(typeof(BaseGameMode<BaseGameModeConfig>).GetMethod("OnGameStateChanged", BindingFlags.NonPublic | BindingFlags.Instance), typeof(BaseGameMode_OnGameStateChanged_Patch).GetMethod("Prefix"));
+                    _harmony.Unpatch(typeof(BaseGameMode<BaseGameModeConfig>).GetMethod("OnGameStateChanged", BindingFlags.NonPublic | BindingFlags.Instance), typeof(BaseGameMode_OnGameStateChanged_Patch).GetMethod("Postfix"));
                 }
 
                 _harmonyPatched = true;
