@@ -116,6 +116,8 @@ namespace oomtm450PuckMod_Ruleset {
         private const string TOGGLE_DEFERRED_ICING_DATANAME = Constants.MOD_NAME + "toggledeficing";
         private const string TOGGLE_OFFSIDE_DATANAME = Constants.MOD_NAME + "toggleoff";
         private const string TOGGLE_GINTERFERENCE_DATANAME = Constants.MOD_NAME + "togglegint";
+
+        private const float Y_NETWORK_BOUND = 50f;
         #endregion
 
         #region Fields
@@ -1676,7 +1678,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (puck == null || !puck || !puck.IsSpawned)
                             continue;
 
-                        if (puck.Rigidbody.transform.position.y < -50f) {
+                        if (puck.Rigidbody.transform.position.y < -Y_NETWORK_BOUND) {
                             if (ServerConfig.Faceoff.UseDefaultPuckDropHeight)
                                 puck.Rigidbody.transform.position = new Vector3(ArenaOffsetX, puck.Rigidbody.transform.position.y + ArenaOffsetY, ArenaOffsetZ);
                             else
@@ -1693,7 +1695,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!Codebase.PlayerFunc.IsPlayerPlaying(player))
                             continue;
 
-                        if (player.PlayerBody.transform.position.y < -50f) {
+                        if (player.PlayerBody.transform.position.y < -Y_NETWORK_BOUND) {
                             player.PlayerBody.Server_Teleport(new Vector3(ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ), player.PlayerBody.transform.rotation);
                             player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
                             player.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
