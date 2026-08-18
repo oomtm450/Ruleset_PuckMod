@@ -56,7 +56,7 @@ namespace oomtm450PuckMod_Ruleset {
         private static Vector3 DELAY_OF_GAME_CORNER_BOTTOM_LEFT_LINE_2_POSITION_1 { get; set; }
         private static Vector3 DELAY_OF_GAME_CORNER_BOTTOM_LEFT_LINE_2_POSITION_2 { get; set; }
 
-        private static readonly Dictionary<string, bool> POSITION_IS_PENALIZED_DEFAULT = new Dictionary<string, bool> {
+        internal static readonly Dictionary<string, bool> POSITION_IS_PENALIZED_DEFAULT = new Dictionary<string, bool> {
             { Codebase.PlayerFunc.GOALIE_POSITION, false },
             { Codebase.PlayerFunc.CENTER_POSITION, false },
             { Codebase.PlayerFunc.LEFT_WINGER_POSITION, false },

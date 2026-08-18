@@ -4119,8 +4119,38 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         PlayerTeam faceoffViolationTeam = (PlayerTeam)faceoffViolationTeamInt;
-                        // TODO : Get player taking faceoff. (Not always center)
-                        Player faceoffViolationPlayer = default;
+                        List<Player> possiblePlayersForFaceoffViolation = new List<Player>();
+                        foreach (Player player in PlayerManager.Instance.GetPlayersByTeam(faceoffViolationTeam)) {
+                            if (!Codebase.PlayerFunc.IsPlayerPlaying(player))
+                                continue;
+
+                            if (player.PlayerPosition == null || string.IsNullOrEmpty(player.PlayerPosition.Name))
+                                continue;
+
+                            possiblePlayersForFaceoffViolation.Add(player);
+                        }
+
+                        if (possiblePlayersForFaceoffViolation.Count == 0)
+                            break;
+
+                        Dictionary<string, bool> positionsOrder = new Dictionary<string, bool>(PenaltyModule.POSITION_IS_PENALIZED_DEFAULT);
+                        positionsOrder.Remove(Codebase.PlayerFunc.GOALIE_POSITION);
+
+                        string playerPositionOnFaceoff = positionsOrder.First().Key;
+                        while (PenaltyModule.PositionIsPenalized[faceoffViolationTeam][playerPositionOnFaceoff]) {
+                            positionsOrder.Remove(playerPositionOnFaceoff);
+                            if (positionsOrder.Count == 0)
+                                break;
+
+                            playerPositionOnFaceoff = positionsOrder.First().Key;
+                        }
+                        if (positionsOrder.Count == 0)
+                            break;
+
+                        Player faceoffViolationPlayer = possiblePlayersForFaceoffViolation.FirstOrDefault(x => x.PlayerPosition.Name == playerPositionOnFaceoff);
+                        if (faceoffViolationPlayer == null || faceoffViolationPlayer.Equals(default) || !faceoffViolationPlayer)
+                            break;
+
                         _puckValidator.HandlePuckViolation(faceoffViolationPlayer);
                         break;
 
