@@ -120,12 +120,14 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             Stick stick = FaceOffPuckCollisionTracker.LastStickCollision;
 
-            HandlePuckViolation(stick.Player);
-            _isMonitoring = false; // Stop monitoring after violation
-            FaceOffPuckCollisionTracker.StopMonitoring();
+            if (Ruleset.CurrentRefMode == RefMode.AI)
+                HandlePuckViolation(stick.Player);
         }
 
         internal void HandlePuckViolation(Player violatingPlayer) {
+            _isMonitoring = false; // Stop monitoring after violation
+            FaceOffPuckCollisionTracker.StopMonitoring();
+
             if (!violatingPlayer)
                 return;
 

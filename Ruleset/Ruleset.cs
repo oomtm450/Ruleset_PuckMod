@@ -520,6 +520,11 @@ namespace oomtm450PuckMod_Ruleset {
         /// Float, radius of the puck using its current scale.
         /// </summary>
         internal static float PuckRadius => Codebase.Constants.PUCK_RADIUS * _puckScale;
+
+        /// <summary>
+        /// RefMode, current ref mode.
+        /// </summary>
+        internal static RefMode CurrentRefMode = RefMode.AI;
         #endregion
 
         #region Harmony Patches
@@ -1628,7 +1633,29 @@ namespace oomtm450PuckMod_Ruleset {
                             if (string.IsNullOrEmpty(content))
                                 return true;
 
+                            if (content == "b" || content == "blue")
+                                content = "b";
+                            else if (content == "r" || content == "red")
+                                content = "r";
+                            else
+                                return true;
+
                             NetworkCommunication.SendData(Codebase.Constants.REF_DISALLOWGOAL_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/reffaceoffviolation")) {
+                            content = content.Replace(@"/reffaceoffviolation", "").Trim().ToLower();
+                            if (string.IsNullOrEmpty(content))
+                                return true;
+
+                            if (content == "b" || content == "blue")
+                                content = "b";
+                            else if (content == "r" || content == "red")
+                                content = "r";
+                            else
+                                return true;
+
+                            NetworkCommunication.SendData(Codebase.Constants.REF_FACEOFFVIOLATION_DATANAME, content, NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                     }
@@ -4072,6 +4099,31 @@ namespace oomtm450PuckMod_Ruleset {
                             SystemChatMessages.Add($"#{disallowGoalReferee.Number.Value} {disallowGoalReferee.Username.Value} DISALLOWED {disallowedGoalTeam.ToString().ToUpper()} TEAM GOAL");
                         break;
 
+                    case Codebase.Constants.REF_FACEOFFVIOLATION_DATANAME: // SERVER-SIDE : Call a faceoff violation.
+                        if (GameManager.Instance.Phase != GamePhase.Play && GameManager.Instance.Phase != GamePhase.FaceOff)
+                            break;
+
+                        if ((DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds > 4000 + _faceoffDuration) // TODO : Config.
+                            break;
+
+                        Player faceoffViolationReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (!HasRefPowers(faceoffViolationReferee))
+                            break;
+
+                        int faceoffViolationTeamInt;
+                        if (dataStr.StartsWith("b"))
+                            faceoffViolationTeamInt = 1;
+                        else if (dataStr.StartsWith("r"))
+                            faceoffViolationTeamInt = 2;
+                        else if (!int.TryParse(dataStr, out faceoffViolationTeamInt))
+                            break;
+
+                        PlayerTeam faceoffViolationTeam = (PlayerTeam)faceoffViolationTeamInt;
+                        // TODO : Get player taking faceoff. (Not always center)
+                        Player faceoffViolationPlayer = default;
+                        _puckValidator.HandlePuckViolation(faceoffViolationPlayer);
+                        break;
+
                     case TOGGLE_HIGHSTICK_DATANAME: // SERVER-SIDE : Toggle high stick rule.
                         Player toggleHsPlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
                         if (toggleHsPlayer == null || !toggleHsPlayer)
@@ -4264,6 +4316,8 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void ChangeRefMode(RefMode refMode) {
+            CurrentRefMode = refMode;
+
             if (ServerConfigBackup != null && (refMode != RefMode.AI)) {
                 ServerConfig = new Configs.ServerConfig(ServerConfigBackup);
                 ServerConfigBackup = null;

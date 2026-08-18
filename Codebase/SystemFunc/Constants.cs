@@ -143,6 +143,7 @@
         public const string REF_VOTE_DATANAME = "refvote";
         public const string REF_VOTEREMOVE_DATANAME = "refvoteremove";
         public const string REF_DISALLOWGOAL_DATANAME = "refdisallowgoal";
+        public const string REF_FACEOFFVIOLATION_DATANAME = "reffaceoffviolation";
         public const string REFMODE_DATANAME = "refmode";
     }
 }
