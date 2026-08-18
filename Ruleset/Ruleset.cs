@@ -4103,7 +4103,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (GameManager.Instance.Phase != GamePhase.Play && GameManager.Instance.Phase != GamePhase.FaceOff)
                             break;
 
-                        if ((DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds > 4000 + _faceoffDuration) // TODO : Config.
+                        if ((DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds > 4000 + (_faceoffDuration * 1000)) // TODO : Config.
                             break;
 
                         Player faceoffViolationReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
