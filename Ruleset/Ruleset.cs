@@ -4632,6 +4632,8 @@ namespace oomtm450PuckMod_Ruleset {
                 else {
                     _harmony.Unpatch(typeof(PhysicsManager).GetMethod("Update"), typeof(PhysicsManager_Update_PuckLoop_Patch).GetMethod("Postfix"));
                     _harmony.Unpatch(typeof(PhysicsManager).GetMethod("Update"), typeof(PhysicsManager_Update_Patch).GetMethod("Postfix"));
+                    _harmony.Unpatch(typeof(BaseGameMode<BaseGameModeConfig>).GetMethod("OnGameStateChanged"), typeof(BaseGameMode_OnGameStateChanged_Patch).GetMethod("Prefix"));
+                    _harmony.Unpatch(typeof(BaseGameMode<BaseGameModeConfig>).GetMethod("OnGameStateChanged"), typeof(BaseGameMode_OnGameStateChanged_Patch).GetMethod("Postfix"));
                 }
 
                 _harmonyPatched = true;
