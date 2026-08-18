@@ -4616,6 +4616,16 @@ namespace oomtm450PuckMod_Ruleset {
                     EventManager.AddEventListener(nameof(Event_OnClientStopped), Event_OnClientStopped);
                 }
 
+                Logging.Log("Unpatching unused code depending on ServerConfig.", ServerConfig, true);
+
+                if (!ServerConfig.FixOutOfBoundsLooping)
+                    _harmony.Unpatch(typeof(PhysicsManager).GetMethod("Update"), typeof(PhysicsManager_Update_PuckLoop_Patch).GetMethod("Postfix"));
+
+                if (!ServerConfig.Faceoff.UseCustomFaceoff) {
+                    _harmony.Unpatch(typeof(PuckManager).GetMethod(nameof(PuckManager.Server_SpawnPuck)), typeof(PuckManager_Server_SpawnPuck_Patch).GetMethod("Prefix"));
+                    _harmony.Unpatch(typeof(Player).GetMethod(nameof(Player.Server_SpawnCharacter)), typeof(Player_Server_SpawnCharacter_Patch).GetMethod("Postfix"));
+                }
+
                 _harmonyPatched = true;
                 Logic = true;
 
