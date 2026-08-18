@@ -1,7 +1,6 @@
 using Codebase;
 using System;
 using System.Collections.Generic;
-using Unity.Netcode;
 using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
@@ -73,7 +72,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 // Faceoff ended - keep monitoring
                 _isFaceOffActive = false;
             }
-            else if (newGameState.Phase == GamePhase.Warmup || newGameState.Phase == GamePhase.BlueScore || newGameState.Phase == GamePhase.RedScore || newGameState.Phase == GamePhase.Intermission || newGameState.Phase == GamePhase.GameOver || newGameState.Phase == GamePhase.PreGame || newGameState.Phase == GamePhase.PostGame)
+            else if (newGameState.Phase != GamePhase.FaceOff && newGameState.Phase != GamePhase.Play)
                 ClearViolations();
         }
 
@@ -126,7 +125,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             FaceOffPuckCollisionTracker.StopMonitoring();
         }
 
-        private void HandlePuckViolation(Player violatingPlayer) {
+        internal void HandlePuckViolation(Player violatingPlayer) {
             if (!violatingPlayer)
                 return;
 
@@ -223,24 +222,14 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             _isMonitoring = false;
 
             // Use Ruleset mod's instant faceoff event to restart at the same spot.
-            if (!NetworkManager.Singleton.IsServer)
-                return;
-
             try {
                 EventManager.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME,
                     new Dictionary<string, object> { { Codebase.Constants.INSTANT_FACEOFF, ((ushort)Ruleset.NextFaceoffSpot).ToString() } });
                 PenaltyModule.AddTimeToAllPenalties((long)(DateTime.UtcNow - Ruleset.LastPlayPhaseStartDateTime).TotalMilliseconds);
-
-                // Clear the flag after a short delay to allow the restart to complete.
-                StartCoroutine(ClearRestartFlagAfterDelay());
             }
             catch (Exception ex) {
                 Logging.LogError($"Failed to restart faceoff.\n{ex}", Ruleset.ServerConfig);
             }
-        }
-
-        private System.Collections.IEnumerator ClearRestartFlagAfterDelay() {
-            yield return new WaitForSeconds(0.5f);
         }
     }
 }
