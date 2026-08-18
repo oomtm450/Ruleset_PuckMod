@@ -4151,7 +4151,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (faceoffViolationPlayer == null || faceoffViolationPlayer.Equals(default) || !faceoffViolationPlayer)
                             break;
 
-                        _puckValidator.HandlePuckViolation(faceoffViolationPlayer);
+                        _puckValidator.HandlePuckViolation(faceoffViolationPlayer, faceoffViolationReferee);
                         break;
 
                     case TOGGLE_HIGHSTICK_DATANAME: // SERVER-SIDE : Toggle high stick rule.

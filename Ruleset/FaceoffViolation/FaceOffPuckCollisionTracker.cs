@@ -124,7 +124,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 HandlePuckViolation(stick.Player);
         }
 
-        internal void HandlePuckViolation(Player violatingPlayer) {
+        internal void HandlePuckViolation(Player violatingPlayer, Player referee = null) {
             _isMonitoring = false; // Stop monitoring after violation
             FaceOffPuckCollisionTracker.StopMonitoring();
 
@@ -150,7 +150,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             // Check if player has hit the penalty threshold.
             if (violation.ViolationCount >= Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty) {
-                if (!Ruleset.ServerConfig.Penalty.FaceoffViolation || !PenaltyModule.GivePenalty(PenaltyType.FaceoffViolation, violatingPlayer)) {
+                if (!Ruleset.ServerConfig.Penalty.FaceoffViolation || !PenaltyModule.GivePenalty(PenaltyType.FaceoffViolation, violatingPlayer, "", referee)) {
                     // Send penalty chat message.
                     Ruleset.SystemChatMessages.Add(
                         $"PENALTY: #{violatingPlayer.Number.Value} {violatingPlayer.Username.Value} has {Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty} faceoff violations! Will be frozen after spawn."
