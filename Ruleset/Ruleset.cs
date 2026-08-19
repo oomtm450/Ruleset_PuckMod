@@ -1072,12 +1072,20 @@ namespace oomtm450PuckMod_Ruleset {
                         IEnumerable<PlayerCollision> playerCollisions = new List<PlayerCollision>(_playerCollisions).OrderByDescending(x => x.DateTime);
                         PlayerCollision originalCollision = null;
                         DateTime originalCollisionTime = now;
+                        string originalCollisionSteamId = goalieSteamId;
                         foreach (PlayerCollision playerCollision in playerCollisions) {
                             if ((originalCollisionTime - playerCollision.DateTime).TotalMilliseconds > ServerConfig.GInt.CollisionTimeThreshold)
                                 break;
 
-                            if (playerCollision.Force < ServerConfig.GInt.CollisionForceThreshold)
-                                return;
+                            if (playerCollision.Player1SteamId == originalCollisionSteamId)
+                                originalCollisionSteamId = playerCollision.Player2SteamId;
+                            else if (playerCollision.Player2SteamId == originalCollisionSteamId)
+                                originalCollisionSteamId = playerCollision.Player1SteamId;
+                            else
+                                continue;
+
+                            if (playerCollision.Force < ServerConfig.GInt.CollisionForceThreshold / 2)
+                                break;
 
                             originalCollision = playerCollision;
                             originalCollisionTime = originalCollision.DateTime;
