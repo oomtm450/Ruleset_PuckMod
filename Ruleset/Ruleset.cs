@@ -317,6 +317,11 @@ namespace oomtm450PuckMod_Ruleset {
         private static string _lastForceOnPlayerPlayerSteamId = "";
 
         /// <summary>
+        /// LockList of PlayerCollision, tracker for all player collisions.
+        /// </summary>
+        private static readonly LockList<PlayerCollision> _playerCollisions = new LockList<PlayerCollision>();
+
+        /// <summary>
         /// Bool, true if there's a pause in play.
         /// </summary>
         private static bool _paused = false;
@@ -894,24 +899,31 @@ namespace oomtm450PuckMod_Ruleset {
                     if (lastPlayerHit == null || !lastPlayerHit)
                         return;
 
-                    // If the player has been hit by the same team, return;
-                    if (playerBody.Player.Team == lastPlayerHit.Team)
-                        return;
-
-                    _lastForceOnPlayerPlayerSteamId = "";
-
                     DateTime now = DateTime.UtcNow;
+
+                    // Collision tracking system.
+                    _playerCollisions.Add(new PlayerCollision(currentPlayerSteamId, _lastForceOnPlayerPlayerSteamId, playerBody.Player.Team, lastPlayerHit.Team, force, now));
 
                     Player goalie, hitter;
                     if (Codebase.PlayerFunc.IsGoalie(playerBody.Player)) {
+                        _lastForceOnPlayerPlayerSteamId = "";
+
                         goalie = playerBody.Player;
                         hitter = lastPlayerHit;
                     }
                     else if (Codebase.PlayerFunc.IsGoalie(lastPlayerHit)) {
+                        _lastForceOnPlayerPlayerSteamId = "";
+
                         goalie = lastPlayerHit;
                         hitter = playerBody.Player;
                     }
                     else {
+                        // If the player has been hit by the same team, return.
+                        if (playerBody.Player.Team == lastPlayerHit.Team)
+                            return;
+
+                        _lastForceOnPlayerPlayerSteamId = "";
+
                         bool hasLastPlayerBeenHit = false, hasOtherPlayerBeenHit = false;
 
                         string lastPlayerHitSteamId = lastPlayerHit.SteamId.Value.ToString();
@@ -1043,6 +1055,9 @@ namespace oomtm450PuckMod_Ruleset {
                         hasHitterDived = false;
 
                     if ((goalie.PlayerBody.HasFallen.Value || goalie.PlayerBody.HasSlipped) && !hasGoalieDived) {
+                        if (goalie.Team == hitter.Team)
+                            return;
+
                         if (hasHitterDived)
                             PenaltyModule.GivePenalty(PenaltyType.Tripping, hitter, goalieSteamId);
                         else {
@@ -1053,6 +1068,27 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
                     else if (force > ServerConfig.GInt.CollisionForceThreshold && goalieIsInHisCrease) {
+                        // TODO : Find player who initiated collision with collision tracker.
+                        IEnumerable<PlayerCollision> playerCollisions = new List<PlayerCollision>(_playerCollisions).OrderByDescending(x => x.DateTime);
+                        PlayerCollision originalCollision = null;
+                        DateTime originalCollisionTime = now;
+                        foreach (PlayerCollision playerCollision in playerCollisions) {
+                            if ((originalCollisionTime - playerCollision.DateTime).TotalMilliseconds > ServerConfig.GInt.CollisionTimeThreshold)
+                                break;
+
+                            if (playerCollision.Force < ServerConfig.GInt.CollisionForceThreshold)
+                                return;
+
+                            originalCollision = playerCollision;
+                            originalCollisionTime = originalCollision.DateTime;
+                        }
+
+                        if (originalCollision == null && goalie.Team == hitter.Team)
+                            return;
+
+                        if (originalCollision.Player1Team == goalie.Team && originalCollision.Player2Team == goalie.Team)
+                            return;
+
                         _ = _goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch);
 
                         if (watch == null) {
@@ -1068,8 +1104,6 @@ namespace oomtm450PuckMod_Ruleset {
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(PlayerBody_OnCollisionEnter_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
-
-                return;
             }
         }
         #endregion
@@ -1157,6 +1191,9 @@ namespace oomtm450PuckMod_Ruleset {
                         ResetIcings();
                         _dictPlayersPositionsForIcing.Clear();
                         ResetInt();
+
+                        // Reset collisions tracker.
+                        _playerCollisions.Clear();
 
                         _puckZone = ZoneFunc.GetZone(NextFaceoffSpot);
                         _puckZoneLastTouched = _puckZone;
@@ -1679,7 +1716,7 @@ namespace oomtm450PuckMod_Ruleset {
                         content = content.ToLowerInvariant();
 
                         if (content.StartsWith(@"/help"))
-                            SystemFunc.AddClientChatMessage("Ruleset commands:\n<b>/refscale</b> - Change the scale of the 2D refs images (0.0-2.0)\n<b>/voteref</b> - Vote to become ref\n<b>/voteremoveref</b> - Vote to remove a ref (Number, Name or SteamId)\n<b>REF UI</b> - F7 to open\n");
+                            SystemFunc.AddClientChatMessage("Ruleset commands:\n<b>/refscale</b> - Change the scale of the 2D refs images (0.0-2.0)\n<b>/voteref</b> - Vote to become ref\n<b>/voteremoveref</b> - Vote to remove a ref (Number, Name, SteamId or nothing if you are ref and want to remove yourself)\n<b>REF UI</b> - F7 to open\n");
                     }
                 }
                 catch (Exception ex) {
@@ -3194,18 +3231,19 @@ namespace oomtm450PuckMod_Ruleset {
             // Use the event to link client Ids to Steam Ids.
             Dictionary<ulong, (string SteamId, string Username)> playersInfo_ToChange = new Dictionary<ulong, (string, string)>();
             foreach (var kvp in PlayerFunc.Players_ClientId_SteamId) {
-                if (string.IsNullOrEmpty(kvp.Value)) {
-                    Player player = PlayerManager.Instance.GetPlayerByClientId(kvp.Key);
-                    playersInfo_ToChange.Add(kvp.Key, (player.SteamId.Value.ToString(), player.Username.Value.ToString()));
-                }
+                if (!string.IsNullOrEmpty(kvp.Value))
+                    continue;
 
+                Player player = PlayerManager.Instance.GetPlayerByClientId(kvp.Key);
+                playersInfo_ToChange.Add(kvp.Key, (player.SteamId.Value.ToString(), player.Username.Value.ToString()));
             }
 
             foreach (var kvp in playersInfo_ToChange) {
-                if (!string.IsNullOrEmpty(kvp.Value.SteamId)) {
-                    PlayerFunc.Players_ClientId_SteamId[kvp.Key] = kvp.Value.SteamId;
-                    Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value} ({kvp.Value.Username}).", ServerConfig);
-                }
+                if (string.IsNullOrEmpty(kvp.Value.SteamId))
+                    continue;
+
+                PlayerFunc.Players_ClientId_SteamId[kvp.Key] = kvp.Value.SteamId;
+                Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value} ({kvp.Value.Username}).", ServerConfig);
             }
         }
 
@@ -4997,6 +5035,40 @@ namespace oomtm450PuckMod_Ruleset {
         Hybrid = 1,
         LinesmanOnly = 2,
         RefereeOnly = 3,
+    }
+
+    internal class PlayerCollision {
+        internal string Player1SteamId { get; }
+
+        internal string Player2SteamId { get; }
+
+        internal PlayerTeam Player1Team { get; }
+
+        internal PlayerTeam Player2Team { get; }
+
+        internal float Force { get; }
+
+        internal DateTime DateTime { get; }
+
+        internal bool SameTeam => Player1Team == Player2Team;
+
+        internal PlayerCollision(string player1SteamId, string player2SteamId, PlayerTeam player1Team, PlayerTeam player2Team, float force, DateTime dateTime) {
+            Player1SteamId = player1SteamId;
+            Player2SteamId = player2SteamId;
+            Player1Team = player1Team;
+            Player2Team = player2Team;
+            Force = force;
+            DateTime = dateTime;
+        }
+
+        internal PlayerCollision(string player1SteamId, string player2SteamId, PlayerTeam player1Team, PlayerTeam player2Team, float force) {
+            Player1SteamId = player1SteamId;
+            Player2SteamId = player2SteamId;
+            Player1Team = player1Team;
+            Player2Team = player2Team;
+            Force = force;
+            DateTime = DateTime.UtcNow;
+        }
     }
 
     internal static class RefVote {

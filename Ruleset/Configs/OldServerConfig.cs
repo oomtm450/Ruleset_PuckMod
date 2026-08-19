@@ -450,6 +450,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float CollisionForceThreshold { get; } = 0.9695f;  // TODO : Change after release.
 
         /// <summary>
+        /// Int, number of milliseconds between each player push to be considered when finding blame for a goalie push.
+        /// </summary>
+        public int CollisionTimeThreshold { get; } = 400;
+
+        /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
         public float GoalieRadius { get; } = 0.81f;  // TODO : Change after release.
