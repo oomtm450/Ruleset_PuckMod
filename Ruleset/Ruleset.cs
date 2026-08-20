@@ -1509,6 +1509,14 @@ namespace oomtm450PuckMod_Ruleset {
                             NetworkCommunication.SendData(RefSignals.OFFSIDE_LINESMAN, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
+                        else if (content.StartsWith(@"/intoffblue")) {
+                            NetworkCommunication.SendData(Codebase.Constants.REF_INTENTIONALOFFSIDE_DATANAME, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/intoffred")) {
+                            NetworkCommunication.SendData(Codebase.Constants.REF_INTENTIONALOFFSIDE_DATANAME, ((int)PlayerTeam.Red).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
+                            return false;
+                        }
                         else if (content.StartsWith(@"/icblue")) {
                             NetworkCommunication.SendData(RefSignals.ICING_LINESMAN, ((int)PlayerTeam.Blue).ToString(), NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
@@ -3661,7 +3669,21 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!int.TryParse(dataStr, out int offsideTeamInt))
                             break;
 
-                        CallOffside((PlayerTeam)offsideTeamInt, offsideReferee);
+                        CallOffside((PlayerTeam)offsideTeamInt, offsideReferee, false);
+                        break;
+
+                    case Codebase.Constants.REF_INTENTIONALOFFSIDE_DATANAME: // SERVER-SIDE : Call an intentional offside.
+                        if (Paused || GameManager.Instance.Phase != GamePhase.Play)
+                            break;
+
+                        Player intentionalOffsideReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (!HasRefPowers(intentionalOffsideReferee))
+                            break;
+
+                        if (!int.TryParse(dataStr, out int intentionalOffsideTeamInt))
+                            break;
+
+                        CallOffside((PlayerTeam)intentionalOffsideTeamInt, intentionalOffsideReferee, true, true);
                         break;
 
                     case RefSignals.HIGHSTICK_LINESMAN: // SERVER-SIDE : Call a high stick stoppage.
@@ -4495,17 +4517,18 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void CallOffside(PlayerTeam team, Player referee = null, bool intentionalOffsides = true) {
+        private static void CallOffside(PlayerTeam team, Player referee = null, bool intentionalOffsides = true, bool forceIntentionalOffsides = false) {
             if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Blue])
                 CallPenalty(PlayerTeam.Blue);
             else if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Red])
                 CallPenalty(PlayerTeam.Red);
             else {
                 // Intentional offside.
-                if (intentionalOffsides &&
+                if (forceIntentionalOffsides ||
+                    (intentionalOffsides &&
                     ((team == PlayerTeam.Blue && ServerConfig.Offside.IntentionalOffsideBlueTeam) ||
                     (team == PlayerTeam.Red && ServerConfig.Offside.IntentionalOffsideRedTeam)) &&
-                    (DateTime.UtcNow - GetOffsideLongestTime(team)).TotalMilliseconds > ServerConfig.Offside.IntentionalOffsideMillisecondsThreshold) {
+                    (DateTime.UtcNow - GetOffsideLongestTime(team)).TotalMilliseconds > ServerConfig.Offside.IntentionalOffsideMillisecondsThreshold)) {
                     SendChat(Rule.Offside, team, true, false, referee, "INTENTIONAL ");
                     NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Icing, _puckLastStateBeforeCall[Rule.Offside]);
                     IcingStaminaDrainLogic(team);
