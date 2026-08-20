@@ -278,7 +278,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, threshold for an intentional offside to be called in milliseconds.
         /// </summary>
-        public int IntentionalOffsideMillisecondsThreshold { get; } = 4500;
+        public int IntentionalOffsideMillisecondsThreshold { get; } = 4250;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
