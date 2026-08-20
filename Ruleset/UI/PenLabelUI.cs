@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static UnityEngine.Rendering.VirtualTexturing.Debugging;
 
 namespace oomtm450PuckMod_Ruleset.UI {
     internal static class PenLabelUI {
@@ -14,6 +15,8 @@ namespace oomtm450PuckMod_Ruleset.UI {
         private const string PEN_LABEL_UI_ASSET_BUNDLE = "penlabelui";
 
         internal static GameObject GameObject { get; set; } = null;
+
+        private static AssetBundle _assetBundle = null;
 
         private static VisualElement _root = null;
         private static VisualElement _bluePanel = null;
@@ -53,33 +56,37 @@ namespace oomtm450PuckMod_Ruleset.UI {
 
                 string bundlePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), PEN_LABEL_UI_FOLDER, PEN_LABEL_UI_ASSET_BUNDLE);
 
-                AssetBundle bundle = AssetBundle.LoadFromFile(bundlePath);
-                if (bundle == null) {
+                if (_assetBundle == null)
+                    _assetBundle = AssetBundle.LoadFromFile(bundlePath);
+
+                if (_assetBundle == null) {
                     Logging.LogError("Failed to load AssetBundle !!!", Ruleset.ClientConfig);
                     return;
                 }
 
-                VisualTreeAsset visualTree = bundle.LoadAsset<VisualTreeAsset>("assets/penlabelui.uxml");
-                PanelSettings panelSettings = bundle.LoadAsset<PanelSettings>("assets/penlabeluipanelsettings.asset");
-                StyleSheet styleSheet = bundle.LoadAsset<StyleSheet>("assets/penlabelui.uss");
+                VisualTreeAsset visualTree = _assetBundle.LoadAsset<VisualTreeAsset>("assets/penlabelui.uxml");
+                PanelSettings panelSettings = _assetBundle.LoadAsset<PanelSettings>("assets/penlabeluipanelsettings.asset");
+                StyleSheet styleSheet = _assetBundle.LoadAsset<StyleSheet>("assets/penlabelui.uss");
 
                 if (visualTree == null) {
-                    Logging.LogError($"Missing {nameof(visualTree)} in bundle !!!", Ruleset.ClientConfig);
-                    bundle.Unload(false);
+                    Logging.LogError($"Missing {nameof(visualTree)} in asset bundle !!!", Ruleset.ClientConfig);
+                    _assetBundle.Unload(false);
                     return;
                 }
 
                 if (panelSettings == null) {
-                    Logging.LogError($"Missing {nameof(panelSettings)} in bundle !!!", Ruleset.ClientConfig);
-                    bundle.Unload(false);
+                    Logging.LogError($"Missing {nameof(panelSettings)} in asset bundle !!!", Ruleset.ClientConfig);
+                    _assetBundle.Unload(false);
                     return;
                 }
 
                 if (styleSheet == null) {
-                    Logging.LogError($"Missing {nameof(styleSheet)} in bundle !!!", Ruleset.ClientConfig);
-                    bundle.Unload(false);
+                    Logging.LogError($"Missing {nameof(styleSheet)} in asset bundle !!!", Ruleset.ClientConfig);
+                    _assetBundle.Unload(false);
                     return;
                 }
+
+                _assetBundle.Unload(false);
 
                 GameObject = new GameObject("PenLabelUI");
                 GameObject.DontDestroyOnLoad(GameObject);
