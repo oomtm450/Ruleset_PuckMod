@@ -1945,10 +1945,12 @@ namespace oomtm450PuckMod_Ruleset {
                             playerTouched = (playerTouched || playerWasLastInPossession);
                             if (!playerTouched ||
                                 otherTeamTouchedTooClose ||
-                                ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds - ((_faceoffDuration + 1) * 1000) ||
                                 (playerTouched && _puckDeflectedTimeSinceLastTouch > lastTouchTime.LastTouchTime) ||
                                 (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_Zone)) {
                                 CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
+                            }
+                            else if (ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds - ((_faceoffDuration + 1) * 1000)) {
+                                CallDelayOfGameStoppage(_lastPlayerOnPuckTeam, true);
                             }
                             else {
                                 Player penalizedDelayOfGamePlayer = PlayerManager.Instance.GetPlayerBySteamId(lastPlayerOnPuckSteamId);
@@ -4538,8 +4540,8 @@ namespace oomtm450PuckMod_Ruleset {
                     (DateTime.UtcNow - GetOffsideLongestTime(team)).TotalMilliseconds > ServerConfig.Offside.IntentionalOffsideMillisecondsThreshold)) {
                     SendChat(Rule.Offside, team, true, false, referee, "INTENTIONAL ");
                     NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Icing, _puckLastStateBeforeCall[Rule.Offside]);
-                    IcingStaminaDrainLogic(team);
                     _lastStoppageReason = Rule.Icing;
+                    IcingStaminaDrainLogic(team);
                 }
                 else { // Normal offside.
                     SendChat(Rule.Offside, team, true, false, referee);
@@ -4585,23 +4587,25 @@ namespace oomtm450PuckMod_Ruleset {
             else {
                 NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.Icing, _puckLastStateBeforeCall[Rule.Icing]);
                 SendChat(Rule.Icing, team, true, false, referee);
-                IcingStaminaDrainLogic(team);
                 _lastStoppageReason = Rule.Icing;
+                IcingStaminaDrainLogic(team);
                 DoFaceoff();
             }
         }
 
-        private static void IcingStaminaDrainLogic(PlayerTeam team) {
+        private static void IcingStaminaDrainLogic(PlayerTeam team, bool addDrainAmount = true) {
             int remainingPlayTick = GameManager.Instance.Tick;
-            if (_lastStoppageReason == Rule.Icing && _lastIcing[TeamFunc.GetOtherTeam(team)] > _lastIcing[team] && _lastIcing[team] - remainingPlayTick <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
-                _icingStaminaDrainPenaltyAmount[team] += 1;
-            else
-                _icingStaminaDrainPenaltyAmount[team] = 0;
+            if (addDrainAmount) {
+                if (_lastIcing[TeamFunc.GetOtherTeam(team)] > _lastIcing[team] && _lastIcing[team] - remainingPlayTick <= ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyTime)
+                    _icingStaminaDrainPenaltyAmount[team] += 1;
+                else
+                    _icingStaminaDrainPenaltyAmount[team] = 0;
+            }
 
             _lastIcing[team] = remainingPlayTick;
         }
 
-        private static void CallDelayOfGameStoppage(PlayerTeam team, Player referee = null) {
+        private static void CallDelayOfGameStoppage(PlayerTeam team, bool carryOverIcing = false, Player referee = null) {
             if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Blue])
                 CallPenalty(PlayerTeam.Blue);
             else if (PenaltyModule.PenaltyToBeCalled[PlayerTeam.Red])
@@ -4609,7 +4613,12 @@ namespace oomtm450PuckMod_Ruleset {
             else {
                 NextFaceoffSpot = Faceoff.GetNextFaceoffPosition(team, Rule.DelayOfGame, _puckLastStateBeforeCall[Rule.DelayOfGame]);
                 SendChat(Rule.DelayOfGame, team, true, false, referee);
-                _lastStoppageReason = Rule.Offside;
+                if (carryOverIcing) {
+                    _lastStoppageReason = Rule.Icing;
+                    IcingStaminaDrainLogic(team, false);
+                }
+                else
+                    _lastStoppageReason = Rule.Offside;
                 DoFaceoff();
             }
         }
