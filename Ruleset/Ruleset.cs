@@ -1446,7 +1446,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     ResetGame(false);
 
-                    _faceoffDuration = __instance.Config.phaseDurationMap[GamePhase.FaceOff];
+                    _faceoffDuration = __instance.Config.phaseDurationMap[GamePhase.FaceOff] + 1;
                     _playDuration = __instance.Config.phaseDurationMap[GamePhase.Play];
                 }
                 catch (Exception ex) {
