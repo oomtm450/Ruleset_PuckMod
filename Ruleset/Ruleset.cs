@@ -830,7 +830,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Icing logic.
                     bool icingPossible = false;
-                    if (ZoneFunc.GetTeamZones(stick.Player.Team, true).Any(x => x == _puckZone))
+                    if (((stick.Player.Team == PlayerTeam.Red && PenaltyModule.PenalizedPlayersCountBlueTeam >= PenaltyModule.PenalizedPlayersCountRedTeam) || (stick.Player.Team == PlayerTeam.Blue && PenaltyModule.PenalizedPlayersCountRedTeam >= PenaltyModule.PenalizedPlayersCountBlueTeam)) && ZoneFunc.GetTeamZones(stick.Player.Team, true).Any(x => x == _puckZone))
                         icingPossible = true;
 
                     if (icingPossible) {
