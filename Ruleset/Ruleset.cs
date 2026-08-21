@@ -738,18 +738,20 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // Icing logic.
-                    if (IsIcing(otherTeam)) {
-                        if (!isGoalie)
-                            CallIcing(otherTeam);
+                    if (!_isPuckBehindHashmarks.Any(x => x.Value) || !ServerConfig.Icing.Deferred) {
+                        if (IsIcing(otherTeam)) {
+                            if (!isGoalie)
+                                CallIcing(otherTeam);
+                            else {
+                                WarnIcing(false, otherTeam);
+                                ResetIcings();
+                            }
+                        }
                         else {
-                            WarnIcing(false, otherTeam);
+                            if (IsIcing(stick.Player.Team))
+                                WarnIcing(false, stick.Player.Team);
                             ResetIcings();
                         }
-                    }
-                    else {
-                        if (IsIcing(stick.Player.Team))
-                            WarnIcing(false, stick.Player.Team);
-                        ResetIcings();
                     }
                 }
                 catch (Exception ex) {
