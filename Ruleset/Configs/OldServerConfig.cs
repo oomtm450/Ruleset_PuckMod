@@ -372,6 +372,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float StaminaDrainDivisionAmountPenaltyDelta { get; } = 0.5f;
 
         /// <summary>
+        /// Float, amount to divide the stamina by for the team causing the icing if StaminaDrain is on.
+        /// </summary>
+        public float StaminaDrainDivisionAmountGoalie { get; } = 2f;
+
+        /// <summary>
+        /// Float, amount to remove from StaminaDrainDivisionAmount when applying additional stamina drain penalties.
+        /// </summary>
+        public float StaminaDrainDivisionAmountPenaltyDeltaGoalie { get; } = 1f;
+
+        /// <summary>
         /// Int, time between 2 icings to apply additional stamina drain penalties.
         /// </summary>
         public int StaminaDrainDivisionAmountPenaltyTime { get; } = 21;

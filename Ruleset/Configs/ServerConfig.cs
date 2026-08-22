@@ -787,6 +787,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float StaminaDrainDivisionAmountPenaltyDelta { get; set; } = 0.5f;
 
         /// <summary>
+        /// Float, amount to divide the stamina by for the team causing the icing if StaminaDrain is on.
+        /// </summary>
+        public float StaminaDrainDivisionAmountGoalie { get; set; } = 2f;
+
+        /// <summary>
+        /// Float, amount to remove from StaminaDrainDivisionAmount when applying additional stamina drain penalties.
+        /// </summary>
+        public float StaminaDrainDivisionAmountPenaltyDeltaGoalie { get; set; } = 1f;
+
+        /// <summary>
         /// Int, time in period seconds between 2 icings to apply additional stamina drain penalties.
         /// </summary>
         public int StaminaDrainDivisionAmountPenaltyTime { get; set; } = 21;
@@ -818,6 +828,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             StaminaDrainGoalie = icingConfig.StaminaDrainGoalie;
             StaminaDrainDivisionAmount = icingConfig.StaminaDrainDivisionAmount;
             StaminaDrainDivisionAmountPenaltyDelta = icingConfig.StaminaDrainDivisionAmountPenaltyDelta;
+            StaminaDrainDivisionAmountGoalie = icingConfig.StaminaDrainDivisionAmountGoalie;
+            StaminaDrainDivisionAmountPenaltyDeltaGoalie = icingConfig.StaminaDrainDivisionAmountPenaltyDeltaGoalie;
             StaminaDrainDivisionAmountPenaltyTime = icingConfig.StaminaDrainDivisionAmountPenaltyTime;
         }
         #endregion
@@ -879,6 +891,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (StaminaDrainDivisionAmountPenaltyDelta == _oldConfig.StaminaDrainDivisionAmountPenaltyDelta)
                 StaminaDrainDivisionAmountPenaltyDelta = newConfig.StaminaDrainDivisionAmountPenaltyDelta;
+
+            if (StaminaDrainDivisionAmountGoalie == _oldConfig.StaminaDrainDivisionAmountGoalie)
+                StaminaDrainDivisionAmountGoalie = newConfig.StaminaDrainDivisionAmountGoalie;
+
+            if (StaminaDrainDivisionAmountPenaltyDeltaGoalie == _oldConfig.StaminaDrainDivisionAmountPenaltyDeltaGoalie)
+                StaminaDrainDivisionAmountPenaltyDeltaGoalie = newConfig.StaminaDrainDivisionAmountPenaltyDeltaGoalie;
 
             if (StaminaDrainDivisionAmountPenaltyTime == _oldConfig.StaminaDrainDivisionAmountPenaltyTime)
                 StaminaDrainDivisionAmountPenaltyTime = newConfig.StaminaDrainDivisionAmountPenaltyTime;

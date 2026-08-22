@@ -3026,17 +3026,29 @@ namespace oomtm450PuckMod_Ruleset {
                 icingTeam = PlayerTeam.Blue;
 
             float staminaDrainDivisionAmount = ServerConfig.Icing.StaminaDrainDivisionAmount;
-            for (int i = 0; i < _icingStaminaDrainPenaltyAmount[icingTeam]; i++)
-                staminaDrainDivisionAmount *= ServerConfig.Icing.StaminaDrainDivisionAmount - ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyDelta;
+            if (ServerConfig.Icing.StaminaDrainDivisionAmount - ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyDelta > 1f) {
+                for (int i = 0; i < _icingStaminaDrainPenaltyAmount[icingTeam]; i++)
+                    staminaDrainDivisionAmount *= ServerConfig.Icing.StaminaDrainDivisionAmount - ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyDelta;
+            }
 
             foreach (Player player in PlayerManager.Instance.GetPlayersByTeam(icingTeam)) {
                 if (!Codebase.PlayerFunc.IsPlayerPlaying(player))
                     continue;
 
-                if (Codebase.PlayerFunc.IsGoalie(player) && !ServerConfig.Icing.StaminaDrainGoalie)
-                    continue;
+                if (Codebase.PlayerFunc.IsGoalie(player)) {
+                    if (!ServerConfig.Icing.StaminaDrainGoalie)
+                        continue;
 
-                player.PlayerBody.Stamina.Value = 1f / staminaDrainDivisionAmount;
+                    float staminaDrainDivisionAmountGoalie = ServerConfig.Icing.StaminaDrainDivisionAmountGoalie;
+                    if (ServerConfig.Icing.StaminaDrainDivisionAmountGoalie - ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyDeltaGoalie > 1f) {
+                        for (int i = 0; i < _icingStaminaDrainPenaltyAmount[icingTeam]; i++)
+                            staminaDrainDivisionAmountGoalie *= ServerConfig.Icing.StaminaDrainDivisionAmountGoalie - ServerConfig.Icing.StaminaDrainDivisionAmountPenaltyDeltaGoalie;
+                    }
+
+                    player.PlayerBody.Stamina.Value = 1f / staminaDrainDivisionAmountGoalie;
+                }
+                else
+                    player.PlayerBody.Stamina.Value = 1f / staminaDrainDivisionAmount;
             }
         }
         #endregion
