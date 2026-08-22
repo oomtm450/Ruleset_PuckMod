@@ -3016,7 +3016,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void IcingStaminaDrain() {
-            if (_lastStoppageReason != Rule.Icing || !ServerConfig.Icing.StaminaDrain)
+            if (_lastStoppageReason != Rule.Icing || (!ServerConfig.Icing.StaminaDrain && !ServerConfig.Icing.StaminaDrainGoalie))
                 return;
 
             PlayerTeam icingTeam;
@@ -3046,8 +3046,11 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     player.PlayerBody.Stamina.Value = 1f / staminaDrainDivisionAmountGoalie;
+
+                    if (!!ServerConfig.Icing.StaminaDrain)
+                        break;
                 }
-                else
+                else if (ServerConfig.Icing.StaminaDrain)
                     player.PlayerBody.Stamina.Value = 1f / staminaDrainDivisionAmount;
             }
         }
