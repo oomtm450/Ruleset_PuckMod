@@ -65,7 +65,7 @@ namespace Codebase {
                 writer.Dispose();
 
                 if (!DataNamesToIgnore.Any(x => dataName.StartsWith(x)))
-                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to {clientId} with listener {listener}.", config);
+                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to {clientId} with listener {listener}. Content : \"{dataStr}\"", config);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error when writing streamed data: {ex}", config);
@@ -105,7 +105,7 @@ namespace Codebase {
                 writer.Dispose();
 
                 if (!DataNamesToIgnore.Any(x => dataName.StartsWith(x)))
-                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to all clients with listener {listener}.", config);
+                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to all clients with listener {listener}. Content : \"{dataStr}\"", config);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error when writing streamed data: {ex}", config);
@@ -135,7 +135,7 @@ namespace Codebase {
                 dataName = dataName.Trim();
 
                 if (!DataNamesToIgnore.Any(x => dataName.StartsWith(x)))
-                    Logging.Log($"Received data {dataName} ({length} bytes - {totalLength} total bytes) from {(clientId == 0 ? "server" : clientId.ToString())}. Content : {dataStr}", config);
+                    Logging.Log($"Received data \"{dataName}\" ({length} bytes - {totalLength} total bytes) from {(clientId == 0 ? "server" : clientId.ToString())}. Content : \"{dataStr}\"", config);
 
                 return (dataName, dataStr);
             }

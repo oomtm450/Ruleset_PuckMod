@@ -98,7 +98,7 @@ namespace oomtm450PuckMod_Ruleset {
             //RefSignals.SHOW_SIGNAL_RED,
             //RefSignals.STOP_SIGNAL_BLUE,
             //RefSignals.STOP_SIGNAL_RED,
-            RefSignals.STOP_SIGNAL,
+            //RefSignals.STOP_SIGNAL,
             "dive",
             "duration",
             Codebase.Constants.PENALTIES_PAUSED_DATANAME,
