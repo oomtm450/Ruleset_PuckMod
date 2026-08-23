@@ -1975,6 +1975,7 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     string playerWithPossessionSteamId = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds,
                         ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled);
+                    PlayerTeam playerTeamWithPossession = PlayerTeam.None;
 
                     if (!string.IsNullOrEmpty(playerWithPossessionSteamId)) {
                         if (!_playersLastTimePuckPossession.TryGetValue(playerWithPossessionSteamId, out Stopwatch watch)) {
@@ -1983,6 +1984,11 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         watch.Restart();
+
+                        Player playerWithPossession = PlayerManager.Instance.GetPlayerBySteamId(playerWithPossessionSteamId);
+
+                        if (Codebase.PlayerFunc.IsPlayerPlaying(playerWithPossession))
+                            playerTeamWithPossession = playerWithPossession.Team;
                     }
 
                     _dictPlayersPositionsForIcing.Clear();
@@ -2098,10 +2104,10 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // Remove offside if the other team entered their zone with the puck.
-                    if (_lastPlayerOnPuckTeamTipIncluded == _lastPlayerOnPuckTeam) {
-                        List<Codebase.Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(_lastPlayerOnPuckTeam, true);
+                    if (playerTeamWithPossession == PlayerTeam.Blue || playerTeamWithPossession == PlayerTeam.Red) {
+                        List<Codebase.Zone> lastPlayerOnPuckTeamZones = ZoneFunc.GetTeamZones(playerTeamWithPossession, true);
                         if (oldZone == lastPlayerOnPuckTeamZones[2] && _puckZone == lastPlayerOnPuckTeamZones[0]) {
-                            PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(_lastPlayerOnPuckTeam);
+                            PlayerTeam lastPlayerOnPuckOtherTeam = TeamFunc.GetOtherTeam(playerTeamWithPossession);
                             foreach (string key in new List<string>(_isOffside.Keys)) {
                                 if (_isOffside[key].Team == lastPlayerOnPuckOtherTeam)
                                     _isOffside[key] = new OffsideObject(lastPlayerOnPuckOtherTeam, false);
