@@ -829,7 +829,7 @@ namespace oomtm450PuckMod_Stats {
             }
         }
 
-        /// <summary>
+        /*/// <summary>
         /// Class that patches the UpdatePlayer event from UIScoreboard.
         /// </summary>
         [HarmonyPatch(typeof(UIScoreboard), nameof(UIScoreboard.AddPlayer))]
@@ -853,7 +853,7 @@ namespace oomtm450PuckMod_Stats {
                     Logging.LogError($"Error in {nameof(UIScoreboard_AddPlayer_Patch)} Postfix().\n{ex}", ClientConfig);
                 }
             }
-        }
+        }*/
 
         /// <summary>
         /// Class that patches the OnCollisionEnter event from Puck.
@@ -1297,7 +1297,7 @@ namespace oomtm450PuckMod_Stats {
             }
         }
 
-        /// <summary>
+        /*/// <summary>
         /// Class that patches GetChatMessagePrefix event from UIChat.
         /// </summary>
         [HarmonyPatch(typeof(UIChat), "GetChatMessagePrefix")]
@@ -1312,7 +1312,7 @@ namespace oomtm450PuckMod_Stats {
 
                 __result = GetStarTag(steamId) + __result;
             }
-        }
+        }*/
 
         /// <summary>
         /// Class that patches the Server_StopTicking event from GameManager.
@@ -1614,7 +1614,9 @@ namespace oomtm450PuckMod_Stats {
                             if (!_pim.TryGetValue(value, out int pim))
                                 pim = 0;
 
-                            _pim.AddOrUpdate(value, pim + int.Parse(message["pim"].ToString()));
+                            pim = pim + int.Parse(message["pim"].ToString());
+                            _pim.AddOrUpdate(value, pim);
+                            LogPIM(value, pim);
                             break;
                     }
                 }
@@ -1893,7 +1895,7 @@ namespace oomtm450PuckMod_Stats {
 
                 if (PlayerFunc.IsGoalie(player) || player.PlayerPosition.Name == PlayerFunc.GOALIE_POSITION) {
                     if (_savePerc.TryGetValue(steamId, out var saveValues))
-                        starPoints[steamId] += ((((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.250d) * ((double)saveValues.Saves) * 31d;
+                        starPoints[steamId] += ((((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.300d) * ((double)saveValues.Saves) * 32d;
 
                     if (_sog.TryGetValue(steamId, out int shots))
                         starPoints[steamId] += ((double)shots) * 1d;
@@ -2760,7 +2762,7 @@ namespace oomtm450PuckMod_Stats {
             return _rulesetModEnabled != null && (bool)_rulesetModEnabled;
         }
 
-        private static string GetStarTag(string playerSteamId) {
+        /*private static string GetStarTag(string playerSteamId) {
             string star = "";
             if (_stars[1] == playerSteamId)
                 star = "<color=#FFD700FF><b>★</b></color> ";
@@ -2770,7 +2772,7 @@ namespace oomtm450PuckMod_Stats {
                 star = "<color=#CD7F32FF><b>★</b></color> ";
 
             return star;
-        }
+        }*/
 
         private static void Client_ResetSOG() {
             foreach (string key in new List<string>(_sog.Keys)) {
