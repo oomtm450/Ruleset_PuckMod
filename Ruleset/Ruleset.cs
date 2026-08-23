@@ -94,10 +94,10 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static readonly ReadOnlyCollection<string> DATA_NAMES_TO_IGNORE = new ReadOnlyCollection<string>(new List<string> {
             "eventName",
-            RefSignals.SHOW_SIGNAL_BLUE,
-            RefSignals.SHOW_SIGNAL_RED,
-            RefSignals.STOP_SIGNAL_BLUE,
-            RefSignals.STOP_SIGNAL_RED,
+            //RefSignals.SHOW_SIGNAL_BLUE,
+            //RefSignals.SHOW_SIGNAL_RED,
+            //RefSignals.STOP_SIGNAL_BLUE,
+            //RefSignals.STOP_SIGNAL_RED,
             RefSignals.STOP_SIGNAL,
             "dive",
             "duration",
@@ -2157,12 +2157,8 @@ namespace oomtm450PuckMod_Ruleset {
                             closestPlayerToPuckTeam = PlayerTeam.Red;
 
                         if (closestPlayerToPuckTeam != PlayerTeam.None) {
-                            if (IsIcing(closestPlayerToPuckTeam)) {
-                                if (icingHasToBeWarned[closestPlayerToPuckTeam] == null)
-                                    WarnIcing(false, closestPlayerToPuckTeam);
-                                else
-                                    icingHasToBeWarned[closestPlayerToPuckTeam] = false;
-                            }
+                            if (IsIcing(closestPlayerToPuckTeam))
+                                icingHasToBeWarned[closestPlayerToPuckTeam] = false;
                             else {
                                 PlayerTeam closestPlayerToEndBoardOtherTeam = TeamFunc.GetOtherTeam(closestPlayerToPuckTeam);
                                 if (IsIcing(closestPlayerToEndBoardOtherTeam))
@@ -2195,8 +2191,8 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     // Warn icings.
                     foreach (var kvp in icingHasToBeWarned) {
-                        if (kvp.Value != null && (bool)kvp.Value) {
-                            WarnIcing(true, kvp.Key);
+                        if (kvp.Value != null) {
+                            WarnIcing((bool)kvp.Value, kvp.Key);
                             break;
                         }
                     }
