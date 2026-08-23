@@ -4447,6 +4447,9 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void ChangeRefMode(RefMode refMode) {
+            if (CurrentRefMode == refMode)
+                return;
+
             CurrentRefMode = refMode;
 
             if (ServerConfigBackup != null && (refMode != RefMode.AI)) {
