@@ -15,7 +15,7 @@ namespace Codebase {
         /// <summary>
         /// ReadOnlyCollection of string, collection of datanames to not log.
         /// </summary>
-        private static readonly List<string> DataNamesToIgnore = new List<string>();
+        private static readonly LockList<string> DataNamesToIgnore = new LockList<string>();
         #endregion
 
         #region Methods/Functions
@@ -24,7 +24,10 @@ namespace Codebase {
         /// </summary>
         /// <param name="dataNamesToNotLog">ICollection of string, data names to add to the to not log list.</param>
         public static void AddToNotLogList(ICollection<string> dataNamesToNotLog) {
-            DataNamesToIgnore.AddRange(dataNamesToNotLog);
+            foreach (string dataName in dataNamesToNotLog) {
+                if (!DataNamesToIgnore.Contains(dataName))
+                    DataNamesToIgnore.Add(dataName);
+            }
         }
 
         /// <summary>
