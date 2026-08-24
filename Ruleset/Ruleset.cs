@@ -2029,7 +2029,9 @@ namespace oomtm450PuckMod_Ruleset {
                         if (playerZoneForOffside == otherTeamZones[0] || playerZoneForOffside == otherTeamZones[1]) {
                             if (playerTeamOffside.IsOffside) // Is offside.
                                 _isOffside[playerSteamId] = new OffsideObject(player.Team, true, playerTeamOffside.Time);
-                            else if (playerWithPossessionSteamId != playerSteamId || (_puckZone != otherTeamZones[0] && _puckZone != otherTeamZones[1])) // Is offside.
+                            else if (playerWithPossessionSteamId == playerSteamId) // Is not offside.
+                                _isOffside[playerSteamId] = new OffsideObject(player.Team, false);
+                            else if (_puckZone == otherTeamZones[0] && _puckZone == otherTeamZones[1]) // Is offside.
                                 _isOffside[playerSteamId] = new OffsideObject(player.Team, true, playerTeamOffside.Time);
                             else
                                 _isOffside[playerSteamId] = new OffsideObject(player.Team, false); // Is not offside.
