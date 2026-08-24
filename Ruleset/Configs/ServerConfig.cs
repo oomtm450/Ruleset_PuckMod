@@ -1002,7 +1002,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
-        public float CollisionForceThreshold { get; set; } = 0.969f;
+        public float CollisionForceThreshold { get; set; } = 0.968f;
 
         /// <summary>
         /// Int, number of milliseconds between each player push to be considered when finding blame for a goalie push.
