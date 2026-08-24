@@ -68,6 +68,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool RefMode { get; } = true;
 
         /// <summary>
+        /// Int, number of games a newly added ref will be doing before being automaticaly removed.
+        /// </summary>
+        public int RefModeGameAmount { get; } = 3;
+
+        /// <summary>
         /// Float, default standing player height.
         /// </summary>
         public float DefaultPlayerHeight { get; } = 0.0338f; // TODO : Check in new Puck build.

@@ -106,6 +106,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool RefMode { get; set; } = true;
 
         /// <summary>
+        /// Int, number of games a newly added ref will be doing before being automaticaly removed.
+        /// </summary>
+        public int RefModeGameAmount { get; set; } = 3;
+
+        /// <summary>
         /// Float, default standing player height.
         /// </summary>
         public float DefaultPlayerHeight { get; set; } = DEFAULT_PLAYER_HEIGHT;
@@ -158,6 +163,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             MaxPossessionMilliseconds = serverConfig.MaxPossessionMilliseconds;
 
             RefMode = serverConfig.RefMode;
+            RefModeGameAmount = serverConfig.RefModeGameAmount;
 
             DefaultPlayerHeight = serverConfig.DefaultPlayerHeight;
 
@@ -200,6 +206,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (RefMode == _oldConfig.RefMode)
                 RefMode = newConfig.RefMode;
+
+            if (RefModeGameAmount == _oldConfig.RefModeGameAmount)
+                RefModeGameAmount = newConfig.RefModeGameAmount;
 
             if (DefaultPlayerHeight == _oldConfig.DefaultPlayerHeight)
                 DefaultPlayerHeight = newConfig.DefaultPlayerHeight;

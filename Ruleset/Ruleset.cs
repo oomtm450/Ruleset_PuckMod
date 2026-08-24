@@ -81,6 +81,8 @@ namespace oomtm450PuckMod_Ruleset {
             Codebase.Constants.UNPENALIZED_PLAYER_DATANAME,
         });
 
+        internal const string REF_UI_DEFAULT_KEY = "F7";
+
         private static Dictionary<PlayerTeam, Dictionary<string, Quaternion>> POSITION_ROTATION_ON_FACEOFF = null;
 
         private const string TOGGLE_HIGHSTICK_DATANAME = Constants.MOD_NAME + "togglehs";
@@ -336,7 +338,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static FaceOffPuckValidator _puckValidator = null;
 
-        internal static readonly LockList<string> CurrentRefsSteamId = new LockList<string>();
+        internal static readonly LockDictionary<string, int> CurrentRefsSteamId = new LockDictionary<string, int>();
 
         private static readonly LockList<string> _permaRefsSteamId = new LockList<string>();
 
@@ -1146,7 +1148,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (newGameState.Phase == GamePhase.GameOver || newGameState.Phase == GamePhase.Warmup)
                             ResetGame();
                         else if (newGameState.Phase == GamePhase.PreGame)
-                            ResetGame(!(oldGameState.Phase == GamePhase.Warmup));
+                            ResetGame(true);
                         else
                             PenaltyModule.PausePenalties();
 
@@ -2629,7 +2631,7 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Methods/Functions
-        private static void ResetGame(bool resetRefSteamIds = true) {
+        private static void ResetGame(bool resetRefSteamIds = false) {
             NextFaceoffSpot = FaceoffSpot.Center;
             _lastStoppageReason = Rule.None;
             _periodTickRemaining = -1;
@@ -2645,7 +2647,7 @@ namespace oomtm450PuckMod_Ruleset {
                 _icingStaminaDrainPenaltyAmount[key] = 0;
 
             if (resetRefSteamIds) {
-                RefVote.RemoveAllRefs();
+                RefVote.RemoveAllRefs(false);
 
                 foreach (string permaRefSteamId in _permaRefsSteamId)
                     RefVote.AddRef(permaRefSteamId, false);
@@ -3773,7 +3775,7 @@ namespace oomtm450PuckMod_Ruleset {
                             RefVote.AddRef(dataStr, false);
                             _permaRefsSteamId.Add(dataStr);
 
-                            SystemChatMessages.Add($"#{addedPermaRefSteamIdPlayer.Number.Value} {addedPermaRefSteamIdPlayer.Username.Value} is now a referee until server restart. (F7 for UI)");
+                            SystemChatMessages.Add($"#{addedPermaRefSteamIdPlayer.Number.Value} {addedPermaRefSteamIdPlayer.Username.Value} is now a referee until server restart. ({REF_UI_DEFAULT_KEY} for UI)");
                             Logging.Log($"Added #{addedPermaRefSteamIdPlayer.Number.Value} {addedPermaRefSteamIdPlayer.Username.Value} [{dataStr}] as a referee until server restart.", ServerConfig);
                         }
                         break;
@@ -4126,7 +4128,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (RefVote.RemoveRefVotingInProgress)
                             RefVote.RemoveRefVote(clientId);
                         else {
-                            if (dataStr == "-100" && CurrentRefsSteamId.Contains(removeRefLocalPlayerSteamId)) {
+                            if (dataStr == "-100" && CurrentRefsSteamId.ContainsKey(removeRefLocalPlayerSteamId)) {
                                 RefVote.RemoveRef(removeRefLocalPlayerSteamId);
                                 break;
                             }
@@ -4442,6 +4444,9 @@ namespace oomtm450PuckMod_Ruleset {
                 ServerConfig.HighStick.BlueTeam = false;
                 ServerConfig.HighStick.RedTeam = false;
 
+                ServerConfig.Penalty.FaceoffViolation = false;
+                ServerConfig.Faceoff.EnableViolations = false;
+
                 if (refMode == RefMode.LinesmanOnly) {
                     NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
@@ -4458,11 +4463,12 @@ namespace oomtm450PuckMod_Ruleset {
                 ServerConfig.Penalty.Charging = false;
                 ServerConfig.Penalty.DelayOfGame = false;
                 ServerConfig.Penalty.Embellishment = false;
-                ServerConfig.Penalty.FaceoffViolation = false;
-                ServerConfig.Faceoff.EnableViolations = false; // TODO : Create new ref command to redo faceoff to simulate violations.
                 ServerConfig.Penalty.GoalieInterference = false;
                 ServerConfig.Penalty.Interference = false;
                 ServerConfig.Penalty.Roughing = false;
+
+                ServerConfig.GInt.BlueTeam = false;
+                ServerConfig.GInt.RedTeam = false;
 
                 if (refMode == RefMode.RefereeOnly) {
                     NetworkCommunication.SendDataToAll(RefSignals.STOP_SIGNAL, RefSignals.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
@@ -4502,7 +4508,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (string.IsNullOrEmpty(playerSteamId))
                 return false;
 
-            if (!IsAdmin(playerSteamId) && !CurrentRefsSteamId.Contains(playerSteamId))
+            if (!IsAdmin(playerSteamId) && !CurrentRefsSteamId.ContainsKey(playerSteamId))
                 return false;
 
             return true;
@@ -5198,20 +5204,24 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void AddRef(string steamId, bool showMessage = true) {
-            if (Ruleset.CurrentRefsSteamId.Contains(steamId))
+            if (Ruleset.CurrentRefsSteamId.ContainsKey(steamId))
                 return;
 
             Player newRef = PlayerManager.Instance.GetPlayerBySteamId(steamId);
             if (newRef == null || !newRef || newRef.Team != PlayerTeam.Spectator)
                 return;
 
-            Ruleset.CurrentRefsSteamId.Add(steamId);
-            if (Ruleset.CurrentRefsSteamId.Count == 1)
+            int refModeGameAmount = Ruleset.ServerConfig.RefModeGameAmount;
+            if (GameManager.Instance.Phase == GamePhase.Warmup || GameManager.Instance.Phase == GamePhase.GameOver || GameManager.Instance.Phase == GamePhase.PostGame)
+                refModeGameAmount += 1;
+
+            Ruleset.CurrentRefsSteamId.Add(steamId, refModeGameAmount);
+            if (Ruleset.CurrentRefsSteamId.Count == 1 && Ruleset.CurrentRefMode == RefMode.AI)
                 Ruleset.ChangeRefMode(RefMode.Hybrid);
 
             if (showMessage) {
-                Ruleset.SystemChatMessages.Add($"#{newRef.Number.Value} {newRef.Username.Value} is now a referee for a game. (F7 for UI)");
-                Logging.Log($"Added #{newRef.Number.Value} {newRef.Username.Value} [{newRef.SteamId.Value}] as a referee for a game.", Ruleset.ServerConfig);
+                Ruleset.SystemChatMessages.Add($"#{newRef.Number.Value} {newRef.Username.Value} is now a referee for {Ruleset.ServerConfig.RefModeGameAmount} game{(Ruleset.ServerConfig.RefModeGameAmount > 1 ? "s" : "")}. ({Ruleset.REF_UI_DEFAULT_KEY} for UI)");
+                Logging.Log($"Added #{newRef.Number.Value} {newRef.Username.Value} [{newRef.SteamId.Value}] as a referee for {Ruleset.ServerConfig.RefModeGameAmount} game{(Ruleset.ServerConfig.RefModeGameAmount > 1 ? "s" : "")}.", Ruleset.ServerConfig);
             }
         }
 
@@ -5221,7 +5231,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             string playerSteamId = player.SteamId.Value.ToString();
 
-            if (!Ruleset.CurrentRefsSteamId.Contains(playerSteamId))
+            if (!Ruleset.CurrentRefsSteamId.ContainsKey(playerSteamId))
                 return;
 
             if (votesNeeded < REMOVE_REF_MINIMUM_VOTES)
@@ -5267,7 +5277,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void RemoveRef(string steamId) {
-            if (!Ruleset.CurrentRefsSteamId.Contains(steamId))
+            if (!Ruleset.CurrentRefsSteamId.ContainsKey(steamId))
                 return;
 
             Player removeRefVotePlayer = _removeRefVotePlayer;
@@ -5290,9 +5300,19 @@ namespace oomtm450PuckMod_Ruleset {
             Logging.Log($"Removed #{removeRefVotePlayer.Number.Value} {removeRefVotePlayer.Username.Value} [{steamId}] as a referee.", Ruleset.ServerConfig);
         }
 
-        internal static void RemoveAllRefs() {
-            Ruleset.CurrentRefsSteamId.Clear();
-            Ruleset.ChangeRefMode(RefMode.AI);
+        internal static void RemoveAllRefs(bool forceRemoveAll = true) {
+            if (forceRemoveAll)
+                Ruleset.CurrentRefsSteamId.Clear();
+            else {
+                foreach (var kvp in new Dictionary<string, int>(Ruleset.CurrentRefsSteamId)) {
+                    Ruleset.CurrentRefsSteamId[kvp.Key] = kvp.Value - 1;
+                    if (Ruleset.CurrentRefsSteamId[kvp.Key] <= 0)
+                        Ruleset.CurrentRefsSteamId.Remove(kvp.Key);
+                }
+            }
+
+            if (Ruleset.CurrentRefsSteamId.Count == 0)
+                Ruleset.ChangeRefMode(RefMode.AI);
         }
     }
 
