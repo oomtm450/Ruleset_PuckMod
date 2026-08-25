@@ -5137,6 +5137,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly LockList<ulong> _addRefVoteClientIds = new LockList<ulong>();
 
+        private static string _addRefVotePlayerSteamId = "";
+
         private static Timer _removeRefTimer = null;
 
         private static int _removeRefVotes = 0;
@@ -5157,12 +5159,18 @@ namespace oomtm450PuckMod_Ruleset {
             if (!Ruleset.ServerConfig.RefMode)
                 return;
 
+            string playerSteamId = player.SteamId.Value.ToString();
+
+            if (Ruleset.CurrentRefsSteamId.ContainsKey(playerSteamId))
+                return;
+
             if (votesNeeded < ADD_REF_MINIMUM_VOTES)
                 votesNeeded = ADD_REF_MINIMUM_VOTES;
 
             StopAddRef();
 
             _addRefVotePlayer = player;
+            _addRefVotePlayerSteamId = playerSteamId;
 
             _addRefTimer = new Timer((_) => {
                 StopAddRef();
@@ -5277,6 +5285,12 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static void RemoveRef(string steamId) {
+            if (_removeRefVotePlayerSteamId == steamId)
+                StopRemoveRef();
+
+            if (_addRefVotePlayerSteamId == steamId)
+                StopAddRef();
+
             if (!Ruleset.CurrentRefsSteamId.ContainsKey(steamId))
                 return;
 
