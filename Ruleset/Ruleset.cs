@@ -5321,7 +5321,7 @@ namespace oomtm450PuckMod_Ruleset {
                 foreach (var kvp in new Dictionary<string, int>(Ruleset.CurrentRefsSteamId)) {
                     Ruleset.CurrentRefsSteamId[kvp.Key] = kvp.Value - 1;
                     if (Ruleset.CurrentRefsSteamId[kvp.Key] <= 0)
-                        Ruleset.CurrentRefsSteamId.Remove(kvp.Key);
+                        RemoveRef(kvp.Key);
                 }
             }
 
