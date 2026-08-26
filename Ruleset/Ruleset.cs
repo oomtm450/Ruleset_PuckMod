@@ -711,28 +711,18 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     // Icing logic.
-                    if (!_isPuckBehindHashmarks.Any(x => x.Value) || !ServerConfig.Icing.Deferred) {
-                        if (IsIcing(otherTeam)) {
-                            if (!isGoalie)
-                                CallIcing(otherTeam);
-                            else {
-                                WarnIcing(false, otherTeam);
-                                ResetIcings();
-                            }
-                        }
+                    if (IsIcing(otherTeam)) {
+                        if (!isGoalie)
+                            CallIcing(otherTeam);
                         else {
-                            if (IsIcing(stick.Player.Team)) {
-                                WarnIcing(false, stick.Player.Team);
-                                ResetIcings();
-                            }
-                        }
-                    }
-                    /*else {
-                        if (IsIcing(stick.Player.Team)) {
-                            WarnIcing(false, stick.Player.Team);
+                            WarnIcing(false, otherTeam);
                             ResetIcings();
                         }
-                    }*/
+                    }
+                    else if (IsIcing(stick.Player.Team)) {
+                        WarnIcing(false, stick.Player.Team);
+                        ResetIcings();
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(Puck_OnCollisionStay_Patch)} Postfix().\n{ex}", ServerConfig);
@@ -2140,8 +2130,10 @@ namespace oomtm450PuckMod_Ruleset {
                             closestPlayerToPuckTeam = PlayerTeam.Red;
 
                         if (closestPlayerToPuckTeam != PlayerTeam.None) {
-                            if (IsIcing(closestPlayerToPuckTeam))
+                            if (IsIcing(closestPlayerToPuckTeam)) {
                                 icingHasToBeWarned[closestPlayerToPuckTeam] = false;
+                                ResetIcings();
+                            }
                             else {
                                 PlayerTeam closestPlayerToEndBoardOtherTeam = TeamFunc.GetOtherTeam(closestPlayerToPuckTeam);
                                 if (IsIcing(closestPlayerToEndBoardOtherTeam))
