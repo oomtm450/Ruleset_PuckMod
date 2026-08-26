@@ -1895,7 +1895,7 @@ namespace oomtm450PuckMod_Stats {
 
                 if (PlayerFunc.IsGoalie(player) || player.PlayerPosition.Name == PlayerFunc.GOALIE_POSITION) {
                     if (_savePerc.TryGetValue(steamId, out var saveValues))
-                        starPoints[steamId] += ((((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.300d) * ((double)saveValues.Saves) * 32d;
+                        starPoints[steamId] += ((((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.300d) * ((double)saveValues.Saves) * 31d;
 
                     if (_sog.TryGetValue(steamId, out int shots))
                         starPoints[steamId] += ((double)shots) * 1d;
@@ -1922,7 +1922,7 @@ namespace oomtm450PuckMod_Stats {
                     if (_blocks.TryGetValue(steamId, out int blocks))
                         starPoints[steamId] += ((double)blocks) * 5d;
 
-                    const double SKATER_GOAL_MODIFIER = 70d;
+                    const double SKATER_GOAL_MODIFIER = 71d;
                     const double SKATER_ASSIST_MODIFIER = 55d;
 
                     starPoints[steamId] += SKATER_GOAL_MODIFIER * gwgModifier;
