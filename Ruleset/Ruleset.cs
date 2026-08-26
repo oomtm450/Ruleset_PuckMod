@@ -2142,8 +2142,6 @@ namespace oomtm450PuckMod_Ruleset {
                                 if (IsIcing(closestPlayerToEndBoardOtherTeam))
                                     CallIcing(closestPlayerToEndBoardOtherTeam);
                             }
-
-                            ResetIcings();
                         }
                         else {
                             if (IsIcing(PlayerTeam.Blue))
