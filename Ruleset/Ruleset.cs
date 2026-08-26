@@ -929,8 +929,11 @@ namespace oomtm450PuckMod_Ruleset {
                             _playersWasLastRanIntoWithoutPuckTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
                         }
 
-                        bool lastPlayerWasCharged = playerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(currentPlayerSteamId, out var currentPlayerSprintTime) && currentPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && currentPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime;
-                        bool currentPlayerWasCharged = lastPlayerHit.PlayerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(lastPlayerHitSteamId, out var lastPlayerSprintTime) && lastPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && lastPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime;
+                        bool hasLastPlayerJumped = lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY;
+                        bool hasCurrentPlayerJumped = playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY;
+
+                        bool lastPlayerWasCharged = playerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(currentPlayerSteamId, out var currentPlayerSprintTime) && currentPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && currentPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime && hasCurrentPlayerJumped;
+                        bool currentPlayerWasCharged = lastPlayerHit.PlayerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(lastPlayerHitSteamId, out var lastPlayerSprintTime) && lastPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && lastPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime && hasLastPlayerJumped;
 
                         // Register player was charged.
                         if (lastPlayerWasCharged)
@@ -965,7 +968,7 @@ namespace oomtm450PuckMod_Ruleset {
                                         // Register player hit.
                                         _playersWasLastHitWithoutPuckTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
 
-                                        if (playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY) { // If the other person jumped.
+                                        if (hasCurrentPlayerJumped) { // If the other person jumped.
                                             _playersWasLastJumpedIntoWithoutPuckTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
                                             PenaltyModule.GivePenalty(PenaltyType.Interference, playerBody.Player, lastPlayerHitSteamId);
                                         }
@@ -986,7 +989,7 @@ namespace oomtm450PuckMod_Ruleset {
                                         // Register player hit.
                                         _playersWasLastHitWithoutPuckTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
 
-                                        if (lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY) { // If the other person jumped.
+                                        if (hasLastPlayerJumped) { // If the other person jumped.
                                             _playersWasLastJumpedIntoWithoutPuckTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
                                             PenaltyModule.GivePenalty(PenaltyType.Interference, lastPlayerHit, currentPlayerSteamId);
                                         }
