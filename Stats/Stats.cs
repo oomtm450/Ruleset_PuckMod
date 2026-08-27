@@ -1,5 +1,4 @@
 ﻿using Codebase;
-using GLTFast.Schema;
 using HarmonyLib;
 using Newtonsoft.Json;
 using oomtm450PuckMod_Stats.Configs;
