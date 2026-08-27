@@ -78,7 +78,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <returns>ClientConfig, parsed config.</returns>
         internal static ClientConfig ReadConfig() {
-            ClientConfig config = new ClientConfig();
+            ClientConfig config;
 
             try {
                 if (!Directory.Exists(CONFIG_FOLDER_PATH))
@@ -89,6 +89,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                     config = SetConfig(configFileContent);
                     Logging.Log($"Client config read.", config, true);
                 }
+                else
+                    config = new ClientConfig();
 
                 if (config.RedTeamPenaltyTimerXOffset < RED_TEAM_PENALTY_TIMER_X_OFFSET_DEFAULT)
                     config.RedTeamPenaltyTimerXOffset = RED_TEAM_PENALTY_TIMER_X_OFFSET_DEFAULT;
@@ -111,7 +113,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", new Configs.ClientConfig());
             }
 
-            return config;
+            return new ClientConfig();
         }
 
         internal void Save() {

@@ -62,7 +62,7 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// </summary>
         /// <returns>ClientConfig, parsed config.</returns>
         internal static ClientConfig ReadConfig() {
-            ClientConfig config = new ClientConfig();
+            ClientConfig config;
 
             try {
                 if (!Directory.Exists(CONFIG_FOLDER_PATH))
@@ -73,6 +73,8 @@ namespace oomtm450PuckMod_Stats.Configs {
                     config = SetConfig(configFileContent);
                     Logging.Log($"Client config read.", config, true);
                 }
+                else
+                    config = new ClientConfig();
 
                 config.Save();
             }
@@ -80,7 +82,7 @@ namespace oomtm450PuckMod_Stats.Configs {
                 Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", new ClientConfig());
             }
 
-            return config;
+            return new ClientConfig();
         }
 
         internal void Save() {
