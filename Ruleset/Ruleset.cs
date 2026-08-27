@@ -714,15 +714,13 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsIcing(otherTeam)) {
                         if (!isGoalie)
                             CallIcing(otherTeam);
-                        else {
+                        else
                             WarnIcing(false, otherTeam);
-                            ResetIcings();
-                        }
                     }
-                    else if (IsIcing(stick.Player.Team)) {
+                    else if (IsIcing(stick.Player.Team))
                         WarnIcing(false, stick.Player.Team);
-                        ResetIcings();
-                    }
+
+                    ResetIcings();
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(Puck_OnCollisionStay_Patch)} Postfix().\n{ex}", ServerConfig);
