@@ -192,7 +192,7 @@ namespace oomtm450PuckMod_Stats.Configs {
                     File.WriteAllText(CONFIG_PATH, config.ToString());
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}", config);
+                    Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}", new ServerConfig());
                 }
 
                 Logging.Log($"Wrote server config : {config}", config, true);
@@ -209,7 +209,7 @@ namespace oomtm450PuckMod_Stats.Configs {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", config);
+                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", new ServerConfig());
             }
 
             return config;
