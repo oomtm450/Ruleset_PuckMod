@@ -132,6 +132,8 @@ namespace oomtm450PuckMod_Sounds.Configs {
                     config = new ClientConfig();
 
                 config.Save();
+
+                return config;
             }
             catch (Exception ex) {
                 Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", new Configs.ClientConfig());

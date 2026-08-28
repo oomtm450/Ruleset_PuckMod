@@ -77,6 +77,8 @@ namespace oomtm450PuckMod_Stats.Configs {
                     config = new ClientConfig();
 
                 config.Save();
+
+                return config;
             }
             catch (Exception ex) {
                 Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", new ClientConfig());
