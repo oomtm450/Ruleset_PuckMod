@@ -488,10 +488,11 @@ namespace oomtm450PuckMod_Ruleset {
                 if (possiblePlayersToPenalize.Count == 1)
                     penalizedPlayer = possiblePlayersToPenalize.First();
                 else {
-                    possiblePlayersToPenalize = possiblePlayersToPenalize.OrderBy(x => x.Goals.Value + x.Assists.Value).ToList();
-                    penalizedPlayer = possiblePlayersToPenalize.First();
-                    if (penalizedPlayer.PlayerPosition.Name == Codebase.PlayerFunc.LEFT_DEFENDER_POSITION || penalizedPlayer.PlayerPosition.Name == Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION)
-                        penalizedPlayer = possiblePlayersToPenalize[1];
+                    List<Player> possiblePlayersToPenalizeOffenseOnly = new List<Player>(possiblePlayersToPenalize.Where(x => x.PlayerPosition.Name != Codebase.PlayerFunc.LEFT_DEFENDER_POSITION && x.PlayerPosition.Name != Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION));
+                    if (possiblePlayersToPenalizeOffenseOnly.Count == 0)
+                        penalizedPlayer = possiblePlayersToPenalize.OrderBy(x => x.Goals.Value + x.Assists.Value).First();
+                    else
+                        penalizedPlayer = possiblePlayersToPenalizeOffenseOnly.OrderBy(x => x.Goals.Value + x.Assists.Value).First();
                 }
 
                 penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
