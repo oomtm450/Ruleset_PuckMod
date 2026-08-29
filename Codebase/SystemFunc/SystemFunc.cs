@@ -63,5 +63,12 @@ namespace Codebase {
                 .Where(c => !Char.IsWhiteSpace(c))
                 .ToArray());
         }
+
+        public static float GetDistance(float x1, float z1, float x2, float z2) {
+            Vector2 vector1 = new Vector2(x1, z1);
+            Vector2 vector2 = new Vector2(x2, z2);
+
+            return Vector2.Distance(vector1, vector2);
+        }
     }
 }

@@ -2111,12 +2111,12 @@ namespace oomtm450PuckMod_Ruleset {
 
                         foreach (PlayerIcing player in dictPlayersPositionsForIcing) {
                             if (player.Team == PlayerTeam.Blue) {
-                                float _blueTeamPlayerDistanceToPuck = GetDistance(puckXCoordinate, puckZCoordinate, player.X, player.Z);
+                                float _blueTeamPlayerDistanceToPuck = SystemFunc.GetDistance(puckXCoordinate, puckZCoordinate, player.X, player.Z);
                                 if (_blueTeamPlayerDistanceToPuck < blueTeamPlayerDistanceToPuck)
                                     blueTeamPlayerDistanceToPuck = _blueTeamPlayerDistanceToPuck;
                             }
                             else {
-                                float _redTeamPlayerDistanceToPuck = GetDistance(puckXCoordinate, puckZCoordinate, player.X, player.Z);
+                                float _redTeamPlayerDistanceToPuck = SystemFunc.GetDistance(puckXCoordinate, puckZCoordinate, player.X, player.Z);
                                 if (_redTeamPlayerDistanceToPuck < redTeamPlayerDistanceToPuck)
                                     redTeamPlayerDistanceToPuck = _redTeamPlayerDistanceToPuck;
                             }
@@ -2916,7 +2916,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (player == null || !player || !player.IsCharacterSpawned)
                                 continue;
 
-                            float maxPossibleTimeLimit = ((float)((GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * (ServerConfig.Icing.DeferredMaxPossibleTimeMultiplicator * _arenaScaleZ)) + (ServerConfig.Icing.DeferredMaxPossibleTimeAddition * _arenaScaleZ))) - (Math.Abs(player.PlayerBody.transform.position.z) * (ServerConfig.Icing.DeferredMaxPossibleTimeDistanceDelta * _arenaScaleZ));
+                            float maxPossibleTimeLimit = ((float)((SystemFunc.GetDistance(puck.Rigidbody.transform.position.x, puck.Rigidbody.transform.position.z, player.PlayerBody.transform.position.x, player.PlayerBody.transform.position.z) * (ServerConfig.Icing.DeferredMaxPossibleTimeMultiplicator * _arenaScaleZ)) + (ServerConfig.Icing.DeferredMaxPossibleTimeAddition * _arenaScaleZ))) - (Math.Abs(player.PlayerBody.transform.position.z) * (ServerConfig.Icing.DeferredMaxPossibleTimeDistanceDelta * _arenaScaleZ));
 
                             if (maxPossibleTime >= maxPossibleTimeLimit) {
                                 _isIcingPossible[team] = new IcingObject();
@@ -5014,13 +5014,6 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             PenLabelUI.AddPenaltiesLabel();
-        }
-
-        public static float GetDistance(float x1, float z1, float x2, float z2) {
-            Vector2 vector1 = new Vector2(x1, z1);
-            Vector2 vector2 = new Vector2(x2, z2);
-
-            return Vector2.Distance(vector1, vector2);
         }
         #endregion
 
