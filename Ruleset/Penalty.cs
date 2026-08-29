@@ -471,7 +471,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 List<Player> possiblePlayersToPenalize = new List<Player>();
                 foreach (Player teamPlayer in teamPlayers) {
-                    if (!Codebase.PlayerFunc.IsPlayerPlaying(teamPlayer))
+                    if (!Codebase.PlayerFunc.IsPlayerPlaying(teamPlayer) || Codebase.PlayerFunc.IsGoalie(teamPlayer) || teamPlayer.PlayerPosition.Name == Codebase.PlayerFunc.GOALIE_POSITION)
                         continue;
 
                     if (PenalizedPlayers.TryGetValue(teamPlayer.SteamId.Value.ToString(), out LockList<Penalty> __penaltyList)) {
