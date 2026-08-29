@@ -1028,6 +1028,13 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         hasHitterDived = false;
 
+                    Logging.LogDebug($"Collision force for goalie collision : {force} (Threshold is {ServerConfig.GInt.CollisionForceThreshold})", ServerConfig); // TODO
+
+                    if (force > ServerConfig.GInt.CollisionForceThreshold)
+                        Logging.LogDebug($"Collision threshold for gint was exceeded.", ServerConfig); // TODO
+
+                    Logging.LogDebug($"Goalie was in his crease ? : {goalieIsInHisCrease}", ServerConfig); // TODO
+
                     if ((goalie.PlayerBody.HasFallen.Value || goalie.PlayerBody.HasSlipped) && !hasGoalieDived) {
                         if (goalie.Team == hitter.Team)
                             return;
@@ -1068,8 +1075,10 @@ namespace oomtm450PuckMod_Ruleset {
                         if (originalCollision == null && goalie.Team == hitter.Team)
                             return;
 
-                        if (originalCollision.Player1Team == goalie.Team && originalCollision.Player2Team == goalie.Team)
+                        if (originalCollision.Player1Team == goalie.Team && originalCollision.Player2Team == goalie.Team) {
+                            Logging.LogDebug($"Original gint collision came from the goalie's team ! No GINT.", ServerConfig); // TODO
                             return;
+                        }
 
                         _ = _goalieIntTimer.TryGetValue(goalieOtherTeam, out Stopwatch watch);
 
@@ -1885,31 +1894,31 @@ namespace oomtm450PuckMod_Ruleset {
 
                             bool playerWasLastInPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == lastPlayerOnPuckSteamId;
 
-                            Logging.Log("playerTouched : " + playerTouched, ServerConfig, true); // TODO
-                            Logging.Log("playerTouchedOtherTeam : " + playerTouchedOtherTeam, ServerConfig, true); // TODO
+                            Logging.LogDebug("playerTouched : " + playerTouched, ServerConfig, true); // TODO
+                            Logging.LogDebug("playerTouchedOtherTeam : " + playerTouchedOtherTeam, ServerConfig, true); // TODO
 
-                            Logging.Log("playerWasLastInPossession : " + playerWasLastInPossession, ServerConfig, true); // TODO
+                            Logging.LogDebug("playerWasLastInPossession : " + playerWasLastInPossession, ServerConfig, true); // TODO
 
-                            Logging.Log("_puckDeflectedTimeSinceLastTouch : " + _puckDeflectedTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                            Logging.LogDebug("_puckDeflectedTimeSinceLastTouch : " + _puckDeflectedTimeSinceLastTouch.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
 
                             if (playerTouched)
-                                Logging.Log("lastTouchTime.LastTouchTime : " + lastTouchTime.LastTouchTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                                Logging.LogDebug("lastTouchTime.LastTouchTime : " + lastTouchTime.LastTouchTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
                             if (playerTouchedOtherTeam)
-                                Logging.Log("lastTouchOtherTeamTime.LastTouchTime : " + lastTouchOtherTeamTime.LastTouchTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
+                                Logging.LogDebug("lastTouchOtherTeamTime.LastTouchTime : " + lastTouchOtherTeamTime.LastTouchTime.ToString("HH:mm:ss.fffffff"), ServerConfig, true); // TODO
 
-                            Logging.Log($"_puckDeflectedTimeSinceLastTouch > lastTouchTime.LastTouchTime : " + (_puckDeflectedTimeSinceLastTouch > lastTouchTime.LastTouchTime), ServerConfig, true); // TODO
+                            Logging.LogDebug($"_puckDeflectedTimeSinceLastTouch > lastTouchTime.LastTouchTime : " + (_puckDeflectedTimeSinceLastTouch > lastTouchTime.LastTouchTime), ServerConfig, true); // TODO
 
                             bool otherTeamTouchedTooClose = false;
                             if (playerTouchedOtherTeam && (lastTouchTime.LastTouchTime - lastTouchOtherTeamTime.LastTouchTime).TotalMilliseconds < ServerConfig.Penalty.DelayOfGameMillisecondsThreshold)
                                 otherTeamTouchedTooClose = true;
 
-                            Logging.Log($"(lastTouchTime.LastTouchTime - lastTouchOtherTeamTime.LastTouchTime).TotalMilliseconds : {(lastTouchTime.LastTouchTime - lastTouchOtherTeamTime.LastTouchTime).TotalMilliseconds}", ServerConfig, true); // TODO
-                            Logging.Log($"ServerConfig.Penalty.DelayOfGameMillisecondsThreshold : {ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}", ServerConfig, true); // TODO
-                            Logging.Log("otherTeamTouchedTooClose : " + otherTeamTouchedTooClose, ServerConfig, true); // TODO
-                            Logging.Log("ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds - ((_faceoffDuration + 1) * 1000) : " + (ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds - ((_faceoffDuration + 1) * 1000)), ServerConfig, true); // TODO
-                            Logging.Log("ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds : " + ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds, ServerConfig, true); // TODO
-                            Logging.Log("(DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds : " + (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds, ServerConfig, true); // TODO
-                            Logging.Log("(_faceoffDuration + 1) * 1000 : " + ((_faceoffDuration + 1) * 1000), ServerConfig, true); // TODO
+                            Logging.LogDebug($"(lastTouchTime.LastTouchTime - lastTouchOtherTeamTime.LastTouchTime).TotalMilliseconds : {(lastTouchTime.LastTouchTime - lastTouchOtherTeamTime.LastTouchTime).TotalMilliseconds}", ServerConfig, true); // TODO
+                            Logging.LogDebug($"ServerConfig.Penalty.DelayOfGameMillisecondsThreshold : {ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}", ServerConfig, true); // TODO
+                            Logging.LogDebug("otherTeamTouchedTooClose : " + otherTeamTouchedTooClose, ServerConfig, true); // TODO
+                            Logging.LogDebug("ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds - ((_faceoffDuration + 1) * 1000) : " + (ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds - ((_faceoffDuration + 1) * 1000)), ServerConfig, true); // TODO
+                            Logging.LogDebug("ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds : " + ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds, ServerConfig, true); // TODO
+                            Logging.LogDebug("(DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds : " + (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds, ServerConfig, true); // TODO
+                            Logging.LogDebug("(_faceoffDuration + 1) * 1000 : " + ((_faceoffDuration + 1) * 1000), ServerConfig, true); // TODO
 
                             playerTouched = (playerTouched || playerWasLastInPossession);
                             if (!playerTouched ||
