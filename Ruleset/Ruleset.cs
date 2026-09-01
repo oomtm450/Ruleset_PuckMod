@@ -1761,11 +1761,8 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!Codebase.PlayerFunc.IsPlayerPlaying(player))
                             continue;
 
-                        if (player.PlayerBody.transform.position.y < -Y_NETWORK_BOUND) {
+                        if (player.PlayerBody.transform.position.y < -Y_NETWORK_BOUND)
                             player.PlayerBody.Server_Teleport(new Vector3(ArenaOffsetX, ArenaOffsetY + ServerConfig.YOffsetForTeleport, ArenaOffsetZ), player.PlayerBody.transform.rotation);
-                            player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
-                            player.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
-                        }
                     }
                 }
                 catch (Exception ex) {

@@ -194,8 +194,18 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             // Use Server_Teleport for proper networked teleportation.
             player.PlayerBody.Server_Teleport(penaltyPos, player.PlayerBody.transform.rotation);
             Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = player, Position = penaltyPos, Rotation = player.PlayerBody.transform.rotation, });
-            player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
-            player.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
+
+            if (player.IsCharacterSpawned) {
+                player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
+                player.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
+
+                player.Stick.Rigidbody.linearVelocity = Vector3.zero;
+                player.Stick.Rigidbody.angularVelocity = Vector3.zero;
+            }
+
+            player.PlayerBody.Server_Freeze();
+            player.Stick.Server_Freeze();
+
             _frozenPlayers.Add(player);
 
             Logging.Log($"Player {player.Username.Value} frozen at ({Ruleset.ServerConfig.Faceoff.PenaltyFreezeDistance}m back) after {Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty} violations!", Ruleset.ServerConfig);
@@ -214,6 +224,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             FaceOffPlayerUnfreezer.PenalizedPlayers.Remove(player);
 
             player.PlayerBody.Server_Unfreeze();
+            player.Stick.Server_Unfreeze();
             _frozenPlayers.Remove(player);
             Logging.Log($"Player {player.Username.Value} unfrozen after penalty", Ruleset.ServerConfig);
         }

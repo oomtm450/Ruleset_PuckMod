@@ -162,7 +162,8 @@ namespace oomtm450PuckMod_Ruleset {
                 Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = player, Position = teleportPosition, Rotation = rotation, });
             }
 
-            player.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.None;
+            player.PlayerBody.Server_Unfreeze();
+            player.Stick.Server_Unfreeze();
         }
         #endregion
     }

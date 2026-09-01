@@ -231,9 +231,16 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                     continue;
 
                 // Freeze all movement
-                tether.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
-                tether.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
-                tether.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
+                if (tether.PlayerBody.Player.IsCharacterSpawned) {
+                    tether.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
+                    tether.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
+
+                    tether.PlayerBody.Stick.Rigidbody.linearVelocity = Vector3.zero;
+                    tether.PlayerBody.Stick.Rigidbody.angularVelocity = Vector3.zero;
+                }
+
+                tether.PlayerBody.Server_Freeze();
+                tether.PlayerBody.Stick.Server_Freeze();
             }
         }
 
@@ -262,8 +269,8 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                     continue;
 
                 // Unfreeze if frozen
-                if (tether.PlayerBody.Rigidbody.constraints == RigidbodyConstraints.FreezeAll)
-                    tether.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.None;
+                tether.PlayerBody.Server_Unfreeze();
+                tether.PlayerBody.Stick.Server_Unfreeze();
 
                 // Enforce position tether
                 EnforceTether(tether);
