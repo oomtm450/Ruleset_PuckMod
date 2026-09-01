@@ -1,4 +1,5 @@
 ﻿using Codebase;
+using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -15,6 +16,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             internal float MaxBackwardDistance { get; set; }
             internal float MaxLeftDistance { get; set; }
             internal float MaxRightDistance { get; set; }
+            internal bool IsCenter { get; set; }
         }
 
         private readonly LockList<PlayerTether> _playerTethers = new LockList<PlayerTether>();
@@ -32,30 +34,42 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
         }
 
         private void Event_Everyone_OnGameStateChanged(Dictionary<string, object> message) {
-            GameState oldGameState = (GameState)message["oldGameState"];
-            GameState newGameState = (GameState)message["newGameState"];
+            try {
+                GameState oldGameState = (GameState)message["oldGameState"];
+                GameState newGameState = (GameState)message["newGameState"];
 
-            if (oldGameState.Phase == newGameState.Phase)
-                return;
+                if (oldGameState.Phase == newGameState.Phase)
+                    return;
 
-            _isFaceOffActive = newGameState.Phase == GamePhase.FaceOff;
+                _isFaceOffActive = newGameState.Phase == GamePhase.FaceOff;
 
-            if (_isFaceOffActive) {
-                // Start countdown to freeze players before puck drop
-                _freezeStartTime = Time.time;
+                if (_isFaceOffActive) {
+                    // Start countdown to freeze players before puck drop
+                    _freezeStartTime = Time.time;
 
-                if (oldGameState.Phase == GamePhase.Play || oldGameState.Phase == GamePhase.Intermission) { // Fix for tether since B312 doesn't respawn players in these cases.
-                    foreach (Player player in PlayerManager.Instance.GetSpawnedPlayers()) {
-                        Dictionary<string, object> onPlayerBodySpawnedMessage = new Dictionary<string, object> {
-                            { "playerBody", player.PlayerBody },
-                        };
-                        Ruleset.Event_Everyone_OnPlayerBodySpawned(onPlayerBodySpawnedMessage);
+                    if (oldGameState.Phase == GamePhase.Play || oldGameState.Phase == GamePhase.Intermission) { // Fix for tether since B312 doesn't respawn players in these cases.
+                        foreach (Player player in PlayerManager.Instance.GetSpawnedPlayers()) {
+                            Dictionary<string, object> onPlayerBodySpawnedMessage = new Dictionary<string, object> {
+                                { "playerBody", player.PlayerBody },
+                            };
+                            Ruleset.Event_Everyone_OnPlayerBodySpawned(onPlayerBodySpawnedMessage);
+                        }
                     }
                 }
+                else {
+                    if (newGameState.Phase == GamePhase.Play && oldGameState.Phase == GamePhase.FaceOff) {
+                        foreach (PlayerTether tether in _playerTethers) {
+                            tether.PlayerBody.Server_Unfreeze();
+                            tether.PlayerBody.Stick.Server_Unfreeze();
+                        }
+                    }
+
+                    _playerTethers.Clear();
+                    _freezeStartTime = float.MinValue;
+                }
             }
-            else {
-                _playerTethers.Clear();
-                _freezeStartTime = float.MinValue;
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(FaceOffPlayerUnfreezer)}.{nameof(Event_Everyone_OnGameStateChanged)}.\n{ex}", Ruleset.ServerConfig);
             }
         }
 
@@ -99,6 +113,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 MaxBackwardDistance = GetMaxBackwardDistance(positionName, playerBody.Player.Team, currentFaceoffSpot, arenaScaleZ),
                 MaxLeftDistance = GetMaxLeftDistance(positionName, playerBody.Player.Team, currentFaceoffSpot, arenaScaleX),
                 MaxRightDistance = GetMaxRightDistance(positionName, playerBody.Player.Team, currentFaceoffSpot, arenaScaleX),
+                IsCenter = positionName == Codebase.PlayerFunc.CENTER_POSITION,
             };
 
             if (positionName != Codebase.PlayerFunc.GOALIE_POSITION && positionName != Codebase.PlayerFunc.CENTER_POSITION && currentFaceoffSpot == FaceoffSpot.Center) {
@@ -240,7 +255,8 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 }
 
                 tether.PlayerBody.Server_Freeze();
-                tether.PlayerBody.Stick.Server_Freeze();
+                if (tether.IsCenter)
+                    tether.PlayerBody.Stick.Server_Freeze();
             }
         }
 
@@ -267,10 +283,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 // Skip players who are serving a penalty
                 if (PenalizedPlayers.Contains(tether.PlayerBody.Player))
                     continue;
-
-                // Unfreeze if frozen
-                tether.PlayerBody.Server_Unfreeze();
-                tether.PlayerBody.Stick.Server_Unfreeze();
 
                 // Enforce position tether
                 EnforceTether(tether);

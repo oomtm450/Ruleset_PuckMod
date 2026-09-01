@@ -204,7 +204,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             }
 
             player.PlayerBody.Server_Freeze();
-            player.Stick.Server_Freeze();
 
             _frozenPlayers.Add(player);
 
