@@ -198,9 +198,6 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             if (player.IsCharacterSpawned) {
                 player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
                 player.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
-
-                player.Stick.Rigidbody.linearVelocity = Vector3.zero;
-                player.Stick.Rigidbody.angularVelocity = Vector3.zero;
             }
 
             player.PlayerBody.Server_Freeze();
