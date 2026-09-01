@@ -2706,22 +2706,22 @@ namespace oomtm450PuckMod_Ruleset {
             SendChat(rule, team, !active, !active);
         }
 
-        private static void WarnOffside(bool active, PlayerTeam team) {
-            if (!IsOffsideEnabled(team))
+        private static void WarnOffside(bool active, PlayerTeam team, bool force = false) {
+            if (!force && !IsOffsideEnabled(team))
                 return;
 
             WarnCall(active, team, Rule.Offside);
         }
 
-        private static void WarnIcing(bool active, PlayerTeam team) {
-            if (!IsIcingEnabled(team))
+        private static void WarnIcing(bool active, PlayerTeam team, bool force = false) {
+            if (!force && !IsIcingEnabled(team))
                 return;
 
             WarnCall(active, team, Rule.Icing);
         }
 
-        private static void WarnHighStick(bool active, PlayerTeam team) {
-            if (!IsHighStickEnabled(team))
+        private static void WarnHighStick(bool active, PlayerTeam team, bool force = false) {
+            if (!force && !IsHighStickEnabled(team))
                 return;
 
             WarnCall(active, team, Rule.HighStick);
@@ -4090,11 +4090,11 @@ namespace oomtm450PuckMod_Ruleset {
                         PlayerTeam callPendingTeam = (PlayerTeam)callPendingTeamInt;
 
                         if (callPendingDataStrSplitted[2].Contains("off"))
-                            WarnOffside(activePendingCall, callPendingTeam);
+                            WarnOffside(activePendingCall, callPendingTeam, true);
                         else if (callPendingDataStrSplitted[2].Contains("ic"))
-                            WarnIcing(activePendingCall, callPendingTeam);
+                            WarnIcing(activePendingCall, callPendingTeam, true);
                         else if (callPendingDataStrSplitted[2].Contains("hs") || callPendingDataStrSplitted[2].Contains("high"))
-                            WarnHighStick(activePendingCall, callPendingTeam);
+                            WarnHighStick(activePendingCall, callPendingTeam, true);
                         break;
 
                     case Codebase.Constants.REF_VOTE_DATANAME: // SERVER-SIDE : Start a vote to become ref or vote for the current vote.
