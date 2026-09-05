@@ -1095,8 +1095,12 @@ namespace oomtm450PuckMod_Ruleset {
 
                         watch.Restart();
                     }
-                    else if (hasHitterDived)
+                    else if (hasHitterDived) {
+                        if (goalie.Team == hitter.Team)
+                            return;
+
                         _playersWasLastDivedIntoTime.AddOrUpdate(goalieSteamId, (hitterSteamId, now));
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(PlayerBody_OnCollisionEnter_Patch)} Postfix().\n{ex}", ServerConfig);
