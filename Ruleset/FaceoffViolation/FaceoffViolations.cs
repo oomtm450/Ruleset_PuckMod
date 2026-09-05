@@ -250,8 +250,8 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                     tether.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
                     tether.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
 
-                    tether.PlayerBody.Stick.Rigidbody.linearVelocity = Vector3.zero;
-                    tether.PlayerBody.Stick.Rigidbody.angularVelocity = Vector3.zero;
+                    /*tether.PlayerBody.Stick.Rigidbody.linearVelocity = Vector3.zero;
+                    tether.PlayerBody.Stick.Rigidbody.angularVelocity = Vector3.zero;*/
                 }
 
                 tether.PlayerBody.Server_Freeze();
