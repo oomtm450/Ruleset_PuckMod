@@ -717,7 +717,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 penalizedPlayer.PlayerBody.Server_Unfreeze();
-                penalizedPlayer.Stick.Server_Unfreeze();
+                Ruleset.UnfreezeStick(penalizedPlayer.Stick);
                 Ruleset.SystemChatMessages.Add($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED");
                 Logging.Log($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED", Ruleset.ServerConfig);
             }

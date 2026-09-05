@@ -163,7 +163,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             player.PlayerBody.Server_Unfreeze();
-            player.Stick.Server_Unfreeze();
+            Ruleset.UnfreezeStick(player.Stick);
         }
         #endregion
     }

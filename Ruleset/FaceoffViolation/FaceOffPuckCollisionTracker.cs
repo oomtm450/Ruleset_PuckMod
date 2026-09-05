@@ -220,7 +220,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             FaceOffPlayerUnfreezer.PenalizedPlayers.Remove(player);
 
             player.PlayerBody.Server_Unfreeze();
-            player.Stick.Server_Unfreeze();
+            Ruleset.UnfreezeStick(player.Stick);
             _frozenPlayers.Remove(player);
             Logging.Log($"Player {player.Username.Value} unfrozen after penalty", Ruleset.ServerConfig);
         }

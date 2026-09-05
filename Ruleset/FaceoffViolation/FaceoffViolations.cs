@@ -60,7 +60,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                     if (newGameState.Phase == GamePhase.Play && oldGameState.Phase == GamePhase.FaceOff) {
                         foreach (PlayerTether tether in _playerTethers) {
                             tether.PlayerBody.Server_Unfreeze();
-                            tether.PlayerBody.Stick.Server_Unfreeze();
+                            Ruleset.UnfreezeStick(tether.PlayerBody.Stick);
                         }
                     }
 
@@ -256,7 +256,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
                 tether.PlayerBody.Server_Freeze();
                 if (tether.IsCenter)
-                    tether.PlayerBody.Stick.Server_Freeze();
+                    Ruleset.FreezeStick(tether.PlayerBody.Stick);
             }
         }
 

@@ -19,6 +19,7 @@ using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
+using static oomtm450PuckMod_Ruleset.Ruleset;
 
 namespace oomtm450PuckMod_Ruleset {
     /// <summary>
@@ -129,6 +130,11 @@ namespace oomtm450PuckMod_Ruleset {
         /// LockList of PlayerIcing, positions of the players on the ice for icing logic.
         /// </summary>
         private static readonly LockList<PlayerIcing> _dictPlayersPositionsForIcing = new LockList<PlayerIcing>();
+
+        /// <summary>
+        /// LockList of Stick, stick that has to stay frozen.
+        /// </summary>
+        private static readonly LockList<Stick> _frozenSticks = new LockList<Stick>();
 
         /// <summary>
         /// LockDictionary of string and OffsideObject, dictionary of offside status of each player with steam Id as a key.
@@ -2627,9 +2633,115 @@ namespace oomtm450PuckMod_Ruleset {
                 }
             }
         }
+
+        /// <summary>
+        /// Class that patches the Server_ApplyFeedbackForces method from Stick.
+        /// </summary>
+        [HarmonyPatch(typeof(Stick), "Server_ApplyFeedbackForces")]
+        public class Stick_Server_ApplyFeedbackForces_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(Stick __instance) {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if (_frozenSticks.Contains(__instance))
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(Stick_Server_ApplyFeedbackForces_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_ClearRollVelocity method from Stick.
+        /// </summary>
+        [HarmonyPatch(typeof(Stick), "Server_ClearRollVelocity")]
+        public class Stick_Server_ClearRollVelocity_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(Stick __instance) {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if (_frozenSticks.Contains(__instance))
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(Stick_Server_ClearRollVelocity_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_ApplyForces method from Stick.
+        /// </summary>
+        [HarmonyPatch(typeof(Stick), "Server_ApplyForces")]
+        public class Stick_Server_ApplyForces_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(Stick __instance) {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if (_frozenSticks.Contains(__instance))
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(Stick_Server_ApplyForces_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Class that patches the Server_ResetRoll method from Stick.
+        /// </summary>
+        [HarmonyPatch(typeof(Stick), "Server_ResetRoll")]
+        public class Stick_Server_ResetRoll_Patch {
+            [HarmonyPrefix]
+            public static bool Prefix(Stick __instance) {
+                try {
+                    // If this is the server, do not use the patch.
+                    if (!ServerFunc.IsDedicatedServer())
+                        return true;
+
+                    if (_frozenSticks.Contains(__instance))
+                        return false;
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(Stick_Server_ResetRoll_Patch)} Prefix().\n{ex}", ServerConfig);
+                }
+
+                return true;
+            }
+        }
         #endregion
 
         #region Methods/Functions
+        private static void UnpatchStickFreezeFunctions() {
+            _harmony.Unpatch(typeof(Stick).GetMethod("Server_ResetRoll", BindingFlags.NonPublic | BindingFlags.Instance), typeof(Stick_Server_ResetRoll_Patch).GetMethod("Prefix"));
+            _harmony.Unpatch(typeof(Stick).GetMethod("Server_ApplyForces", BindingFlags.NonPublic | BindingFlags.Instance), typeof(Stick_Server_ApplyForces_Patch).GetMethod("Prefix"));
+            _harmony.Unpatch(typeof(Stick).GetMethod("Server_ClearRollVelocity", BindingFlags.NonPublic | BindingFlags.Instance), typeof(Stick_Server_ClearRollVelocity_Patch).GetMethod("Prefix"));
+            _harmony.Unpatch(typeof(Stick).GetMethod("Server_ApplyFeedbackForces", BindingFlags.NonPublic | BindingFlags.Instance), typeof(Stick_Server_ApplyFeedbackForces_Patch).GetMethod("Prefix"));
+        }
+
+        private static void PatchStickFreezeFunctions() {
+            _harmony.Patch(typeof(Stick).GetMethod("Server_ResetRoll", BindingFlags.NonPublic | BindingFlags.Instance), new HarmonyMethod(typeof(Stick_Server_ResetRoll_Patch).GetMethod("Prefix")));
+            _harmony.Patch(typeof(Stick).GetMethod("Server_ApplyForces", BindingFlags.NonPublic | BindingFlags.Instance), new HarmonyMethod(typeof(Stick_Server_ApplyForces_Patch).GetMethod("Prefix")));
+            _harmony.Patch(typeof(Stick).GetMethod("Server_ClearRollVelocity", BindingFlags.NonPublic | BindingFlags.Instance), new HarmonyMethod(typeof(Stick_Server_ClearRollVelocity_Patch).GetMethod("Prefix")));
+            _harmony.Patch(typeof(Stick).GetMethod("Server_ApplyFeedbackForces", BindingFlags.NonPublic | BindingFlags.Instance), new HarmonyMethod(typeof(Stick_Server_ApplyFeedbackForces_Patch).GetMethod("Prefix")));
+        }
+
         private static void ResetGame(bool resetRefSteamIds = false) {
             NextFaceoffSpot = FaceoffSpot.Center;
             _lastStoppageReason = Rule.None;
@@ -4361,6 +4473,22 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        internal static void FreezeStick(Stick stick) {
+            /*stick.Server_Freeze();
+            _frozenSticks.Add(stick);
+
+            if (_frozenSticks.Count == 1)
+                PatchStickFreezeFunctions();*/
+        }
+
+        internal static void UnfreezeStick(Stick stick) {
+            /*stick.Server_Unfreeze();
+            _frozenSticks.Remove(stick);
+
+            if (_frozenSticks.Count == 0)
+                UnpatchStickFreezeFunctions();*/
+        }
+
         private static bool DisallowLastGoal(PlayerTeam team) {
             if (_goals[team].Count == 0)
                 return false;
@@ -4732,6 +4860,7 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.LogWarning($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION} !", ServerConfig);
 
                 _harmony.PatchAll();
+                UnpatchStickFreezeFunctions();
 
                 Logging.Log($"Enabled.", ServerConfig, true);
 
