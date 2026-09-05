@@ -4483,9 +4483,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal static void UnfreezeStick(Stick stick) {
             /*stick.Server_Unfreeze();
-            _frozenSticks.Remove(stick);
 
-            if (_frozenSticks.Count == 0)
+            if (_frozenSticks.Remove(stick) && _frozenSticks.Count == 0)
                 UnpatchStickFreezeFunctions();*/
         }
 
