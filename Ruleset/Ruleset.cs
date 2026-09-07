@@ -601,10 +601,16 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsHighStick(stick.Player.Team)) {
                         Puck puck = PuckManager.Instance.GetPuck();
                         if (puck && puck.Rigidbody.transform.position.y < PuckRadius + ArenaOffsetY) {
-                            _isHighStickActiveTimers.TryGetValue(stick.Player.Team, out Timer highStickTimer);
-                            highStickTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                            if (_isHighStickActive[stick.Player.Team].HandPass && _isHighStickActive[stick.Player.Team].PlayerSteamId == currentPlayerSteamId) {
+                                _isHighStickActive[stick.Player.Team] = new HighStickObject();
+                                WarnHighStick(false, stick.Player.Team);
+                            }
+                            else {
+                                _isHighStickActiveTimers.TryGetValue(stick.Player.Team, out Timer highStickTimer);
+                                highStickTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
-                            CallHighStick(stick.Player.Team);
+                                CallHighStick(stick.Player.Team);
+                            }
                         }
                     }
 
@@ -811,25 +817,33 @@ namespace oomtm450PuckMod_Ruleset {
                         _isIcingPossible[stick.Player.Team] = new IcingObject();
 
                     // High stick logic.
-                    if (IsHighStickEnabled(stick.Player.Team) && __instance &&
-                        !isGoalie &&
-                        !playerHasPossession &&
+                    if (IsHighStickEnabled(stick.Player.Team) && __instance && !isGoalie) {
+                        bool isHandPass = false;
+                        // If player has jumped, hand pass situation.
+                        if (stick.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY && IsHandPassEnabled(stick.Player.Team))
+                            isHandPass = true;
+                        
+                        if (!playerHasPossession &&
                         __instance.Rigidbody.transform.position.y > (ServerConfig.HighStick.MaxHeightNoGoal * _puckScaleYHalf) + ArenaOffsetY) {
-                        if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
-                            noHighStickFrames = int.MaxValue;
-                            _noHighStickFrames.Add(currentPlayerSteamId, noHighStickFrames);
-                        }
+                            if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
+                                noHighStickFrames = int.MaxValue;
+                                _noHighStickFrames.Add(currentPlayerSteamId, noHighStickFrames);
+                            }
 
-                        if (noHighStickFrames >= ServerManager.Instance.ServerConfig.tickRate / ServerConfig.HighStick.Delta) {
-                            _isHighStickActiveTimers.TryGetValue(stick.Player.Team, out Timer highStickTimer);
+                            if (noHighStickFrames >= ServerManager.Instance.ServerConfig.tickRate / ServerConfig.HighStick.Delta) {
+                                _isHighStickActiveTimers.TryGetValue(stick.Player.Team, out Timer highStickTimer);
 
-                            highStickTimer.Change(ServerConfig.HighStick.MaxMilliseconds, Timeout.Infinite);
-                            if (!IsHighStick(stick.Player.Team)) {
-                                bool aboveShoulders = __instance.Rigidbody.transform.position.y > (ServerConfig.HighStick.MaxHeight * _puckScaleYHalf) + ArenaOffsetY;
-                                _isHighStickActive[stick.Player.Team] = new HighStickObject(stick.Player.Team, true, aboveShoulders);
-                                _puckLastStateBeforeCall[Rule.HighStick] = (__instance.Rigidbody.transform.position, _puckZone);
-                                if (aboveShoulders)
-                                    WarnHighStick(true, stick.Player.Team);
+                                highStickTimer.Change(ServerConfig.HighStick.MaxMilliseconds, Timeout.Infinite);
+                                if (!IsHighStick(stick.Player.Team)) {
+                                    bool aboveShoulders = __instance.Rigidbody.transform.position.y > (ServerConfig.HighStick.MaxHeight * _puckScaleYHalf) + ArenaOffsetY;
+                                    _isHighStickActive[stick.Player.Team] = new HighStickObject(stick.Player.Team, true, aboveShoulders, isHandPass,
+                                        stick.Player.SteamId.Value.ToString());
+
+                                    _puckLastStateBeforeCall[Rule.HighStick] = (__instance.Rigidbody.transform.position, _puckZone);
+
+                                    if (aboveShoulders)
+                                        WarnHighStick(true, stick.Player.Team);
+                                }
                             }
                         }
                     }
@@ -928,7 +942,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
 
                         bool hasLastPlayerJumped = lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY;
-                        bool hasCurrentPlayerJumped = playerBody.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY;
+                        bool hasCurrentPlayerJumped = playerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY;
 
                         bool lastPlayerWasCharged = playerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(currentPlayerSteamId, out var currentPlayerSprintTime) && currentPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && currentPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime && hasCurrentPlayerJumped;
                         bool currentPlayerWasCharged = lastPlayerHit.PlayerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(lastPlayerHitSteamId, out var lastPlayerSprintTime) && lastPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && lastPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime && hasLastPlayerJumped;
@@ -947,7 +961,7 @@ namespace oomtm450PuckMod_Ruleset {
                         else if (hasOtherPlayerDived)
                             _playersWasLastDivedIntoTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
 
-                        if (playerBody.Player.PlayerBody.HasFallen.Value || playerBody.Player.PlayerBody.HasSlipped || playerBody.Player.PlayerBody.IsSlipping || playerBody.Player.PlayerBody.IsSideways || playerBody.Player.PlayerBody.HasSlipped) {
+                        if (playerBody.HasFallen.Value || playerBody.HasSlipped || playerBody.IsSlipping || playerBody.IsSideways || playerBody.HasSlipped) {
                             if (!_playersLastSlipDateTime.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitSlipTime) || (now - otherPlayerHitSlipTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceOnSamePlayerMillisecondsThreshold)
                                 hasOtherPlayerBeenHit = !hasOtherPlayerDived;
                         }
@@ -3002,6 +3016,13 @@ namespace oomtm450PuckMod_Ruleset {
                 return ServerConfig.HighStick.BlueTeam;
             else
                 return ServerConfig.HighStick.RedTeam;
+        }
+
+        private static bool IsHandPassEnabled(PlayerTeam team) {
+            if (team == PlayerTeam.Blue)
+                return ServerConfig.HighStick.HandPassBlueTeam;
+            else
+                return ServerConfig.HighStick.HandPassRedTeam;
         }
 
         private static bool IsIcing(PlayerTeam team) {
@@ -5554,18 +5575,29 @@ namespace oomtm450PuckMod_Ruleset {
     }
 
     internal class HighStickObject {
+        private bool _handPass = false;
+
         internal PlayerTeam Team { get; set; } = PlayerTeam.None;
 
         internal bool IsActive { get; set; } = false;
 
         internal bool AboveShoulders { get; set; } = false;
 
+        internal bool HandPass {
+            get => _handPass && AboveShoulders;
+            set => _handPass = value;
+        }
+
+        internal string PlayerSteamId = string.Empty;
+
         internal HighStickObject() { }
 
-        internal HighStickObject(PlayerTeam team, bool isActive, bool aboveShoulders) {
+        internal HighStickObject(PlayerTeam team, bool isActive, bool aboveShoulders, bool handPass, string playerSteamId) {
             Team = team;
             IsActive = isActive;
             AboveShoulders = aboveShoulders;
+            HandPass = handPass;
+            PlayerSteamId = playerSteamId;
         }
     }
 

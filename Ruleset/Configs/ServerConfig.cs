@@ -300,6 +300,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                         HighStick = new HighStickConfig {
                             BlueTeam = config.HighStick.BlueTeam,
                             RedTeam = config.HighStick.RedTeam,
+                            HandPassBlueTeam = config.HighStick.HandPassBlueTeam,
+                            HandPassRedTeam = config.HighStick.HandPassRedTeam,
                         },
                         Penalty = new PenaltyConfig {
                             Interference = config.Penalty.Interference,
@@ -946,6 +948,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         public float Delta { get; set; } = 20f;
 
+        /// <summary>
+        /// Bool, true to make a jumping high stick a hand pass situation for blue team.
+        /// </summary>
+        public bool HandPassBlueTeam { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true to make a jumping high stick a hand pass situation for red team.
+        /// </summary>
+        public bool HandPassRedTeam { get; set; } = true;
+
         #region Constructors
         /// <summary>
         /// Default constructor of HighStickConfig.
@@ -964,6 +976,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             MaxHeightNoGoal = highStickConfig.MaxHeightNoGoal;
             MaxMilliseconds = highStickConfig.MaxMilliseconds;
             Delta = highStickConfig.Delta;
+
+            HandPassBlueTeam = highStickConfig.HandPassBlueTeam;
+            HandPassRedTeam = highStickConfig.HandPassRedTeam;
         }
         #endregion
 
@@ -995,6 +1010,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (Delta == _oldConfig.Delta)
                 Delta = newConfig.Delta;
+
+            if (HandPassBlueTeam == _oldConfig.HandPassBlueTeam)
+                HandPassBlueTeam = newConfig.HandPassBlueTeam;
+
+            if (HandPassRedTeam == _oldConfig.HandPassRedTeam)
+                HandPassRedTeam = newConfig.HandPassRedTeam;
         }
     }
 
