@@ -1889,12 +1889,12 @@ namespace oomtm450PuckMod_Stats {
 
                 starPoints.Add(steamId, 0);
 
-                double gwgModifier = gwgSteamId == steamId ? 0.5d : 0;
+                double gwgModifier = gwgSteamId == steamId ? 0.55d : 0;
                 double teamModifier = winningTeam == player.Team ? 1.1d : 1d;
 
                 if (PlayerFunc.IsGoalie(player) || player.PlayerPosition.Name == PlayerFunc.GOALIE_POSITION) {
                     if (_savePerc.TryGetValue(steamId, out var saveValues))
-                        starPoints[steamId] += ((((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.300d) * ((double)saveValues.Saves) * 31d;
+                        starPoints[steamId] += ((((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.300d) * ((double)saveValues.Saves) * 30d;
 
                     if (_sog.TryGetValue(steamId, out int shots))
                         starPoints[steamId] += ((double)shots) * 1d;
@@ -1921,8 +1921,8 @@ namespace oomtm450PuckMod_Stats {
                     if (_blocks.TryGetValue(steamId, out int blocks))
                         starPoints[steamId] += ((double)blocks) * 5d;
 
-                    const double SKATER_GOAL_MODIFIER = 71d;
-                    const double SKATER_ASSIST_MODIFIER = 55d;
+                    const double SKATER_GOAL_MODIFIER = 72d;
+                    const double SKATER_ASSIST_MODIFIER = 54d;
 
                     starPoints[steamId] += SKATER_GOAL_MODIFIER * gwgModifier;
                     starPoints[steamId] += ((double)player.Goals.Value) * SKATER_GOAL_MODIFIER;
