@@ -66,11 +66,11 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static readonly ReadOnlyCollection<string> DATA_NAMES_TO_IGNORE = new ReadOnlyCollection<string>(new List<string> {
             "eventName",
-            //RefSignals.SHOW_SIGNAL_BLUE,
-            //RefSignals.SHOW_SIGNAL_RED,
-            //RefSignals.STOP_SIGNAL_BLUE,
-            //RefSignals.STOP_SIGNAL_RED,
-            //RefSignals.STOP_SIGNAL,
+            RefSignals.SHOW_SIGNAL_BLUE,
+            RefSignals.SHOW_SIGNAL_RED,
+            RefSignals.STOP_SIGNAL_BLUE,
+            RefSignals.STOP_SIGNAL_RED,
+            RefSignals.STOP_SIGNAL,
             "dive",
             "duration",
             Codebase.Constants.PENALTIES_PAUSED_DATANAME,
