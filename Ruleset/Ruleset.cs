@@ -19,7 +19,6 @@ using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
-using static oomtm450PuckMod_Ruleset.Ruleset;
 
 namespace oomtm450PuckMod_Ruleset {
     /// <summary>
@@ -822,7 +821,7 @@ namespace oomtm450PuckMod_Ruleset {
                         // If player has jumped, hand pass situation.
                         if (IsHandPassEnabled(stick.Player.Team) && stick.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY)
                             isHandPass = true;
-                        
+
                         if (!playerHasPossession &&
                         __instance.Rigidbody.transform.position.y > (ServerConfig.HighStick.MaxHeightNoGoal * _puckScaleYHalf) + ArenaOffsetY) {
                             if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {

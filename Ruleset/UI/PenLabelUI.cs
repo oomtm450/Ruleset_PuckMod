@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.UIElements;
-using static UnityEngine.Rendering.VirtualTexturing.Debugging;
 
 namespace oomtm450PuckMod_Ruleset.UI {
     internal static class PenLabelUI {
