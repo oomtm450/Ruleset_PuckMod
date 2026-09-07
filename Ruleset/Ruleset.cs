@@ -3653,9 +3653,9 @@ namespace oomtm450PuckMod_Ruleset {
                             PenaltyModule.OffsetZCoordinates(ArenaOffsetZ);
                             break;
                     }
-
-                    LowerBarriers(_boardWindowsDefaultHeight, _arenaScaleY, ArenaOffsetY);
                 }
+
+                LowerBarriers(_boardWindowsDefaultHeight, _arenaScaleY, ArenaOffsetY);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(Event_CompetitiveAdjustments_OnArenaSync)}.\n{ex}", ServerConfig);
