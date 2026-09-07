@@ -820,7 +820,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsHighStickEnabled(stick.Player.Team) && __instance && !isGoalie) {
                         bool isHandPass = false;
                         // If player has jumped, hand pass situation.
-                        if (stick.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY && IsHandPassEnabled(stick.Player.Team))
+                        if (IsHandPassEnabled(stick.Player.Team) && stick.Player.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY)
                             isHandPass = true;
                         
                         if (!playerHasPossession &&
