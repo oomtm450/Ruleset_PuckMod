@@ -184,9 +184,9 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, new Timer(ResetIcingCallback, PlayerTeam.Red, Timeout.Infinite, Timeout.Infinite) },
         };
 
-        private static readonly LockDictionary<PlayerTeam, bool> _isHighStickActive = new LockDictionary<PlayerTeam, bool> {
-            { PlayerTeam.Blue, false },
-            { PlayerTeam.Red, false },
+        private static readonly LockDictionary<PlayerTeam, HighStickObject> _isHighStickActive = new LockDictionary<PlayerTeam, HighStickObject> {
+            { PlayerTeam.Blue, new HighStickObject() },
+            { PlayerTeam.Red, new HighStickObject() },
         };
 
         private static readonly LockDictionary<PlayerTeam, Timer> _isHighStickActiveTimers = new LockDictionary<PlayerTeam, Timer> {
@@ -610,7 +610,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(stick.Player.Team);
                     if (IsHighStick(otherTeam)) {
-                        _isHighStickActive[otherTeam] = false;
+                        _isHighStickActive[otherTeam] = new HighStickObject();
                         WarnHighStick(false, otherTeam);
                     }
                 }
@@ -814,7 +814,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (IsHighStickEnabled(stick.Player.Team) && __instance &&
                         !isGoalie &&
                         !playerHasPossession &&
-                        __instance.Rigidbody.transform.position.y > (ServerConfig.HighStick.MaxHeight * _puckScaleYHalf) + ArenaOffsetY) {
+                        __instance.Rigidbody.transform.position.y > (ServerConfig.HighStick.MaxHeightNoGoal * _puckScaleYHalf) + ArenaOffsetY) {
                         if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int noHighStickFrames)) {
                             noHighStickFrames = int.MaxValue;
                             _noHighStickFrames.Add(currentPlayerSteamId, noHighStickFrames);
@@ -825,9 +825,11 @@ namespace oomtm450PuckMod_Ruleset {
 
                             highStickTimer.Change(ServerConfig.HighStick.MaxMilliseconds, Timeout.Infinite);
                             if (!IsHighStick(stick.Player.Team)) {
-                                _isHighStickActive[stick.Player.Team] = true;
+                                bool aboveShoulders = __instance.Rigidbody.transform.position.y > (ServerConfig.HighStick.MaxHeight * _puckScaleYHalf) + ArenaOffsetY;
+                                _isHighStickActive[stick.Player.Team] = new HighStickObject(stick.Player.Team, true, aboveShoulders);
                                 _puckLastStateBeforeCall[Rule.HighStick] = (__instance.Rigidbody.transform.position, _puckZone);
-                                WarnHighStick(true, stick.Player.Team);
+                                if (aboveShoulders)
+                                    WarnHighStick(true, stick.Player.Team);
                             }
                         }
                     }
@@ -2267,7 +2269,7 @@ namespace oomtm450PuckMod_Ruleset {
                             return false;
                         }
 
-                        if (IsHighStick(byTeam)) {
+                        if (IsHighStick(byTeam, true)) {
                             CallHighStick(byTeam);
                             return false;
                         }
@@ -2858,12 +2860,14 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static void ResetHighStickCallback(object stateInfo) {
             PlayerTeam team = (PlayerTeam)stateInfo;
-            if (!_isHighStickActive[team])
+            if (!_isHighStickActive[team].IsActive)
                 return;
 
-            _isHighStickActive[team] = false;
+            if (_isHighStickActive[team].AboveShoulders)
+                _callHighStickNextFrame[team] = true;
+
+            _isHighStickActive[team] = new HighStickObject();
             _isHighStickActiveTimers[team].Change(Timeout.Infinite, Timeout.Infinite);
-            _callHighStickNextFrame[team] = true;
         }
 
         private static void ResetInt() {
@@ -2883,7 +2887,7 @@ namespace oomtm450PuckMod_Ruleset {
                 _isHighStickActiveTimers[key].Change(Timeout.Infinite, Timeout.Infinite);
 
             foreach (PlayerTeam key in new List<PlayerTeam>(_isHighStickActive.Keys))
-                _isHighStickActive[key] = false;
+                _isHighStickActive[key] = new HighStickObject();
 
             foreach (PlayerTeam key in new List<PlayerTeam>(_callHighStickNextFrame.Keys))
                 _callHighStickNextFrame[key] = false;
@@ -2980,8 +2984,14 @@ namespace oomtm450PuckMod_Ruleset {
                 return ServerConfig.Offside.RedTeam;
         }
 
-        private static bool IsHighStick(PlayerTeam team) {
-            if (!IsHighStickEnabled(team) || !_isHighStickActive[team])
+        private static bool IsHighStick(PlayerTeam team, bool forGoal = false) {
+            if (!IsHighStickEnabled(team))
+                return false;
+
+            if (!_isHighStickActive[team].IsActive)
+                return false;
+
+            if (!forGoal && !_isHighStickActive[team].AboveShoulders)
                 return false;
 
             return true;
@@ -5540,6 +5550,22 @@ namespace oomtm450PuckMod_Ruleset {
             Watch = watch;
             Delta = delta;
             AnyPlayersBehindHashmarks = anyPlayersBehindHashmarks;
+        }
+    }
+
+    internal class HighStickObject {
+        internal PlayerTeam Team { get; set; } = PlayerTeam.None;
+
+        internal bool IsActive { get; set; } = false;
+
+        internal bool AboveShoulders { get; set; } = false;
+
+        internal HighStickObject() { }
+
+        internal HighStickObject(PlayerTeam team, bool isActive, bool aboveShoulders) {
+            Team = team;
+            IsActive = isActive;
+            AboveShoulders = aboveShoulders;
         }
     }
 

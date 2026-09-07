@@ -56,6 +56,11 @@
         internal const float CROSSBAR_HEIGHT = 1.8f;
 
         /// <summary>
+        /// Const float, height of a player's shoulders.
+        /// </summary>
+        internal const float SHOULDERS_HEIGHT = 1.8838f;
+
+        /// <summary>
         /// Const string, data name for SOG.
         /// </summary>
         public const string SOG = STATS_MOD_NAME + "SOG";
