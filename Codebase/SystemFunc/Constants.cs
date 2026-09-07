@@ -58,7 +58,7 @@
         /// <summary>
         /// Const float, height of a player's shoulders.
         /// </summary>
-        internal const float SHOULDERS_HEIGHT = 1.88f;
+        internal const float SHOULDERS_HEIGHT = 1.882f;
 
         /// <summary>
         /// Const string, data name for SOG.
