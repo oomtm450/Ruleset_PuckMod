@@ -418,7 +418,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
         /// </summary>
-        public float MaxHeight { get; } = Codebase.Constants.CROSSBAR_HEIGHT;
+        public float MaxHeight { get; } = Codebase.Constants.CROSSBAR_HEIGHT; // TODO : Change after release.
+
+        /// <summary>
+        /// Float, base height before hitting the puck with a stick is considered high stick for a no goal situation.
+        /// </summary>
+        public float MaxHeightNoGoal { get; } = Codebase.Constants.CROSSBAR_HEIGHT;
 
         /// <summary>
         /// Int, number of milliseconds after a high stick to not be considered.

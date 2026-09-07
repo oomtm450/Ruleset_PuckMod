@@ -932,7 +932,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float MaxHeight { get; set; } = Codebase.Constants.SHOULDERS_HEIGHT;
 
         /// <summary>
-        /// Float, base height before hitting the puck with a stick is considered high stick.
+        /// Float, base height before hitting the puck with a stick is considered high stick for a no goal situation.
         /// </summary>
         public float MaxHeightNoGoal { get; set; } = Codebase.Constants.CROSSBAR_HEIGHT;
 
@@ -961,6 +961,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             RedTeam = highStickConfig.RedTeam;
 
             MaxHeight = highStickConfig.MaxHeight;
+            MaxHeightNoGoal = highStickConfig.MaxHeightNoGoal;
             MaxMilliseconds = highStickConfig.MaxMilliseconds;
             Delta = highStickConfig.Delta;
         }
@@ -985,6 +986,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (MaxHeight == _oldConfig.MaxHeight)
                 MaxHeight = newConfig.MaxHeight;
+
+            if (MaxHeightNoGoal == _oldConfig.MaxHeightNoGoal)
+                MaxHeightNoGoal = newConfig.MaxHeightNoGoal;
 
             if (MaxMilliseconds == _oldConfig.MaxMilliseconds)
                 MaxMilliseconds = newConfig.MaxMilliseconds;

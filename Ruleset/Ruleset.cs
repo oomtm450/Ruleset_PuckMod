@@ -670,7 +670,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!_noHighStickFrames.TryGetValue(currentPlayerSteamId, out int _))
                         _noHighStickFrames.Add(currentPlayerSteamId, int.MaxValue);
 
-                    if (__instance && __instance.Rigidbody.transform.position.y <= (ServerConfig.HighStick.MaxHeight * _puckScaleYHalf) + ArenaOffsetY)
+                    if (__instance && __instance.Rigidbody.transform.position.y <= (ServerConfig.HighStick.MaxHeightNoGoal * _puckScaleYHalf) + ArenaOffsetY)
                         _noHighStickFrames[currentPlayerSteamId] = 0;
 
                     var puckLastStateBeforeCallOffside = _puckLastStateBeforeCall[Rule.Offside];
