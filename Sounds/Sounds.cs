@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.4.3d";
+        private static readonly string MOD_VERSION = "0.5.0";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -37,6 +37,7 @@ namespace oomtm450PuckMod_Sounds {
             "0.4.3a",
             "0.4.3b",
             "0.4.3c",
+            "0.4.3d",
         });
 
         /// <summary>
@@ -997,22 +998,22 @@ namespace oomtm450PuckMod_Sounds {
                         if (dataStr != "1")
                             break;
 
-                        ServerManager.Instance.Server_KickPlayer(PlayerManager.Instance.GetPlayerByClientId(clientId), DisconnectionCode.Kicked,
-                            $"{Constants.WORKSHOP_MOD_NAME} mod is out of date. Unsubscribe in the workshop and restart your game to update.", false);
+                        /*ServerManager.Instance.Server_KickPlayer(PlayerManager.Instance.GetPlayerByClientId(clientId), DisconnectionCode.Kicked,
+                            $"{Constants.WORKSHOP_MOD_NAME} mod is out of date. Unsubscribe in the workshop and restart your game to update.", false);*/
 
                         if (!_sentOutOfDateMessage.TryGetValue(clientId, out DateTime lastCheckTime)) {
                             lastCheckTime = DateTime.MinValue;
                             _sentOutOfDateMessage.Add(clientId, lastCheckTime);
                         }
 
-                        DateTime utcNow = DateTime.UtcNow;
-                        if (lastCheckTime + TimeSpan.FromSeconds(900) < utcNow) {
+                        DateTime now = DateTime.UtcNow;
+                        if (lastCheckTime + TimeSpan.FromSeconds(900) < now) {
                             if (string.IsNullOrEmpty(PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value.ToString()))
                                 break;
 
                             Logging.Log($"Warning client {clientId} mod out of date.", ServerConfig);
                             ChatManager.Instance.Server_BroadcastChatMessage($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date. Please unsubscribe from {Constants.WORKSHOP_MOD_NAME} and all SoundsPack in the workshop and restart your game to update.");
-                            _sentOutOfDateMessage[clientId] = utcNow;
+                            _sentOutOfDateMessage[clientId] = now;
                         }
                         break;
 
