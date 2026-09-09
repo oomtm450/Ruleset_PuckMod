@@ -4825,7 +4825,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             SendChat(Rule.Penalty, team, true, false, referee);
             _lastStoppageReason = Rule.Penalty;
-            DoFaceoff(millisecondsPauseMin: 6200, millisecondsPauseMax: 8700, startOfPowerplay: (team == PlayerTeam.Blue && PenaltyModule.PenalizedPlayersCountBlueTeam > PenaltyModule.PenalizedPlayersCountRedTeam) || (team == PlayerTeam.Red && PenaltyModule.PenalizedPlayersCountRedTeam > PenaltyModule.PenalizedPlayersCountBlueTeam));
+            DoFaceoff(millisecondsPauseMin: 7250, millisecondsPauseMax: 10000, startOfPowerplay: (team == PlayerTeam.Blue && PenaltyModule.PenalizedPlayersCountBlueTeam > PenaltyModule.PenalizedPlayersCountRedTeam) || (team == PlayerTeam.Red && PenaltyModule.PenalizedPlayersCountRedTeam > PenaltyModule.PenalizedPlayersCountBlueTeam));
         }
 
         private static void StopBlueRefSignals(string dataStr) {
