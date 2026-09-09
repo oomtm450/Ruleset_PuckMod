@@ -4828,7 +4828,7 @@ namespace oomtm450PuckMod_Ruleset {
             bool startOfPowerplay = (team == PlayerTeam.Blue && PenaltyModule.PenalizedPlayersCountBlueTeam > PenaltyModule.PenalizedPlayersCountRedTeam) || (team == PlayerTeam.Red && PenaltyModule.PenalizedPlayersCountRedTeam > PenaltyModule.PenalizedPlayersCountBlueTeam);
             
             if (startOfPowerplay)
-                DoFaceoff(millisecondsPauseMin: 7250, millisecondsPauseMax: 10000, startOfPowerplay: startOfPowerplay);
+                DoFaceoff(millisecondsPauseMin: 7250, millisecondsPauseMax: 9250, startOfPowerplay: startOfPowerplay);
             else
                 DoFaceoff(startOfPowerplay: startOfPowerplay);
         }
