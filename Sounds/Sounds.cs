@@ -668,6 +668,12 @@ namespace oomtm450PuckMod_Sounds {
                     EventManager.AddEventListener(nameof(Event_OnClientStopped), Event_OnClientStopped);
                 }
 
+                Logging.Log("Unpatching unused code.", ServerConfig, true);
+
+                if (ServerFunc.IsDedicatedServer()) {
+                    _harmony.Unpatch(typeof(PhysicsManager).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance), typeof(PhysicsManager_Update_ClientPatch).GetMethod("Postfix"));
+                }
+
                 _harmonyPatched = true;
                 _logic = true;
                 return true;
