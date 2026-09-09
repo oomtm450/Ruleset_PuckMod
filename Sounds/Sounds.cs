@@ -787,6 +787,8 @@ namespace oomtm450PuckMod_Sounds {
                         case Codebase.SoundsSystem.PLAY_SOUND:
                             if (value == Codebase.SoundsSystem.FACEOFF_MUSIC)
                                 PlayFaceoffMusic();
+                            else if (value == Codebase.SoundsSystem.POWERPLAY_MUSIC)
+                                PlayPowerplayMusic();
                             break;
 
                         //case Codebase.SoundsSystem.CHANGE_GOAL_SONG_BLUE:
@@ -1249,6 +1251,16 @@ namespace oomtm450PuckMod_Sounds {
             }
             else
                 _currentMusicPlayingType = Codebase.SoundsSystem.FACEOFF_MUSIC_DELAYED;
+
+            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlayingType), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+            _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.FACEOFF_MUSIC;
+        }
+
+        private static void PlayPowerplayMusic() {
+            if (!ServerConfig.EnableMusic)
+                return;
+
+            _currentMusicPlayingType = Codebase.SoundsSystem.POWERPLAY_MUSIC_DELAYED;
 
             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlayingType), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
             _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.FACEOFF_MUSIC;
