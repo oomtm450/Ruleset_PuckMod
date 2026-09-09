@@ -1037,6 +1037,11 @@ namespace oomtm450PuckMod_Sounds {
                             }
 
                             NetworkCommunication.SendData(Codebase.SoundsSystem.LOAD_EXTRA_SOUNDS, dataStrSplitted[1], clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+
+                            if (_currentMusicPlayingType == Codebase.SoundsSystem.WARMUP_MUSIC) {
+                                NetworkCommunication.SendData(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                                NetworkCommunication.SendData(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(Codebase.SoundsSystem.WARMUP_MUSIC), clientId, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                            }
                             break;
                         }
 
