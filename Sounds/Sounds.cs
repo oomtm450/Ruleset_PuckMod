@@ -658,14 +658,14 @@ namespace oomtm450PuckMod_Sounds {
                 Logging.Log("Subscribing to events.", ServerConfig, true);
 
                 if (ServerFunc.IsDedicatedServer()) {
-                    EventManager.AddEventListener("Event_Everyone_OnClientConnected", Event_Everyone_OnClientConnected);
-                    EventManager.AddEventListener("Event_Everyone_OnClientDisconnected", Event_Everyone_OnClientDisconnected);
-                    EventManager.AddEventListener("Event_Everyone_OnPlayerGameStateChanged", Event_Everyone_OnPlayerGameStateChanged);
+                    EventManager.AddEventListener(nameof(Event_Everyone_OnClientConnected), Event_Everyone_OnClientConnected);
+                    EventManager.AddEventListener(nameof(Event_Everyone_OnClientDisconnected), Event_Everyone_OnClientDisconnected);
+                    EventManager.AddEventListener(nameof(Event_Everyone_OnPlayerGameStateChanged), Event_Everyone_OnPlayerGameStateChanged);
                     EventManager.AddEventListener(Codebase.Constants.SOUNDS_MOD_NAME, Event_OnSoundsTrigger);
                 }
                 else {
-                    EventManager.AddEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
-                    EventManager.AddEventListener("Event_OnClientStopped", Event_OnClientStopped);
+                    EventManager.AddEventListener(nameof(Event_OnSceneLoaded), Event_OnSceneLoaded);
+                    EventManager.AddEventListener(nameof(Event_OnClientStopped), Event_OnClientStopped);
                 }
 
                 _harmonyPatched = true;
@@ -706,15 +706,15 @@ namespace oomtm450PuckMod_Sounds {
                 Logging.Log("Unsubscribing from events.", ServerConfig, true);
                 NetworkCommunication.RemoveFromNotLogList(DATA_NAMES_TO_IGNORE);
                 if (ServerFunc.IsDedicatedServer()) {
-                    EventManager.RemoveEventListener("Event_Everyone_OnClientConnected", Event_Everyone_OnClientConnected);
-                    EventManager.RemoveEventListener("Event_Everyone_OnClientDisconnected", Event_Everyone_OnClientDisconnected);
-                    EventManager.RemoveEventListener("Event_Everyone_OnPlayerGameStateChanged", Event_Everyone_OnPlayerGameStateChanged);
+                    EventManager.RemoveEventListener(nameof(Event_Everyone_OnClientConnected), Event_Everyone_OnClientConnected);
+                    EventManager.RemoveEventListener(nameof(Event_Everyone_OnClientDisconnected), Event_Everyone_OnClientDisconnected);
+                    EventManager.RemoveEventListener(nameof(Event_Everyone_OnPlayerGameStateChanged), Event_Everyone_OnPlayerGameStateChanged);
                     EventManager.RemoveEventListener(Codebase.Constants.SOUNDS_MOD_NAME, Event_OnSoundsTrigger);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_CLIENT_TO_SERVER);
                 }
                 else {
-                    EventManager.RemoveEventListener("Event_OnSceneLoaded", Event_OnSceneLoaded);
-                    EventManager.RemoveEventListener("Event_OnClientStopped", Event_OnClientStopped);
+                    EventManager.RemoveEventListener(nameof(Event_OnSceneLoaded), Event_OnSceneLoaded);
+                    EventManager.RemoveEventListener(nameof(Event_OnClientStopped), Event_OnClientStopped);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER_TO_CLIENT);
                 }
 
