@@ -32,6 +32,9 @@
         internal const string SECOND_FACEOFF_MUSIC_DELAYED = SECOND_FACEOFF_MUSIC + "d";
 
         internal const string GAMEOVER_MUSIC = "gameovermusic";
+
+        internal const string POWERPLAY_MUSIC = "powerplaymusic";
+        internal const string POWERPLAY_MUSIC_DELAYED = POWERPLAY_MUSIC + "d";
         #endregion
 
         #region Methods/Functions

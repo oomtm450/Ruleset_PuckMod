@@ -58,6 +58,7 @@ namespace oomtm450PuckMod_Sounds {
         internal LockWeightedList<string> FirstFaceoffMusicList { get; set; } = new LockWeightedList<string>();
         internal LockWeightedList<string> SecondFaceoffMusicList { get; set; } = new LockWeightedList<string>();
         internal LockWeightedList<string> GameOverMusicList { get; set; } = new LockWeightedList<string>();
+        internal LockWeightedList<string> PowerplayMusicList { get; set; } = new LockWeightedList<string>();
 
         internal LockList<string> Errors { get; } = new LockList<string>();
 
@@ -363,6 +364,7 @@ namespace oomtm450PuckMod_Sounds {
             FirstFaceoffMusicList.Remove(clipName);
             SecondFaceoffMusicList.Remove(clipName);
             GameOverMusicList.Remove(clipName);
+            PowerplayMusicList.Remove(clipName);
         }
 
         private bool AudioHasToBePreloaded(string clipName) {
@@ -393,6 +395,8 @@ namespace oomtm450PuckMod_Sounds {
                 SecondFaceoffMusicList.Add(clipName, weight);
             if (clipName.Contains(Codebase.SoundsSystem.GAMEOVER_MUSIC))
                 GameOverMusicList.Add(clipName, weight);
+            if (clipName.Contains(Codebase.SoundsSystem.POWERPLAY_MUSIC))
+                PowerplayMusicList.Add(clipName, weight);
         }
 
         internal async Awaitable PlayAsync(string name, string type, float vol = float.MaxValue, float delay = 0, bool loop = false) {
@@ -669,6 +673,7 @@ namespace oomtm450PuckMod_Sounds {
             FirstFaceoffMusicList = new LockWeightedList<string>(FirstFaceoffMusicList.OrderBy(x => x), FirstFaceoffMusicList.GetWeightOf);
             SecondFaceoffMusicList = new LockWeightedList<string>(SecondFaceoffMusicList.OrderBy(x => x), SecondFaceoffMusicList.GetWeightOf);
             GameOverMusicList = new LockWeightedList<string>(GameOverMusicList.OrderBy(x => x), GameOverMusicList.GetWeightOf);
+            PowerplayMusicList = new LockWeightedList<string>(PowerplayMusicList.OrderBy(x => x), PowerplayMusicList.GetWeightOf);
         }
         #endregion
 
@@ -693,6 +698,7 @@ namespace oomtm450PuckMod_Sounds {
             FirstFaceoff = 6,
             SecondFaceoff = 7,
             LastMinuteFaceoff = 8,
+            Powerplay,
         }
     }
 

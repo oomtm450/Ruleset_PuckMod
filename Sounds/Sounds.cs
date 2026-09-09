@@ -1135,6 +1135,12 @@ namespace oomtm450PuckMod_Sounds {
 
                             isFaceoffMusic = true;
                         }
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.POWERPLAY_MUSIC) {
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.PowerplayMusicList, SoundsSystem.SoundType.Powerplay, seed);
+
+                            isFaceoffMusic = true;
+                        }
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.LAST_MINUTE_MUSIC_DELAYED) {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.LastMinuteMusicList, SoundsSystem.SoundType.LastMinuteFaceoff, seed);
@@ -1152,6 +1158,13 @@ namespace oomtm450PuckMod_Sounds {
                         else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.SECOND_FACEOFF_MUSIC_DELAYED) {
                             if (string.IsNullOrEmpty(chosenSound))
                                 _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.SecondFaceoffMusicList, SoundsSystem.SoundType.SecondFaceoff, seed);
+
+                            isFaceoffMusic = true;
+                            delay = 0.95f;
+                        }
+                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.POWERPLAY_MUSIC_DELAYED) {
+                            if (string.IsNullOrEmpty(chosenSound))
+                                _currentMusicPlaying = SoundsSystem.GetRandomSound(_soundsSystem.PowerplayMusicList, SoundsSystem.SoundType.Powerplay, seed);
 
                             isFaceoffMusic = true;
                             delay = 0.95f;

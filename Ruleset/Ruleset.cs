@@ -2909,7 +2909,7 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void DoFaceoff(string dataName = "", string dataStr = "", int millisecondsPauseMin = 3200, int millisecondsPauseMax = 5600, bool clearViolations = true,
-            bool setRemainingPeriodTick = true) {
+            bool setRemainingPeriodTick = true, bool startOfPowerplay = false) {
             if (Paused)
                 return;
 
@@ -2928,9 +2928,15 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             try {
-                EventManager.TriggerEvent(Codebase.Constants.SOUNDS_MOD_NAME, new Dictionary<string, object> { { SoundsSystem.PLAY_SOUND, SoundsSystem.FACEOFF_MUSIC } });
+                string musicToPlay;
+                if (startOfPowerplay)
+                    musicToPlay = SoundsSystem.POWERPLAY_MUSIC;
+                else
+                    musicToPlay = SoundsSystem.FACEOFF_MUSIC;
+
+                EventManager.TriggerEvent(Codebase.Constants.SOUNDS_MOD_NAME, new Dictionary<string, object> { { SoundsSystem.PLAY_SOUND, musicToPlay } });
                 if (!NetworkCommunication.GetDataNamesToIgnore().Contains(SoundsSystem.PLAY_SOUND))
-                    Logging.Log($"Sent data \"{SoundsSystem.PLAY_SOUND}\" ({SoundsSystem.FACEOFF_MUSIC}) to {Codebase.Constants.SOUNDS_MOD_NAME}.", ServerConfig);
+                    Logging.Log($"Sent data \"{SoundsSystem.PLAY_SOUND}\" ({musicToPlay}) to {Codebase.Constants.SOUNDS_MOD_NAME}.", ServerConfig);
             }
             catch (Exception ex) {
                 Logging.LogError(ex.ToString(), ServerConfig);
@@ -4819,7 +4825,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             SendChat(Rule.Penalty, team, true, false, referee);
             _lastStoppageReason = Rule.Penalty;
-            DoFaceoff();
+            DoFaceoff(startOfPowerplay: (team == PlayerTeam.Blue && PenaltyModule.PenalizedPlayersCountBlueTeam < PenaltyModule.PenalizedPlayersCountRedTeam) || (team == PlayerTeam.Red && PenaltyModule.PenalizedPlayersCountRedTeam < PenaltyModule.PenalizedPlayersCountBlueTeam));
         }
 
         private static void StopBlueRefSignals(string dataStr) {
