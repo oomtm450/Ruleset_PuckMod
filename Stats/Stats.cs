@@ -203,6 +203,16 @@ namespace oomtm450PuckMod_Stats {
         private static float _arenaOffsetZ = 0;
 
         /// <summary>
+        /// Float, average scale of the puck's x and z coordinate.
+        /// </summary>
+        private static float _puckScale = 1f;
+
+        /// <summary>
+        /// Float, half of the Y scale. (Half of 1.1y would be 1.05y)
+        /// </summary>
+        private static float _puckScaleYHalf = 1f;
+
+        /// <summary>
         /// LockDictionary of ulong and string, dictionary of all players clientId, steamId and username.
         /// </summary>
         private static readonly LockDictionary<ulong, (string SteamId, string Username)> _playersInfo = new LockDictionary<ulong, (string, string)>();
@@ -867,6 +877,9 @@ namespace oomtm450PuckMod_Stats {
                     return;
 
                 try {
+                    _puckScale = (__instance.transform.localScale.x + __instance.transform.localScale.z) / 2;
+                    _puckScaleYHalf = 1f + ((__instance.transform.localScale.y - 1f) / 2f);
+
                     Player player = null;
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
                     if (!stick) {
@@ -1085,7 +1098,7 @@ namespace oomtm450PuckMod_Stats {
                     if (_lastPlayerOnPuckSteamId[_lastTeamOnPuck].SteamId == currentPlayerSteamId ||
                         (hitStick && !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
                             __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter, PlayerFunc.IsGoalie(player),
-                            __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight + ArenaOffsetY))) {
+                            __instance.Rigidbody.transform.position.y, (ServerConfig.PuckIceContactHeight * 2f * _puckScaleYHalf) + ArenaOffsetY))) {
                         _lastTeamOnPuck = player.Team;
                         _lastPlayerOnPuckSteamId[player.Team] = (currentPlayerSteamId, now);
                     }
@@ -1138,7 +1151,7 @@ namespace oomtm450PuckMod_Stats {
                     if (_lastPlayerOnPuckSteamId[_lastTeamOnPuck].SteamId == currentPlayerSteamId ||
                         !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
                             __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter, PlayerFunc.IsGoalie(stick.Player),
-                            __instance.Rigidbody.transform.position.y, ServerConfig.PuckIceContactHeight + ArenaOffsetY)) {
+                            __instance.Rigidbody.transform.position.y, (ServerConfig.PuckIceContactHeight * 2f * _puckScaleYHalf) + ArenaOffsetY)) {
                         _lastTeamOnPuck = stick.Player.Team;
                         _lastPlayerOnPuckSteamId[stick.Player.Team] = (currentPlayerSteamId, now);
                     }
@@ -1545,6 +1558,7 @@ namespace oomtm450PuckMod_Stats {
                         case "ArenaOffsetY":
                             double arenaOffsetY = double.Parse(kvp.Value.ToString(), CultureInfo.InvariantCulture);
                             ArenaOffsetY = (float)arenaOffsetY;
+                            ArenaOffsetY += 0.01f * _arenaScaleY;
                             if (arenaOffsetY == 0)
                                 break;
                             break;
