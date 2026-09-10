@@ -1940,7 +1940,7 @@ namespace oomtm450PuckMod_Ruleset {
                             Logging.LogDebug("ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds - ((_faceoffDuration + 1) * 1000) : " + (ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds - ((_faceoffDuration + 1) * 1000)), ServerConfig, true); // TODO
                             Logging.LogDebug("ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds : " + ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds, ServerConfig, true); // TODO
                             Logging.LogDebug("(DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds : " + (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds, ServerConfig, true); // TODO
-                            Logging.LogDebug("(_faceoffDuration + 1) * 1000 : " + ((_faceoffDuration + 1) * 1000), ServerConfig, true); // TODO
+                            //Logging.LogDebug("(_faceoffDuration + 1) * 1000 : " + ((_faceoffDuration + 1) * 1000), ServerConfig, true); // TODO
 
                             playerTouched = (playerTouched || playerWasLastInPossession);
                             if (!playerTouched ||
