@@ -686,7 +686,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId ||
                             !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
                                 __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter, isGoalie, __instance.Rigidbody.transform.position.y,
-                                ServerConfig.Faceoff.PuckIceContactHeight * _puckScaleYHalf)) {
+                                (ServerConfig.Faceoff.PuckIceContactHeight * _puckScaleYHalf) + ArenaOffsetY)) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
                             if (!isGoalie && playerHasPossession)
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(stick.Player.Team), __instance);
@@ -784,7 +784,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (_lastPlayerOnPuckSteamId[_lastPlayerOnPuckTeam] == currentPlayerSteamId ||
                             !PuckFunc.PuckIsTipped(currentPlayerSteamId, ServerConfig.MaxTippedMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled,
                                 __instance.Speed, ServerConfig.PuckSpeedTippingRatio, _lastPuckSpeedOnCollisionEnter, isGoalie, __instance.Rigidbody.transform.position.y,
-                                ServerConfig.Faceoff.PuckIceContactHeight * _puckScaleYHalf)) {
+                                (ServerConfig.Faceoff.PuckIceContactHeight * _puckScaleYHalf) + ArenaOffsetY)) {
                             _lastPlayerOnPuckTeam = stick.Player.Team;
                             if (!isGoalie && playerHasPossession)
                                 ResetGoalAndAssistAttribution(TeamFunc.GetOtherTeam(stick.Player.Team), __instance);

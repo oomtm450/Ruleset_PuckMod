@@ -105,7 +105,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 return;
 
             // Check if puck has dropped below the allowed height threshold
-            if (puck.transform.position.y > Ruleset.ServerConfig.Faceoff.PuckIceContactHeight)
+            if (puck.transform.position.y > Ruleset.ServerConfig.Faceoff.PuckIceContactHeight + Ruleset.ArenaOffsetY)
                 return;
 
             _puckTouchedIce = true;
