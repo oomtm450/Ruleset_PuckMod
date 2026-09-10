@@ -59,8 +59,11 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 else {
                     if (newGameState.Phase == GamePhase.Play && oldGameState.Phase == GamePhase.FaceOff) {
                         foreach (PlayerTether tether in _playerTethers) {
-                            tether.PlayerBody.Server_Unfreeze();
-                            Ruleset.UnfreezeStick(tether.PlayerBody.Stick);
+                            try {
+                                tether.PlayerBody.Server_Unfreeze();
+                                Ruleset.UnfreezeStick(tether.PlayerBody.Stick);
+                            }
+                            catch { }
                         }
                     }
 
