@@ -3697,8 +3697,6 @@ namespace oomtm450PuckMod_Ruleset {
                             _addServerModVersionOutOfDateMessage = true;
                             break;
                         }
-                        else if (MOD_VERSION == "1.0.8") // TODO : Remove for release.
-                            break;
 
                         _askForModOutOfDateWarning = true;
                         break;
@@ -3792,7 +3790,7 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         ServerManager.Instance.Server_KickPlayer(PlayerManager.Instance.GetPlayerByClientId(clientId), DisconnectionCode.Kicked,
-                            $"PRERELEASE - {Constants.WORKSHOP_MOD_NAME} mod is out of date or {Constants.WORKSHOP_MOD_NAME} is enabled. Disable all Rulesets, unsubscribe in the workshop and restart your game to update.", false); // TODO : Remove PRERELEASE -
+                            $"{Constants.WORKSHOP_MOD_NAME} mod is out of date or {Constants.WORKSHOP_MOD_NAME} is enabled. Disable all Rulesets, unsubscribe in the workshop and restart your game to update.", false);
 
                         if (!_sentOutOfDateMessage.TryGetValue(clientId, out DateTime lastCheckTime)) {
                             lastCheckTime = DateTime.MinValue;
@@ -3805,7 +3803,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 break;
 
                             Logging.Log($"Warning client {clientId} mod out of date.", ServerConfig);
-                            SystemChatMessages.Add($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : PRERELEASE - {Constants.WORKSHOP_MOD_NAME} Mod is out of date or was enabled manually. Disable all Rulesets and/or unsubscribe from PRERELEASE - {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update."); // TODO : Remove PRERELEASE -
+                            SystemChatMessages.Add($"{PlayerManager.Instance.GetPlayerByClientId(clientId).Username.Value} : {Constants.WORKSHOP_MOD_NAME} Mod is out of date or was enabled manually. Disable all Rulesets and/or unsubscribe from {Constants.WORKSHOP_MOD_NAME} in the workshop and restart your game to update.");
                             _sentOutOfDateMessage[clientId] = utcNow;
                         }
                         break;
