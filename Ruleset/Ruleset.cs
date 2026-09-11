@@ -1051,12 +1051,13 @@ namespace oomtm450PuckMod_Ruleset {
                     else
                         hasHitterDived = false;
 
-                    Logging.LogDebug($"Collision force for goalie collision : {force} (Threshold is {ServerConfig.GInt.CollisionForceThreshold})", ServerConfig); // TODO
-
-                    if (force > ServerConfig.GInt.CollisionForceThreshold)
-                        Logging.LogDebug($"Collision threshold for gint was exceeded.", ServerConfig); // TODO
-
                     Logging.LogDebug($"Goalie was in his crease ? : {goalieIsInHisCrease}", ServerConfig); // TODO
+                    if (goalieIsInHisCrease) {
+                        Logging.LogDebug($"Collision force for goalie collision : {force} (Threshold is {ServerConfig.GInt.CollisionForceThreshold})", ServerConfig); // TODO
+
+                        if (force > ServerConfig.GInt.CollisionForceThreshold)
+                            Logging.LogDebug($"Collision threshold for gint was exceeded.", ServerConfig); // TODO
+                    }
 
                     if ((goalie.PlayerBody.HasFallen.Value || goalie.PlayerBody.HasSlipped) && !hasGoalieDived) {
                         if (goalie.Team == hitter.Team)
