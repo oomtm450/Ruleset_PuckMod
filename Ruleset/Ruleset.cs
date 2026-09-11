@@ -79,6 +79,8 @@ namespace oomtm450PuckMod_Ruleset {
             Codebase.Constants.REMOVED_ALL_PENALTIES_DATANAME,
             Codebase.Constants.PENALIZED_PLAYERS_DATANAME,
             Codebase.Constants.UNPENALIZED_PLAYER_DATANAME,
+            Codebase.Constants.PENALIZED_PLAYER_PENDING_DATANAME,
+            "pim",
         });
 
         internal const string REF_UI_DEFAULT_KEY = "F7";
