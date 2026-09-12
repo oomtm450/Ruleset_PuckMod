@@ -5342,6 +5342,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (_lastAddRefVote.TryGetValue(playerSteamId, out DateTime lastAddVote)) {
                 double secondsSinceLastAddVote = (DateTime.UtcNow - lastAddVote).TotalSeconds;
                 if (secondsSinceLastAddVote < 30d) { // TODO : Config 30d.
+                    secondsSinceLastAddVote = Math.Round(secondsSinceLastAddVote, 1, MidpointRounding.AwayFromZero);
                     NetworkCommunication.SendData("refvotecooldown", (30d - secondsSinceLastAddVote).ToString(CultureInfo.InvariantCulture), player.OwnerClientId, Constants.FROM_SERVER_TO_CLIENT, Ruleset.ServerConfig);
                     return;
                 }
@@ -5350,6 +5351,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (_lastRemoveRef.TryGetValue(playerSteamId, out DateTime lastRemove)) {
                 double secondsSinceLastRemove = (DateTime.UtcNow - lastRemove).TotalSeconds;
                 if (secondsSinceLastRemove < 600d) { // TODO : Config 600d.
+                    secondsSinceLastRemove = Math.Round(secondsSinceLastRemove, 1, MidpointRounding.AwayFromZero);
                     NetworkCommunication.SendData("refvotecooldown", (600d - secondsSinceLastRemove).ToString(CultureInfo.InvariantCulture), player.OwnerClientId, Constants.FROM_SERVER_TO_CLIENT, Ruleset.ServerConfig);
                     return;
                 }
