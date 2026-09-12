@@ -3937,7 +3937,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!ServerConfig.RefMode || !IsAdmin(clientId))
                             break;
 
-                        RefVote.RemoveRef(dataStr);
+                        RefVote.RemoveRef(dataStr, true);
                         break;
 
                     case "rule": // SERVER-SIDE : Change rule. // TODO : Constant.
@@ -4507,6 +4507,10 @@ namespace oomtm450PuckMod_Ruleset {
                             SystemChatMessages.Add("Deferred icing is now enabled.");
                         else
                             SystemChatMessages.Add("Deferred icing is now disabled.");
+                        break;
+
+                    case "refvotecooldown": // CLIENT-SIDE : Show local chat message for ref cooldown.
+                        SystemFunc.AddClientChatMessage($"Referee voting is on cooldown for {dataStr} seconds.");
                         break;
                 }
             }
@@ -5306,6 +5310,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static string _addRefVotePlayerSteamId = "";
 
+        private static LockDictionary<string, DateTime> _lastAddRefVote = new LockDictionary<string, DateTime>();
+
         private static Timer _removeRefTimer = null;
 
         private static int _removeRefVotes = 0;
@@ -5317,6 +5323,8 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly LockList<ulong> _removeRefVoteClientIds = new LockList<ulong>();
 
         private static string _removeRefVotePlayerSteamId = "";
+
+        private static LockDictionary<string, DateTime> _lastRemoveRef = new LockDictionary<string, DateTime>();
 
         internal static bool AddRefVotingInProgress => _addRefTimer != null;
 
@@ -5331,6 +5339,22 @@ namespace oomtm450PuckMod_Ruleset {
             if (Ruleset.CurrentRefsSteamId.ContainsKey(playerSteamId))
                 return;
 
+            if (_lastAddRefVote.TryGetValue(playerSteamId, out DateTime lastAddVote)) {
+                double secondsSinceLastAddVote = (DateTime.UtcNow - lastAddVote).TotalSeconds;
+                if (secondsSinceLastAddVote < 30d) { // TODO : Config 30d.
+                    NetworkCommunication.SendData("refvotecooldown", (30d - secondsSinceLastAddVote).ToString(CultureInfo.InvariantCulture), player.OwnerClientId, Constants.FROM_SERVER_TO_CLIENT, Ruleset.ServerConfig);
+                    return;
+                }
+            }
+
+            if (_lastRemoveRef.TryGetValue(playerSteamId, out DateTime lastRemove)) {
+                double secondsSinceLastRemove = (DateTime.UtcNow - lastRemove).TotalSeconds;
+                if (secondsSinceLastRemove < 600d) { // TODO : Config 600d.
+                    NetworkCommunication.SendData("refvotecooldown", (600d - secondsSinceLastRemove).ToString(CultureInfo.InvariantCulture), player.OwnerClientId, Constants.FROM_SERVER_TO_CLIENT, Ruleset.ServerConfig);
+                    return;
+                }
+            }
+
             if (votesNeeded < ADD_REF_MINIMUM_VOTES)
                 votesNeeded = ADD_REF_MINIMUM_VOTES;
 
@@ -5340,7 +5364,12 @@ namespace oomtm450PuckMod_Ruleset {
             _addRefVotePlayerSteamId = playerSteamId;
 
             _addRefTimer = new Timer((_) => {
+                _lastAddRefVote.AddOrUpdate(_addRefVotePlayerSteamId, DateTime.UtcNow);
                 StopAddRef();
+                if (_addRefVotePlayer == null || !_addRefVotePlayer) {
+                    Ruleset.SystemChatMessages.Add($"Add referee vote expired.");
+                    return;
+                }
                 Ruleset.SystemChatMessages.Add($"Add referee #{_addRefVotePlayer.Number.Value} {_addRefVotePlayer.Username.Value} vote expired.");
             },
             null, timeForVoteMilliseconds, Timeout.Infinite);
@@ -5385,6 +5414,8 @@ namespace oomtm450PuckMod_Ruleset {
             Player newRef = PlayerManager.Instance.GetPlayerBySteamId(steamId);
             if (newRef == null || !newRef || newRef.Team != PlayerTeam.Spectator)
                 return;
+
+            _lastAddRefVote.AddOrUpdate(steamId, DateTime.UtcNow);
 
             int refModeGameAmount = Ruleset.ServerConfig.RefModeGameAmount;
             if (GameManager.Instance.Phase == GamePhase.Warmup || GameManager.Instance.Phase == GamePhase.GameOver || GameManager.Instance.Phase == GamePhase.PostGame)
@@ -5446,12 +5477,12 @@ namespace oomtm450PuckMod_Ruleset {
 
             Interlocked.Increment(ref _removeRefVotes);
             if (_removeRefVotes >= _removeRefVotesNeeded)
-                RemoveRef(_removeRefVotePlayerSteamId);
+                RemoveRef(_removeRefVotePlayerSteamId, true);
             else
                 Ruleset.SystemChatMessages.Add($"Remove referee #{_removeRefVotePlayer.Number.Value} {_removeRefVotePlayer.Username.Value} votes needed {_removeRefVotes}/{_removeRefVotesNeeded}. (/voteremoveref)");
         }
 
-        internal static void RemoveRef(string steamId) {
+        internal static void RemoveRef(string steamId, bool addCooldown = false) {
             if (_removeRefVotePlayerSteamId == steamId)
                 StopRemoveRef();
 
@@ -5469,6 +5500,9 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!removeRefVotePlayer)
                     removeRefVotePlayer = null;
             }
+
+            if (addCooldown)
+                _lastRemoveRef.Add(steamId, DateTime.UtcNow);
 
             Ruleset.CurrentRefsSteamId.Remove(steamId);
             if (Ruleset.CurrentRefsSteamId.Count == 0)
