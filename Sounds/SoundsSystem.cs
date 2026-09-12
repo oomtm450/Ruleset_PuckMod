@@ -703,7 +703,7 @@ namespace oomtm450PuckMod_Sounds {
             FirstFaceoff = 6,
             SecondFaceoff = 7,
             LastMinuteFaceoff = 8,
-            Powerplay,
+            Powerplay = 9,
         }
     }
 
