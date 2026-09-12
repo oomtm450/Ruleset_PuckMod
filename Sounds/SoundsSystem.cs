@@ -278,6 +278,11 @@ namespace oomtm450PuckMod_Sounds {
 
             string clipName = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(SOUND_EXTENSION, "");
 
+            if (string.IsNullOrEmpty(clipName)) {
+                await Awaitable.NextFrameAsync(cancellationToken);
+                return;
+            }
+
             if (!_soundSettings.TryGetValue(clipName, out SoundSettings clipSettings)) {
                 clipSettings = new SoundSettings {
                     Weight = DEFAULT_SOUND_WEIGHT,

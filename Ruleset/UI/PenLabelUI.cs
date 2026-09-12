@@ -59,7 +59,7 @@ namespace oomtm450PuckMod_Ruleset.UI {
                     _assetBundle = AssetBundle.LoadFromFile(bundlePath);
 
                 if (_assetBundle == null) {
-                    Logging.LogError("Failed to load AssetBundle !!!", Ruleset.ClientConfig);
+                    Logging.LogError($"Failed to load AssetBundle !!! ({bundlePath})", Ruleset.ClientConfig);
                     return;
                 }
 
