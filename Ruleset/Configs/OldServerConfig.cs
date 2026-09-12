@@ -1,5 +1,4 @@
-﻿using Codebase;
-using Codebase.Configs;
+﻿using Codebase.Configs;
 using System.Collections.Generic;
 
 namespace oomtm450PuckMod_Ruleset.Configs {
@@ -46,12 +45,17 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; } = 67; // TODO : Change after release.
+        public int MaxTippedMilliseconds { get; } = 33; // TODO : Change after release.
+
+        /// <summary>
+        /// Float, puck speed tipping ratio.
+        /// </summary>
+        public float PuckSpeedTippingRatio { get; } = 0.025f;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
         /// </summary>
-        public int MinPossessionMilliseconds { get; } = 350; // TODO : Change after release.
+        public int MinPossessionMilliseconds { get; } = 333;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered without challenging.
@@ -62,6 +66,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, authorize ref mode to be voted or activated by an admin.
         /// </summary>
         public bool RefMode { get; } = true;
+
+        /// <summary>
+        /// Int, number of games a newly added ref will be doing before being automaticaly removed.
+        /// </summary>
+        public int RefModeGameAmount { get; } = 3;
 
         /// <summary>
         /// Float, default standing player height.
@@ -77,6 +86,15 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if the glass barriers has to be lowered.
         /// </summary>
         public bool LowerBarriers { get; } = true;
+
+        /// <summary>
+        /// Float, Y offset to use when teleporting/spawning players and pucks related to Ruleset.
+        /// </summary>
+        public float YOffsetForTeleport { get; } = 0.01f;
+        /// <summary>
+        /// Bool, true if the out of bounds looping bug has to be fixed.
+        /// </summary>
+        public bool FixOutOfBoundsLooping { get; } = true;
         #endregion
 
         #region Methods/Functions
@@ -158,7 +176,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds before leaving the stick.
         /// </summary>
-        public int DelayOfGameMillisecondsThreshold { get; } = 120; // TODO : Change after release.
+        public int DelayOfGameMillisecondsThreshold { get; } = 25;
+        /// <summary>
+        /// Int, delay of game can be called after this number of milliseconds after a faceoff since the last touch.
+        /// </summary>
+        public int DelayOfGameFaceoffProtectionMilliseconds { get; } = 2250;
 
         /// <summary>
         /// Bool, true if faceoff violation penalty is enabled.
@@ -201,7 +223,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, chance for an roughing to be called. (1 is equal to 100%. 1 / 100 * 100 = 1)
         /// </summary>
-        public int RoughingChancePercInverse { get; } = 1;
+        public int RoughingChancePercInverse { get; } = 1; // TODO : Change after release.
 
         /// <summary>
         /// Bool, true if charging penalty is enabled.
@@ -211,6 +233,18 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, time in the box for a charging penalty in milliseconds.
         /// </summary>
         public int ChargingTime { get; } = 45000;
+        /// <summary>
+        /// Float, skater's speed threshold to call a charging penalty.
+        /// </summary>
+        public float ChargingSpeedThreshold { get; } = 8.7f;
+        /// <summary>
+        /// Int, skater's last sprint timespan threshold to call a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingLastSprintTimeThreshold { get; } = 500;
+        /// <summary>
+        /// Int, skater's last sprint minimum total time to call a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingMinimumTotalSprintTime { get; } = 1400;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -235,6 +269,21 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if red team offsides are activated.
         /// </summary>
         public bool RedTeam { get; } = true;
+
+        /// <summary>
+        /// Bool, true if blue team intentional offsides are activated.
+        /// </summary>
+        public bool IntentionalOffsideBlueTeam { get; } = true;
+
+        /// <summary>
+        /// Bool, true if red team intentional offsides are activated.
+        /// </summary>
+        public bool IntentionalOffsideRedTeam { get; } = true;
+
+        /// <summary>
+        /// Int, threshold for an intentional offside to be called in milliseconds.
+        /// </summary>
+        public int IntentionalOffsideMillisecondsThreshold { get; } = 3750;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -268,28 +317,28 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Double, deferred icing max possible time multiplicator.
         /// </summary>
-        public double DeferredMaxPossibleTimeMultiplicator { get; } = 280d; // TODO : Change after release.
+        public double DeferredMaxPossibleTimeMultiplicator { get; } = 300d; // TODO : Change after release.
 
         /// <summary>
         /// Double, deferred icing max possible time addition (after multiplicator).
         /// </summary>
-        public double DeferredMaxPossibleTimeAddition { get; } = 9750d; // TODO : Change after release.
+        public double DeferredMaxPossibleTimeAddition { get; } = 9850d; // TODO : Change after release.
 
         /// <summary>
         /// Float, deferred icing max possible time substraction depending of players distance to puck (after addition).
         /// </summary>
-        public float DeferredMaxPossibleTimeDistanceDelta { get; } = 250f; // TODO : Change after release.
+        public float DeferredMaxPossibleTimeDistanceDelta { get; } = 200f; // TODO : Change after release.
 
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
         public Dictionary<Codebase.Zone, float> MaxPossibleTime { get; } = new Dictionary<Codebase.Zone, float> { // TODO : Change after release.
-            { Codebase.Zone.BlueTeam_BehindGoalLine, 9500f },
-            { Codebase.Zone.RedTeam_BehindGoalLine, 9500f },
-            { Codebase.Zone.BlueTeam_Zone, 7750f },
-            { Codebase.Zone.RedTeam_Zone, 7750f },
-            { Codebase.Zone.BlueTeam_Center, 5500f },
-            { Codebase.Zone.RedTeam_Center, 5500f },
+            { Codebase.Zone.BlueTeam_BehindGoalLine, 9850f },
+            { Codebase.Zone.RedTeam_BehindGoalLine, 9850f },
+            { Codebase.Zone.BlueTeam_Zone, 8125f },
+            { Codebase.Zone.RedTeam_Zone, 8125f },
+            { Codebase.Zone.BlueTeam_Center, 5800f },
+            { Codebase.Zone.RedTeam_Center, 5800f },
         };
 
         /// <summary>
@@ -300,12 +349,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, delta used to calculate the dynamic icing possible times.
         /// </summary>
-        public float Delta { get; } = 21.75f; // TODO : Change after release.
+        public float Delta { get; } = 22f;
 
         /// <summary>
         /// Float, max height before deferred icing does not check for possibility that the other team touches the puck before icing.
         /// </summary>
-        public float DeferredMaxHeight { get; } = 0.85f; // TODO : Change after release.
+        public float DeferredMaxHeight { get; } = 0.8f; // TODO : Change after release.
 
         /// <summary>
         /// Bool, true if icing team stamina has to be drained.
@@ -326,6 +375,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, amount to remove from StaminaDrainDivisionAmount when applying additional stamina drain penalties.
         /// </summary>
         public float StaminaDrainDivisionAmountPenaltyDelta { get; } = 0.5f;
+
+        /// <summary>
+        /// Float, amount to divide the stamina by for the team causing the icing if StaminaDrain is on.
+        /// </summary>
+        public float StaminaDrainDivisionAmountGoalie { get; } = 2f;
+
+        /// <summary>
+        /// Float, amount to remove from StaminaDrainDivisionAmount when applying additional stamina drain penalties.
+        /// </summary>
+        public float StaminaDrainDivisionAmountPenaltyDeltaGoalie { get; } = 1f;
 
         /// <summary>
         /// Int, time between 2 icings to apply additional stamina drain penalties.
@@ -359,7 +418,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
         /// </summary>
-        public float MaxHeight { get; } = Codebase.Constants.CROSSBAR_HEIGHT;
+        public float MaxHeight { get; } = Codebase.Constants.CROSSBAR_HEIGHT; // TODO : Change after release.
+
+        /// <summary>
+        /// Float, base height before hitting the puck with a stick is considered high stick for a no goal situation.
+        /// </summary>
+        public float MaxHeightNoGoal { get; } = Codebase.Constants.CROSSBAR_HEIGHT;
 
         /// <summary>
         /// Int, number of milliseconds after a high stick to not be considered.
@@ -370,6 +434,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, delta used to calculate the high stick maximum frames before activation.
         /// </summary>
         public float Delta { get; } = 18f;
+
+        /// <summary>
+        /// Bool, true to make a jumping high stick a hand pass situation for blue team.
+        /// </summary>
+        public bool HandPassBlueTeam { get; } = true;
+
+        /// <summary>
+        /// Bool, true to make a jumping high stick a hand pass situation for red team.
+        /// </summary>
+        public bool HandPassRedTeam { get; } = true;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -398,17 +472,22 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after a push on the goalie to be considered no goal.
         /// </summary>
-        public int PushNoGoalMilliseconds { get; } = 3750;
+        public int PushNoGoalMilliseconds { get; } = 3750;  // TODO : Change after release.
 
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
-        public float CollisionForceThreshold { get; } = 0.9695f;
+        public float CollisionForceThreshold { get; } = 0.9695f;  // TODO : Change after release.
+
+        /// <summary>
+        /// Int, number of milliseconds between each player push to be considered when finding blame for a goalie push.
+        /// </summary>
+        public int CollisionTimeThreshold { get; } = 400;
 
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
-        public float GoalieRadius { get; } = 0.81f;
+        public float GoalieRadius { get; } = 0.81f;  // TODO : Change after release.
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
@@ -447,7 +526,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, maximum height for the puck to be touched on faceoff.
         /// </summary>
-        public float PuckIceContactHeight { get; } = 0.3f;
+        public float PuckIceContactHeight { get; } = 0.205f;
 
         /// <summary>
         /// Int, maximum of faceoff violations before getting penalized.
@@ -465,38 +544,43 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float PenaltyFreezeDuration { get; } = 5f;
 
         /// <summary>
-        /// Bool, true if players has to be freezed before puck drops.
+        /// Bool, true if skaters has to be freezed before puck drops.
         /// </summary>
-        public bool FreezePlayersBeforeDrop { get; } = true;
+        public bool FreezeSkatersBeforeDrop { get; } = true;
+
+        /// <summary>
+        /// Bool, true if goalies has to be freezed before puck drops.
+        /// </summary>
+        public bool FreezeGoaliesBeforeDrop { get; } = false;
 
         /// <summary>
         /// Float, number of seconds to freeze players before faceoff ends.
         /// </summary>
-        public float FreezeBeforeDropTime { get; } = 2.999f;
+        public float FreezeBeforeDropTime { get; } = 2f;
 
         // Center position settings
-        public float CenterMaxForward { get; } = 0;       // Centers can't move forward at all
-        public float CenterMaxBackward { get;} = 2f;    // Backward wall
-        public float CenterMaxLeft { get; } = 1f;        // Limited side movement
-        public float CenterMaxRight { get; } = 1f;
+        public float CenterMaxForward { get; } = 0;       // Centers can't move forward at all // TODO : Change after release.
+        public float CenterMaxBackward { get; } = 2f;    // Backward wall // TODO : Change after release.
+        public float CenterMaxLeft { get; } = 1f;        // Limited side movement // TODO : Change after release.
+        public float CenterMaxRight { get; } = 1f; // TODO : Change after release.
 
         // Winger settings
-        public float WingerMaxForward { get; } = 1f;     // Wingers can move forward a bit
-        public float WingerMaxBackward { get; } = 2f;    // Backward wall
-        public float WingerMaxToward { get; } = 0;      // Limited movement toward center (inward wall)
-        public float WingerMaxAway { get; } = 5f;       // More movement away from center (outward wall toward boards)
+        public float WingerMaxForward { get; } = 1f;     // Wingers can move forward a bit // TODO : Change after release.
+        public float WingerMaxBackward { get; } = 2f;    // Backward wall // TODO : Change after release.
+        public float WingerMaxToward { get; } = 0;      // Limited movement toward center (inward wall) // TODO : Change after release.
+        public float WingerMaxAway { get; } = 5f;       // More movement away from center (outward wall toward boards) // TODO : Change after release.
 
         // Defense settings
-        public float DefenseMaxForward { get; } = 0;      // Defense can't move forward at all
-        public float DefenseMaxBackward { get; } = 0f;   // Backward wall
-        public float DefenseMaxToward { get; } = 5f;     // Movement toward center
-        public float DefenseMaxAway { get; } = 5f;      // Movement away from center (toward boards)
+        public float DefenseMaxForward { get; } = 0;      // Defense can't move forward at all // TODO : Change after release.
+        public float DefenseMaxBackward { get; } = 0f;   // Backward wall // TODO : Change after release.
+        public float DefenseMaxToward { get; } = 5f;     // Movement toward center // TODO : Change after release.
+        public float DefenseMaxAway { get; } = 5f;      // Movement away from center (toward boards) // TODO : Change after release.
 
         // Goalie settings
-        public float GoalieMaxForward { get; } = 2f;     // Minimal forward movement
-        public float GoalieMaxBackward { get; } = 2f;    // Backward wall
-        public float GoalieMaxLeft { get; } = 2f;
-        public float GoalieMaxRight { get; } = 2f;
+        public float GoalieMaxForward { get; } = 2f; // TODO : Change after release.
+        public float GoalieMaxBackward { get; } = 2f; // TODO : Change after release.
+        public float GoalieMaxLeft { get; } = 2f; // TODO : Change after release.
+        public float GoalieMaxRight { get; } = 2f; // TODO : Change after release.
 
         public bool ResetPlayersOnFaceoff { get; } = true;
 

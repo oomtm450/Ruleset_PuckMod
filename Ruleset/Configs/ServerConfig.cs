@@ -83,7 +83,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; set; } = 33;
+        public int MaxTippedMilliseconds { get; set; } = 31;
+
+        /// <summary>
+        /// Float, puck speed tipping ratio.
+        /// </summary>
+        public float PuckSpeedTippingRatio { get; set; } = 0.025f;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
@@ -101,6 +106,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public bool RefMode { get; set; } = true;
 
         /// <summary>
+        /// Int, number of games a newly added ref will be doing before being automaticaly removed.
+        /// </summary>
+        public int RefModeGameAmount { get; set; } = 3;
+
+        /// <summary>
         /// Float, default standing player height.
         /// </summary>
         public float DefaultPlayerHeight { get; set; } = DEFAULT_PLAYER_HEIGHT;
@@ -114,6 +124,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if the glass barriers has to be lowered.
         /// </summary>
         public bool LowerBarriers { get; set; } = true;
+
+        /// <summary>
+        /// Float, Y offset to use when teleporting/spawning players and pucks related to Ruleset.
+        /// </summary>
+        public float YOffsetForTeleport { get; set; } = 0.01f;
+
+        /// <summary>
+        /// Bool, true if the out of bounds looping bug has to be fixed.
+        /// </summary>
+        public bool FixOutOfBoundsLooping { get; set; } = true;
         #endregion
 
         #region Constructors
@@ -138,16 +158,22 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             Penalty = new PenaltyConfig(serverConfig.Penalty);
 
             MaxTippedMilliseconds = serverConfig.MaxTippedMilliseconds;
+            PuckSpeedTippingRatio = serverConfig.PuckSpeedTippingRatio;
             MinPossessionMilliseconds = serverConfig.MinPossessionMilliseconds;
             MaxPossessionMilliseconds = serverConfig.MaxPossessionMilliseconds;
 
             RefMode = serverConfig.RefMode;
+            RefModeGameAmount = serverConfig.RefModeGameAmount;
 
             DefaultPlayerHeight = serverConfig.DefaultPlayerHeight;
 
             LogPhaseChangeAndStoppage = serverConfig.LogPhaseChangeAndStoppage;
 
             LowerBarriers = serverConfig.LowerBarriers;
+
+            YOffsetForTeleport = serverConfig.YOffsetForTeleport;
+
+            FixOutOfBoundsLooping = serverConfig.FixOutOfBoundsLooping;
         }
         #endregion
 
@@ -164,10 +190,13 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             ServerConfig newConfig = new Configs.ServerConfig();
 
             //if (LogInfo == _oldConfig.LogInfo)
-                //LogInfo = newConfig.LogInfo;
+            //LogInfo = newConfig.LogInfo;
 
             if (MaxTippedMilliseconds == _oldConfig.MaxTippedMilliseconds)
                 MaxTippedMilliseconds = newConfig.MaxTippedMilliseconds;
+
+            if (PuckSpeedTippingRatio == _oldConfig.PuckSpeedTippingRatio)
+                PuckSpeedTippingRatio = newConfig.PuckSpeedTippingRatio;
 
             if (MinPossessionMilliseconds == _oldConfig.MinPossessionMilliseconds)
                 MinPossessionMilliseconds = newConfig.MinPossessionMilliseconds;
@@ -178,6 +207,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (RefMode == _oldConfig.RefMode)
                 RefMode = newConfig.RefMode;
 
+            if (RefModeGameAmount == _oldConfig.RefModeGameAmount)
+                RefModeGameAmount = newConfig.RefModeGameAmount;
+
             if (DefaultPlayerHeight == _oldConfig.DefaultPlayerHeight)
                 DefaultPlayerHeight = newConfig.DefaultPlayerHeight;
 
@@ -186,6 +218,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (LowerBarriers == _oldConfig.LowerBarriers)
                 LowerBarriers = newConfig.LowerBarriers;
+
+            if (YOffsetForTeleport == _oldConfig.YOffsetForTeleport)
+                YOffsetForTeleport = newConfig.YOffsetForTeleport;
+
+            if (FixOutOfBoundsLooping == _oldConfig.FixOutOfBoundsLooping)
+                FixOutOfBoundsLooping = newConfig.FixOutOfBoundsLooping;
 
             Offside.UpdateDefaultValues(_oldConfig.Offside);
             Icing.UpdateDefaultValues(_oldConfig.Icing);
@@ -236,7 +274,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                     File.WriteAllText(CONFIG_PATH, config.ToString());
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}", config);
+                    Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}", new Configs.ServerConfig());
                 }
 
                 Logging.Log($"Wrote server config : {config}", config, true);
@@ -262,6 +300,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                         HighStick = new HighStickConfig {
                             BlueTeam = config.HighStick.BlueTeam,
                             RedTeam = config.HighStick.RedTeam,
+                            HandPassBlueTeam = config.HighStick.HandPassBlueTeam,
+                            HandPassRedTeam = config.HighStick.HandPassRedTeam,
                         },
                         Penalty = new PenaltyConfig {
                             Interference = config.Penalty.Interference,
@@ -274,20 +314,22 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                         },
                         Faceoff = new FaceoffConfig {
                             EnableViolations = config.Faceoff.EnableViolations,
-                            FreezePlayersBeforeDrop = config.Faceoff.FreezePlayersBeforeDrop,
+                            FreezeSkatersBeforeDrop = config.Faceoff.FreezeSkatersBeforeDrop,
+                            FreezeGoaliesBeforeDrop = config.Faceoff.FreezeGoaliesBeforeDrop,
                             UseCustomFaceoff = config.Faceoff.UseCustomFaceoff,
                             UseDefaultPuckDropHeight = config.Faceoff.UseDefaultPuckDropHeight,
                             ResetPlayersOnFaceoff = config.Faceoff.ResetPlayersOnFaceoff,
                         },
                         LogPhaseChangeAndStoppage = config.LogPhaseChangeAndStoppage,
                         LowerBarriers = config.LowerBarriers,
+                        FixOutOfBoundsLooping = config.FixOutOfBoundsLooping,
                     };
 
                     config = defaultConfig;
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", config);
+                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", new Configs.ServerConfig());
             }
 
             return config;
@@ -364,6 +406,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, delay of game can be called if someone didn't touch the puck this number of milliseconds on the other team.
         /// </summary>
         public int DelayOfGameMillisecondsThreshold { get; set; } = 25;
+        /// <summary>
+        /// Int, delay of game can be called after this number of milliseconds after a faceoff since the last touch.
+        /// </summary>
+        public int DelayOfGameFaceoffProtectionMilliseconds { get; set; } = 2250;
 
         /// <summary>
         /// Bool, true if faceoff violation penalty is enabled.
@@ -404,9 +450,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         public int RoughingMillisecondsThreshold { get; set; } = 6500;
         /// <summary>
-        /// Int, chance for an roughing to be called. (1 is equal to 100%. 1 / 100 * 100 = 1)
+        /// Int, chance for an roughing to be called. (2 is equal to 50%. 1 / 50 * 100 = 2)
         /// </summary>
-        public int RoughingChancePercInverse { get; set; } = 1;
+        public int RoughingChancePercInverse { get; set; } = 2;
 
         /// <summary>
         /// Bool, true if charging penalty is enabled.
@@ -416,6 +462,18 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, time in the box for a charging penalty in milliseconds.
         /// </summary>
         public int ChargingTime { get; set; } = PenaltyModule.LONG_PENALTY_TIME_MS;
+        /// <summary>
+        /// Float, skater's speed threshold to call a charging penalty.
+        /// </summary>
+        public float ChargingSpeedThreshold { get; set; } = 8.69f;
+        /// <summary>
+        /// Int, skater's last sprint timespan threshold to call a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingLastSprintTimeThreshold { get; set; } = 500;
+        /// <summary>
+        /// Int, skater's last sprint minimum total time to call a charging penalty in milliseconds.
+        /// </summary>
+        public int ChargingMinimumTotalSprintTime { get; set; } = 1400;
         #endregion
 
         #region Constructors
@@ -447,6 +505,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             DelayOfGameTime = penaltyConfig.DelayOfGameTime;
             DelayOfGameZDelta = penaltyConfig.DelayOfGameZDelta;
             DelayOfGameMillisecondsThreshold = penaltyConfig.DelayOfGameMillisecondsThreshold;
+            DelayOfGameFaceoffProtectionMilliseconds = penaltyConfig.DelayOfGameFaceoffProtectionMilliseconds;
 
             FaceoffViolation = penaltyConfig.FaceoffViolation;
             FaceoffViolationTime = penaltyConfig.FaceoffViolationTime;
@@ -463,6 +522,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             Charging = penaltyConfig.Charging;
             ChargingTime = penaltyConfig.ChargingTime;
+            ChargingSpeedThreshold = penaltyConfig.ChargingSpeedThreshold;
+            ChargingLastSprintTimeThreshold = penaltyConfig.ChargingLastSprintTimeThreshold;
+            ChargingMinimumTotalSprintTime = penaltyConfig.ChargingMinimumTotalSprintTime;
         }
         #endregion
 
@@ -526,6 +588,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (DelayOfGameMillisecondsThreshold == _oldConfig.DelayOfGameMillisecondsThreshold)
                 DelayOfGameMillisecondsThreshold = newConfig.DelayOfGameMillisecondsThreshold;
 
+            if (DelayOfGameFaceoffProtectionMilliseconds == _oldConfig.DelayOfGameFaceoffProtectionMilliseconds)
+                DelayOfGameFaceoffProtectionMilliseconds = newConfig.DelayOfGameFaceoffProtectionMilliseconds;
+
 
             if (FaceoffViolation == _oldConfig.FaceoffViolation)
                 FaceoffViolation = newConfig.FaceoffViolation;
@@ -565,6 +630,15 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (ChargingTime == _oldConfig.ChargingTime)
                 ChargingTime = newConfig.ChargingTime;
+
+            if (ChargingSpeedThreshold == _oldConfig.ChargingSpeedThreshold)
+                ChargingSpeedThreshold = newConfig.ChargingSpeedThreshold;
+
+            if (ChargingLastSprintTimeThreshold == _oldConfig.ChargingLastSprintTimeThreshold)
+                ChargingLastSprintTimeThreshold = newConfig.ChargingLastSprintTimeThreshold;
+
+            if (ChargingMinimumTotalSprintTime == _oldConfig.ChargingMinimumTotalSprintTime)
+                ChargingMinimumTotalSprintTime = newConfig.ChargingMinimumTotalSprintTime;
         }
     }
 
@@ -581,6 +655,21 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Bool, true if red team offsides are activated.
         /// </summary>
         public bool RedTeam { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if blue team intentional offsides are activated.
+        /// </summary>
+        public bool IntentionalOffsideBlueTeam { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if red team intentional offsides are activated.
+        /// </summary>
+        public bool IntentionalOffsideRedTeam { get; set; } = true;
+
+        /// <summary>
+        /// Int, threshold for an intentional offside to be called in milliseconds.
+        /// </summary>
+        public int IntentionalOffsideMillisecondsThreshold { get; set; } = 3750;
 
         #region Constructors
         /// <summary>
@@ -614,6 +703,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (RedTeam == _oldConfig.RedTeam)
                 RedTeam = newConfig.RedTeam;
+
+
+            if (IntentionalOffsideBlueTeam == _oldConfig.IntentionalOffsideBlueTeam)
+                IntentionalOffsideBlueTeam = newConfig.IntentionalOffsideBlueTeam;
+
+            if (IntentionalOffsideRedTeam == _oldConfig.IntentionalOffsideRedTeam)
+                IntentionalOffsideRedTeam = newConfig.IntentionalOffsideRedTeam;
+
+            if (IntentionalOffsideMillisecondsThreshold == _oldConfig.IntentionalOffsideMillisecondsThreshold)
+                IntentionalOffsideMillisecondsThreshold = newConfig.IntentionalOffsideMillisecondsThreshold;
         }
     }
 
@@ -639,28 +738,28 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Double, deferred icing max possible time multiplicator.
         /// </summary>
-        public double DeferredMaxPossibleTimeMultiplicator { get; set; } = 300d;
+        public double DeferredMaxPossibleTimeMultiplicator { get; set; } = 310d;
 
         /// <summary>
         /// Double, deferred icing max possible time addition (after multiplicator).
         /// </summary>
-        public double DeferredMaxPossibleTimeAddition { get; set; } = 9850d;
+        public double DeferredMaxPossibleTimeAddition { get; set; } = 10150d;
 
         /// <summary>
         /// Float, deferred icing max possible time substraction depending of players distance to puck (after addition).
         /// </summary>
-        public float DeferredMaxPossibleTimeDistanceDelta { get; set; } = 200f;
+        public float DeferredMaxPossibleTimeDistanceDelta { get; set; } = 168f;
 
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
         public Dictionary<Codebase.Zone, float> MaxPossibleTime { get; set; } = new Dictionary<Codebase.Zone, float> {
-            { Codebase.Zone.BlueTeam_BehindGoalLine, 9850f },
-            { Codebase.Zone.RedTeam_BehindGoalLine, 9850f },
-            { Codebase.Zone.BlueTeam_Zone, 8125f },
-            { Codebase.Zone.RedTeam_Zone, 8125f },
-            { Codebase.Zone.BlueTeam_Center, 5800f },
-            { Codebase.Zone.RedTeam_Center, 5800f },
+            { Codebase.Zone.BlueTeam_BehindGoalLine, 10150f },
+            { Codebase.Zone.RedTeam_BehindGoalLine, 10150f },
+            { Codebase.Zone.BlueTeam_Zone, 8325f },
+            { Codebase.Zone.RedTeam_Zone, 8325f },
+            { Codebase.Zone.BlueTeam_Center, 6075f },
+            { Codebase.Zone.RedTeam_Center, 6075f },
         };
 
         /// <summary>
@@ -676,7 +775,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, max height before deferred icing does not check for possibility that the other team touches the puck before icing.
         /// </summary>
-        public float DeferredMaxHeight { get; set; } = 0.8f;
+        public float DeferredMaxHeight { get; set; } = 0.75f;
 
         /// <summary>
         /// Bool, true if icing team stamina has to be drained.
@@ -697,6 +796,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, amount to remove from StaminaDrainDivisionAmount when applying additional stamina drain penalties.
         /// </summary>
         public float StaminaDrainDivisionAmountPenaltyDelta { get; set; } = 0.5f;
+
+        /// <summary>
+        /// Float, amount to divide the stamina by for the team causing the icing if StaminaDrain is on.
+        /// </summary>
+        public float StaminaDrainDivisionAmountGoalie { get; set; } = 2f;
+
+        /// <summary>
+        /// Float, amount to remove from StaminaDrainDivisionAmount when applying additional stamina drain penalties.
+        /// </summary>
+        public float StaminaDrainDivisionAmountPenaltyDeltaGoalie { get; set; } = 1f;
 
         /// <summary>
         /// Int, time in period seconds between 2 icings to apply additional stamina drain penalties.
@@ -730,6 +839,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             StaminaDrainGoalie = icingConfig.StaminaDrainGoalie;
             StaminaDrainDivisionAmount = icingConfig.StaminaDrainDivisionAmount;
             StaminaDrainDivisionAmountPenaltyDelta = icingConfig.StaminaDrainDivisionAmountPenaltyDelta;
+            StaminaDrainDivisionAmountGoalie = icingConfig.StaminaDrainDivisionAmountGoalie;
+            StaminaDrainDivisionAmountPenaltyDeltaGoalie = icingConfig.StaminaDrainDivisionAmountPenaltyDeltaGoalie;
             StaminaDrainDivisionAmountPenaltyTime = icingConfig.StaminaDrainDivisionAmountPenaltyTime;
         }
         #endregion
@@ -792,6 +903,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (StaminaDrainDivisionAmountPenaltyDelta == _oldConfig.StaminaDrainDivisionAmountPenaltyDelta)
                 StaminaDrainDivisionAmountPenaltyDelta = newConfig.StaminaDrainDivisionAmountPenaltyDelta;
 
+            if (StaminaDrainDivisionAmountGoalie == _oldConfig.StaminaDrainDivisionAmountGoalie)
+                StaminaDrainDivisionAmountGoalie = newConfig.StaminaDrainDivisionAmountGoalie;
+
+            if (StaminaDrainDivisionAmountPenaltyDeltaGoalie == _oldConfig.StaminaDrainDivisionAmountPenaltyDeltaGoalie)
+                StaminaDrainDivisionAmountPenaltyDeltaGoalie = newConfig.StaminaDrainDivisionAmountPenaltyDeltaGoalie;
+
             if (StaminaDrainDivisionAmountPenaltyTime == _oldConfig.StaminaDrainDivisionAmountPenaltyTime)
                 StaminaDrainDivisionAmountPenaltyTime = newConfig.StaminaDrainDivisionAmountPenaltyTime;
         }
@@ -814,7 +931,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, base height before hitting the puck with a stick is considered high stick.
         /// </summary>
-        public float MaxHeight { get; set; } = Codebase.Constants.CROSSBAR_HEIGHT + 0.05f + ServerConfig.DEFAULT_PLAYER_HEIGHT;
+        public float MaxHeight { get; set; } = Codebase.Constants.SHOULDERS_HEIGHT;
+
+        /// <summary>
+        /// Float, base height before hitting the puck with a stick is considered high stick for a no goal situation.
+        /// </summary>
+        public float MaxHeightNoGoal { get; set; } = Codebase.Constants.CROSSBAR_HEIGHT;
 
         /// <summary>
         /// Int, number of milliseconds after a high stick to call high stick if no one touches the puck.
@@ -825,6 +947,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, delta used to calculate the high stick maximum frames before activation.
         /// </summary>
         public float Delta { get; set; } = 20f;
+
+        /// <summary>
+        /// Bool, true to make a jumping high stick a hand pass situation for blue team.
+        /// </summary>
+        public bool HandPassBlueTeam { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true to make a jumping high stick a hand pass situation for red team.
+        /// </summary>
+        public bool HandPassRedTeam { get; set; } = true;
 
         #region Constructors
         /// <summary>
@@ -841,8 +973,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             RedTeam = highStickConfig.RedTeam;
 
             MaxHeight = highStickConfig.MaxHeight;
+            MaxHeightNoGoal = highStickConfig.MaxHeightNoGoal;
             MaxMilliseconds = highStickConfig.MaxMilliseconds;
             Delta = highStickConfig.Delta;
+
+            HandPassBlueTeam = highStickConfig.HandPassBlueTeam;
+            HandPassRedTeam = highStickConfig.HandPassRedTeam;
         }
         #endregion
 
@@ -866,11 +1002,20 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (MaxHeight == _oldConfig.MaxHeight)
                 MaxHeight = newConfig.MaxHeight;
 
+            if (MaxHeightNoGoal == _oldConfig.MaxHeightNoGoal)
+                MaxHeightNoGoal = newConfig.MaxHeightNoGoal;
+
             if (MaxMilliseconds == _oldConfig.MaxMilliseconds)
                 MaxMilliseconds = newConfig.MaxMilliseconds;
 
             if (Delta == _oldConfig.Delta)
                 Delta = newConfig.Delta;
+
+            if (HandPassBlueTeam == _oldConfig.HandPassBlueTeam)
+                HandPassBlueTeam = newConfig.HandPassBlueTeam;
+
+            if (HandPassRedTeam == _oldConfig.HandPassRedTeam)
+                HandPassRedTeam = newConfig.HandPassRedTeam;
         }
     }
 
@@ -891,17 +1036,22 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after a push on the goalie to be considered no goal.
         /// </summary>
-        public int PushNoGoalMilliseconds { get; set; } = 3750;
+        public int PushNoGoalMilliseconds { get; set; } = 3400;
 
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
         /// </summary>
-        public float CollisionForceThreshold { get; set; } = 0.9695f;
+        public float CollisionForceThreshold { get; set; } = 0.968f;
+
+        /// <summary>
+        /// Int, number of milliseconds between each player push to be considered when finding blame for a goalie push.
+        /// </summary>
+        public int CollisionTimeThreshold { get; set; } = 400;
 
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
-        public float GoalieRadius { get; set; } = 0.81f;
+        public float GoalieRadius { get; set; } = 0.83f;
 
         #region Constructors
         /// <summary>
@@ -919,6 +1069,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             PushNoGoalMilliseconds = gIntConfig.PushNoGoalMilliseconds;
             CollisionForceThreshold = gIntConfig.CollisionForceThreshold;
+            CollisionTimeThreshold = gIntConfig.CollisionTimeThreshold;
             GoalieRadius = gIntConfig.GoalieRadius;
         }
         #endregion
@@ -945,6 +1096,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
             if (CollisionForceThreshold == _oldConfig.CollisionForceThreshold)
                 CollisionForceThreshold = newConfig.CollisionForceThreshold;
+
+            if (CollisionTimeThreshold == _oldConfig.CollisionTimeThreshold)
+                CollisionTimeThreshold = newConfig.CollisionTimeThreshold;
 
             if (GoalieRadius == _oldConfig.GoalieRadius)
                 GoalieRadius = newConfig.GoalieRadius;
@@ -996,9 +1150,14 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float PenaltyFreezeDuration { get; set; } = 5f;
 
         /// <summary>
-        /// Bool, true if players has to be freezed before puck drops.
+        /// Bool, true if skaters has to be freezed before puck drops.
         /// </summary>
-        public bool FreezePlayersBeforeDrop { get; set; } = true;
+        public bool FreezeSkatersBeforeDrop { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if goalies has to be freezed before puck drops.
+        /// </summary>
+        public bool FreezeGoaliesBeforeDrop { get; set; } = false;
 
         /// <summary>
         /// Float, number of seconds to freeze players before faceoff ends.
@@ -1007,27 +1166,27 @@ namespace oomtm450PuckMod_Ruleset.Configs {
 
         // Center position settings
         public float CenterMaxForward { get; set; } = 0;      // Centers can't move forward at all
-        public float CenterMaxBackward { get; set; } = 2f;    // Backward wall
+        public float CenterMaxBackward { get; set; } = 1.8f;    // Backward wall
         public float CenterMaxLeft { get; set; } = 1f;        // Limited side movement
         public float CenterMaxRight { get; set; } = 1f;
 
         // Winger settings
-        public float WingerMaxForward { get; set; } = 0.5f;     // Wingers can move forward a bit
-        public float WingerMaxBackward { get; set; } = 2f;    // Backward wall
+        public float WingerMaxForward { get; set; } = 0.6f;     // Wingers can move forward a bit
+        public float WingerMaxBackward { get; set; } = 1.8f;    // Backward wall
         public float WingerMaxToward { get; set; } = 0;       // Limited movement toward center (inward wall)
-        public float WingerMaxAway { get; set; } = 2.5f;      // More movement away from center (outward wall toward boards)
+        public float WingerMaxAway { get; set; } = 2.3f;      // More movement away from center (outward wall toward boards)
 
         // Defense settings
         public float DefenseMaxForward { get; set; } = 0;     // Defense can't move forward at all
         public float DefenseMaxBackward { get; set; } = 0;    // Backward wall
-        public float DefenseMaxToward { get; set; } = 2.5f;   // Movement toward center
-        public float DefenseMaxAway { get; set; } = 2.5f;     // Movement away from center (toward boards)
+        public float DefenseMaxToward { get; set; } = 2.4f;   // Movement toward center
+        public float DefenseMaxAway { get; set; } = 2.4f;     // Movement away from center (toward boards)
 
         // Goalie settings
-        public float GoalieMaxForward { get; set; } = 2f;     // Minimal forward movement
-        public float GoalieMaxBackward { get; set; } = 2f;    // Backward wall
-        public float GoalieMaxLeft { get; set; } = 2f;
-        public float GoalieMaxRight { get; set; } = 2f;
+        public float GoalieMaxForward { get; set; } = 2f;
+        public float GoalieMaxBackward { get; set; } = 2.1f;
+        public float GoalieMaxLeft { get; set; } = 2.2f;
+        public float GoalieMaxRight { get; set; } = 2.2f;
 
         /// <summary>
         /// Bool, reset some values on faceoff, like stamina.
@@ -1054,7 +1213,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             MaxViolationsBeforePenalty = faceoffConfig.MaxViolationsBeforePenalty;
             PenaltyFreezeDistance = faceoffConfig.PenaltyFreezeDistance;
             PenaltyFreezeDuration = faceoffConfig.PenaltyFreezeDuration;
-            FreezePlayersBeforeDrop = faceoffConfig.FreezePlayersBeforeDrop;
+            FreezeSkatersBeforeDrop = faceoffConfig.FreezeSkatersBeforeDrop;
+            FreezeGoaliesBeforeDrop = faceoffConfig.FreezeGoaliesBeforeDrop;
             FreezeBeforeDropTime = faceoffConfig.FreezeBeforeDropTime;
 
             CenterMaxForward = faceoffConfig.CenterMaxForward;
@@ -1116,8 +1276,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (PenaltyFreezeDuration == _oldConfig.PenaltyFreezeDuration)
                 PenaltyFreezeDuration = newConfig.PenaltyFreezeDuration;
 
-            if (FreezePlayersBeforeDrop == _oldConfig.FreezePlayersBeforeDrop)
-                FreezePlayersBeforeDrop = newConfig.FreezePlayersBeforeDrop;
+            if (FreezeSkatersBeforeDrop == _oldConfig.FreezeSkatersBeforeDrop)
+                FreezeSkatersBeforeDrop = newConfig.FreezeSkatersBeforeDrop;
+
+            if (FreezeGoaliesBeforeDrop == _oldConfig.FreezeGoaliesBeforeDrop)
+                FreezeGoaliesBeforeDrop = newConfig.FreezeGoaliesBeforeDrop;
 
             if (FreezeBeforeDropTime == _oldConfig.FreezeBeforeDropTime)
                 FreezeBeforeDropTime = newConfig.FreezeBeforeDropTime;

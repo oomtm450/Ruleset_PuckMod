@@ -8,7 +8,7 @@ namespace Codebase {
         private readonly Stopwatch _stopwatch = new Stopwatch();
         private readonly Action _callback;
         private bool _callbackCalled = false;
-        private readonly long _intervalMilliseconds;
+        private long _intervalMilliseconds;
         private bool _isRunning = false;
 
         public long MillisecondsLeft => _intervalMilliseconds - _stopwatch.ElapsedMilliseconds;
@@ -43,6 +43,12 @@ namespace Codebase {
         public void Reset() {
             _stopwatch.Reset();
             Pause(); // Pause also sets isRunning to false
+        }
+
+        public void AddTime(long milliseconds) {
+            _intervalMilliseconds += milliseconds;
+            Pause();
+            Start();
         }
 
         public void TimerCallback(object state) {

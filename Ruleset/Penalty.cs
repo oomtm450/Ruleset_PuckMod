@@ -8,10 +8,6 @@ using UnityEngine;
 namespace oomtm450PuckMod_Ruleset {
     internal static class PenaltyModule {
         #region Constants
-        internal const string GIVE_PENALTY_DATANAME = Constants.MOD_NAME + "pen";
-        internal const string REMOVE_ALL_PENALTIES_REFMODE_DATANAME = Constants.MOD_NAME + "refremoveallpen";
-        internal const string REMOVE_PENALTY_DATANAME = Constants.MOD_NAME + "removepen";
-
         internal const int LONG_PENALTY_TIME_MS = 45000;
         internal const int SHORT_PENALTY_TIME_MS = 30000;
 
@@ -60,7 +56,7 @@ namespace oomtm450PuckMod_Ruleset {
         private static Vector3 DELAY_OF_GAME_CORNER_BOTTOM_LEFT_LINE_2_POSITION_1 { get; set; }
         private static Vector3 DELAY_OF_GAME_CORNER_BOTTOM_LEFT_LINE_2_POSITION_2 { get; set; }
 
-        private static readonly Dictionary<string, bool> POSITION_IS_PENALIZED_DEFAULT = new Dictionary<string, bool> {
+        internal static readonly Dictionary<string, bool> POSITION_IS_PENALIZED_DEFAULT = new Dictionary<string, bool> {
             { Codebase.PlayerFunc.GOALIE_POSITION, false },
             { Codebase.PlayerFunc.CENTER_POSITION, false },
             { Codebase.PlayerFunc.LEFT_WINGER_POSITION, false },
@@ -368,7 +364,10 @@ namespace oomtm450PuckMod_Ruleset {
 
             Ruleset.PenaltyTimersElapsed.Clear();
 
-            Ruleset.DataToSendToAll.Add(new List<string> { "removeallpen", "1", Constants.FROM_SERVER_TO_CLIENT, });
+            Ruleset.DataToSendToAll.Add(new List<string> { Codebase.Constants.REMOVED_ALL_PENALTIES_DATANAME, "1", Constants.FROM_SERVER_TO_CLIENT, });
+            EventManager.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object> {
+                { Codebase.Constants.REMOVED_ALL_PENALTIES_DATANAME, "1" },
+            });
 
             UnpausePenalties();
         }
@@ -422,12 +421,15 @@ namespace oomtm450PuckMod_Ruleset {
                 if (allPenalties.Where(x => x.Team == penalizedPlayer.Team && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
                     return false;
 
-                if (penaltyType == PenaltyType.Roughing && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Interference || x.PenaltyType == PenaltyType.GoalieInterference) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
+                if ((penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.GoalieInterference) && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Charging) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
+                    return false;
+
+                if (penaltyType == PenaltyType.Roughing && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Interference || x.PenaltyType == PenaltyType.GoalieInterference || x.PenaltyType == PenaltyType.Charging) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
                     return false;
             }
 
-            if ((penalizedPlayer.Team == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam == Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
-                (penalizedPlayer.Team == PlayerTeam.Red && PenalizedPlayersCountRedTeam == Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
+            if ((((penalizedPlayer.Team == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam >= Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
+                (penalizedPlayer.Team == PlayerTeam.Red && PenalizedPlayersCountRedTeam >= Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam)) && penaltyList.Count >= Ruleset.ServerConfig.Penalty.MaxPenaltiesCountPerPlayer) ||
                 (teamPlayers.Count(x => !PenalizedPlayers.TryGetValue(x.SteamId.Value.ToString(), out LockList<Penalty> penalties) || penalties.Count == 0) < Ruleset.ServerConfig.Penalty.MaximumPenaltyImmunedPlayersCountPerTeam)) {
                 bool unpenalizeOnePlayer = false;
                 if (penalizedPlayer.Team == PlayerTeam.Blue) {
@@ -462,11 +464,14 @@ namespace oomtm450PuckMod_Ruleset {
                 RemoveOnePenalty(_playerToUnpenalize.Team, true);
             }
 
+            Player penalizedGoalie = null;
             // If goalie has a penalty, take another player.
             if (Codebase.PlayerFunc.IsGoalie(penalizedPlayer) || penalizedPlayer.PlayerPosition.Name == Codebase.PlayerFunc.GOALIE_POSITION) {
+                penalizedGoalie = penalizedPlayer;
+
                 List<Player> possiblePlayersToPenalize = new List<Player>();
                 foreach (Player teamPlayer in teamPlayers) {
-                    if (!Codebase.PlayerFunc.IsPlayerPlaying(teamPlayer))
+                    if (!Codebase.PlayerFunc.IsPlayerPlaying(teamPlayer) || Codebase.PlayerFunc.IsGoalie(teamPlayer) || teamPlayer.PlayerPosition.Name == Codebase.PlayerFunc.GOALIE_POSITION)
                         continue;
 
                     if (PenalizedPlayers.TryGetValue(teamPlayer.SteamId.Value.ToString(), out LockList<Penalty> __penaltyList)) {
@@ -480,7 +485,16 @@ namespace oomtm450PuckMod_Ruleset {
                 if (possiblePlayersToPenalize.Count == 0)
                     return false;
 
-                penalizedPlayer = possiblePlayersToPenalize.OrderBy(x => x.Goals.Value + x.Assists.Value).First();
+                if (possiblePlayersToPenalize.Count == 1)
+                    penalizedPlayer = possiblePlayersToPenalize.First();
+                else {
+                    List<Player> possiblePlayersToPenalizeOffenseOnly = new List<Player>(possiblePlayersToPenalize.Where(x => x.PlayerPosition.Name != Codebase.PlayerFunc.LEFT_DEFENDER_POSITION && x.PlayerPosition.Name != Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION));
+                    if (possiblePlayersToPenalizeOffenseOnly.Count == 0)
+                        penalizedPlayer = possiblePlayersToPenalize.OrderBy(x => x.Goals.Value + x.Assists.Value).First();
+                    else
+                        penalizedPlayer = possiblePlayersToPenalizeOffenseOnly.OrderBy(x => x.Goals.Value + x.Assists.Value).First();
+                }
+
                 penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
 
                 if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> _penaltyList)) {
@@ -510,15 +524,36 @@ namespace oomtm450PuckMod_Ruleset {
                 penalizedPlayer.PlayerPosition.Name,
                 receivingPlayerSteamId
             );
-
             penaltyList.Add(newPenalty);
-            string message = $"Penalty #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}, {GetPenaltyTypeTime(penaltyType) / 1000} seconds for {penaltyType.GetDescription("ToString")}";
+
+            int penaltyTimeMilliseconds = GetPenaltyTypeTime(penaltyType);
+
+            string message;
+            if (penalizedGoalie != null)
+                message = $"Penalty #{penalizedGoalie.Number.Value} {penalizedGoalie.Username.Value} (served by #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value})";
+            else
+                message = $"Penalty #{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value}";
+
+            message += $", {penaltyTimeMilliseconds / 1000} seconds for {penaltyType.GetDescription("ToString")}";
+            if (!string.IsNullOrEmpty(receivingPlayerSteamId)) {
+                Player receivingPlayer = PlayerManager.Instance.GetPlayerBySteamId(receivingPlayerSteamId);
+                if (Codebase.PlayerFunc.IsPlayerPlaying(receivingPlayer))
+                    message += $" on #{receivingPlayer.Number.Value} {receivingPlayer.Username.Value}";
+            }
+
             if (referee != null)
                 message += $", called by #{referee.Number.Value} {referee.Username.Value}";
+
             Ruleset.SystemChatMessages.Add(message);
             Logging.Log(message, Ruleset.ServerConfig);
+
             // TODO : Get actual ref signal.
             Ruleset.DataToSendToAll.Add(new List<string> { RefSignals.GetSignalConstant(true, penalizedPlayer.Team), RefSignals.HIGHSTICK_LINESMAN, Constants.FROM_SERVER_TO_CLIENT, });
+            Ruleset.DataToSendToAll.Add(new List<string> { Codebase.Constants.PENALIZED_PLAYER_PENDING_DATANAME, penalizedPlayerSteamId, Constants.FROM_SERVER_TO_CLIENT, });
+            EventManager.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object> {
+                { Codebase.Constants.PENALIZED_PLAYER_PENDING_DATANAME, penalizedPlayerSteamId },
+                { "pim", penaltyTimeMilliseconds },
+            });
 
             if (PenaltyToBeCalled.Values.All(x => x))
                 Ruleset.CallPenalty(PlayerTeam.None);
@@ -548,6 +583,11 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
+        internal static void AddTimeToAllPenalties(long milliseconds) {
+            foreach (Penalty penalty in GetAllPenalties())
+                penalty.Timer.AddTime(milliseconds);
+        }
+
         internal static void TeleportPlayers() {
             foreach (PlayerTeam key in new List<PlayerTeam>(PenaltyBenchPositionIsOccupied.Keys))
                 PenaltyBenchPositionIsOccupied[key] = new LockDictionary<int, bool>(PENALTY_BENCH_POSITION_DEFAULT);
@@ -574,7 +614,7 @@ namespace oomtm450PuckMod_Ruleset {
                 player.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
             }
 
-            player.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
+            player.PlayerBody.Server_Freeze();
 
             Vector3 penaltyBoxPosition;
             float zOffset = 0;
@@ -608,11 +648,17 @@ namespace oomtm450PuckMod_Ruleset {
             foreach (PlayerTeam key in new List<PlayerTeam>(PenaltyBenchPositionIsOccupied.Keys))
                 PenaltyBenchPositionIsOccupied[key] = new LockDictionary<int, bool>(PENALTY_BENCH_POSITION_DEFAULT);
 
-            Ruleset.DataToSendToAll.Add(new List<string> { "penpause", "1", Constants.FROM_SERVER_TO_CLIENT, });
+            Ruleset.DataToSendToAll.Add(new List<string> { Codebase.Constants.PENALTIES_PAUSED_DATANAME, "1", Constants.FROM_SERVER_TO_CLIENT, });
+            EventManager.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object> {
+                { Codebase.Constants.PENALTIES_PAUSED_DATANAME, "1" },
+            });
         }
 
         internal static void UnpausePenalties() {
             string penaltyUIMsg = "";
+            List<string> allPenaltiesSteamId = new List<string>();
+            string allPenaltiesSteamIdString = "";
+
             foreach (Penalty penalty in GetAllPenalties()) {
                 if (penalty.Timer.TimerEnded())
                     continue;
@@ -620,19 +666,28 @@ namespace oomtm450PuckMod_Ruleset {
                 if (penalty.CurrentPenalty)
                     penalty.Timer.Start();
 
-                penaltyUIMsg += $"{(penalty.Team == PlayerTeam.Blue ? "B" : "R")} {penalty.Position} #{penalty.PlayerNumber}!{penalty.Timer.MillisecondsLeft}!{(penalty.CurrentPenalty ? "1" : "0")};";
+                penaltyUIMsg = $"{penaltyUIMsg}{(penalty.Team == PlayerTeam.Blue ? "B" : "R")} {penalty.Position} #{penalty.PlayerNumber}!{penalty.Timer.MillisecondsLeft}!{(penalty.CurrentPenalty ? "1" : "0")};";
+
+                allPenaltiesSteamId.Add(penalty.SteamId);
+                allPenaltiesSteamIdString = $"{allPenaltiesSteamIdString}{penalty.SteamId};";
             }
 
             if (string.IsNullOrEmpty(penaltyUIMsg)) {
-                Ruleset.DataToSendToAll.Add(new List<string> { "removeallpen", "1", Constants.FROM_SERVER_TO_CLIENT, });
+                Ruleset.DataToSendToAll.Add(new List<string> { Codebase.Constants.REMOVED_ALL_PENALTIES_DATANAME, "1", Constants.FROM_SERVER_TO_CLIENT, });
                 return;
             }
 
             penaltyUIMsg = penaltyUIMsg.Remove(penaltyUIMsg.Length - 1);
-            Ruleset.DataToSendToAll.Add(new List<string> { "penunpause", penaltyUIMsg, Constants.FROM_SERVER_TO_CLIENT, });
+            Ruleset.DataToSendToAll.Add(new List<string> { Codebase.Constants.PENALTIES_UNPAUSED_DATANAME, penaltyUIMsg, Constants.FROM_SERVER_TO_CLIENT, });
+
+            allPenaltiesSteamIdString = allPenaltiesSteamIdString.Remove(allPenaltiesSteamIdString.Length - 1);
+            Ruleset.DataToSendToAll.Add(new List<string> { Codebase.Constants.PENALIZED_PLAYERS_DATANAME, allPenaltiesSteamIdString, Constants.FROM_SERVER_TO_CLIENT, });
+            EventManager.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object> {
+                { Codebase.Constants.PENALIZED_PLAYERS_DATANAME, allPenaltiesSteamId },
+            });
         }
 
-        internal static void UnpenalizePlayer(Player penalizedPlayer, PlayerTeam penalizedPlayerTeam, string penalizedPlayerPosition) {
+        internal static void UnpenalizePlayer(string penalizedPlayerSteamId, PlayerTeam penalizedPlayerTeam, string penalizedPlayerPosition) {
             PositionIsPenalized[penalizedPlayerTeam][penalizedPlayerPosition] = false;
 
             if (penalizedPlayerTeam == PlayerTeam.Blue) {
@@ -650,6 +705,7 @@ namespace oomtm450PuckMod_Ruleset {
                     PenalizedPlayersInBoxCountRedTeam = 0;
             }
 
+            Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(penalizedPlayerSteamId);
             if (penalizedPlayer != null && penalizedPlayer && penalizedPlayer.IsCharacterSpawned) {
                 if (penalizedPlayerTeam == PlayerTeam.Blue) {
                     penalizedPlayer.PlayerBody.Server_Teleport(INFRONT_BLUE_PENALTY_BOX_POSITION, PENALTY_ROTATION);
@@ -661,9 +717,15 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 penalizedPlayer.PlayerBody.Server_Unfreeze();
+                Ruleset.UnfreezeStick(penalizedPlayer.Stick);
                 Ruleset.SystemChatMessages.Add($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED");
                 Logging.Log($"#{penalizedPlayer.Number.Value} {penalizedPlayer.Username.Value} UNPENALIZED", Ruleset.ServerConfig);
             }
+
+            Ruleset.DataToSendToAll.Add(new List<string> { Codebase.Constants.UNPENALIZED_PLAYER_DATANAME, penalizedPlayerSteamId, Constants.FROM_SERVER_TO_CLIENT, });
+            EventManager.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME, new Dictionary<string, object> {
+                { Codebase.Constants.UNPENALIZED_PLAYER_DATANAME, penalizedPlayerSteamId },
+            });
         }
 
         internal static void RemoveAllPenalties() {
@@ -747,11 +809,12 @@ namespace oomtm450PuckMod_Ruleset {
             return position;
         }
 
-        internal static string GetPlayerPositionForFaceoff(string position, PlayerTeam team, FaceoffSpot faceoffSpot, List<(string Position, bool IsPenalized)> claimedPositions) {
+        internal static string GetPlayerPositionForFaceoff(string position, PlayerTeam team, FaceoffSpot faceoffSpot,
+            List<(string Position, bool IsPenalized)> claimedPositions, List<(string Position, bool IsPenalized)> fakedClaimedPositions) {
             position = FakePlayerPositionForFaceoffByAvailability(position, team, claimedPositions);
 
-            bool centerPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.CENTER_POSITION);
-            bool leftDefenderPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION] && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_DEFENDER_POSITION);
+            bool centerPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.CENTER_POSITION] && !fakedClaimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.CENTER_POSITION);
+            bool leftDefenderPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_DEFENDER_POSITION] && !fakedClaimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_DEFENDER_POSITION);
 
             switch (position) {
                 case Codebase.PlayerFunc.LEFT_WINGER_POSITION:
@@ -762,21 +825,21 @@ namespace oomtm450PuckMod_Ruleset {
                     break;
 
                 case Codebase.PlayerFunc.RIGHT_WINGER_POSITION:
-                    bool leftWingerPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_WINGER_POSITION] && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_WINGER_POSITION);
+                    bool leftWingerPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.LEFT_WINGER_POSITION] && !fakedClaimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.LEFT_WINGER_POSITION);
 
                     if (centerPositionIsOpen && leftWingerPositionIsOpen)
                         return Codebase.PlayerFunc.CENTER_POSITION;
 
                     if (team == PlayerTeam.Blue) {
-                        if (centerPositionIsOpen && (faceoffSpot == FaceoffSpot.BlueteamBLLeft || faceoffSpot == FaceoffSpot.RedteamBLLeft || faceoffSpot == FaceoffSpot.BlueteamDZoneLeft || faceoffSpot == FaceoffSpot.RedteamDZoneLeft || faceoffSpot == FaceoffSpot.Center))
+                        if (centerPositionIsOpen && (faceoffSpot == FaceoffSpot.BlueTeamBLLeft || faceoffSpot == FaceoffSpot.RedTeamBLLeft || faceoffSpot == FaceoffSpot.BlueTeamDZoneLeft || faceoffSpot == FaceoffSpot.RedTeamDZoneLeft || faceoffSpot == FaceoffSpot.Center))
                             return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
                     }
                     else {
-                        if (centerPositionIsOpen && (faceoffSpot == FaceoffSpot.BlueteamBLRight || faceoffSpot == FaceoffSpot.RedteamBLRight || faceoffSpot == FaceoffSpot.BlueteamDZoneRight || faceoffSpot == FaceoffSpot.RedteamDZoneRight || faceoffSpot == FaceoffSpot.Center))
+                        if (centerPositionIsOpen && (faceoffSpot == FaceoffSpot.BlueTeamBLRight || faceoffSpot == FaceoffSpot.RedTeamBLRight || faceoffSpot == FaceoffSpot.BlueTeamDZoneRight || faceoffSpot == FaceoffSpot.RedTeamDZoneRight || faceoffSpot == FaceoffSpot.Center))
                             return Codebase.PlayerFunc.LEFT_WINGER_POSITION;
                     }
 
-                    bool rightDefenderPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION] && !claimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION);
+                    bool rightDefenderPositionIsOpen = PositionIsPenalized[team][Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION] && !fakedClaimedPositions.Any(x => !x.IsPenalized && x.Position == Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION);
 
                     if (rightDefenderPositionIsOpen)
                         return Codebase.PlayerFunc.RIGHT_DEFENDER_POSITION;
@@ -883,7 +946,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 // Unpenalize player if no more penalties or start the next one.
                 if (PenaltyModule.PenalizedPlayers[penaltyToRemove.SteamId].Count == 0)
-                    PenaltyModule.UnpenalizePlayer(PlayerManager.Instance.GetPlayerBySteamId(penaltyToRemove.SteamId), penaltyToRemove.Team, penaltyToRemove.Position);
+                    PenaltyModule.UnpenalizePlayer(penaltyToRemove.SteamId, penaltyToRemove.Team, penaltyToRemove.Position);
                 else {
                     Penalty firstPenalty = PenaltyModule.PenalizedPlayers[penaltyToRemove.SteamId].First();
                     firstPenalty.CurrentPenalty = true;

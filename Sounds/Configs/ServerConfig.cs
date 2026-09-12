@@ -65,7 +65,7 @@ namespace oomtm450PuckMod_Sounds.Configs {
             ServerConfig newConfig = new ServerConfig();
 
             //if (LogInfo == _oldConfig.LogInfo)
-                //LogInfo = newConfig.LogInfo;
+            //LogInfo = newConfig.LogInfo;
 
             if (EnableMusic == _oldConfig.EnableMusic)
                 EnableMusic = newConfig.EnableMusic;
