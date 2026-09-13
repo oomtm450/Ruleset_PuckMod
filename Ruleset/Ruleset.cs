@@ -1684,10 +1684,22 @@ namespace oomtm450PuckMod_Ruleset {
                             return false;
                         }
                         else if (content.StartsWith(@"/voteref")) {
+                            Player localPlayer = PlayerManager.Instance.GetLocalPlayer();
+                            if (localPlayer.Team != PlayerTeam.Blue && localPlayer.Team != PlayerTeam.Red) {
+                                SystemFunc.AddClientChatMessage("Only players can vote.");
+                                return false;
+                            }
+
                             NetworkCommunication.SendData(Codebase.Constants.REF_VOTE_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                         else if (content.StartsWith(@"/voteremoveref")) {
+                            Player localPlayer = PlayerManager.Instance.GetLocalPlayer();
+                            if (localPlayer.Team != PlayerTeam.Blue && localPlayer.Team != PlayerTeam.Red) {
+                                SystemFunc.AddClientChatMessage("Only players can vote.");
+                                return false;
+                            }
+
                             content = content.Replace(@"/voteremoveref", "").Trim().ToLower();
                             if (string.IsNullOrEmpty(content))
                                 content = "-100";
@@ -4252,19 +4264,24 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!ServerConfig.RefMode)
                             return;
 
-                        if (RefVote.AddRefVotingInProgress)
-                            RefVote.AddRefVote(clientId);
-                        else {
-                            Player addRefPlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
-                            if (addRefPlayer == null || !addRefPlayer)
-                                break;
+                        Player addRefPlayer = PlayerManager.Instance.GetPlayerByClientId(clientId);
+                        if (addRefPlayer == null || !addRefPlayer)
+                            break;
 
+                        if (RefVote.AddRefVotingInProgress) {
+                            if (addRefPlayer.Team != PlayerTeam.Blue && addRefPlayer.Team != PlayerTeam.Red) {
+                                SystemFunc.SendChatMessageToClients("Only players can vote.", clientId);
+                                break;
+                            }
+                            RefVote.AddRefVote(clientId);
+                        }
+                        else {
                             if (addRefPlayer.Team != PlayerTeam.Spectator) {
-                                SystemFunc.SendChatMessageToClients("Only spectators can become referees.", clientId);
+                                SystemFunc.SendChatMessageToClients("Only spectators can become referee.", clientId);
                                 break;
                             }
 
-                            RefVote.StartAddRefVote(30000, ((PlayerManager.Instance.GetPlayers().Count + 1) / 2) + 1, addRefPlayer);
+                            RefVote.StartAddRefVote(30000, ((PlayerManager.Instance.GetPlayers().Where(x => x.Team == PlayerTeam.Red || x.Team == PlayerTeam.Blue).Count() + 1) / 2) + 1, addRefPlayer);
                         }
                         break;
 
@@ -4278,8 +4295,14 @@ namespace oomtm450PuckMod_Ruleset {
 
                         string removeRefLocalPlayerSteamId = removeRefLocalPlayer.SteamId.Value.ToString();
 
-                        if (RefVote.RemoveRefVotingInProgress)
+                        if (RefVote.RemoveRefVotingInProgress) {
+                            if (removeRefLocalPlayer.Team != PlayerTeam.Blue && removeRefLocalPlayer.Team != PlayerTeam.Red) {
+                                SystemFunc.SendChatMessageToClients("Only players can vote.", clientId);
+                                break;
+                            }
+
                             RefVote.RemoveRefVote(clientId);
+                        }
                         else {
                             if (dataStr == "-100" && CurrentRefsSteamId.ContainsKey(removeRefLocalPlayerSteamId)) {
                                 RefVote.RemoveRef(removeRefLocalPlayerSteamId);
@@ -4300,7 +4323,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (removeRefPlayer == null || !removeRefPlayer)
                                 break;
 
-                            RefVote.StartRemoveRefVote(35000, (PlayerManager.Instance.GetPlayers().Count - 2) / 2, removeRefPlayer);
+                            RefVote.StartRemoveRefVote(40000, (PlayerManager.Instance.GetPlayers().Where(x => x.Team == PlayerTeam.Red || x.Team == PlayerTeam.Blue).Count() - 2) / 2, removeRefPlayer);
                         }
                         break;
 
