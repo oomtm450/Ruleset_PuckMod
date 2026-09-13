@@ -4333,6 +4333,9 @@ namespace oomtm450PuckMod_Ruleset {
                             GameManager.Instance.Phase != GamePhase.RedScore && GameManager.Instance.Phase != GamePhase.BlueScore)
                             break;
 
+                        if (GameManager.Instance.Period > 3 && GameManager.Instance.Phase != GamePhase.RedScore && GameManager.Instance.Phase != GamePhase.BlueScore) // TODO : Fix OT disallow goal.
+                            break;
+
                         Player disallowGoalReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
                         if (!HasRefPowers(disallowGoalReferee))
                             break;
