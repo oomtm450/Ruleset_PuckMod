@@ -4309,6 +4309,11 @@ namespace oomtm450PuckMod_Ruleset {
                                 break;
                             }
 
+                            if (removeRefLocalPlayer.Team != PlayerTeam.Blue && removeRefLocalPlayer.Team != PlayerTeam.Red) {
+                                SystemFunc.SendChatMessageToClients("Only players can vote.", clientId);
+                                break;
+                            }
+
                             Player removeRefPlayer;
 
                             if (long.TryParse(dataStr, out long removeRefPlayerIdentifier)) {
@@ -4333,9 +4338,6 @@ namespace oomtm450PuckMod_Ruleset {
                             GameManager.Instance.Phase != GamePhase.RedScore && GameManager.Instance.Phase != GamePhase.BlueScore)
                             break;
 
-                        if (GameManager.Instance.Period > 3 && GameManager.Instance.Phase != GamePhase.RedScore && GameManager.Instance.Phase != GamePhase.BlueScore) // TODO : Fix OT disallow goal.
-                            break;
-
                         Player disallowGoalReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
                         if (!HasRefPowers(disallowGoalReferee))
                             break;
@@ -4349,19 +4351,21 @@ namespace oomtm450PuckMod_Ruleset {
                             break;
 
                         PlayerTeam disallowedGoalTeam = (PlayerTeam)disallowedGoalTeamInt;
-                        if (DisallowLastGoal(disallowedGoalTeam))
+                        if (DisallowLastGoal(disallowedGoalTeam, IsAdmin(disallowGoalReferee.SteamId.Value.ToString())))
                             SystemChatMessages.Add($"#{disallowGoalReferee.Number.Value} {disallowGoalReferee.Username.Value} DISALLOWED {disallowedGoalTeam.ToString().ToUpper()} TEAM GOAL");
+                        else
+                            SystemFunc.SendChatMessageToClients("Goal couldn't be disallowed. (Too late or no goal to disallow)", clientId);
                         break;
 
                     case Codebase.Constants.REF_FACEOFFVIOLATION_DATANAME: // SERVER-SIDE : Call a faceoff violation.
                         if (GameManager.Instance.Phase != GamePhase.Play && GameManager.Instance.Phase != GamePhase.FaceOff)
                             break;
 
-                        if ((DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds > 4000 + ((_faceoffDuration + 1) * 1000)) // TODO : Config.
-                            break;
-
                         Player faceoffViolationReferee = PlayerManager.Instance.GetPlayerByClientId(clientId);
                         if (!HasRefPowers(faceoffViolationReferee))
+                            break;
+
+                        if (!IsAdmin(faceoffViolationReferee.SteamId.Value.ToString()) && (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds > 4000 + ((_faceoffDuration + 1) * 1000)) // TODO : Config.
                             break;
 
                         int faceoffViolationTeamInt;
@@ -4560,13 +4564,16 @@ namespace oomtm450PuckMod_Ruleset {
                 UnpatchStickFreezeFunctions();*/
         }
 
-        private static bool DisallowLastGoal(PlayerTeam team) {
+        private static bool DisallowLastGoal(PlayerTeam team, bool isAdmin) {
             if (_goals[team].Count == 0)
                 return false;
 
             FaceoffState lastGoal = _goals[team].Last();
 
-            if (lastGoal.IsOvertime && GameManager.Instance.Phase == GamePhase.Replay)
+            if (lastGoal.IsOvertime && GameManager.Instance.Phase == GamePhase.Replay) // TODO : Fix OT goal disallow.
+                return false;
+
+            if (!isAdmin && (DateTime.UtcNow - lastGoal.DateTime).TotalMilliseconds > 30000) // TODO : Config.
                 return false;
 
             _goals[team].Remove(lastGoal);
