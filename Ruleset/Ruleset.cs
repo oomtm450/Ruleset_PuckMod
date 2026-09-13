@@ -4281,7 +4281,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 break;
                             }
 
-                            RefVote.StartAddRefVote(30000, ((PlayerManager.Instance.GetPlayers().Where(x => x.Team == PlayerTeam.Red || x.Team == PlayerTeam.Blue).Count() + 1) / 2) + 1, addRefPlayer);
+                            RefVote.StartAddRefVote(30000, ((PlayerManager.Instance.GetPlayers().Where(x => x.Team == PlayerTeam.Red || x.Team == PlayerTeam.Blue).Count() + 1) / 2) + 2, addRefPlayer);
                         }
                         break;
 
