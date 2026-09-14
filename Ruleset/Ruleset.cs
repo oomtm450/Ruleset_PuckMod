@@ -1684,22 +1684,10 @@ namespace oomtm450PuckMod_Ruleset {
                             return false;
                         }
                         else if (content.StartsWith(@"/voteref")) {
-                            Player localPlayer = PlayerManager.Instance.GetLocalPlayer();
-                            if (localPlayer.Team != PlayerTeam.Blue && localPlayer.Team != PlayerTeam.Red) {
-                                SystemFunc.AddClientChatMessage("Only players can vote.");
-                                return false;
-                            }
-
                             NetworkCommunication.SendData(Codebase.Constants.REF_VOTE_DATANAME, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                             return false;
                         }
                         else if (content.StartsWith(@"/voteremoveref")) {
-                            Player localPlayer = PlayerManager.Instance.GetLocalPlayer();
-                            if (localPlayer.Team != PlayerTeam.Blue && localPlayer.Team != PlayerTeam.Red) {
-                                SystemFunc.AddClientChatMessage("Only players can vote.");
-                                return false;
-                            }
-
                             content = content.Replace(@"/voteremoveref", "").Trim().ToLower();
                             if (string.IsNullOrEmpty(content))
                                 content = "-100";
