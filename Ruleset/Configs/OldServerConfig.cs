@@ -70,7 +70,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of games a newly added ref will be doing before being automaticaly removed.
         /// </summary>
-        public int RefModeGameAmount { get; } = 3;
+        public int RefModeGameAmount { get; } = 3; // TODO : Change after release.
 
         /// <summary>
         /// Float, default standing player height.
