@@ -949,7 +949,7 @@ namespace oomtm450PuckMod_Sounds {
             foreach (var kvp in players_ClientId_SteamId_ToChange) {
                 if (!string.IsNullOrEmpty(kvp.Value)) {
                     _players_ClientId_SteamId[kvp.Key] = kvp.Value;
-                    Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value}.", ServerConfig);
+                    //Logging.Log($"Added clientId {kvp.Key} linked to Steam Id {kvp.Value}.", ServerConfig);
                 }
             }
         }
