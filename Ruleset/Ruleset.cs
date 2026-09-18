@@ -615,7 +615,24 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
 
+                    if (_isHighStickActive[stick.Player.Team].IsActive && !_isHighStickActive[stick.Player.Team].AboveShoulders) {
+                        Puck puck = PuckManager.Instance.GetPuck();
+                        if (puck && puck.Rigidbody.transform.position.y < (ServerConfig.HighStick.MaxHeightNoGoal * _puckScaleYHalf) + ArenaOffsetY) {
+                            _isHighStickActive[stick.Player.Team] = new HighStickObject();
+                            WarnHighStick(false, stick.Player.Team);
+                        }
+                    }
+
                     PlayerTeam otherTeam = TeamFunc.GetOtherTeam(stick.Player.Team);
+
+                    if (_isHighStickActive[otherTeam].IsActive) {
+                        Puck puck = PuckManager.Instance.GetPuck();
+                        if (puck && puck.Rigidbody.transform.position.y < (ServerConfig.HighStick.MaxHeightNoGoal * _puckScaleYHalf) + ArenaOffsetY) {
+                            _isHighStickActive[otherTeam] = new HighStickObject();
+                            WarnHighStick(false, otherTeam);
+                        }
+                    }
+
                     if (IsHighStick(otherTeam)) {
                         _isHighStickActive[otherTeam] = new HighStickObject();
                         WarnHighStick(false, otherTeam);
