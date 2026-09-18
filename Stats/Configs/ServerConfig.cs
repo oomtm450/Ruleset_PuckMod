@@ -58,7 +58,12 @@ namespace oomtm450PuckMod_Stats.Configs {
         /// <summary>
         /// Int, number of milliseconds for a puck to not be considered tipped by a player's stick.
         /// </summary>
-        public int MaxTippedMilliseconds { get; set; } = 33;
+        public int MaxTippedMilliseconds { get; set; } = 32;
+
+        /// <summary>
+        /// Float, puck speed tipping ratio.
+        /// </summary>
+        public float PuckSpeedTippingRatio { get; set; } = 0.025f;
 
         /// <summary>
         /// Int, number of milliseconds for a possession to be considered with challenge.
@@ -124,6 +129,9 @@ namespace oomtm450PuckMod_Stats.Configs {
             if (MaxTippedMilliseconds == _oldConfig.MaxTippedMilliseconds)
                 MaxTippedMilliseconds = newConfig.MaxTippedMilliseconds;
 
+            if (PuckSpeedTippingRatio == _oldConfig.PuckSpeedTippingRatio)
+                PuckSpeedTippingRatio = newConfig.PuckSpeedTippingRatio;
+
             if (MinPossessionMilliseconds == _oldConfig.MinPossessionMilliseconds)
                 MinPossessionMilliseconds = newConfig.MinPossessionMilliseconds;
 
@@ -184,7 +192,7 @@ namespace oomtm450PuckMod_Stats.Configs {
                     File.WriteAllText(CONFIG_PATH, config.ToString());
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}", config);
+                    Logging.LogError($"Can't write the server config file. (Permission error ?)\n{ex}", new ServerConfig());
                 }
 
                 Logging.Log($"Wrote server config : {config}", config, true);
@@ -201,7 +209,7 @@ namespace oomtm450PuckMod_Stats.Configs {
                 }
             }
             catch (Exception ex) {
-                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", config);
+                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", new ServerConfig());
             }
 
             return config;

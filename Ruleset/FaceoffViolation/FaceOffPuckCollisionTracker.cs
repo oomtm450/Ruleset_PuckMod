@@ -1,7 +1,6 @@
 using Codebase;
 using System;
 using System.Collections.Generic;
-using Unity.Netcode;
 using UnityEngine;
 
 namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
@@ -73,7 +72,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 // Faceoff ended - keep monitoring
                 _isFaceOffActive = false;
             }
-            else if (newGameState.Phase == GamePhase.Warmup || newGameState.Phase == GamePhase.BlueScore || newGameState.Phase == GamePhase.RedScore || newGameState.Phase == GamePhase.Intermission || newGameState.Phase == GamePhase.GameOver || newGameState.Phase == GamePhase.PreGame || newGameState.Phase == GamePhase.PostGame)
+            else if (newGameState.Phase != GamePhase.FaceOff && newGameState.Phase != GamePhase.Play)
                 ClearViolations();
         }
 
@@ -106,7 +105,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
                 return;
 
             // Check if puck has dropped below the allowed height threshold
-            if (puck.transform.position.y > Ruleset.ServerConfig.Faceoff.PuckIceContactHeight)
+            if (puck.transform.position.y > Ruleset.ServerConfig.Faceoff.PuckIceContactHeight + Ruleset.ArenaOffsetY)
                 return;
 
             _puckTouchedIce = true;
@@ -121,12 +120,14 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             Stick stick = FaceOffPuckCollisionTracker.LastStickCollision;
 
-            HandlePuckViolation(stick.Player);
-            _isMonitoring = false; // Stop monitoring after violation
-            FaceOffPuckCollisionTracker.StopMonitoring();
+            if (Ruleset.CurrentRefMode == RefMode.AI)
+                HandlePuckViolation(stick.Player);
         }
 
-        private void HandlePuckViolation(Player violatingPlayer) {
+        internal void HandlePuckViolation(Player violatingPlayer, Player referee = null) {
+            _isMonitoring = false; // Stop monitoring after violation
+            FaceOffPuckCollisionTracker.StopMonitoring();
+
             if (!violatingPlayer)
                 return;
 
@@ -149,7 +150,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             // Check if player has hit the penalty threshold.
             if (violation.ViolationCount >= Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty) {
-                if (!Ruleset.ServerConfig.Penalty.FaceoffViolation || !PenaltyModule.GivePenalty(PenaltyType.FaceoffViolation, violatingPlayer)) {
+                if ((!Ruleset.ServerConfig.Penalty.FaceoffViolation && Ruleset.CurrentRefMode == RefMode.AI) || !PenaltyModule.GivePenalty(PenaltyType.FaceoffViolation, violatingPlayer, "", referee)) {
                     // Send penalty chat message.
                     Ruleset.SystemChatMessages.Add(
                         $"PENALTY: #{violatingPlayer.Number.Value} {violatingPlayer.Username.Value} has {Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty} faceoff violations! Will be frozen after spawn."
@@ -193,8 +194,14 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             // Use Server_Teleport for proper networked teleportation.
             player.PlayerBody.Server_Teleport(penaltyPos, player.PlayerBody.transform.rotation);
             Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = player, Position = penaltyPos, Rotation = player.PlayerBody.transform.rotation, });
-            player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
-            player.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
+
+            if (player.IsCharacterSpawned) {
+                player.PlayerBody.Rigidbody.linearVelocity = Vector3.zero;
+                player.PlayerBody.Rigidbody.angularVelocity = Vector3.zero;
+            }
+
+            player.PlayerBody.Server_Freeze();
+
             _frozenPlayers.Add(player);
 
             Logging.Log($"Player {player.Username.Value} frozen at ({Ruleset.ServerConfig.Faceoff.PenaltyFreezeDistance}m back) after {Ruleset.ServerConfig.Faceoff.MaxViolationsBeforePenalty} violations!", Ruleset.ServerConfig);
@@ -213,6 +220,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             FaceOffPlayerUnfreezer.PenalizedPlayers.Remove(player);
 
             player.PlayerBody.Server_Unfreeze();
+            Ruleset.UnfreezeStick(player.Stick);
             _frozenPlayers.Remove(player);
             Logging.Log($"Player {player.Username.Value} unfrozen after penalty", Ruleset.ServerConfig);
         }
@@ -223,23 +231,14 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             _isMonitoring = false;
 
             // Use Ruleset mod's instant faceoff event to restart at the same spot.
-            if (!NetworkManager.Singleton.IsServer)
-                return;
-
             try {
                 EventManager.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME,
                     new Dictionary<string, object> { { Codebase.Constants.INSTANT_FACEOFF, ((ushort)Ruleset.NextFaceoffSpot).ToString() } });
-
-                // Clear the flag after a short delay to allow the restart to complete.
-                StartCoroutine(ClearRestartFlagAfterDelay());
+                PenaltyModule.AddTimeToAllPenalties((long)(DateTime.UtcNow - Ruleset.LastPlayPhaseStartDateTime).TotalMilliseconds);
             }
             catch (Exception ex) {
                 Logging.LogError($"Failed to restart faceoff.\n{ex}", Ruleset.ServerConfig);
             }
-        }
-
-        private System.Collections.IEnumerator ClearRestartFlagAfterDelay() {
-            yield return new WaitForSeconds(0.5f);
         }
     }
 }
