@@ -366,11 +366,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, interference can be called after this number of milliseconds after touching the puck.
         /// </summary>
-        public int InterferenceMillisecondsThreshold { get; set; } = 2000;
+        public int InterferenceMillisecondsThreshold { get; set; } = 1600;
         /// <summary>
         /// Int, interference can be called after this number of milliseconds after the player hit fell.
         /// </summary>
-        public int InterferenceOnSamePlayerMillisecondsThreshold { get; set; } = 5500;
+        public int InterferenceOnSamePlayerMillisecondsThreshold { get; set; } = 5000;
         /// <summary>
         /// Float, minimum y for a hit to be considered.
         /// </summary>
