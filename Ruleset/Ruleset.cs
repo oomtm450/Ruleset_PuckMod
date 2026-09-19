@@ -734,9 +734,26 @@ namespace oomtm450PuckMod_Ruleset {
                     // Offside logic.
                     List<Codebase.Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam);
                     if (IsOffside(stick.Player.Team) && (_puckZone == otherTeamZones[0] || _puckZone == otherTeamZones[1])) {
+                        float blueLineOtherTeamMiddleCoordinate = (float)ZoneFunc.GetMiddleZCoordinateOfIceElement(ZoneFunc.GetBlueLineForTeam(otherTeam));
+
+                        int count = 0;
+                        foreach (var player in PlayerManager.Instance.GetSpawnedPlayersByTeam(stick.Player.Team)) {
+                            try {
+                                // Cheap check first, so ToString() only runs for players near the line
+                                if (!Codebase.PlayerFunc.IsPlayerPlaying(player) || Math.Abs(player.PlayerBody.transform.position.z - blueLineOtherTeamMiddleCoordinate) > 2f * _arenaScaleZ) // TODO : Config.
+                                    continue;
+
+                                if (_isOffside.TryGetValue(player.SteamId.Value.ToString(), out OffsideObject offside) && ++count > 1)
+                                    break;
+                            }
+                            catch { }
+                        }
+
+                        bool checkForIntentionalOffside = count > 1; // If there is the puck carrier and someone else close to the blue line, it is not intentional.
+
                         var temp = _puckLastStateBeforeCall[Rule.Offside];
                         _puckLastStateBeforeCall[Rule.Offside] = puckLastStateBeforeCallOffside;
-                        CallOffside(stick.Player.Team);
+                        CallOffside(stick.Player.Team, null, checkForIntentionalOffside);
                         _puckLastStateBeforeCall[Rule.Offside] = temp;
                     }
 

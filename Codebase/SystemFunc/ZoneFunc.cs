@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEngine;
@@ -250,6 +251,17 @@ namespace Codebase {
                         Zone.None,
                     };
             }
+        }
+
+        internal static double GetMiddleZCoordinateOfIceElement(IceElement iceElement) {
+            return ((ICE_Z_POSITIONS[iceElement].End - ICE_Z_POSITIONS[iceElement].Start) / 2d) + ICE_Z_POSITIONS[iceElement].Start;
+        }
+
+        internal static IceElement GetBlueLineForTeam(PlayerTeam team) {
+            if (team == PlayerTeam.Blue)
+                return IceElement.BlueTeam_BlueLine;
+            else
+                return IceElement.RedTeam_BlueLine;
         }
         #endregion
     }
