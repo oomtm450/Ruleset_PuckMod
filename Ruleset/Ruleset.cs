@@ -4350,6 +4350,12 @@ namespace oomtm450PuckMod_Ruleset {
                             if (long.TryParse(dataStr, out long removeRefPlayerIdentifier)) {
                                 if (removeRefPlayerIdentifier > -100 && removeRefPlayerIdentifier < 100)
                                     removeRefPlayer = PlayerManager.Instance.GetPlayerByNumber((int)removeRefPlayerIdentifier);
+                                else if (removeRefPlayerIdentifier == -100) {
+                                    if (CurrentRefsSteamId.Count != 1)
+                                        break;
+
+                                    removeRefPlayer = PlayerManager.Instance.GetPlayerBySteamId(CurrentRefsSteamId.First().Key);
+                                }
                                 else
                                     removeRefPlayer = PlayerManager.Instance.GetPlayerBySteamId(removeRefPlayerIdentifier.ToString());
                             }
