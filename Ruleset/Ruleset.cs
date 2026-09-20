@@ -739,7 +739,6 @@ namespace oomtm450PuckMod_Ruleset {
                         int count = 0;
                         foreach (var player in PlayerManager.Instance.GetSpawnedPlayersByTeam(stick.Player.Team)) {
                             try {
-                                // Cheap check first, so ToString() only runs for players near the line
                                 if (!Codebase.PlayerFunc.IsPlayerPlaying(player) || Math.Abs(player.PlayerBody.transform.position.z - blueLineOtherTeamMiddleCoordinate) > 2f * _arenaScaleZ) // TODO : Config.
                                     continue;
 
@@ -4351,8 +4350,10 @@ namespace oomtm450PuckMod_Ruleset {
                                 if (removeRefPlayerIdentifier > -100 && removeRefPlayerIdentifier < 100)
                                     removeRefPlayer = PlayerManager.Instance.GetPlayerByNumber((int)removeRefPlayerIdentifier);
                                 else if (removeRefPlayerIdentifier == -100) {
-                                    if (CurrentRefsSteamId.Count != 1)
+                                    if (CurrentRefsSteamId.Count != 1) {
+                                        SystemFunc.SendChatMessageToClients("Referee not found.", clientId);
                                         break;
+                                    }
 
                                     removeRefPlayer = PlayerManager.Instance.GetPlayerBySteamId(CurrentRefsSteamId.First().Key);
                                 }
@@ -4362,8 +4363,10 @@ namespace oomtm450PuckMod_Ruleset {
                             else
                                 removeRefPlayer = PlayerManager.Instance.GetPlayerByUsername(dataStr);
 
-                            if (removeRefPlayer == null || !removeRefPlayer)
+                            if (removeRefPlayer == null || !removeRefPlayer) {
+                                SystemFunc.SendChatMessageToClients("Referee not found.", clientId);
                                 break;
+                            }
 
                             RefVote.StartRemoveRefVote(40000, (PlayerManager.Instance.GetPlayers().Where(x => x.Team == PlayerTeam.Red || x.Team == PlayerTeam.Blue).Count() - 2) / 2, removeRefPlayer);
                         }
