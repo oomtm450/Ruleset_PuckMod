@@ -1010,7 +1010,7 @@ namespace oomtm450PuckMod_Ruleset {
                                     PenaltyModule.GivePenalty(PenaltyType.Charging, playerBody.Player, lastPlayerHitSteamId);
                                 }
                                 else if (!_playersOnPuckTipIncludedTime.TryGetValue(lastPlayerHitSteamId, out var _lastTouchTimePlayerHit) || (now - _lastTouchTimePlayerHit.LastTouchTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
-                                    if (!_playersOnPuckTipIncludedTime.TryGetValue(currentPlayerSteamId, out var _lastTouchTimeOtherPlayerHit) || (now - _lastTouchTimeOtherPlayerHit.LastTouchTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000) {
+                                    if (!_playersOnPuckTipIncludedTime.TryGetValue(currentPlayerSteamId, out var _lastTouchTimeOtherPlayerHit) || (now - _lastTouchTimeOtherPlayerHit.LastTouchTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 600) {
                                         // Register player hit.
                                         _playersWasLastHitWithoutPuckTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
 
@@ -1031,7 +1031,7 @@ namespace oomtm450PuckMod_Ruleset {
                                     PenaltyModule.GivePenalty(PenaltyType.Charging, lastPlayerHit, currentPlayerSteamId);
                                 }
                                 else if (!_playersOnPuckTipIncludedTime.TryGetValue(currentPlayerSteamId, out var _lastTouchTimeOtherPlayerHit) || (now - _lastTouchTimeOtherPlayerHit.LastTouchTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold) {
-                                    if (!_playersOnPuckTipIncludedTime.TryGetValue(lastPlayerHitSteamId, out var _lastTouchTimePlayerHit) || (now - _lastTouchTimePlayerHit.LastTouchTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 1000) {
+                                    if (!_playersOnPuckTipIncludedTime.TryGetValue(lastPlayerHitSteamId, out var _lastTouchTimePlayerHit) || (now - _lastTouchTimePlayerHit.LastTouchTime).TotalMilliseconds > ServerConfig.Penalty.InterferenceMillisecondsThreshold - 600) {
                                         // Register player hit.
                                         _playersWasLastHitWithoutPuckTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
 
