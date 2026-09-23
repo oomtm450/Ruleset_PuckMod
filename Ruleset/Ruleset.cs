@@ -3572,15 +3572,6 @@ namespace oomtm450PuckMod_Ruleset {
                     if (PenaltyModule.PenalizedPlayers.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out LockList<Penalty> penalties) && penalties.Count != 0)
                         return;
 
-                    if (Codebase.PlayerFunc.IsGoalie(playerBody.Player)) {
-                        if (!ServerConfig.Faceoff.FreezeGoaliesBeforeDrop)
-                            return;
-                    }
-                    else {
-                        if (!ServerConfig.Faceoff.FreezeSkatersBeforeDrop)
-                            return;
-                    }
-
                     _playerUnfreezer?.RegisterPlayer(playerBody, NextFaceoffSpot, _arenaScaleX, _arenaScaleZ);
                 }
             }

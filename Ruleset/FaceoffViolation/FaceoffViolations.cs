@@ -243,10 +243,14 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             foreach (PlayerTether tether in _playerTethers) {
                 if (tether.PlayerBody == null || tether.PlayerBody.Rigidbody == null)
                     continue;
-                if (Codebase.PlayerFunc.IsGoalie(tether.PlayerBody.Player) && !Ruleset.ServerConfig.Faceoff.FreezeGoaliesBeforeDrop)
-                    continue;
-                if (!Codebase.PlayerFunc.IsGoalie(tether.PlayerBody.Player) && !Ruleset.ServerConfig.Faceoff.FreezeSkatersBeforeDrop)
-                    continue;
+                if (Codebase.PlayerFunc.IsGoalie(tether.PlayerBody.Player)) {
+                    if (!Ruleset.ServerConfig.Faceoff.FreezeGoaliesBeforeDrop)
+                        continue;
+                }
+                else {
+                    if (!Ruleset.ServerConfig.Faceoff.FreezeSkatersBeforeDrop)
+                        continue;
+                }
 
                 // Freeze all movement
                 if (tether.PlayerBody.Player.IsCharacterSpawned) {
