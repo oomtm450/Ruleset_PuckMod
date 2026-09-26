@@ -179,7 +179,7 @@ namespace oomtm450PuckMod_Sounds {
             int tryGetFilesCount = 0;
             string jsonPath = "";
             Dictionary<string, SoundSettings> currentConfig = new Dictionary<string, SoundSettings>();
-            bool currentConfigWasEmpty = false;
+            bool currentConfigWasEmpty = true;
             while (tryGetFiles) {
                 tryGetFiles = false;
 
@@ -197,9 +197,9 @@ namespace oomtm450PuckMod_Sounds {
                     if (File.Exists(jsonPath)) {
                         string settingsFileContent = File.ReadAllText(jsonPath);
                         currentConfig = settingsFileContent.ToSoundSettings();
-                        if (currentConfig.Count == 0)
-                            currentConfigWasEmpty = true;
-                        else {
+                        if (currentConfig.Count != 0) {
+                            currentConfigWasEmpty = false;
+
                             foreach (string key in new List<string>(currentConfig.Keys)) {
                                 if (string.IsNullOrEmpty(key))
                                     continue;
@@ -254,7 +254,7 @@ namespace oomtm450PuckMod_Sounds {
             foreach (string key in _soundSettings.Keys.ToList()) {
                 if (_soundSettings.TryGetValue(key, out SoundSettings s) && string.IsNullOrEmpty(s.FilePath)) {
                     _soundSettings.Remove(key);
-                    RemoveClip(key); // In case a stale key snuck into a weighted list from an earlier load.
+                    RemoveClip(key);
                 }
             }
 
@@ -308,10 +308,10 @@ namespace oomtm450PuckMod_Sounds {
                 _soundSettings.Add(clipName, clipSettings);
             }
             else {
+                clipSettings.FilePath = filePath;
+
                 if (clipSettings.Weight <= 0)
                     return;
-
-                clipSettings.FilePath = filePath;
             }
 
             AddClipNameToCorrectList(clipName, (int)clipSettings.Weight);
