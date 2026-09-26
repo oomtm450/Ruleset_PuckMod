@@ -2452,6 +2452,8 @@ namespace oomtm450PuckMod_Ruleset {
                             _lastDateTimeAskStartupData = now;
                             NetworkCommunication.SendData(Constants.ASK_SERVER_FOR_STARTUP_DATA, "1", NetworkManager.ServerClientId, Constants.FROM_CLIENT_TO_SERVER, ClientConfig);
                         }
+
+                        return;
                     }
                     else if (_askForModOutOfDateWarning) {
                         _askForModOutOfDateWarning = false;
@@ -2461,6 +2463,8 @@ namespace oomtm450PuckMod_Ruleset {
                         _addServerModVersionOutOfDateMessage = false;
                         SystemFunc.AddClientChatMessage($"Server's {Constants.WORKSHOP_MOD_NAME} mod is out of date. Some functionalities might not work properly.");
                     }
+
+                    PenLabelUI.ApplyPendingLabelUpdates();
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(PhysicsManager_Update_ClientPatch)} Postfix().\n{ex}", ClientConfig ?? new ClientConfig());

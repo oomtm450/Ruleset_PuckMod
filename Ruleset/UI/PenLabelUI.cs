@@ -21,6 +21,12 @@ namespace oomtm450PuckMod_Ruleset.UI {
         private static VisualElement _bluePanel = null;
         private static VisualElement _redPanel = null;
 
+        private static int _hasPendingUpdate = 0;
+        private static readonly LockDictionary<PlayerTeam, string> _pendingLabelText = new LockDictionary<PlayerTeam, string> {
+            { PlayerTeam.Blue, ""},
+            { PlayerTeam.Red, ""},
+        };
+
         private static readonly LockDictionary<PlayerTeam, Label> _activeLabels = new LockDictionary<PlayerTeam, Label>();
 
         internal static LockList<(string SteamId, PausableTimer Timer)> PenaltyTimers { get; } = new LockList<(string SteamId, PausableTimer Timer)>();
@@ -110,18 +116,6 @@ namespace oomtm450PuckMod_Ruleset.UI {
                 if (Ruleset.Paused)
                     return;
 
-                if (!_activeLabels.TryGetValue(PlayerTeam.Blue, out Label blueTeamLabel))
-                    return;
-
-                if (blueTeamLabel == null)
-                    return;
-
-                if (!_activeLabels.TryGetValue(PlayerTeam.Red, out Label redTeamLabel))
-                    return;
-
-                if (redTeamLabel == null)
-                    return;
-
                 List<(string PlayerIdentity, PausableTimer Timer)> penaltyTimers = new List<(string, PausableTimer)>(PenaltyTimers);
 
                 // Blue team.
@@ -138,8 +132,6 @@ namespace oomtm450PuckMod_Ruleset.UI {
 
                 var redPenaltyTimers = penaltyTimers.Where(x => x.PlayerIdentity.StartsWith("R"));
 
-                blueTeamLabel.text = penaltyTimersTextBlueTeam;
-
                 // Red team.
                 string penaltyTimersTextRedTeam = "";
                 foreach (var timer in redPenaltyTimers) {
@@ -150,13 +142,39 @@ namespace oomtm450PuckMod_Ruleset.UI {
                 if (!string.IsNullOrEmpty(penaltyTimersTextRedTeam))
                     penaltyTimersTextRedTeam = penaltyTimersTextRedTeam.Remove(penaltyTimersTextRedTeam.Length - 1);
 
-                redTeamLabel.text = penaltyTimersTextRedTeam;
+                // Queue for main-thread application instead of touching VisualElements here.
+                _pendingLabelText[PlayerTeam.Blue] = penaltyTimersTextBlueTeam;
+                _pendingLabelText[PlayerTeam.Red] = penaltyTimersTextRedTeam;
+                Interlocked.Exchange(ref _hasPendingUpdate, 1);
             }
             catch (Exception ex) {
                 _penaltiesLabelTimer.Change(Timeout.Infinite, Timeout.Infinite);
                 _penaltiesLabelTimer.Dispose();
                 _penaltiesLabelTimer = null;
                 Logging.LogError($"Error in {nameof(PenaltiesLabelTimerCallback)}.\n{ex}", Ruleset.ClientConfig);
+            }
+        }
+
+        internal static void ApplyPendingLabelUpdates() {
+            if (_hasPendingUpdate != 1)
+                return;
+
+            try {
+                if (_activeLabels.TryGetValue(PlayerTeam.Blue, out Label blueTeamLabel) && blueTeamLabel != null
+                    && _pendingLabelText.TryGetValue(PlayerTeam.Blue, out string blueText)) {
+                    blueTeamLabel.text = blueText;
+                }
+
+                if (_activeLabels.TryGetValue(PlayerTeam.Red, out Label redTeamLabel) && redTeamLabel != null
+                    && _pendingLabelText.TryGetValue(PlayerTeam.Red, out string redText)) {
+                    redTeamLabel.text = redText;
+                }
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(ApplyPendingLabelUpdates)}.\n{ex}", Ruleset.ClientConfig);
+            }
+            finally {
+                Interlocked.Exchange(ref _hasPendingUpdate, 0);
             }
         }
 
