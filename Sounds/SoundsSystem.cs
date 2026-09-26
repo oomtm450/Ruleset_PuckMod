@@ -201,6 +201,9 @@ namespace oomtm450PuckMod_Sounds {
                             currentConfigWasEmpty = true;
                         else {
                             foreach (string key in new List<string>(currentConfig.Keys)) {
+                                if (string.IsNullOrEmpty(key))
+                                    continue;
+
                                 SoundSettings soundSetting = currentConfig[key];
                                 currentConfig[key] = new SoundSettings {
                                     Weight = soundSetting.Weight ?? DEFAULT_SOUND_WEIGHT,
@@ -231,11 +234,12 @@ namespace oomtm450PuckMod_Sounds {
             await Awaitable.MainThreadAsync();
 
             try {
-                foreach (string key in currentConfig.Keys)
-                    _soundSettings.AddOrUpdate(key, currentConfig[key]);
+                foreach (string key in currentConfig.Keys) {
+                    if (string.IsNullOrEmpty(key))
+                        continue;
 
-                if (!string.IsNullOrEmpty(jsonPath) && !currentConfigWasEmpty)
-                    File.WriteAllText(jsonPath, currentConfig.ToDictionary((x) => x.Key, (x) => x.Value).ToJSON());
+                    _soundSettings.AddOrUpdate(key, currentConfig[key]);
+                }
             }
             catch (Exception ex) {
                 Warnings.Add($"Sounds.{nameof(GetAudioClipsAsync)} 4 : {ex}");
@@ -245,6 +249,17 @@ namespace oomtm450PuckMod_Sounds {
                 await CreateAudioClipAsync(file, cancellationToken);
                 await Awaitable.NextFrameAsync(cancellationToken);
             }
+
+            // Drop settings entries that no longer correspond to a file on disk.
+            foreach (string key in _soundSettings.Keys.ToList()) {
+                if (_soundSettings.TryGetValue(key, out SoundSettings s) && string.IsNullOrEmpty(s.FilePath)) {
+                    _soundSettings.Remove(key);
+                    RemoveClip(key); // In case a stale key snuck into a weighted list from an earlier load.
+                }
+            }
+
+            if (!string.IsNullOrEmpty(jsonPath) && !currentConfigWasEmpty)
+                File.WriteAllText(jsonPath, currentConfig.ToDictionary((x) => x.Key, (x) => x.Value).ToJSON());
 
             try {
                 if (setCustomGoalHorns)
@@ -308,6 +323,11 @@ namespace oomtm450PuckMod_Sounds {
         }
 
         private async Awaitable WebRequestAudioClipAsync(string clipName, Uri fileUri, CancellationToken cancellationToken = default) {
+            if (fileUri == null || string.IsNullOrEmpty(fileUri.AbsoluteUri) || fileUri.AbsoluteUri.EndsWith('/') || fileUri.AbsoluteUri.EndsWith('\\')) {
+                Errors.Add($"{nameof(WebRequestAudioClipAsync)}: empty/invalid URI for \"{clipName}\".");
+                return;
+            }
+
             await Awaitable.MainThreadAsync();
 
             using (UnityWebRequest webRequest = UnityWebRequestMultimedia.GetAudioClip(fileUri, AudioType.OGGVORBIS)) {
@@ -427,6 +447,11 @@ namespace oomtm450PuckMod_Sounds {
             if (clip == null) {
                 if (!Sounds.ClientConfig.LazyLoading)
                     return;
+
+                if (string.IsNullOrEmpty(soundSettings.FilePath)) {
+                    Errors.Add($"{nameof(PlayAsync)}: \"{name}\" has no {nameof(soundSettings.FilePath)} (stale settings.json entry, file missing on disk).");
+                    return;
+                }
 
                 await WebRequestAudioClipAsync(name, new Uri(soundSettings.FilePath));
                 clip = _audioClips.FirstOrDefault(x => x.name == name);
