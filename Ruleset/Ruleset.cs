@@ -739,16 +739,25 @@ namespace oomtm450PuckMod_Ruleset {
                         int count = 0;
                         foreach (var player in PlayerManager.Instance.GetSpawnedPlayersByTeam(stick.Player.Team)) {
                             try {
-                                if (!Codebase.PlayerFunc.IsPlayerPlaying(player) || Math.Abs(player.PlayerBody.transform.position.z - blueLineOtherTeamMiddleCoordinate) > 2f * _arenaScaleZ) // TODO : Config.
+                                if (!Codebase.PlayerFunc.IsPlayerPlaying(player))
                                     continue;
 
-                                if (_isOffside.TryGetValue(player.SteamId.Value.ToString(), out OffsideObject offside) && ++count > 1)
+                                if (player.PlayerBody.transform.position.z >= 0 && blueLineOtherTeamMiddleCoordinate < 0)
+                                    continue;
+
+                                if (player.PlayerBody.transform.position.z <= 0 && blueLineOtherTeamMiddleCoordinate > 0)
+                                    continue;
+
+                                if (Math.Abs(player.PlayerBody.transform.position.z) - Math.Abs(blueLineOtherTeamMiddleCoordinate) < 2f * _arenaScaleZ) // TODO : Config.
+                                    continue;
+
+                                if (_isOffside.TryGetValue(player.SteamId.Value.ToString(), out OffsideObject offside) && ++count > 0)
                                     break;
                             }
                             catch { }
                         }
 
-                        bool checkForIntentionalOffside = count > 1; // If there is the puck carrier and someone else close to the blue line, it is not intentional.
+                        bool checkForIntentionalOffside = count > 0; // If there is someone too far behind the blue line, it is intentional.
 
                         var temp = _puckLastStateBeforeCall[Rule.Offside];
                         _puckLastStateBeforeCall[Rule.Offside] = puckLastStateBeforeCallOffside;
