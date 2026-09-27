@@ -569,17 +569,18 @@ namespace oomtm450PuckMod_Ruleset {
             PenalizedPlayersInBoxCountRedTeam = PenalizedPlayersCountRedTeam;
 
             foreach (LockList<Penalty> penalties in PenalizedPlayers.Values) {
+                if (penalties.Count == 0 || penalties.Any(x => x.CurrentPenalty))
+                    continue;
+
                 // Player to the box and start first penalty.
-                if (penalties.Count != 0 && penalties.All(x => !x.CurrentPenalty)) {
-                    Penalty firstPenalty = penalties.First();
-                    firstPenalty.CurrentPenalty = true;
+                Penalty firstPenalty = penalties.First();
+                firstPenalty.CurrentPenalty = true;
 
-                    Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(firstPenalty.SteamId);
-                    if (penalizedPlayer == null || !penalizedPlayer || !penalizedPlayer.IsCharacterSpawned)
-                        return;
+                Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(firstPenalty.SteamId);
+                if (penalizedPlayer == null || !penalizedPlayer || !penalizedPlayer.IsCharacterSpawned)
+                    return;
 
-                    TeleportPlayer(penalizedPlayer);
-                }
+                TeleportPlayer(penalizedPlayer);
             }
         }
 
@@ -938,6 +939,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (penaltyToRemove == null)
                     return;
 
+                penaltyToRemove.CurrentPenalty = false;
                 PenaltyModule.PenalizedPlayers[penaltyToRemove.SteamId].Remove(penaltyToRemove);
 
                 string penaltyOverMsg = $"PENALTY #{penaltyToRemove.PlayerNumber} {penaltyToRemove.PlayerUsername} OVER";
