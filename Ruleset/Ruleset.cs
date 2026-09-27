@@ -5738,7 +5738,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal bool IsOvertime { get; set; } = false;
 
-        internal DateTime DateTime { get; }
+        internal DateTime DateTime { get; } = DateTime.UtcNow;
 
         internal FaceoffState() { }
 
@@ -5749,8 +5749,6 @@ namespace oomtm450PuckMod_Ruleset {
             RedScore = redScore;
             Period = period;
             IsOvertime = isOvertime;
-
-            DateTime = DateTime.UtcNow;
         }
     }
 
