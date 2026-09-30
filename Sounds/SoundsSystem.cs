@@ -196,20 +196,22 @@ namespace oomtm450PuckMod_Sounds {
 
                     if (File.Exists(jsonPath)) {
                         string settingsFileContent = File.ReadAllText(jsonPath);
-                        currentConfig = settingsFileContent.ToSoundSettings();
-                        if (currentConfig.Count != 0) {
-                            currentConfigWasEmpty = false;
+                        if (!string.IsNullOrEmpty(settingsFileContent)) {
+                            currentConfig = settingsFileContent.ToSoundSettings();
+                            if (currentConfig.Count != 0) {
+                                currentConfigWasEmpty = false;
 
-                            foreach (string key in new List<string>(currentConfig.Keys)) {
-                                if (string.IsNullOrEmpty(key))
-                                    continue;
+                                foreach (string key in new List<string>(currentConfig.Keys)) {
+                                    if (string.IsNullOrEmpty(key))
+                                        continue;
 
-                                SoundSettings soundSetting = currentConfig[key];
-                                currentConfig[key] = new SoundSettings {
-                                    Weight = soundSetting.Weight ?? DEFAULT_SOUND_WEIGHT,
-                                    Volume = soundSetting.Volume ?? DEFAULT_SOUND_VOLUME,
-                                    Delay = soundSetting.Delay ?? DEFAULT_SOUND_DELAY,
-                                };
+                                    SoundSettings soundSetting = currentConfig[key];
+                                    currentConfig[key] = new SoundSettings {
+                                        Weight = soundSetting.Weight ?? DEFAULT_SOUND_WEIGHT,
+                                        Volume = soundSetting.Volume ?? DEFAULT_SOUND_VOLUME,
+                                        Delay = soundSetting.Delay ?? DEFAULT_SOUND_DELAY,
+                                    };
+                                }
                             }
                         }
                     }
@@ -245,28 +247,30 @@ namespace oomtm450PuckMod_Sounds {
                 Warnings.Add($"Sounds.{nameof(GetAudioClipsAsync)} 4 : {ex}");
             }
 
-            foreach (string file in files) {
-                await CreateAudioClipAsync(file, cancellationToken);
-                await Awaitable.NextFrameAsync(cancellationToken);
+            try {
+                if (!string.IsNullOrEmpty(jsonPath) && !currentConfigWasEmpty)
+                    File.WriteAllText(jsonPath, currentConfig.ToDictionary((x) => x.Key, (x) => x.Value).ToJSON());
+            }
+            catch (Exception ex) {
+                Warnings.Add($"Sounds.{nameof(GetAudioClipsAsync)} 5 : {ex}");
             }
 
-            // Drop settings entries that no longer correspond to a file on disk.
-            foreach (string key in _soundSettings.Keys.ToList()) {
-                if (_soundSettings.TryGetValue(key, out SoundSettings s) && string.IsNullOrEmpty(s.FilePath)) {
-                    _soundSettings.Remove(key);
-                    RemoveClip(key);
+            try {
+                foreach (string file in files) {
+                    await CreateAudioClipAsync(file, cancellationToken);
+                    await Awaitable.NextFrameAsync(cancellationToken);
                 }
             }
-
-            if (!string.IsNullOrEmpty(jsonPath) && !currentConfigWasEmpty)
-                File.WriteAllText(jsonPath, currentConfig.ToDictionary((x) => x.Key, (x) => x.Value).ToJSON());
+            catch (Exception ex) {
+                Warnings.Add($"Sounds.{nameof(GetAudioClipsAsync)} 6 : {ex}");
+            }
 
             try {
                 if (setCustomGoalHorns)
                     SetGoalHorns();
             }
             catch (Exception ex) {
-                Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} 5 : {ex}");
+                Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} 7 : {ex}");
             }
 
             try {
@@ -274,7 +278,7 @@ namespace oomtm450PuckMod_Sounds {
                 ReorderAllLists();
             }
             catch (Exception ex) {
-                Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} 6 : {ex}");
+                Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} 8 : {ex}");
             }
 
             await Awaitable.BackgroundThreadAsync();
