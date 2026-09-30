@@ -308,10 +308,10 @@ namespace oomtm450PuckMod_Sounds {
                 _soundSettings.Add(clipName, clipSettings);
             }
             else {
-                clipSettings.FilePath = filePath;
-
                 if (clipSettings.Weight <= 0)
                     return;
+
+                clipSettings.FilePath = filePath;
             }
 
             AddClipNameToCorrectList(clipName, (int)clipSettings.Weight);
