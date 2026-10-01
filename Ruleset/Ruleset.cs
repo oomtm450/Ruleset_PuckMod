@@ -3449,6 +3449,11 @@ namespace oomtm450PuckMod_Ruleset {
                 RefVote.RemoveRef(player.SteamId.Value.ToString());
         }
 
+        /// <summary>
+        /// Method called when a player changes their state.
+        /// Used to set a link between steamIds and clientIds.
+        /// </summary>
+        /// <param name="message">Dictionary of string and object, content of the event.</param>
         public static void Event_Everyone_OnPlayerGameStateChanged(Dictionary<string, object> message) { // TODO : Optimize by using another function that gets called less often.
             // Use the event to link client Ids to Steam Ids.
             Dictionary<ulong, (string SteamId, string Username)> playersInfo_ToChange = new Dictionary<ulong, (string, string)>();
@@ -3539,6 +3544,9 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 ulong clientId = (ulong)message["clientId"];
+
+                _sentOutOfDateMessage.Remove(clientId);
+
                 string clientSteamId;
                 try {
                     clientSteamId = PlayerFunc.Players_ClientId_SteamId[clientId];
@@ -3547,8 +3555,6 @@ namespace oomtm450PuckMod_Ruleset {
                     //Logging.LogError($"Client Id {clientId} steam Id not found in {nameof(PlayerFunc.Players_ClientId_SteamId)}.", ServerConfig);
                     return;
                 }
-
-                _sentOutOfDateMessage.Remove(clientId);
 
                 try {
                     var offsideValue = _isOffside[clientSteamId];

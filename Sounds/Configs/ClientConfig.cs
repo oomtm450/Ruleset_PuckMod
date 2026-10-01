@@ -22,7 +22,7 @@ namespace oomtm450PuckMod_Sounds.Configs {
         [JsonIgnore]
         private static readonly string CONFIG_PATH = Path.Combine(CONFIG_FOLDER_PATH, Constants.MOD_NAME + "_clientconfig.json");
         #endregion
-
+        
         /// <summary>
         /// Bool, true if the info logs must be printed.
         /// </summary>
