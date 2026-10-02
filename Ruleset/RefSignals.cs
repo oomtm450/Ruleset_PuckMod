@@ -15,7 +15,8 @@ namespace oomtm450PuckMod_Ruleset {
     /// </summary>
     internal class RefSignals : MonoBehaviour {
         #region Constants
-        private const string IMAGES_FOLDER_PATH = "images\\refsignals";
+        private const string IMAGES_FOLDER_PATH_1 = "images";
+        private const string IMAGES_FOLDER_PATH_2 = "refsignals";
         private const string IMAGE_EXTENSION = ".png";
 
         private const string REF_SIGNAL = "refsignal";
@@ -75,7 +76,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 DontDestroyOnLoad(gameObject);
 
-                string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), IMAGES_FOLDER_PATH);
+                string fullPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), IMAGES_FOLDER_PATH_1, IMAGES_FOLDER_PATH_2);
 
                 if (!Directory.Exists(fullPath)) {
                     Logging.LogError($"Images not found at: {fullPath}", Ruleset.ClientConfig);
@@ -98,15 +99,15 @@ namespace oomtm450PuckMod_Ruleset {
 
         private IEnumerator GetSprites(string path, PlayerTeam team) {
             foreach (string file in Directory.GetFiles(path, "*" + IMAGE_EXTENSION, SearchOption.AllDirectories)) {
-                string filePath = new Uri(Path.GetFullPath(file)).LocalPath;
-                UnityWebRequest webRequest = UnityWebRequestTexture.GetTexture(filePath);
+                Uri fileUri = new Uri(Path.GetFullPath(file));
+                UnityWebRequest webRequest = UnityWebRequestTexture.GetTexture(fileUri);
                 yield return webRequest.SendWebRequest();
 
                 if (webRequest.result != UnityWebRequest.Result.Success)
-                    Errors.Add(webRequest.error);
+                    Errors.Add($"Error in {nameof(GetSprites)}. {nameof(webRequest)}.{nameof(webRequest.result)} is not {nameof(UnityWebRequest.Result.Success)} ({fileUri.AbsoluteUri}).\n{webRequest.error}");
                 else {
                     try {
-                        string fileName = filePath.Substring(filePath.LastIndexOf('\\') + 1, filePath.Length - filePath.LastIndexOf('\\') - 1).Replace(IMAGE_EXTENSION, "");
+                        string fileName = fileUri.LocalPath.Substring(fileUri.LocalPath.LastIndexOf('\\') + 1, fileUri.LocalPath.Length - fileUri.LocalPath.LastIndexOf('\\') - 1).Replace(IMAGE_EXTENSION, "");
                         Texture2D texture = DownloadHandlerTexture.GetContent(webRequest);
 
                         GameObject _gameObject = new GameObject($"RefSignals_{team}Team_Images");
@@ -137,7 +138,7 @@ namespace oomtm450PuckMod_Ruleset {
                         _images.Add(fileName, image);
                     }
                     catch (Exception ex) {
-                        Errors.Add(ex.ToString());
+                        Errors.Add($"Error in {nameof(RefSignals)}.{nameof(GetSprites)}.\n{ex}");
                     }
                 }
             }

@@ -32,6 +32,15 @@ namespace Codebase {
         /// Const string, position name for the right defender.
         /// </summary>
         public const string RIGHT_DEFENDER_POSITION = "RD";
+
+        /*public static readonly List<string> ORDERED_POSITIONNING = new List<string> {
+            GOALIE_POSITION,
+            CENTER_POSITION,
+            LEFT_WINGER_POSITION,
+            RIGHT_WINGER_POSITION,
+            LEFT_DEFENDER_POSITION,
+            RIGHT_DEFENDER_POSITION,
+        };*/
         #endregion
 
         #region Methods/Functions
