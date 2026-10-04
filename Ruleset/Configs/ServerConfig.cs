@@ -280,6 +280,22 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 Logging.Log($"Wrote server config : {config}", config, true);
 
                 if (config.UseDefaultNumericValues) {
+                    PenaltyConfig penaltyConfig;
+                    if (config.Penalty.UseDefaultNumericValues) {
+                        penaltyConfig = new PenaltyConfig {
+                            Interference = config.Penalty.Interference,
+                            GoalieInterference = config.Penalty.GoalieInterference,
+                            DelayOfGame = config.Penalty.DelayOfGame,
+                            FaceoffViolation = config.Penalty.FaceoffViolation,
+                            Embellishment = config.Penalty.Embellishment,
+                            Roughing = config.Penalty.Roughing,
+                            Charging = config.Penalty.Charging,
+                            UseDefaultNumericValues = config.Penalty.UseDefaultNumericValues,
+                        };
+                    }
+                    else
+                        penaltyConfig = config.Penalty;
+
                     ServerConfig defaultConfig = new Configs.ServerConfig {
                         LogInfo = config.LogInfo,
                         UseDefaultNumericValues = config.UseDefaultNumericValues,
@@ -303,15 +319,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                             HandPassBlueTeam = config.HighStick.HandPassBlueTeam,
                             HandPassRedTeam = config.HighStick.HandPassRedTeam,
                         },
-                        Penalty = new PenaltyConfig {
-                            Interference = config.Penalty.Interference,
-                            GoalieInterference = config.Penalty.GoalieInterference,
-                            DelayOfGame = config.Penalty.DelayOfGame,
-                            FaceoffViolation = config.Penalty.FaceoffViolation,
-                            Embellishment = config.Penalty.Embellishment,
-                            Roughing = config.Penalty.Roughing,
-                            Charging = config.Penalty.Charging,
-                        },
+                        Penalty = penaltyConfig,
                         Faceoff = new FaceoffConfig {
                             EnableViolations = config.Faceoff.EnableViolations,
                             FreezeSkatersBeforeDrop = config.Faceoff.FreezeSkatersBeforeDrop,
@@ -474,6 +482,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, skater's last sprint minimum total time to call a charging penalty in milliseconds.
         /// </summary>
         public int ChargingMinimumTotalSprintTime { get; set; } = 1400;
+
+        /// <summary>
+        /// Bool, true if the numeric values has to be replaced be the default ones. Make this false to use custom values.
+        /// </summary>
+        public bool UseDefaultNumericValues { get; set; } = true;
         #endregion
 
         #region Constructors
@@ -525,6 +538,8 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             ChargingSpeedThreshold = penaltyConfig.ChargingSpeedThreshold;
             ChargingLastSprintTimeThreshold = penaltyConfig.ChargingLastSprintTimeThreshold;
             ChargingMinimumTotalSprintTime = penaltyConfig.ChargingMinimumTotalSprintTime;
+
+            UseDefaultNumericValues = penaltyConfig.UseDefaultNumericValues;
         }
         #endregion
 
