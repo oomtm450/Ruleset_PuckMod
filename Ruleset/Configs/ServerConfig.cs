@@ -1051,7 +1051,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, radius of a goalie. Make higher to augment the crease size for goalie interference calls.
         /// </summary>
-        public float GoalieRadius { get; set; } = 0.875f;
+        public float GoalieRadius { get; set; } = 0.885f;
 
         #region Constructors
         /// <summary>
