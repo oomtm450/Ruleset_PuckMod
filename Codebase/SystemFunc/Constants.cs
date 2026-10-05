@@ -53,7 +53,7 @@
         /// <summary>
         /// Const float, height of the net's crossbar.
         /// </summary>
-        internal const float CROSSBAR_HEIGHT = 1.8f;
+        internal const float CROSSBAR_HEIGHT = 1.81f;
 
         /// <summary>
         /// Const float, height of a player's shoulders.
