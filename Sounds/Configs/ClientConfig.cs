@@ -22,7 +22,7 @@ namespace oomtm450PuckMod_Sounds.Configs {
         [JsonIgnore]
         private static readonly string CONFIG_PATH = Path.Combine(CONFIG_FOLDER_PATH, Constants.MOD_NAME + "_clientconfig.json");
         #endregion
-
+        
         /// <summary>
         /// Bool, true if the info logs must be printed.
         /// </summary>
@@ -117,7 +117,7 @@ namespace oomtm450PuckMod_Sounds.Configs {
         /// </summary>
         /// <returns>ClientConfig, parsed config.</returns>
         internal static ClientConfig ReadConfig() {
-            ClientConfig config = new ClientConfig();
+            ClientConfig config;
 
             try {
                 if (!Directory.Exists(CONFIG_FOLDER_PATH))
@@ -128,14 +128,18 @@ namespace oomtm450PuckMod_Sounds.Configs {
                     config = SetConfig(configFileContent);
                     Logging.Log($"Client config read.", config, true);
                 }
+                else
+                    config = new ClientConfig();
 
                 config.Save();
+
+                return config;
             }
             catch (Exception ex) {
-                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", config);
+                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", new Configs.ClientConfig());
             }
 
-            return config;
+            return new ClientConfig();
         }
 
         internal void Save() {

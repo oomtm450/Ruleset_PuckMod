@@ -20,6 +20,11 @@ namespace oomtm450PuckMod_Sounds.Configs {
         /// Bool, true if the music/goal horn packs authorized on this server has to be the one set by server.
         /// </summary>
         public bool ForceServerPacks { get; } = true;
+
+        /// <summary>
+        /// Bool, true if the music has to be stopped by Sounds on Play phase change.
+        /// </summary>
+        public bool AutomaticMusicStoppageOnPlay { get; } = false;
         #endregion
 
         #region Methods/Functions

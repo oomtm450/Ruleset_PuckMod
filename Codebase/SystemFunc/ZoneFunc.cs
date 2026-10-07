@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEngine;
@@ -206,18 +207,18 @@ namespace Codebase {
         /// <returns>Zone, zone containing the faceoff spot.</returns>
         internal static Zone GetZone(FaceoffSpot faceoffSpot) {
             switch (faceoffSpot) {
-                case FaceoffSpot.BlueteamDZoneLeft:
-                case FaceoffSpot.BlueteamDZoneRight:
+                case FaceoffSpot.BlueTeamDZoneLeft:
+                case FaceoffSpot.BlueTeamDZoneRight:
                     return Zone.BlueTeam_Zone;
-                case FaceoffSpot.BlueteamBLLeft:
-                case FaceoffSpot.BlueteamBLRight:
+                case FaceoffSpot.BlueTeamBLLeft:
+                case FaceoffSpot.BlueTeamBLRight:
                     return Zone.BlueTeam_Center;
 
-                case FaceoffSpot.RedteamDZoneLeft:
-                case FaceoffSpot.RedteamDZoneRight:
+                case FaceoffSpot.RedTeamDZoneLeft:
+                case FaceoffSpot.RedTeamDZoneRight:
                     return Zone.RedTeam_Zone;
-                case FaceoffSpot.RedteamBLLeft:
-                case FaceoffSpot.RedteamBLRight:
+                case FaceoffSpot.RedTeamBLLeft:
+                case FaceoffSpot.RedTeamBLRight:
                     return Zone.RedTeam_Center;
 
                 default:
@@ -250,6 +251,17 @@ namespace Codebase {
                         Zone.None,
                     };
             }
+        }
+
+        internal static double GetMiddleZCoordinateOfIceElement(IceElement iceElement) {
+            return ((ICE_Z_POSITIONS[iceElement].End - ICE_Z_POSITIONS[iceElement].Start) / 2d) + ICE_Z_POSITIONS[iceElement].Start;
+        }
+
+        internal static IceElement GetBlueLineForTeam(PlayerTeam team) {
+            if (team == PlayerTeam.Blue)
+                return IceElement.BlueTeam_BlueLine;
+            else
+                return IceElement.RedTeam_BlueLine;
         }
         #endregion
     }
@@ -288,14 +300,14 @@ namespace Codebase {
     /// </summary>
     public enum FaceoffSpot : ushort {
         Center,
-        BlueteamBLLeft,
-        BlueteamBLRight,
-        RedteamBLLeft,
-        RedteamBLRight,
-        BlueteamDZoneLeft,
-        BlueteamDZoneRight,
-        RedteamDZoneLeft,
-        RedteamDZoneRight,
+        BlueTeamBLLeft,
+        BlueTeamBLRight,
+        RedTeamBLLeft,
+        RedTeamBLRight,
+        BlueTeamDZoneLeft,
+        BlueTeamDZoneRight,
+        RedTeamDZoneLeft,
+        RedTeamDZoneRight,
     }
     #endregion
 }
