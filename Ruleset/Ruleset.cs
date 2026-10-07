@@ -2977,13 +2977,13 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             try {
-                string musicToPlay;
-                if (startOfPowerplay)
-                    musicToPlay = SoundsSystem.POWERPLAY_MUSIC;
-                else
-                    musicToPlay = SoundsSystem.FACEOFF_MUSIC;
-
                 if (playMusic) {
+                    string musicToPlay;
+                    if (startOfPowerplay)
+                        musicToPlay = SoundsSystem.POWERPLAY_MUSIC;
+                    else
+                        musicToPlay = SoundsSystem.FACEOFF_MUSIC;
+
                     EventManager.TriggerEvent(Codebase.Constants.SOUNDS_MOD_NAME, new Dictionary<string, object> { { SoundsSystem.PLAY_SOUND, musicToPlay } });
                     if (!NetworkCommunication.GetDataNamesToIgnore().Contains(SoundsSystem.PLAY_SOUND))
                         Logging.Log($"Sent data \"{SoundsSystem.PLAY_SOUND}\" ({musicToPlay}) to {Codebase.Constants.SOUNDS_MOD_NAME}.", ServerConfig);
