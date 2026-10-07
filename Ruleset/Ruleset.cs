@@ -1786,7 +1786,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (content.StartsWith(@"/")) {
                         content = content.ToLowerInvariant();
 
-                        if (content.StartsWith(@"/help"))
+                        if (content == @"/help")
                             SystemFunc.AddClientChatMessage("Ruleset commands:\n<b>/refscale</b> - Change the scale of the 2D refs images (0.0-2.0)\n<b>/voteref</b> - Vote to become ref\n<b>/voteremoveref</b> - Vote to remove a ref (Number, Name, SteamId or nothing if you are ref and want to remove yourself)\n<b>REF UI</b> - F7 to open\n");
                     }
                 }
