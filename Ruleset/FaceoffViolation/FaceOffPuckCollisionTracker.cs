@@ -111,6 +111,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             _puckTouchedIce = true;
             _isMonitoring = false;
             FaceOffPuckCollisionTracker.StopMonitoring();
+            EventManager.TriggerEvent(Codebase.Constants.SOUNDS_MOD_NAME, new Dictionary<string, object> { { Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC } });
         }
 
         private void CheckStickContact() {
@@ -230,10 +231,8 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             _puckTouchedIce = false;
             _isMonitoring = false;
 
-            // Use Ruleset mod's instant faceoff event to restart at the same spot.
             try {
-                EventManager.TriggerEvent(Codebase.Constants.RULESET_MOD_NAME,
-                    new Dictionary<string, object> { { Codebase.Constants.INSTANT_FACEOFF, ((ushort)Ruleset.NextFaceoffSpot).ToString() } });
+                Ruleset.DoFaceoff("", "", 0, 0, false, playMusic: false);
                 PenaltyModule.AddTimeToAllPenalties((long)(DateTime.UtcNow - Ruleset.LastPlayPhaseStartDateTime).TotalMilliseconds);
             }
             catch (Exception ex) {

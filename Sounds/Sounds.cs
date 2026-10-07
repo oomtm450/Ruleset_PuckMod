@@ -781,11 +781,13 @@ namespace oomtm450PuckMod_Sounds {
                     if (string.IsNullOrEmpty(kvp.Key))
                         continue;
 
+                    string key = kvp.Key;
                     string value = kvp.Value.ToString();
-                    if (!NetworkCommunication.GetDataNamesToIgnore().Contains(kvp.Key))
-                        Logging.Log($"Received data {kvp.Key}. Content : {value}", ServerConfig);
 
-                    switch (kvp.Key) {
+                    if (!NetworkCommunication.GetDataNamesToIgnore().Contains(key))
+                        Logging.Log($"Received data {key}. Content : {value}", ServerConfig);
+
+                    switch (key) {
                         case Codebase.Constants.LOGIC:
                             _logic = bool.Parse(value);
                             break;
@@ -797,22 +799,15 @@ namespace oomtm450PuckMod_Sounds {
                                 PlayPowerplayMusic();
                             break;
 
-                        //case Codebase.SoundsSystem.CHANGE_GOAL_SONG_BLUE:
-                        //break;
-
-                        //case Codebase.SoundsSystem.CHANGE_GOAL_SONG_RED:
-                        //break;
-
                         case Codebase.SoundsSystem.STOP_SOUND:
-                            if (_soundsSystem == null)
-                                break;
-
                             if (value == Codebase.SoundsSystem.ALL)
                                 NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.ALL, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             else if (value == Codebase.SoundsSystem.MUSIC)
                                 NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
                             else if (value == Codebase.SoundsSystem.GOAL_MUSIC)
                                 NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.GOAL_MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+                            else
+                                break;
 
                             _currentMusicPlaying = "";
                             _currentMusicPlayingType = "";
