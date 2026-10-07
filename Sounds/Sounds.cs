@@ -247,10 +247,12 @@ namespace oomtm450PuckMod_Sounds {
                         return;
 
                     if (newGameState.Phase == GamePhase.Play) {
-                        NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                        _currentMusicPlaying = "";
-                        _currentMusicPlayingType = "";
                         _lastGoalScorerSteamId = "";
+
+                        if (!ServerConfig.AutomaticMusicStoppageOnPlay)
+                            return;
+
+                        SendStopMusicToClients();
                         return;
                     }
                 }
@@ -273,9 +275,7 @@ namespace oomtm450PuckMod_Sounds {
                         return true;
 
                     // Reset music.
-                    NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
-                    _currentMusicPlaying = "";
-                    _currentMusicPlayingType = "";
+                    SendStopMusicToClients();
                     _hasPlayedLastMinuteMusic = false;
                     _hasPlayedFirstFaceoffMusic = false;
                     _hasPlayedSecondFaceoffMusic = false;
@@ -1275,6 +1275,12 @@ namespace oomtm450PuckMod_Sounds {
 
             NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(_currentMusicPlayingType), Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
             _currentMusicPlayingType = _currentMusicPlaying = Codebase.SoundsSystem.FACEOFF_MUSIC;
+        }
+
+        private static void SendStopMusicToClients() {
+            NetworkCommunication.SendDataToAll(Codebase.SoundsSystem.STOP_SOUND, Codebase.SoundsSystem.MUSIC, Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
+            _currentMusicPlaying = "";
+            _currentMusicPlayingType = "";
         }
 
         /// <summary>
