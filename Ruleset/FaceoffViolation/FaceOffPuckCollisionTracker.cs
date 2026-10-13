@@ -232,7 +232,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
             _isMonitoring = false;
 
             try {
-                Ruleset.DoFaceoff("", "", 0, 0, false, playMusic: false);
+                Ruleset.DoFaceoff("", "", 0, 0, false, true, false, false);
                 PenaltyModule.AddTimeToAllPenalties((long)(DateTime.UtcNow - Ruleset.LastPlayPhaseStartDateTime).TotalMilliseconds);
             }
             catch (Exception ex) {
