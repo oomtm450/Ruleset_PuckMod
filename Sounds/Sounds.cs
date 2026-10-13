@@ -1184,8 +1184,10 @@ namespace oomtm450PuckMod_Sounds {
                             _currentMusicPlayingType = Codebase.SoundsSystem.MUSIC;
                             _ = _soundsSystem.PlayAsync(_currentMusicPlaying, _currentMusicPlayingType, ClientConfig.MusicVolume * ClientConfig.GameOverMusicVolume, 0.5f);
                         }
-                        else if (playSoundDataStrSplitted[0] == Codebase.SoundsSystem.WHISTLE)
-                            _ = _soundsSystem.PlayAsync(Codebase.SoundsSystem.WHISTLE, "");
+                        else {
+                            _ = _soundsSystem.PlayAsync(playSoundDataStrSplitted[0], "");
+                            break;
+                        }
 
                         if (isFaceoffMusic) {
                             if (string.IsNullOrEmpty(_currentMusicPlaying))
