@@ -793,6 +793,9 @@ namespace oomtm450PuckMod_Sounds {
                             break;
 
                         case Codebase.SoundsSystem.PLAY_SOUND:
+                            if (!string.IsNullOrEmpty(_currentMusicPlayingType))
+                                break;
+
                             if (value == Codebase.SoundsSystem.FACEOFF_MUSIC)
                                 PlayFaceoffMusic();
                             else if (value == Codebase.SoundsSystem.POWERPLAY_MUSIC)
