@@ -1,6 +1,6 @@
 ﻿using Codebase;
-using static Codebase.PlayerFunc;
 using UnityEngine;
+using static Codebase.PlayerFunc;
 
 namespace oomtm450PuckMod_Ruleset {
     internal class PlayerFunc {
@@ -18,10 +18,17 @@ namespace oomtm450PuckMod_Ruleset {
         /// <param name="player">Player, player to teleport.</param>
         /// <param name="faceoffDot">Vector3, position of the faceoff dot.</param>
         /// <param name="faceoffSpot">FaceoffSpot, location of the faceoff.</param>
+        /// <param name="arenaScaleX">Float, scale of the arena X coordinate.</param>
+        /// <param name="arenaScaleZ">Float, scale of the arena X coordinate.</param>
         /// <param name="playerPosition">String, player's position.</param>
-        public static void TeleportOnFaceoff(Player player, Vector3 faceoffDot, FaceoffSpot faceoffSpot, string playerPosition = "", Quaternion rotation = default) {
+        /// <param name="rotation">Quaternion, player's rotation.</param>
+        public static void TeleportOnFaceoff(Player player, Vector3 faceoffDot, FaceoffSpot faceoffSpot, float arenaScaleX = 1f, float arenaScaleZ = 1f,
+            string playerPosition = "", Quaternion rotation = default) {
             if (!IsPlayerPlaying(player))
                 return;
+
+            arenaScaleX = arenaScaleX > 1f ? 1f : arenaScaleX;
+            arenaScaleZ = arenaScaleZ > 1f ? 1f : arenaScaleZ;
 
             if (string.IsNullOrEmpty(playerPosition))
                 playerPosition = player.PlayerPosition.Name;
@@ -37,52 +44,64 @@ namespace oomtm450PuckMod_Ruleset {
 
                 case LEFT_WINGER_POSITION:
                     zOffset = 1.5f;
-                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team == PlayerTeam.Blue))
-                        xOffset = 6.5f;
+                    if ((faceoffSpot == FaceoffSpot.RedTeamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && player.Team == PlayerTeam.Blue))
+                        xOffset = 9.75f;
                     else
                         xOffset = 9f;
                     break;
 
                 case RIGHT_WINGER_POSITION:
                     zOffset = 1.5f;
-                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team == PlayerTeam.Blue))
-                        xOffset = -6.5f;
+                    if ((faceoffSpot == FaceoffSpot.RedTeamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneRight && player.Team == PlayerTeam.Blue))
+                        xOffset = -9.75f;
                     else
                         xOffset = -9f;
                     break;
 
                 case LEFT_DEFENDER_POSITION:
-                    zOffset = 13.75f;
-                    if ((ushort)faceoffSpot >= 5)
-                        zOffset -= 1f;
-
-                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneRight && player.Team == PlayerTeam.Blue)) {
+                    if ((faceoffSpot == FaceoffSpot.RedTeamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneRight && player.Team == PlayerTeam.Blue)) {
                         zOffset = 1.5f;
-                        xOffset = -9f;
+                        xOffset = -7f;
                         if (player.Team == PlayerTeam.Red)
                             rotation = Quaternion.Euler(0, -90, 0);
                         else
                             rotation = Quaternion.Euler(0, 90, 0);
                     }
-                    else
+                    else {
+                        zOffset = 13.75f;
+                        if ((ushort)faceoffSpot >= 5)
+                            zOffset -= 1f;
+
                         xOffset = 4.5f;
+
+                        if ((faceoffSpot == FaceoffSpot.RedTeamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && player.Team == PlayerTeam.Blue)) {
+                            zOffset -= 1f;
+                            xOffset += 0.5f;
+                        }
+                    }
                     break;
 
                 case RIGHT_DEFENDER_POSITION:
-                    zOffset = 13.75f;
-                    if ((ushort)faceoffSpot >= 5)
-                        zOffset -= 1f;
-
-                    if ((faceoffSpot == FaceoffSpot.RedteamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueteamDZoneLeft && player.Team == PlayerTeam.Blue)) {
+                    if ((faceoffSpot == FaceoffSpot.RedTeamDZoneRight && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneLeft && player.Team == PlayerTeam.Blue)) {
                         zOffset = 1.5f;
-                        xOffset = 9f;
+                        xOffset = 7f;
                         if (player.Team == PlayerTeam.Red)
                             rotation = Quaternion.Euler(0, 90, 0);
                         else
                             rotation = Quaternion.Euler(0, -90, 0);
                     }
-                    else
+                    else {
+                        zOffset = 13.75f;
+                        if ((ushort)faceoffSpot >= 5)
+                            zOffset -= 1f;
+
                         xOffset = -4.5f;
+
+                        if ((faceoffSpot == FaceoffSpot.RedTeamDZoneLeft && player.Team == PlayerTeam.Red) || (faceoffSpot == FaceoffSpot.BlueTeamDZoneRight && player.Team == PlayerTeam.Blue)) {
+                            zOffset -= 1f;
+                            xOffset -= 0.5f;
+                        }
+                    }
                     break;
 
                 case GOALIE_POSITION:
@@ -92,11 +111,11 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (player.Team == PlayerTeam.Red) {
                         zOffset *= -1f;
-                        if (faceoffSpot == FaceoffSpot.RedteamDZoneLeft) {
+                        if (faceoffSpot == FaceoffSpot.RedTeamDZoneLeft) {
                             xOffset *= -1f;
                             rotation = Quaternion.Euler(0, -1 * quaternionY, 0);
                         }
-                        else if (faceoffSpot == FaceoffSpot.RedteamDZoneRight) {
+                        else if (faceoffSpot == FaceoffSpot.RedTeamDZoneRight) {
                             rotation = Quaternion.Euler(0, quaternionY, 0);
                         }
                         else {
@@ -105,11 +124,11 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
                     else {
-                        if (faceoffSpot == FaceoffSpot.BlueteamDZoneLeft) {
+                        if (faceoffSpot == FaceoffSpot.BlueTeamDZoneLeft) {
                             xOffset *= -1f;
                             rotation = Quaternion.Euler(0, quaternionY - 180, 0);
                         }
-                        else if (faceoffSpot == FaceoffSpot.BlueteamDZoneRight)
+                        else if (faceoffSpot == FaceoffSpot.BlueTeamDZoneRight)
                             rotation = Quaternion.Euler(0, 180 - quaternionY, 0);
                         else {
                             zOffset = 0;
@@ -117,7 +136,7 @@ namespace oomtm450PuckMod_Ruleset {
                         }
                     }
 
-                    Vector3 teleportPosition = new Vector3(player.PlayerBody.transform.position.x + xOffset, player.PlayerBody.transform.position.y, player.PlayerBody.transform.position.z + zOffset);
+                    Vector3 teleportPosition = new Vector3(player.PlayerBody.transform.position.x + (xOffset * arenaScaleX) + Ruleset.ArenaOffsetX, faceoffDot.y + Ruleset.ServerConfig.YOffsetForTeleport, player.PlayerBody.transform.position.z + (zOffset * arenaScaleZ) + Ruleset.ArenaOffsetZ);
                     player.PlayerBody.Server_Teleport(teleportPosition, rotation);
                     Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = player, Position = teleportPosition, Rotation = rotation, });
                     break;
@@ -130,7 +149,7 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 if (faceoffSpot == FaceoffSpot.Center && playerPosition != CENTER_POSITION) {
-                    xOffset *= 2;
+                    xOffset *= 1.9f;
 
                     if (playerPosition != LEFT_DEFENDER_POSITION && playerPosition != RIGHT_DEFENDER_POSITION)
                         zOffset *= 1.9f;
@@ -138,12 +157,13 @@ namespace oomtm450PuckMod_Ruleset {
                         zOffset *= 0.8f;
                 }
 
-                Vector3 teleportPosition = new Vector3(faceoffDot.x + xOffset, faceoffDot.y, faceoffDot.z + zOffset);
+                Vector3 teleportPosition = new Vector3(faceoffDot.x + (xOffset * arenaScaleX), faceoffDot.y + Ruleset.ServerConfig.YOffsetForTeleport, faceoffDot.z + (zOffset * arenaScaleZ));
                 player.PlayerBody.Server_Teleport(teleportPosition, rotation);
                 Ruleset.PlayersToTeleport.Add(new PlayerWithCoordinate { Player = player, Position = teleportPosition, Rotation = rotation, });
             }
 
-            player.PlayerBody.Rigidbody.constraints = RigidbodyConstraints.None;
+            player.PlayerBody.Server_Unfreeze();
+            Ruleset.UnfreezeStick(player.Stick);
         }
         #endregion
     }

@@ -26,6 +26,20 @@ namespace Codebase {
             ChatManager.Instance.AddChatMessage(chatMsg);
         }
 
+        public static void SendChatMessageToClients(string message, params ulong[] clientIds) {
+            ChatMessage chatMsg = new ChatMessage {
+                SteamID = null,
+                Username = null,
+                Team = null,
+                Content = message,
+                Timestamp = Utils.GetTimestamp(),
+                IsQuickChat = false,
+                IsTeamChat = false,
+                IsSystem = true,
+            };
+            ChatManager.Instance.Server_SendChatMessage(chatMsg, clientIds);
+        }
+
         /// <summary>
         /// Function that returns a Stick instance from a GameObject.
         /// </summary>
@@ -48,6 +62,13 @@ namespace Codebase {
             return new string(input
                 .Where(c => !Char.IsWhiteSpace(c))
                 .ToArray());
+        }
+
+        public static float GetDistance(float x1, float z1, float x2, float z2) {
+            Vector2 vector1 = new Vector2(x1, z1);
+            Vector2 vector2 = new Vector2(x2, z2);
+
+            return Vector2.Distance(vector1, vector2);
         }
     }
 }

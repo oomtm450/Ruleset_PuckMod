@@ -57,9 +57,7 @@ namespace oomtm450PuckMod_SoundsPack.Configs {
         /// </summary>
         /// <returns>ClientConfig, parsed config.</returns>
         internal static ClientConfig ReadConfig() {
-            ClientConfig config = new ClientConfig {
-                ModName = SoundsPack.ModName,
-            };
+            ClientConfig config;
 
             try {
                 if (!Directory.Exists(CONFIG_FOLDER_PATH))
@@ -71,14 +69,23 @@ namespace oomtm450PuckMod_SoundsPack.Configs {
                     config.ModName = SoundsPack.ModName;
                     Logging.Log($"Client config read.", config, true);
                 }
+                else {
+                    config = new ClientConfig {
+                        ModName = SoundsPack.ModName,
+                    };
+                }
 
                 config.Save();
+
+                return config;
             }
             catch (Exception ex) {
-                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", config);
+                Logging.LogError($"Can't read the server config file/folder. (Permission error ?)\n{ex}", new Configs.ClientConfig());
             }
 
-            return config;
+            return new ClientConfig {
+                ModName = SoundsPack.ModName,
+            };
         }
 
         internal void Save() {

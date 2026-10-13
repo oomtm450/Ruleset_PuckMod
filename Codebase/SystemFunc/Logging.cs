@@ -18,6 +18,17 @@ namespace Codebase {
         }
 
         /// <summary>
+        /// Function that logs information to the debug console.
+        /// </summary>
+        /// <param name="msg">String, message to log.</param>
+        /// <param name="config">IConfig, config to use to check if info must be logged.</param>
+        /// <param name="bypassConfig">Bool, true to bypass the logs config. False by default.</param>
+        public static void LogDebug(string msg, IConfig config, bool bypassConfig = false) {
+            if (bypassConfig || config == null || config.LogInfo)
+                Debug.Log($"[{config.ModName}] DEBUG - {msg}");
+        }
+
+        /// <summary>
         /// Function that logs errors to the debug console.
         /// </summary>
         /// <param name="msg">String, message to log.</param>
