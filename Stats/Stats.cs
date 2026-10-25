@@ -902,7 +902,7 @@ namespace oomtm450PuckMod_Stats {
                                 }
 
                                 _posts[lastPlayerOnPuckTipIncludedSteamId] = (_posts[lastPlayerOnPuckTipIncludedSteamId].Count + 1, now);
-                                NetworkCommunication.SendDataToAll(Codebase.Constants.POST + lastPlayerOnPuckTipIncludedSteamId, _posts[lastPlayerOnPuckTipIncludedSteamId].ToString(),
+                                NetworkCommunication.SendDataToAll(Codebase.Constants.POST + lastPlayerOnPuckTipIncludedSteamId, _posts[lastPlayerOnPuckTipIncludedSteamId].Count.ToString(),
                                     Constants.FROM_SERVER_TO_CLIENT, ServerConfig);
 
                                 LogPost(lastPlayerOnPuckTipIncludedSteamId, _posts[lastPlayerOnPuckTipIncludedSteamId].Count);
