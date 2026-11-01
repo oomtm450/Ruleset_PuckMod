@@ -249,7 +249,7 @@ namespace oomtm450PuckMod_Sounds {
 
             try {
                 if (!string.IsNullOrEmpty(jsonPath)) {
-                    if (!currentConfigWasEmpty || Sounds.ClientConfig.ForceSaveMusicPacksSettings)
+                    if (!currentConfigWasEmpty && !Sounds.ClientConfig.ForceSaveMusicPacksSettings)
                         File.WriteAllText(jsonPath, currentConfig.ToDictionary((x) => x.Key, (x) => x.Value).ToJSON());
                 }
             }
@@ -268,11 +268,19 @@ namespace oomtm450PuckMod_Sounds {
             }
 
             try {
+                if (!string.IsNullOrEmpty(jsonPath) && Sounds.ClientConfig.ForceSaveMusicPacksSettings)
+                    File.WriteAllText(jsonPath, _soundSettings.ToDictionary((x) => x.Key, (x) => x.Value).ToJSON());
+            }
+            catch (Exception ex) {
+                Warnings.Add($"Sounds.{nameof(GetAudioClipsAsync)} 7 : {ex}");
+            }
+
+            try {
                 if (setCustomGoalHorns)
                     SetGoalHorns();
             }
             catch (Exception ex) {
-                Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} 7 : {ex}");
+                Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} 8 : {ex}");
             }
 
             try {
@@ -280,7 +288,7 @@ namespace oomtm450PuckMod_Sounds {
                 ReorderAllLists();
             }
             catch (Exception ex) {
-                Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} 8 : {ex}");
+                Errors.Add($"Sounds.{nameof(GetAudioClipsAsync)} 9 : {ex}");
             }
 
             await Awaitable.BackgroundThreadAsync();
