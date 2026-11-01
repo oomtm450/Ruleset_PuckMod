@@ -25,11 +25,6 @@ namespace oomtm450PuckMod_Sounds.Configs {
         /// Bool, true if the music has to be stopped by Sounds on Play phase change.
         /// </summary>
         public bool AutomaticMusicStoppageOnPlay { get; } = false;
-
-        /// <summary>
-        /// Bool, true if the settings.json from MusicPack needs to be created, even if doesn't exist.
-        /// </summary>
-        public bool ForceSaveMusicPacksSettings { get; } = false;
         #endregion
 
         #region Methods/Functions

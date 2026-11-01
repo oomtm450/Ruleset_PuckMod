@@ -89,6 +89,11 @@ namespace oomtm450PuckMod_Sounds.Configs {
         public bool LazyLoading { get; set; } = true;
 
         /// <summary>
+        /// Bool, true if the settings.json from MusicPack needs to be created, even if doesn't exist.
+        /// </summary>
+        public bool ForceSaveMusicPacksSettings { get; set; } = false;
+
+        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]

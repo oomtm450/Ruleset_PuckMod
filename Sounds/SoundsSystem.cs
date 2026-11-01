@@ -249,7 +249,7 @@ namespace oomtm450PuckMod_Sounds {
 
             try {
                 if (!string.IsNullOrEmpty(jsonPath)) {
-                    if (!currentConfigWasEmpty || Sounds.ServerConfig.ForceSaveMusicPacksSettings)
+                    if (!currentConfigWasEmpty || Sounds.ClientConfig.ForceSaveMusicPacksSettings)
                         File.WriteAllText(jsonPath, currentConfig.ToDictionary((x) => x.Key, (x) => x.Value).ToJSON());
                 }
             }
