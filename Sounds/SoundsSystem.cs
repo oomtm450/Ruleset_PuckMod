@@ -248,8 +248,10 @@ namespace oomtm450PuckMod_Sounds {
             }
 
             try {
-                if (!string.IsNullOrEmpty(jsonPath) && !currentConfigWasEmpty)
-                    File.WriteAllText(jsonPath, currentConfig.ToDictionary((x) => x.Key, (x) => x.Value).ToJSON());
+                if (!string.IsNullOrEmpty(jsonPath) && !currentConfigWasEmpty) {
+                    if (!currentConfigWasEmpty || Sounds.ServerConfig.ForceSaveMusicPacksSettings)
+                        File.WriteAllText(jsonPath, currentConfig.ToDictionary((x) => x.Key, (x) => x.Value).ToJSON());
+                }
             }
             catch (Exception ex) {
                 Warnings.Add($"Sounds.{nameof(GetAudioClipsAsync)} 5 : {ex}");

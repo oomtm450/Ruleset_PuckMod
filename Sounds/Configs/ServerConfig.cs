@@ -51,6 +51,11 @@ namespace oomtm450PuckMod_Sounds.Configs {
         public bool AutomaticMusicStoppageOnPlay { get; set; } = false;
 
         /// <summary>
+        /// Bool, true if the settings.json from MusicPack needs to be created, even if doesn't exist.
+        /// </summary>
+        public bool ForceSaveMusicPacksSettings { get; set; } = false;
+
+        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]
@@ -80,6 +85,9 @@ namespace oomtm450PuckMod_Sounds.Configs {
 
             if (AutomaticMusicStoppageOnPlay == _oldConfig.AutomaticMusicStoppageOnPlay)
                 AutomaticMusicStoppageOnPlay = newConfig.AutomaticMusicStoppageOnPlay;
+
+            if (ForceSaveMusicPacksSettings == _oldConfig.ForceSaveMusicPacksSettings)
+                ForceSaveMusicPacksSettings = newConfig.ForceSaveMusicPacksSettings;
         }
 
         /// <summary>
