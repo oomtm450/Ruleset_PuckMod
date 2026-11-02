@@ -15,7 +15,7 @@ namespace Codebase {
         /// <summary>
         /// ReadOnlyCollection of string, collection of datanames to not log.
         /// </summary>
-        private static readonly List<string> DataNamesToIgnore = new List<string>();
+        private static readonly LockList<string> DataNamesToIgnore = new LockList<string>();
         #endregion
 
         #region Methods/Functions
@@ -24,7 +24,10 @@ namespace Codebase {
         /// </summary>
         /// <param name="dataNamesToNotLog">ICollection of string, data names to add to the to not log list.</param>
         public static void AddToNotLogList(ICollection<string> dataNamesToNotLog) {
-            DataNamesToIgnore.AddRange(dataNamesToNotLog);
+            foreach (string dataName in dataNamesToNotLog) {
+                if (!DataNamesToIgnore.Contains(dataName))
+                    DataNamesToIgnore.Add(dataName);
+            }
         }
 
         /// <summary>
@@ -65,7 +68,7 @@ namespace Codebase {
                 writer.Dispose();
 
                 if (!DataNamesToIgnore.Any(x => dataName.StartsWith(x)))
-                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to {clientId} with listener {listener}.", config);
+                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to {clientId} with listener {listener}. Content : \"{dataStr}\"", config);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error when writing streamed data: {ex}", config);
@@ -105,7 +108,7 @@ namespace Codebase {
                 writer.Dispose();
 
                 if (!DataNamesToIgnore.Any(x => dataName.StartsWith(x)))
-                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to all clients with listener {listener}.", config);
+                    Logging.Log($"Sent data \"{dataName}\" ({data.Length} bytes - {size} total bytes) to all clients with listener {listener}. Content : \"{dataStr}\"", config);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error when writing streamed data: {ex}", config);
@@ -135,7 +138,7 @@ namespace Codebase {
                 dataName = dataName.Trim();
 
                 if (!DataNamesToIgnore.Any(x => dataName.StartsWith(x)))
-                    Logging.Log($"Received data {dataName} ({length} bytes - {totalLength} total bytes) from {(clientId == 0 ? "server" : clientId.ToString())}. Content : {dataStr}", config);
+                    Logging.Log($"Received data \"{dataName}\" ({length} bytes - {totalLength} total bytes) from {(clientId == 0 ? "server" : clientId.ToString())}. Content : \"{dataStr}\"", config);
 
                 return (dataName, dataStr);
             }
