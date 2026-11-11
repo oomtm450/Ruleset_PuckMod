@@ -46,6 +46,11 @@ namespace oomtm450PuckMod_Sounds.Configs {
         public bool ForceServerPacks { get; set; } = true;
 
         /// <summary>
+        /// Bool, true if the music has to be stopped by Sounds on Play phase change.
+        /// </summary>
+        public bool AutomaticMusicStoppageOnPlay { get; set; } = false;
+
+        /// <summary>
         /// String, name of the mod.
         /// </summary>
         [JsonIgnore]
@@ -65,13 +70,16 @@ namespace oomtm450PuckMod_Sounds.Configs {
             ServerConfig newConfig = new ServerConfig();
 
             //if (LogInfo == _oldConfig.LogInfo)
-                //LogInfo = newConfig.LogInfo;
+            //LogInfo = newConfig.LogInfo;
 
             if (EnableMusic == _oldConfig.EnableMusic)
                 EnableMusic = newConfig.EnableMusic;
 
             if (ForceServerPacks == _oldConfig.ForceServerPacks)
                 ForceServerPacks = newConfig.ForceServerPacks;
+
+            if (AutomaticMusicStoppageOnPlay == _oldConfig.AutomaticMusicStoppageOnPlay)
+                AutomaticMusicStoppageOnPlay = newConfig.AutomaticMusicStoppageOnPlay;
         }
 
         /// <summary>
