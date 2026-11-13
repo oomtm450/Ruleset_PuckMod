@@ -247,6 +247,49 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public int ChargingMinimumTotalSprintTime { get; } = 1400;
 
         /// <summary>
+        /// Bool, true if slashing is enabled.
+        /// </summary>
+        public bool Slashing { get; } = true;
+        /// <summary>
+        /// Int, time in the box for a slashing penalty in milliseconds.
+        /// </summary>
+        public int SlashingTime { get; } = PenaltyModule.LONG_PENALTY_TIME_MS;
+        /// <summary>
+        /// Int, time between allowed slashes in milliseconds.
+        /// </summary>
+        public int SlashingAllowedHitMillisecondsThreshold { get; } = 400;
+        /// <summary>
+        /// Float, slash force threshold to consider a slashing penalty.
+        /// </summary>
+        public float SlashingForceThreshold { get; } = 2f;
+
+        /// <summary>
+        /// Bool, true if high stick penalty is enabled.
+        /// </summary>
+        public bool HighStick { get; } = true;
+        /// <summary>
+        /// Int, time in the box for a high stick penalty in milliseconds.
+        /// </summary>
+        public int HighStickTime { get; } = PenaltyModule.LONG_PENALTY_TIME_MS;
+        /// <summary>
+        /// Float, high stick force threshold to consider a slashing penalty.
+        /// </summary>
+        public float HighStickForceThreshold { get; } = 2f;
+
+        /// <summary>
+        /// Bool, true if hooking is enabled.
+        /// </summary>
+        public bool Hooking { get; } = true;
+        /// <summary>
+        /// Int, time in the box for a hooking penalty in milliseconds.
+        /// </summary>
+        public int HookingTime { get; } = PenaltyModule.LONG_PENALTY_TIME_MS;
+        /// <summary>
+        /// Float, hooking force threshold to consider a hooking penalty.
+        /// </summary>
+        public float HookingForceThreshold { get; } = 2f;
+
+        /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
         /// </summary>
         /// <param name="oldConfig">ISubConfig, config with old values.</param>
