@@ -581,21 +581,21 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Double, deferred icing max possible time addition (after multiplicator).
         /// </summary>
-        public double DeferredMaxPossibleTimeAddition { get; set; } = 10150d;
+        public double DeferredMaxPossibleTimeAddition { get; set; } = 10350d;
 
         /// <summary>
         /// Float, deferred icing max possible time substraction depending of players distance to puck (after addition).
         /// </summary>
-        public float DeferredMaxPossibleTimeDistanceDelta { get; set; } = 168f;
+        public float DeferredMaxPossibleTimeDistanceDelta { get; set; } = 164f;
 
         /// <summary>
         /// Dictionary of Zone and float, number of milliseconds after puck exiting the stick before arriving behind the goal line to not be considered for icing for each zone.
         /// </summary>
         public Dictionary<Codebase.Zone, float> MaxPossibleTime { get; set; } = new Dictionary<Codebase.Zone, float> {
-            { Codebase.Zone.BlueTeam_BehindGoalLine, 10150f },
-            { Codebase.Zone.RedTeam_BehindGoalLine, 10150f },
-            { Codebase.Zone.BlueTeam_Zone, 8325f },
-            { Codebase.Zone.RedTeam_Zone, 8325f },
+            { Codebase.Zone.BlueTeam_BehindGoalLine, 10350f },
+            { Codebase.Zone.RedTeam_BehindGoalLine, 10350f },
+            { Codebase.Zone.BlueTeam_Zone, 8375f },
+            { Codebase.Zone.RedTeam_Zone, 8375f },
             { Codebase.Zone.BlueTeam_Center, 6075f },
             { Codebase.Zone.RedTeam_Center, 6075f },
         };
@@ -765,7 +765,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, number of milliseconds after a push on the goalie to be considered no goal.
         /// </summary>
-        public int PushNoGoalMilliseconds { get; set; } = 3400;
+        public int PushNoGoalMilliseconds { get; set; } = 3350;
 
         /// <summary>
         /// Float, force threshold for a push on the goalie to be considered for goalie interference.
