@@ -1177,15 +1177,19 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Stick_OnCollision
-        /// <summary>
-        /// Class that patches the OnCollisionEnter event from Stick.
-        /// </summary>
-        [HarmonyPatch(typeof(Stick), "OnCollisionEnter")]
-        public class Stick_OnCollisionEnter_Patch {
-            [HarmonyPostfix]
-            public static void Postfix(Collision collision) {
+        [HarmonyPatch(typeof(Stick), "Awake")]
+        public static class Stick_Awake_Patch {
+            public static void Postfix(Stick __instance) {
+                // Attach your listener to the GameObject if it isn't already there
+                if (__instance.gameObject.GetComponent<CustomStickCollisionListener>() == null)
+                    __instance.gameObject.AddComponent<CustomStickCollisionListener>();
+            }
+        }
+
+        public class CustomStickCollisionListener : MonoBehaviour {
+            private void OnCollisionEnter(Collision collision) {
                 // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Play || !Logic)
+                if (!ServerFunc.IsDedicatedServer() || Paused /*|| GameManager.Instance.Phase != GamePhase.Play || !Logic*/)
                     return;
 
                 try {
@@ -1199,13 +1203,16 @@ namespace oomtm450PuckMod_Ruleset {
 
                     float force = Utils.GetCollisionForce(collision);
 
+                    if (force < ServerConfig.Penalty.SlashingForceThreshold)
+                        return;
+
                     string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
                     Logging.LogDebug($"{stick.Player.Username.Value} #{stick.Player.Number.Value} ({currentPlayerSteamId}) has hit someone else stick with {force} of force !", ServerConfig);
 
                     ContactPoint contact = collision.GetContact(0);
                     Collider thisCollider = contact.thisCollider;
                     Collider otherCollider = contact.otherCollider;
-                    Logging.LogDebug($"The stick of {stick.Player.Username.Value} {(thisCollider.CompareTag("Stick Blade") ? "blade" : "shaft")} has hit the stick {(otherCollider.CompareTag("Stick Blade") ? "blade" : "shaft")} of the other player.", ServerConfig);
+                    Logging.LogDebug($"The stick of {stick.Player.Username.Value} {(otherCollider.CompareTag("Stick Blade") ? "blade" : "shaft")} has hit the stick {(thisCollider.CompareTag("Stick Blade") ? "blade" : "shaft")} of the other player.", ServerConfig);
 
                     /*if (_lastForceOnPlayer != force || string.IsNullOrEmpty(_lastForceOnPlayerPlayerSteamId)) {
                         _lastForceOnPlayer = force;
@@ -1216,7 +1223,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(Stick_OnCollisionEnter_Patch)} Postfix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(CustomStickCollisionListener)}.{nameof(OnCollisionEnter)}.\n{ex}", ServerConfig);
                 }
             }
         }

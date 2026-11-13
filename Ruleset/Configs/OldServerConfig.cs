@@ -261,7 +261,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, slash force threshold to consider a slashing penalty.
         /// </summary>
-        public float SlashingForceThreshold { get; } = 2f;
+        public float SlashingForceThreshold { get; } = 10f;
 
         /// <summary>
         /// Bool, true if high stick penalty is enabled.
@@ -274,7 +274,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, high stick force threshold to consider a slashing penalty.
         /// </summary>
-        public float HighStickForceThreshold { get; } = 2f;
+        public float HighStickForceThreshold { get; } = 10f;
 
         /// <summary>
         /// Bool, true if hooking is enabled.
@@ -287,7 +287,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, hooking force threshold to consider a hooking penalty.
         /// </summary>
-        public float HookingForceThreshold { get; } = 2f;
+        public float HookingForceThreshold { get; } = 10f;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
