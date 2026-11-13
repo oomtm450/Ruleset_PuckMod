@@ -2,8 +2,11 @@
 using Codebase.Configs;
 using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 
 namespace oomtm450PuckMod_Ruleset.Configs {
     /// <summary>
@@ -37,6 +40,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Bool, true if the info logs must be printed.
         /// </summary>
+        
         public bool LogInfo { get; set; } = true;
 
         /// <summary>
@@ -147,33 +151,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <param name="serverConfig">ServerConfig, config to copy.</param>
         public ServerConfig(ServerConfig serverConfig) {
-            LogInfo = serverConfig.LogInfo;
-            ModName = serverConfig.ModName;
-            UseDefaultNumericValues = serverConfig.UseDefaultNumericValues;
-            Faceoff = new FaceoffConfig(serverConfig.Faceoff);
-            Offside = new OffsideConfig(serverConfig.Offside);
-            Icing = new IcingConfig(serverConfig.Icing);
-            HighStick = new HighStickConfig(serverConfig.HighStick);
-            GInt = new GIntConfig(serverConfig.GInt);
-            Penalty = new PenaltyConfig(serverConfig.Penalty);
-
-            MaxTippedMilliseconds = serverConfig.MaxTippedMilliseconds;
-            PuckSpeedTippingRatio = serverConfig.PuckSpeedTippingRatio;
-            MinPossessionMilliseconds = serverConfig.MinPossessionMilliseconds;
-            MaxPossessionMilliseconds = serverConfig.MaxPossessionMilliseconds;
-
-            RefMode = serverConfig.RefMode;
-            RefModeGameAmount = serverConfig.RefModeGameAmount;
-
-            DefaultPlayerHeight = serverConfig.DefaultPlayerHeight;
-
-            LogPhaseChangeAndStoppage = serverConfig.LogPhaseChangeAndStoppage;
-
-            LowerBarriers = serverConfig.LowerBarriers;
-
-            YOffsetForTeleport = serverConfig.YOffsetForTeleport;
-
-            FixOutOfBoundsLooping = serverConfig.FixOutOfBoundsLooping;
+            ConfigUpdater.CopyProperties(serverConfig, this);
         }
         #endregion
 
@@ -186,51 +164,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (!(oldConfig is OldServerConfig))
                 throw new ArgumentException($"oldConfig has to be typeof {nameof(OldServerConfig)}.", nameof(oldConfig));
 
-            OldServerConfig _oldConfig = oldConfig as OldServerConfig;
-            ServerConfig newConfig = new Configs.ServerConfig();
-
-            //if (LogInfo == _oldConfig.LogInfo)
-            //LogInfo = newConfig.LogInfo;
-
-            if (MaxTippedMilliseconds == _oldConfig.MaxTippedMilliseconds)
-                MaxTippedMilliseconds = newConfig.MaxTippedMilliseconds;
-
-            if (PuckSpeedTippingRatio == _oldConfig.PuckSpeedTippingRatio)
-                PuckSpeedTippingRatio = newConfig.PuckSpeedTippingRatio;
-
-            if (MinPossessionMilliseconds == _oldConfig.MinPossessionMilliseconds)
-                MinPossessionMilliseconds = newConfig.MinPossessionMilliseconds;
-
-            if (MaxPossessionMilliseconds == _oldConfig.MaxPossessionMilliseconds)
-                MaxPossessionMilliseconds = newConfig.MaxPossessionMilliseconds;
-
-            if (RefMode == _oldConfig.RefMode)
-                RefMode = newConfig.RefMode;
-
-            if (RefModeGameAmount == _oldConfig.RefModeGameAmount)
-                RefModeGameAmount = newConfig.RefModeGameAmount;
-
-            if (DefaultPlayerHeight == _oldConfig.DefaultPlayerHeight)
-                DefaultPlayerHeight = newConfig.DefaultPlayerHeight;
-
-            if (LogPhaseChangeAndStoppage == _oldConfig.LogPhaseChangeAndStoppage)
-                LogPhaseChangeAndStoppage = newConfig.LogPhaseChangeAndStoppage;
-
-            if (LowerBarriers == _oldConfig.LowerBarriers)
-                LowerBarriers = newConfig.LowerBarriers;
-
-            if (YOffsetForTeleport == _oldConfig.YOffsetForTeleport)
-                YOffsetForTeleport = newConfig.YOffsetForTeleport;
-
-            if (FixOutOfBoundsLooping == _oldConfig.FixOutOfBoundsLooping)
-                FixOutOfBoundsLooping = newConfig.FixOutOfBoundsLooping;
-
-            Offside.UpdateDefaultValues(_oldConfig.Offside);
-            Icing.UpdateDefaultValues(_oldConfig.Icing);
-            HighStick.UpdateDefaultValues(_oldConfig.HighStick);
-            GInt.UpdateDefaultValues(_oldConfig.GInt);
-            Penalty.UpdateDefaultValues(_oldConfig.Penalty);
-            Faceoff.UpdateDefaultValues(_oldConfig.Faceoff);
+            ConfigUpdater.UpdateDefaults(this, oldConfig, new ServerConfig(), new List<string> {
+                nameof(IConfig.LogInfo),
+            });
         }
 
         /// <summary>
@@ -290,6 +226,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                             Embellishment = config.Penalty.Embellishment,
                             Roughing = config.Penalty.Roughing,
                             Charging = config.Penalty.Charging,
+                            Slashing = config.Penalty.Slashing,
+                            HighStick = config.Penalty.HighStick,
+                            Hooking = config.Penalty.Hooking,
                             UseDefaultNumericValues = config.Penalty.UseDefaultNumericValues,
                         };
                     }
@@ -484,6 +423,49 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public int ChargingMinimumTotalSprintTime { get; set; } = 1400;
 
         /// <summary>
+        /// Bool, true if slashing is enabled.
+        /// </summary>
+        public bool Slashing { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a slashing penalty in milliseconds.
+        /// </summary>
+        public int SlashingTime { get; set; } = PenaltyModule.LONG_PENALTY_TIME_MS;
+        /// <summary>
+        /// Int, time between allowed slashes in milliseconds.
+        /// </summary>
+        public int SlashingAllowedHitMillisecondsThreshold { get; set; } = 400;
+        /// <summary>
+        /// Float, slash force threshold to consider a slashing penalty.
+        /// </summary>
+        public float SlashingForceThreshold { get; set; } = 2f;
+
+        /// <summary>
+        /// Bool, true if high stick penalty is enabled.
+        /// </summary>
+        public bool HighStick { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a high stick penalty in milliseconds.
+        /// </summary>
+        public int HighStickTime { get; set; } = PenaltyModule.LONG_PENALTY_TIME_MS;
+        /// <summary>
+        /// Float, high stick force threshold to consider a slashing penalty.
+        /// </summary>
+        public float HighStickForceThreshold { get; set; } = 2f;
+
+        /// <summary>
+        /// Bool, true if hooking is enabled.
+        /// </summary>
+        public bool Hooking { get; set; } = true;
+        /// <summary>
+        /// Int, time in the box for a hooking penalty in milliseconds.
+        /// </summary>
+        public int HookingTime { get; set; } = PenaltyModule.LONG_PENALTY_TIME_MS;
+        /// <summary>
+        /// Float, hooking force threshold to consider a hooking penalty.
+        /// </summary>
+        public float HookingForceThreshold { get; set; } = 2f;
+
+        /// <summary>
         /// Bool, true if the numeric values has to be replaced be the default ones. Make this false to use custom values.
         /// </summary>
         public bool UseDefaultNumericValues { get; set; } = true;
@@ -500,46 +482,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <param name="penaltyConfig">PenaltyConfig, config to copy.</param>
         public PenaltyConfig(PenaltyConfig penaltyConfig) {
-            MaxPenaltiesCountPerPlayer = penaltyConfig.MaxPenaltiesCountPerPlayer;
-            MaxPenalizedPlayersPerTeam = penaltyConfig.MaxPenalizedPlayersPerTeam;
-
-            Interference = penaltyConfig.Interference;
-            InterferenceTime = penaltyConfig.InterferenceTime;
-            InterferenceMillisecondsThreshold = penaltyConfig.InterferenceMillisecondsThreshold;
-            InterferenceOnSamePlayerMillisecondsThreshold = penaltyConfig.InterferenceOnSamePlayerMillisecondsThreshold;
-            JumpHeightMinimum = penaltyConfig.JumpHeightMinimum;
-
-            GoalieInterference = penaltyConfig.GoalieInterference;
-            GoalieInterferenceTime = penaltyConfig.GoalieInterferenceTime;
-
-            LateInterferenceTimeThreshold = penaltyConfig.LateInterferenceTimeThreshold;
-
-            DelayOfGame = penaltyConfig.DelayOfGame;
-            DelayOfGameTime = penaltyConfig.DelayOfGameTime;
-            DelayOfGameZDelta = penaltyConfig.DelayOfGameZDelta;
-            DelayOfGameMillisecondsThreshold = penaltyConfig.DelayOfGameMillisecondsThreshold;
-            DelayOfGameFaceoffProtectionMilliseconds = penaltyConfig.DelayOfGameFaceoffProtectionMilliseconds;
-
-            FaceoffViolation = penaltyConfig.FaceoffViolation;
-            FaceoffViolationTime = penaltyConfig.FaceoffViolationTime;
-
-            Embellishment = penaltyConfig.Embellishment;
-            EmbellishmentTime = penaltyConfig.EmbellishmentTime;
-            EmbellishmentMillisecondsThreshold = penaltyConfig.EmbellishmentMillisecondsThreshold;
-            EmbellishmentChancePercInverse = penaltyConfig.EmbellishmentChancePercInverse;
-
-            Roughing = penaltyConfig.Roughing;
-            RoughingTime = penaltyConfig.RoughingTime;
-            RoughingMillisecondsThreshold = penaltyConfig.RoughingMillisecondsThreshold;
-            RoughingChancePercInverse = penaltyConfig.RoughingChancePercInverse;
-
-            Charging = penaltyConfig.Charging;
-            ChargingTime = penaltyConfig.ChargingTime;
-            ChargingSpeedThreshold = penaltyConfig.ChargingSpeedThreshold;
-            ChargingLastSprintTimeThreshold = penaltyConfig.ChargingLastSprintTimeThreshold;
-            ChargingMinimumTotalSprintTime = penaltyConfig.ChargingMinimumTotalSprintTime;
-
-            UseDefaultNumericValues = penaltyConfig.UseDefaultNumericValues;
+            ConfigUpdater.CopyProperties(penaltyConfig, this);
         }
         #endregion
 
@@ -551,109 +494,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (!(oldConfig is OldPenaltyConfig))
                 throw new ArgumentException($"oldConfig has to be typeof {nameof(OldPenaltyConfig)}.", nameof(oldConfig));
 
-            OldPenaltyConfig _oldConfig = oldConfig as OldPenaltyConfig;
-            PenaltyConfig newConfig = new PenaltyConfig();
-
-            if (MaxPenaltiesCountPerPlayer == _oldConfig.MaxPenaltiesCountPerPlayer)
-                MaxPenaltiesCountPerPlayer = newConfig.MaxPenaltiesCountPerPlayer;
-
-            if (MaxPenalizedPlayersPerTeam == _oldConfig.MaxPenalizedPlayersPerTeam)
-                MaxPenalizedPlayersPerTeam = newConfig.MaxPenalizedPlayersPerTeam;
-
-            if (MaximumPenaltyImmunedPlayersCountPerTeam == _oldConfig.MaximumPenaltyImmunedPlayersCountPerTeam)
-                MaximumPenaltyImmunedPlayersCountPerTeam = newConfig.MaximumPenaltyImmunedPlayersCountPerTeam;
-
-
-            if (Interference == _oldConfig.Interference)
-                Interference = newConfig.Interference;
-
-            if (InterferenceTime == _oldConfig.InterferenceTime)
-                InterferenceTime = newConfig.InterferenceTime;
-
-            if (InterferenceMillisecondsThreshold == _oldConfig.InterferenceMillisecondsThreshold)
-                InterferenceMillisecondsThreshold = newConfig.InterferenceMillisecondsThreshold;
-
-            if (InterferenceOnSamePlayerMillisecondsThreshold == _oldConfig.InterferenceOnSamePlayerMillisecondsThreshold)
-                InterferenceOnSamePlayerMillisecondsThreshold = newConfig.InterferenceOnSamePlayerMillisecondsThreshold;
-
-            if (JumpHeightMinimum == _oldConfig.JumpHeightMinimum)
-                JumpHeightMinimum = newConfig.JumpHeightMinimum;
-
-
-            if (GoalieInterference == _oldConfig.GoalieInterference)
-                GoalieInterference = newConfig.GoalieInterference;
-
-            if (GoalieInterferenceTime == _oldConfig.GoalieInterferenceTime)
-                GoalieInterferenceTime = newConfig.GoalieInterferenceTime;
-
-
-            if (LateInterferenceTimeThreshold == _oldConfig.LateInterferenceTimeThreshold)
-                LateInterferenceTimeThreshold = newConfig.LateInterferenceTimeThreshold;
-
-
-            if (DelayOfGame == _oldConfig.DelayOfGame)
-                DelayOfGame = newConfig.DelayOfGame;
-
-            if (DelayOfGameTime == _oldConfig.DelayOfGameTime)
-                DelayOfGameTime = newConfig.DelayOfGameTime;
-
-            if (DelayOfGameZDelta == _oldConfig.DelayOfGameZDelta)
-                DelayOfGameZDelta = newConfig.DelayOfGameZDelta;
-
-            if (DelayOfGameMillisecondsThreshold == _oldConfig.DelayOfGameMillisecondsThreshold)
-                DelayOfGameMillisecondsThreshold = newConfig.DelayOfGameMillisecondsThreshold;
-
-            if (DelayOfGameFaceoffProtectionMilliseconds == _oldConfig.DelayOfGameFaceoffProtectionMilliseconds)
-                DelayOfGameFaceoffProtectionMilliseconds = newConfig.DelayOfGameFaceoffProtectionMilliseconds;
-
-
-            if (FaceoffViolation == _oldConfig.FaceoffViolation)
-                FaceoffViolation = newConfig.FaceoffViolation;
-
-            if (FaceoffViolationTime == _oldConfig.FaceoffViolationTime)
-                FaceoffViolationTime = newConfig.FaceoffViolationTime;
-
-
-            if (Embellishment == _oldConfig.Embellishment)
-                Embellishment = newConfig.Embellishment;
-
-            if (EmbellishmentTime == _oldConfig.EmbellishmentTime)
-                EmbellishmentTime = newConfig.EmbellishmentTime;
-
-            if (EmbellishmentMillisecondsThreshold == _oldConfig.EmbellishmentMillisecondsThreshold)
-                EmbellishmentMillisecondsThreshold = newConfig.EmbellishmentMillisecondsThreshold;
-
-            if (EmbellishmentChancePercInverse == _oldConfig.EmbellishmentChancePercInverse)
-                EmbellishmentChancePercInverse = newConfig.EmbellishmentChancePercInverse;
-
-
-            if (Roughing == _oldConfig.Roughing)
-                Roughing = newConfig.Roughing;
-
-            if (RoughingTime == _oldConfig.RoughingTime)
-                RoughingTime = newConfig.RoughingTime;
-
-            if (RoughingMillisecondsThreshold == _oldConfig.RoughingMillisecondsThreshold)
-                RoughingMillisecondsThreshold = newConfig.RoughingMillisecondsThreshold;
-
-            if (RoughingChancePercInverse == _oldConfig.RoughingChancePercInverse)
-                RoughingChancePercInverse = newConfig.RoughingChancePercInverse;
-
-
-            if (Charging == _oldConfig.Charging)
-                Charging = newConfig.Charging;
-
-            if (ChargingTime == _oldConfig.ChargingTime)
-                ChargingTime = newConfig.ChargingTime;
-
-            if (ChargingSpeedThreshold == _oldConfig.ChargingSpeedThreshold)
-                ChargingSpeedThreshold = newConfig.ChargingSpeedThreshold;
-
-            if (ChargingLastSprintTimeThreshold == _oldConfig.ChargingLastSprintTimeThreshold)
-                ChargingLastSprintTimeThreshold = newConfig.ChargingLastSprintTimeThreshold;
-
-            if (ChargingMinimumTotalSprintTime == _oldConfig.ChargingMinimumTotalSprintTime)
-                ChargingMinimumTotalSprintTime = newConfig.ChargingMinimumTotalSprintTime;
+            ConfigUpdater.UpdateDefaults(this, oldConfig, new PenaltyConfig());
         }
     }
 
@@ -697,8 +538,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <param name="offsideConfig">OffsideConfig, config to copy.</param>
         public OffsideConfig(OffsideConfig offsideConfig) {
-            BlueTeam = offsideConfig.BlueTeam;
-            RedTeam = offsideConfig.RedTeam;
+            ConfigUpdater.CopyProperties(offsideConfig, this);
         }
         #endregion
 
@@ -710,24 +550,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (!(oldConfig is OldOffsideConfig))
                 throw new ArgumentException($"oldConfig has to be typeof {nameof(OldOffsideConfig)}.", nameof(oldConfig));
 
-            OldOffsideConfig _oldConfig = oldConfig as OldOffsideConfig;
-            OffsideConfig newConfig = new OffsideConfig();
-
-            if (BlueTeam == _oldConfig.BlueTeam)
-                BlueTeam = newConfig.BlueTeam;
-
-            if (RedTeam == _oldConfig.RedTeam)
-                RedTeam = newConfig.RedTeam;
-
-
-            if (IntentionalOffsideBlueTeam == _oldConfig.IntentionalOffsideBlueTeam)
-                IntentionalOffsideBlueTeam = newConfig.IntentionalOffsideBlueTeam;
-
-            if (IntentionalOffsideRedTeam == _oldConfig.IntentionalOffsideRedTeam)
-                IntentionalOffsideRedTeam = newConfig.IntentionalOffsideRedTeam;
-
-            if (IntentionalOffsideMillisecondsThreshold == _oldConfig.IntentionalOffsideMillisecondsThreshold)
-                IntentionalOffsideMillisecondsThreshold = newConfig.IntentionalOffsideMillisecondsThreshold;
+            ConfigUpdater.UpdateDefaults(this, oldConfig, new OffsideConfig());
         }
     }
 
@@ -838,25 +661,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <param name="icingConfig">IcingConfig, config to copy.</param>
         public IcingConfig(IcingConfig icingConfig) {
-            BlueTeam = icingConfig.BlueTeam;
-            RedTeam = icingConfig.RedTeam;
-
-            Deferred = icingConfig.Deferred;
-            DeferredMaxPossibleTimeMultiplicator = icingConfig.DeferredMaxPossibleTimeMultiplicator;
-            DeferredMaxPossibleTimeAddition = icingConfig.DeferredMaxPossibleTimeAddition;
-            DeferredMaxPossibleTimeDistanceDelta = icingConfig.DeferredMaxPossibleTimeDistanceDelta;
-            MaxPossibleTime = new Dictionary<Codebase.Zone, float>(icingConfig.MaxPossibleTime);
-            MaxActiveTime = icingConfig.MaxActiveTime;
-            Delta = icingConfig.Delta;
-            DeferredMaxHeight = icingConfig.DeferredMaxHeight;
-
-            StaminaDrain = icingConfig.StaminaDrain;
-            StaminaDrainGoalie = icingConfig.StaminaDrainGoalie;
-            StaminaDrainDivisionAmount = icingConfig.StaminaDrainDivisionAmount;
-            StaminaDrainDivisionAmountPenaltyDelta = icingConfig.StaminaDrainDivisionAmountPenaltyDelta;
-            StaminaDrainDivisionAmountGoalie = icingConfig.StaminaDrainDivisionAmountGoalie;
-            StaminaDrainDivisionAmountPenaltyDeltaGoalie = icingConfig.StaminaDrainDivisionAmountPenaltyDeltaGoalie;
-            StaminaDrainDivisionAmountPenaltyTime = icingConfig.StaminaDrainDivisionAmountPenaltyTime;
+            ConfigUpdater.CopyProperties(icingConfig, this);
         }
         #endregion
 
@@ -868,64 +673,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (!(oldConfig is OldIcingConfig))
                 throw new ArgumentException($"oldConfig has to be typeof {nameof(OldIcingConfig)}.", nameof(oldConfig));
 
-            OldIcingConfig _oldConfig = oldConfig as OldIcingConfig;
-            IcingConfig newConfig = new IcingConfig();
-
-            if (BlueTeam == _oldConfig.BlueTeam)
-                BlueTeam = newConfig.BlueTeam;
-
-            if (RedTeam == _oldConfig.RedTeam)
-                RedTeam = newConfig.RedTeam;
-
-            if (Deferred == _oldConfig.Deferred)
-                Deferred = newConfig.Deferred;
-
-            if (DeferredMaxPossibleTimeMultiplicator == _oldConfig.DeferredMaxPossibleTimeMultiplicator)
-                DeferredMaxPossibleTimeMultiplicator = newConfig.DeferredMaxPossibleTimeMultiplicator;
-
-            if (DeferredMaxPossibleTimeAddition == _oldConfig.DeferredMaxPossibleTimeAddition)
-                DeferredMaxPossibleTimeAddition = newConfig.DeferredMaxPossibleTimeAddition;
-
-            if (DeferredMaxPossibleTimeDistanceDelta == _oldConfig.DeferredMaxPossibleTimeDistanceDelta)
-                DeferredMaxPossibleTimeDistanceDelta = newConfig.DeferredMaxPossibleTimeDistanceDelta;
-
-            try {
-                foreach (KeyValuePair<Codebase.Zone, float> kvp in new Dictionary<Codebase.Zone, float>(MaxPossibleTime)) {
-                    if (_oldConfig.MaxPossibleTime.TryGetValue(kvp.Key, out float value) && value == kvp.Value)
-                        MaxPossibleTime[kvp.Key] = newConfig.MaxPossibleTime[kvp.Key];
-                }
-            }
-            catch { }
-
-            if (MaxActiveTime == _oldConfig.MaxActiveTime)
-                MaxActiveTime = newConfig.MaxActiveTime;
-
-            if (Delta == _oldConfig.Delta)
-                Delta = newConfig.Delta;
-
-            if (DeferredMaxHeight == _oldConfig.DeferredMaxHeight)
-                DeferredMaxHeight = newConfig.DeferredMaxHeight;
-
-            if (StaminaDrain == _oldConfig.StaminaDrain)
-                StaminaDrain = newConfig.StaminaDrain;
-
-            if (StaminaDrainGoalie == _oldConfig.StaminaDrainGoalie)
-                StaminaDrainGoalie = newConfig.StaminaDrainGoalie;
-
-            if (StaminaDrainDivisionAmount == _oldConfig.StaminaDrainDivisionAmount)
-                StaminaDrainDivisionAmount = newConfig.StaminaDrainDivisionAmount;
-
-            if (StaminaDrainDivisionAmountPenaltyDelta == _oldConfig.StaminaDrainDivisionAmountPenaltyDelta)
-                StaminaDrainDivisionAmountPenaltyDelta = newConfig.StaminaDrainDivisionAmountPenaltyDelta;
-
-            if (StaminaDrainDivisionAmountGoalie == _oldConfig.StaminaDrainDivisionAmountGoalie)
-                StaminaDrainDivisionAmountGoalie = newConfig.StaminaDrainDivisionAmountGoalie;
-
-            if (StaminaDrainDivisionAmountPenaltyDeltaGoalie == _oldConfig.StaminaDrainDivisionAmountPenaltyDeltaGoalie)
-                StaminaDrainDivisionAmountPenaltyDeltaGoalie = newConfig.StaminaDrainDivisionAmountPenaltyDeltaGoalie;
-
-            if (StaminaDrainDivisionAmountPenaltyTime == _oldConfig.StaminaDrainDivisionAmountPenaltyTime)
-                StaminaDrainDivisionAmountPenaltyTime = newConfig.StaminaDrainDivisionAmountPenaltyTime;
+            ConfigUpdater.UpdateDefaults(this, oldConfig, new IcingConfig());
         }
     }
 
@@ -984,16 +732,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <param name="highStickConfig">HighStickConfig, config to copy.</param>
         public HighStickConfig(HighStickConfig highStickConfig) {
-            BlueTeam = highStickConfig.BlueTeam;
-            RedTeam = highStickConfig.RedTeam;
-
-            MaxHeight = highStickConfig.MaxHeight;
-            MaxHeightNoGoal = highStickConfig.MaxHeightNoGoal;
-            MaxMilliseconds = highStickConfig.MaxMilliseconds;
-            Delta = highStickConfig.Delta;
-
-            HandPassBlueTeam = highStickConfig.HandPassBlueTeam;
-            HandPassRedTeam = highStickConfig.HandPassRedTeam;
+            ConfigUpdater.CopyProperties(highStickConfig, this);
         }
         #endregion
 
@@ -1005,32 +744,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (!(oldConfig is OldHighStickConfig))
                 throw new ArgumentException($"oldConfig has to be typeof {nameof(OldHighStickConfig)}.", nameof(oldConfig));
 
-            OldHighStickConfig _oldConfig = oldConfig as OldHighStickConfig;
-            HighStickConfig newConfig = new HighStickConfig();
-
-            if (BlueTeam == _oldConfig.BlueTeam)
-                BlueTeam = newConfig.BlueTeam;
-
-            if (RedTeam == _oldConfig.RedTeam)
-                RedTeam = newConfig.RedTeam;
-
-            if (MaxHeight == _oldConfig.MaxHeight)
-                MaxHeight = newConfig.MaxHeight;
-
-            if (MaxHeightNoGoal == _oldConfig.MaxHeightNoGoal)
-                MaxHeightNoGoal = newConfig.MaxHeightNoGoal;
-
-            if (MaxMilliseconds == _oldConfig.MaxMilliseconds)
-                MaxMilliseconds = newConfig.MaxMilliseconds;
-
-            if (Delta == _oldConfig.Delta)
-                Delta = newConfig.Delta;
-
-            if (HandPassBlueTeam == _oldConfig.HandPassBlueTeam)
-                HandPassBlueTeam = newConfig.HandPassBlueTeam;
-
-            if (HandPassRedTeam == _oldConfig.HandPassRedTeam)
-                HandPassRedTeam = newConfig.HandPassRedTeam;
+            ConfigUpdater.UpdateDefaults(this, oldConfig, new HighStickConfig());
         }
     }
 
@@ -1079,13 +793,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <param name="gIntConfig">GIntConfig, config to copy.</param>
         public GIntConfig(GIntConfig gIntConfig) {
-            BlueTeam = gIntConfig.BlueTeam;
-            RedTeam = gIntConfig.RedTeam;
-
-            PushNoGoalMilliseconds = gIntConfig.PushNoGoalMilliseconds;
-            CollisionForceThreshold = gIntConfig.CollisionForceThreshold;
-            CollisionTimeThreshold = gIntConfig.CollisionTimeThreshold;
-            GoalieRadius = gIntConfig.GoalieRadius;
+            ConfigUpdater.CopyProperties(gIntConfig, this);
         }
         #endregion
 
@@ -1097,26 +805,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (!(oldConfig is OldGIntConfig))
                 throw new ArgumentException($"oldConfig has to be typeof {nameof(OldGIntConfig)}.", nameof(oldConfig));
 
-            OldGIntConfig _oldConfig = oldConfig as OldGIntConfig;
-            GIntConfig newConfig = new GIntConfig();
-
-            if (BlueTeam == _oldConfig.BlueTeam)
-                BlueTeam = newConfig.BlueTeam;
-
-            if (RedTeam == _oldConfig.RedTeam)
-                RedTeam = newConfig.RedTeam;
-
-            if (PushNoGoalMilliseconds == _oldConfig.PushNoGoalMilliseconds)
-                PushNoGoalMilliseconds = newConfig.PushNoGoalMilliseconds;
-
-            if (CollisionForceThreshold == _oldConfig.CollisionForceThreshold)
-                CollisionForceThreshold = newConfig.CollisionForceThreshold;
-
-            if (CollisionTimeThreshold == _oldConfig.CollisionTimeThreshold)
-                CollisionTimeThreshold = newConfig.CollisionTimeThreshold;
-
-            if (GoalieRadius == _oldConfig.GoalieRadius)
-                GoalieRadius = newConfig.GoalieRadius;
+            ConfigUpdater.UpdateDefaults(this, oldConfig, new GIntConfig());
         }
     }
 
@@ -1219,40 +908,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         /// <param name="faceoffConfig">FaceoffConfig, config to copy.</param>
         public FaceoffConfig(FaceoffConfig faceoffConfig) {
-            UseCustomFaceoff = faceoffConfig.UseCustomFaceoff;
-            UseDefaultPuckDropHeight = faceoffConfig.UseDefaultPuckDropHeight;
-            PuckDropHeight = faceoffConfig.PuckDropHeight;
-
-            EnableViolations = faceoffConfig.EnableViolations;
-            PuckIceContactHeight = faceoffConfig.PuckIceContactHeight;
-            MaxViolationsBeforePenalty = faceoffConfig.MaxViolationsBeforePenalty;
-            PenaltyFreezeDistance = faceoffConfig.PenaltyFreezeDistance;
-            PenaltyFreezeDuration = faceoffConfig.PenaltyFreezeDuration;
-            FreezeSkatersBeforeDrop = faceoffConfig.FreezeSkatersBeforeDrop;
-            FreezeGoaliesBeforeDrop = faceoffConfig.FreezeGoaliesBeforeDrop;
-            FreezeBeforeDropTime = faceoffConfig.FreezeBeforeDropTime;
-
-            CenterMaxForward = faceoffConfig.CenterMaxForward;
-            CenterMaxBackward = faceoffConfig.CenterMaxBackward;
-            CenterMaxLeft = faceoffConfig.CenterMaxLeft;
-            CenterMaxRight = faceoffConfig.CenterMaxRight;
-
-            WingerMaxForward = faceoffConfig.WingerMaxForward;
-            WingerMaxBackward = faceoffConfig.WingerMaxBackward;
-            WingerMaxToward = faceoffConfig.WingerMaxToward;
-            WingerMaxAway = faceoffConfig.WingerMaxAway;
-
-            DefenseMaxForward = faceoffConfig.DefenseMaxForward;
-            DefenseMaxBackward = faceoffConfig.DefenseMaxBackward;
-            DefenseMaxToward = faceoffConfig.DefenseMaxToward;
-            DefenseMaxAway = faceoffConfig.DefenseMaxAway;
-
-            GoalieMaxForward = faceoffConfig.GoalieMaxForward;
-            GoalieMaxBackward = faceoffConfig.GoalieMaxBackward;
-            GoalieMaxLeft = faceoffConfig.GoalieMaxLeft;
-            GoalieMaxRight = faceoffConfig.GoalieMaxRight;
-
-            ResetPlayersOnFaceoff = faceoffConfig.ResetPlayersOnFaceoff;
+            ConfigUpdater.CopyProperties(faceoffConfig, this);
         }
         #endregion
 
@@ -1264,71 +920,80 @@ namespace oomtm450PuckMod_Ruleset.Configs {
             if (!(oldConfig is OldFaceoffConfig))
                 throw new ArgumentException($"{nameof(oldConfig)} has to be typeof {nameof(OldFaceoffConfig)}.", nameof(oldConfig));
 
-            OldFaceoffConfig _oldConfig = oldConfig as OldFaceoffConfig;
-            FaceoffConfig newConfig = new FaceoffConfig();
+            ConfigUpdater.UpdateDefaults(this, oldConfig, new FaceoffConfig());
+        }
+    }
 
-            if (UseCustomFaceoff == _oldConfig.UseCustomFaceoff)
-                UseCustomFaceoff = newConfig.UseCustomFaceoff;
+    internal static class ConfigUpdater {
+        /// <summary>
+        /// For every property of the current config that also exists (same name and type) in the old config:
+        /// if the current value equals the old default, replace it with the new default.
+        /// Sub-configs (ISubConfig) are recursed into.
+        /// </summary>
+        internal static void UpdateDefaults(object current, object oldDefaults, object newDefaults, List<string> propertiesToSkip = null) {
+            foreach (PropertyInfo prop in current.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
+                if (!prop.CanRead || !prop.CanWrite && !IsSubConfig(prop))
+                    continue;
 
-            if (UseDefaultPuckDropHeight == _oldConfig.UseDefaultPuckDropHeight)
-                UseDefaultPuckDropHeight = newConfig.UseDefaultPuckDropHeight;
+                // Skip [JsonIgnore]-style/non-config properties if needed.
+                PropertyInfo oldProp = oldDefaults.GetType().GetProperty(prop.Name, BindingFlags.Public | BindingFlags.Instance);
+                if (oldProp == null || oldProp.PropertyType != prop.PropertyType)
+                    continue; // Property didn't exist in the old config (new property): keep as is.
 
-            if (PuckDropHeight == _oldConfig.PuckDropHeight)
-                PuckDropHeight = newConfig.PuckDropHeight;
+                if (propertiesToSkip != null) {
+                    foreach (string property in propertiesToSkip) {
+                        if (prop.Name == property)
+                            continue;
+                    }
+                }
 
-            if (EnableViolations == _oldConfig.EnableViolations)
-                EnableViolations = newConfig.EnableViolations;
+                object currentValue = prop.GetValue(current);
+                object oldValue = oldProp.GetValue(oldDefaults);
+                object newValue = prop.GetValue(newDefaults);
 
-            if (PuckIceContactHeight == _oldConfig.PuckIceContactHeight)
-                PuckIceContactHeight = newConfig.PuckIceContactHeight;
+                // Nested config: recurse (works even with get-only properties).
+                if (currentValue is Codebase.Configs.ISubConfig && oldValue != null && newValue != null) {
+                    UpdateDefaults(currentValue, oldValue, newValue);
+                    continue;
+                }
 
-            if (MaxViolationsBeforePenalty == _oldConfig.MaxViolationsBeforePenalty)
-                MaxViolationsBeforePenalty = newConfig.MaxViolationsBeforePenalty;
+                if (!prop.CanWrite)
+                    continue;
 
-            if (PenaltyFreezeDistance == _oldConfig.PenaltyFreezeDistance)
-                PenaltyFreezeDistance = newConfig.PenaltyFreezeDistance;
+                // Dictionaries: compare per key (replaces your MaxPossibleTime loop).
+                if (currentValue is IDictionary currentDict && oldValue is IDictionary oldDict && newValue is IDictionary newDict) {
+                    foreach (object key in currentDict.Keys.Cast<object>().ToList()) {
+                        if (oldDict.Contains(key) && newDict.Contains(key) && Equals(currentDict[key], oldDict[key]))
+                            currentDict[key] = newDict[key];
+                    }
+                    continue;
+                }
 
-            if (PenaltyFreezeDuration == _oldConfig.PenaltyFreezeDuration)
-                PenaltyFreezeDuration = newConfig.PenaltyFreezeDuration;
+                if (Equals(currentValue, oldValue))
+                    prop.SetValue(current, newValue);
+            }
+        }
 
-            if (FreezeSkatersBeforeDrop == _oldConfig.FreezeSkatersBeforeDrop)
-                FreezeSkatersBeforeDrop = newConfig.FreezeSkatersBeforeDrop;
+        private static bool IsSubConfig(PropertyInfo prop) => typeof(Codebase.Configs.ISubConfig).IsAssignableFrom(prop.PropertyType);
 
-            if (FreezeGoaliesBeforeDrop == _oldConfig.FreezeGoaliesBeforeDrop)
-                FreezeGoaliesBeforeDrop = newConfig.FreezeGoaliesBeforeDrop;
+        internal static void CopyProperties(object source, object target) {
+            foreach (PropertyInfo prop in source.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
+                if (!prop.CanRead || !prop.CanWrite)
+                    continue;
 
-            if (FreezeBeforeDropTime == _oldConfig.FreezeBeforeDropTime)
-                FreezeBeforeDropTime = newConfig.FreezeBeforeDropTime;
+                object value = prop.GetValue(source);
+                if (value is IDictionary dict) {
+                    // Shallow clone dictionaries.
+                    value = Activator.CreateInstance(value.GetType(), dict);
+                }
+                else if (value is Codebase.Configs.ISubConfig) {
+                    object clone = Activator.CreateInstance(value.GetType());
+                    CopyProperties(value, clone);
+                    value = clone;
+                }
 
-            if (WingerMaxForward == _oldConfig.WingerMaxForward)
-                WingerMaxForward = newConfig.WingerMaxForward;
-            if (WingerMaxBackward == _oldConfig.WingerMaxBackward)
-                WingerMaxBackward = newConfig.WingerMaxBackward;
-            if (WingerMaxToward == _oldConfig.WingerMaxToward)
-                WingerMaxToward = newConfig.WingerMaxToward;
-            if (WingerMaxAway == _oldConfig.WingerMaxAway)
-                WingerMaxAway = newConfig.WingerMaxAway;
-
-            if (DefenseMaxForward == _oldConfig.DefenseMaxForward)
-                DefenseMaxForward = newConfig.DefenseMaxForward;
-            if (DefenseMaxBackward == _oldConfig.DefenseMaxBackward)
-                DefenseMaxBackward = newConfig.DefenseMaxBackward;
-            if (DefenseMaxToward == _oldConfig.DefenseMaxToward)
-                DefenseMaxToward = newConfig.DefenseMaxToward;
-            if (DefenseMaxAway == _oldConfig.DefenseMaxAway)
-                DefenseMaxAway = newConfig.DefenseMaxAway;
-
-            if (GoalieMaxForward == _oldConfig.GoalieMaxForward)
-                GoalieMaxForward = newConfig.GoalieMaxForward;
-            if (GoalieMaxBackward == _oldConfig.GoalieMaxBackward)
-                GoalieMaxBackward = newConfig.GoalieMaxBackward;
-            if (GoalieMaxLeft == _oldConfig.GoalieMaxLeft)
-                GoalieMaxLeft = newConfig.GoalieMaxLeft;
-            if (GoalieMaxRight == _oldConfig.GoalieMaxRight)
-                GoalieMaxRight = newConfig.GoalieMaxRight;
-
-            if (ResetPlayersOnFaceoff == _oldConfig.ResetPlayersOnFaceoff)
-                ResetPlayersOnFaceoff = newConfig.ResetPlayersOnFaceoff;
+                prop.SetValue(target, value);
+            }
         }
     }
 }
