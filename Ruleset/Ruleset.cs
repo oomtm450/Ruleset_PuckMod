@@ -912,8 +912,14 @@ namespace oomtm450PuckMod_Ruleset {
                     return;
 
                 try {
-                    if (collision.gameObject.layer != LayerMask.NameToLayer("Player"))
+                    if (collision.gameObject.layer != LayerMask.NameToLayer("Player")) {
+                        if (collision.gameObject.layer != LayerMask.NameToLayer("Stick")) {
+                            return;
+                        }
+
+                        // Stick collision with body. // TODO
                         return;
+                    }
 
                     PlayerBody playerBody = SystemFunc.GetPlayerBody(collision.gameObject);
 
@@ -1165,6 +1171,52 @@ namespace oomtm450PuckMod_Ruleset {
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(PlayerBody_OnCollisionEnter_Patch)} Postfix().\n{ex}", ServerConfig);
+                }
+            }
+        }
+        #endregion
+
+        #region Stick_OnCollision
+        /// <summary>
+        /// Class that patches the OnCollisionEnter event from Stick.
+        /// </summary>
+        [HarmonyPatch(typeof(Stick), "OnCollisionEnter")]
+        public class Stick_OnCollisionEnter_Patch {
+            [HarmonyPostfix]
+            public static void Postfix(Collision collision) {
+                // If this is not the server or game is not started, do not use the patch.
+                if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Play || !Logic)
+                    return;
+
+                try {
+                    if (collision.gameObject.layer != LayerMask.NameToLayer("Stick"))
+                        return;
+
+                    Stick stick = SystemFunc.GetStick(collision.gameObject);
+
+                    if (!stick || !stick.Player || !stick.Player.IsCharacterSpawned)
+                        return;
+
+                    float force = Utils.GetCollisionForce(collision);
+
+                    string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
+                    Logging.LogDebug($"{stick.Player.Username.Value} #{stick.Player.Number.Value} ({currentPlayerSteamId}) has hit someone else stick with {force} of force !", ServerConfig);
+
+                    ContactPoint contact = collision.GetContact(0);
+                    Collider thisCollider = contact.thisCollider;
+                    Collider otherCollider = contact.otherCollider;
+                    Logging.LogDebug($"The stick of {stick.Player.Username.Value} {(thisCollider.CompareTag("Stick Blade") ? "blade" : "shaft")} has hit the stick {(otherCollider.CompareTag("Stick Blade") ? "blade" : "shaft")} of the other player.", ServerConfig);
+
+                    /*if (_lastForceOnPlayer != force || string.IsNullOrEmpty(_lastForceOnPlayerPlayerSteamId)) {
+                        _lastForceOnPlayer = force;
+                        _lastForceOnPlayerPlayerSteamId = currentPlayerSteamId;
+                        return;
+                    }*/
+
+
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(Stick_OnCollisionEnter_Patch)} Postfix().\n{ex}", ServerConfig);
                 }
             }
         }
