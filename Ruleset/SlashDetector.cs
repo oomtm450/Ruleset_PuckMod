@@ -55,7 +55,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         #region Tracking
         /// <summary>
-        /// Call every frame on the server (from PhysicsManager_Update_Patch, before the Phase != Play return is fine too).
+        /// Call every frame on the server (from PhysicsManager_Update_Patch)
         /// </summary>
         internal static void RecordAll() {
             foreach (Player player in PlayerManager.Instance.GetSpawnedPlayers()) {
@@ -141,8 +141,9 @@ namespace oomtm450PuckMod_Ruleset {
                     return Fail(result, "invalid stick/contact");
 
                 // Who is hit ? Another stick, or an opposing player's body.
-                Stick otherStick = SystemFunc.GetStick(c.gameObject);
-                PlayerBody otherBody = otherStick ? null : SystemFunc.GetPlayerBody(c.gameObject);
+                Collider otherCollider = c.GetContact(0).otherCollider;
+                Stick otherStick = SystemFunc.GetStick(otherCollider.gameObject);
+                //PlayerBody otherBody = otherStick ? null : SystemFunc.GetPlayerBody(c.gameObject);
 
                 Stick attackerStick;
                 Stick victimStick;
@@ -163,26 +164,29 @@ namespace oomtm450PuckMod_Ruleset {
                     }
                     victimPlayer = victimStick.Player;
                 }
-                else if (otherBody && otherBody.Player) {
+                /*else if (otherBody && otherBody.Player) {
                     attackerStick = selfStick;
                     victimStick = null;
                     victimPlayer = otherBody.Player;
-                }
+                }*/
                 else
-                    return Fail(result, "target is not a stick or player");
+                    return Fail(result, "Target is not a stick");
 
                 Player attacker = attackerStick.Player;
                 result.Attacker = attacker;
                 result.Victim = victimPlayer;
 
                 if (!Codebase.PlayerFunc.IsPlayerPlaying(attacker) || !Codebase.PlayerFunc.IsPlayerPlaying(victimPlayer))
-                    return Fail(result, "player not playing");
+                    return Fail(result, "Player not playing");
 
                 if (attacker.Team == victimPlayer.Team)
-                    return Fail(result, "same team");
+                    return Fail(result, $"Same team ({attacker.Username.Value} {victimPlayer.Username.Value})");
 
                 if (Codebase.PlayerFunc.IsGoalie(attacker))
-                    return Fail(result, "goalie attacker");
+                    return Fail(result, "Goalie attacker");
+
+                if (Codebase.PlayerFunc.IsGoalie(victimPlayer))
+                    return Fail(result, "Goalie victim");
 
                 string attackerId = attacker.SteamId.Value.ToString();
                 string victimId = victimPlayer.SteamId.Value.ToString();
@@ -191,7 +195,7 @@ namespace oomtm450PuckMod_Ruleset {
                 string pairKey = attackerId + ">" + victimId;
                 DateTime now = DateTime.UtcNow;
                 if (_pairCooldown.TryGetValue(pairKey, out DateTime lastCall) && (now - lastCall).TotalMilliseconds < PAIR_COOLDOWN_MS)
-                    return Fail(result, "pair cooldown");
+                    return Fail(result, "Pair cooldown");
 
                 // Swing data.
                 var atk = Analyze(attackerStick, SWING_WINDOW);
@@ -245,31 +249,31 @@ namespace oomtm450PuckMod_Ruleset {
 
                 // 1. Clear aggressor with enough swing speed.
                 if (atk.PeakSpeed < MIN_ATTACKER_SWING_SPEED * m)
-                    return Fail(result, "swing too slow");
+                    return Fail(result, "Swing too slow");
 
                 if (victimStick && atk.PeakSpeed < victimSpeed * AGGRESSOR_RATIO && !isAxe)
-                    return Fail(result, "no clear aggressor");
+                    return Fail(result, "No clear aggressor");
 
                 // 2. Mutual blade battle.
                 if (victimStick && !isAxe && victimSpeed > MAX_VICTIM_SWING_SPEED)
-                    return Fail(result, "mutual blade battle");
+                    return Fail(result, "Mutual blade battle");
 
                 // 3. Impact and angle.
                 if (impulse < MIN_IMPULSE * m)
-                    return Fail(result, "impact too light");
+                    return Fail(result, "Impact too light");
 
                 if (approach < MIN_APPROACH_DOT && !isAxe)
-                    return Fail(result, "glancing hit");
+                    return Fail(result, "Glancing hit");
 
                 // 4. Attacker playing the puck = stick check. An axe is never legal.
                 if (!isAxe && Ruleset.PlayerTouchedPuckRecently(attackerId, PUCK_PLAY_EXEMPTION_MS))
-                    return Fail(result, "attacker playing the puck");
+                    return Fail(result, "Attacker playing the puck");
 
                 // 5. Scrum.
                 if (!isAxe && ctx != SlashContext.VictimHasPuckFromBehind &&
                     CountPlayersNear(contactPoint, SCRUM_RADIUS, attackerId, victimId) >= SCRUM_PLAYER_COUNT &&
                     atk.PeakSpeed < MIN_ATTACKER_SWING_SPEED * SCRUM_SPEED_MULTIPLIER)
-                    return Fail(result, "scrum");
+                    return Fail(result, "Scrum");
 
                 _pairCooldown[pairKey] = now;
                 result.IsSlash = true;

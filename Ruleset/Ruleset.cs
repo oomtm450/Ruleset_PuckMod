@@ -1213,6 +1213,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (ServerConfig.Penalty.Slashing) {
                         SlashResult slash = SlashDetector.Evaluate(stick, collision);
+                        Logging.LogDebug($"Slash - IsSlash:{slash.IsSlash} Reason:{slash.Reason} IsAxe:{slash.IsAxe}", ServerConfig);
                         if (slash.IsSlash)
                             PenaltyModule.GivePenalty(PenaltyType.Slashing, slash.Attacker, slash.Victim.SteamId.Value.ToString());
                     }
