@@ -388,6 +388,12 @@ namespace oomtm450PuckMod_Ruleset {
                     return false;
                 if (!Ruleset.ServerConfig.Penalty.Charging && penaltyType == PenaltyType.Charging)
                     return false;
+                if (!Ruleset.ServerConfig.Penalty.Slashing && penaltyType == PenaltyType.Slashing)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.HighStick && penaltyType == PenaltyType.HighStick)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.Hooking && penaltyType == PenaltyType.Hooking)
+                    return false;
             }
 
             List<Player> teamPlayers = PlayerManager.Instance.GetPlayersByTeam(penalizedPlayer.Team).Where(x => !Codebase.PlayerFunc.IsGoalie(x)).ToList();
@@ -875,6 +881,15 @@ namespace oomtm450PuckMod_Ruleset {
 
                 case PenaltyType.Charging:
                     return Ruleset.ServerConfig.Penalty.ChargingTime;
+
+                case PenaltyType.Slashing:
+                    return Ruleset.ServerConfig.Penalty.SlashingTime;
+
+                case PenaltyType.HighStick:
+                    return Ruleset.ServerConfig.Penalty.HighStickTime;
+
+                case PenaltyType.Hooking:
+                    return Ruleset.ServerConfig.Penalty.HookingTime;
             }
 
             return PenaltyModule.LONG_PENALTY_TIME_MS;
@@ -976,5 +991,9 @@ namespace oomtm450PuckMod_Ruleset {
         FaceoffViolation,
         Roughing,
         Charging,
+        Slashing,
+        [Description("High stick"), Category("ToString")]
+        HighStick,
+        Hooking,
     }
 }

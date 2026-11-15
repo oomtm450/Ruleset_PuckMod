@@ -19,6 +19,7 @@ using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
+using static oomtm450PuckMod_Ruleset.StickSlash;
 
 namespace oomtm450PuckMod_Ruleset {
     /// <summary>
@@ -684,7 +685,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (string.IsNullOrEmpty(currentPlayerSteamId))
                         return;
 
-                    bool playerHasPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == currentPlayerSteamId;
+                    bool playerHasPossession = GetPuckCarrierSteamId(false) == currentPlayerSteamId;
 
                     if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionWatch)) {
                         lastTimeCollisionWatch = new Stopwatch();
@@ -813,7 +814,7 @@ namespace oomtm450PuckMod_Ruleset {
                     if (string.IsNullOrEmpty(currentPlayerSteamId))
                         return;
 
-                    bool playerHasPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == currentPlayerSteamId;
+                    bool playerHasPossession = GetPuckCarrierSteamId(false) == currentPlayerSteamId;
 
                     if (!_lastTimeOnCollisionStayOrExitWasCalled.TryGetValue(currentPlayerSteamId, out Stopwatch lastTimeCollisionWatch)) {
                         lastTimeCollisionWatch = new Stopwatch();
@@ -1177,13 +1178,6 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Stick_OnCollision
-        [HarmonyPatch(typeof(Stick), "FixedUpdate")]
-        public static class Stick_FixedUpdate_Patch {
-            public static void Postfix(Stick __instance) {
-                StickSlash.StickSwingTracker.Record(__instance, __instance.BladeHandlePosition);
-            }
-        }
-
         [HarmonyPatch(typeof(Stick), "Awake")]
         public static class Stick_Awake_Patch {
             public static void Postfix(Stick __instance) {
@@ -1221,13 +1215,17 @@ namespace oomtm450PuckMod_Ruleset {
                     Collider otherCollider = contact.otherCollider;
                     Logging.LogDebug($"The stick of {stick.Player.Username.Value} {(otherCollider.CompareTag("Stick Blade") ? "blade" : "shaft")} has hit the stick {(thisCollider.CompareTag("Stick Blade") ? "blade" : "shaft")} of the other player.", ServerConfig);
 
-                    /*if (_lastForceOnPlayer != force || string.IsNullOrEmpty(_lastForceOnPlayerPlayerSteamId)) {
-                        _lastForceOnPlayer = force;
-                        _lastForceOnPlayerPlayerSteamId = currentPlayerSteamId;
+                    if (!thisCollider.CompareTag("Stick Blade"))
                         return;
-                    }*/
 
+                    if (otherCollider.CompareTag("Stick Blade"))
+                        return;
 
+                    if (ServerConfig.Penalty.Slashing) {
+                        SlashResult slash = SlashDetector.Evaluate(stick, collision);
+                        if (slash.IsSlash)
+                            PenaltyModule.GivePenalty(PenaltyType.Slashing, slash.Attacker, slash.Victim.SteamId.Value.ToString());
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(CustomStickCollisionListener)}.{nameof(OnCollisionEnter)}.\n{ex}", ServerConfig);
@@ -1321,6 +1319,8 @@ namespace oomtm450PuckMod_Ruleset {
                         ResetIcings();
                         _dictPlayersPositionsForIcing.Clear();
                         ResetInt();
+
+                        SlashDetector.Reset();
 
                         // Reset collisions tracker.
                         _playerCollisions.Clear();
@@ -1961,6 +1961,8 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!Logic)
                     return;
 
+                SlashDetector.RecordAll();
+
                 Puck puck = null;
                 List<Player> players = null;
                 Codebase.Zone oldZone = ZoneFunc.DEFAULT_ZONE;
@@ -2026,7 +2028,7 @@ namespace oomtm450PuckMod_Ruleset {
                             if (!playerTouchedOtherTeam)
                                 lastTouchOtherTeamTime = (lastPlayerOnPuckOtherTeam, DateTime.MinValue);
 
-                            bool playerWasLastInPossession = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds, ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, false) == lastPlayerOnPuckSteamId;
+                            bool playerWasLastInPossession = GetPuckCarrierSteamId(false) == lastPlayerOnPuckSteamId;
 
                             Logging.LogDebug("playerTouched : " + playerTouched, ServerConfig, true); // TODO
                             Logging.LogDebug("playerTouchedOtherTeam : " + playerTouchedOtherTeam, ServerConfig, true); // TODO
@@ -2083,8 +2085,7 @@ namespace oomtm450PuckMod_Ruleset {
                 };
 
                 try {
-                    string playerWithPossessionSteamId = Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds,
-                        ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled);
+                    string playerWithPossessionSteamId = GetPuckCarrierSteamId();
                     PlayerTeam playerTeamWithPossession = PlayerTeam.None;
 
                     if (!string.IsNullOrEmpty(playerWithPossessionSteamId)) {
@@ -4145,11 +4146,11 @@ namespace oomtm450PuckMod_Ruleset {
                             penaltyType = PenaltyType.GoalieInterference;
                         }
                         else if (dataStr.Contains("int")) {
-                            dataStr = dataStr.Replace("int", "");
+                            dataStr = dataStr.Replace("interference", "").Replace("int", "");
                             penaltyType = PenaltyType.Interference;
                         }
                         else if (dataStr.Contains("trip")) {
-                            dataStr = dataStr.Replace("trip", "");
+                            dataStr = dataStr.Replace("tripping", "").Replace("trip", "");
                             penaltyType = PenaltyType.Tripping;
                         }
                         else if (dataStr.Contains("embel")) {
@@ -4165,12 +4166,24 @@ namespace oomtm450PuckMod_Ruleset {
                             penaltyType = PenaltyType.FaceoffViolation;
                         }
                         else if (dataStr.Contains("rough")) {
-                            dataStr = dataStr.Replace("rough", "");
+                            dataStr = dataStr.Replace("roughing", "").Replace("rough", "");
                             penaltyType = PenaltyType.Roughing;
                         }
                         else if (dataStr.Contains("charge") || dataStr.Contains("charging")) {
                             dataStr = dataStr.Replace("charge", "").Replace("charging", "");
                             penaltyType = PenaltyType.Charging;
+                        }
+                        else if (dataStr.Contains("slash")) {
+                            dataStr = dataStr.Replace("slashing", "").Replace("slash", "");
+                            penaltyType = PenaltyType.Slashing;
+                        }
+                        else if (dataStr.Contains("hs")) {
+                            dataStr = dataStr.Replace("hs", "");
+                            penaltyType = PenaltyType.HighStick;
+                        }
+                        else if (dataStr.Contains("hook")) {
+                            dataStr = dataStr.Replace("hooking", "").Replace("hook", "");
+                            penaltyType = PenaltyType.Hooking;
                         }
                         else
                             break;
@@ -4790,6 +4803,9 @@ namespace oomtm450PuckMod_Ruleset {
                 ServerConfig.Penalty.GoalieInterference = false;
                 ServerConfig.Penalty.Interference = false;
                 ServerConfig.Penalty.Roughing = false;
+                ServerConfig.Penalty.Slashing = false;
+                ServerConfig.Penalty.HighStick = false;
+                ServerConfig.Penalty.Hooking = false;
 
                 ServerConfig.GInt.BlueTeam = false;
                 ServerConfig.GInt.RedTeam = false;
@@ -5332,6 +5348,16 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             return fakedClaimedPositions;
+        }
+
+        internal static string GetPuckCarrierSteamId(bool checkForChallenge = true) {
+            return Codebase.PlayerFunc.GetPlayerSteamIdInPossession(ServerConfig.MinPossessionMilliseconds,
+                ServerConfig.MaxPossessionMilliseconds, _playersCurrentPuckTouch, _lastTimeOnCollisionStayOrExitWasCalled, checkForChallenge);
+        }
+
+        internal static bool PlayerTouchedPuckRecently(string steamId, int milliseconds) {
+            return _playersOnPuckTipIncludedTime.TryGetValue(steamId, out var touch) &&
+                (DateTime.UtcNow - touch.LastTouchTime).TotalMilliseconds < milliseconds;
         }
 
         /// <summary>
