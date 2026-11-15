@@ -3356,7 +3356,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                             DateTime getUpTime;
                             if (divingValue == int.MinValue)
-                                getUpTime = now + TimeSpan.FromMilliseconds(2750d);
+                                getUpTime = now + TimeSpan.FromMilliseconds(2000d);
                             else if (divingValue == int.MaxValue)
                                 getUpTime = now + TimeSpan.FromMilliseconds(60000d);
                             else
