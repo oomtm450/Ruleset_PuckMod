@@ -19,7 +19,6 @@ using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
-using static oomtm450PuckMod_Ruleset.StickSlash;
 
 namespace oomtm450PuckMod_Ruleset {
     /// <summary>
