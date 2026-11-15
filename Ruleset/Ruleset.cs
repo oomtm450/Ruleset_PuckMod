@@ -1202,18 +1202,9 @@ namespace oomtm450PuckMod_Ruleset {
                     if (!stick || !stick.Player || !stick.Player.IsCharacterSpawned)
                         return;
 
-                    float force = Utils.GetCollisionForce(collision);
-
-                    if (force < ServerConfig.Penalty.SlashingForceThreshold)
-                        return;
-
-                    string currentPlayerSteamId = stick.Player.SteamId.Value.ToString();
-                    Logging.LogDebug($"{stick.Player.Username.Value} #{stick.Player.Number.Value} ({currentPlayerSteamId}) has hit someone else stick with {force} of force !", ServerConfig);
-
                     ContactPoint contact = collision.GetContact(0);
                     Collider thisCollider = contact.thisCollider;
                     Collider otherCollider = contact.otherCollider;
-                    Logging.LogDebug($"The stick of {stick.Player.Username.Value} {(otherCollider.CompareTag("Stick Blade") ? "blade" : "shaft")} has hit the stick {(thisCollider.CompareTag("Stick Blade") ? "blade" : "shaft")} of the other player.", ServerConfig);
 
                     if (!thisCollider.CompareTag("Stick Blade"))
                         return;

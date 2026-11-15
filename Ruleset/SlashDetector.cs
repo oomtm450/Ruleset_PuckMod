@@ -1,6 +1,5 @@
 ﻿using Codebase;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -91,7 +90,10 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             float now = Time.time;
-            list.Add(new Sample { TipPos = tipPos, Time = now });
+            list.Add(new Sample {
+                TipPos = tipPos,
+                Time = now,
+            });
             list.RemoveAll(s => now - s.Time > SAMPLE_HISTORY);
         }
 
@@ -129,12 +131,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// <param name="selfStick">Stick, the stick that received OnCollisionEnter.</param>
         /// <param name="c">Collision, the collision.</param>
         internal static SlashResult Evaluate(Stick selfStick, Collision c) {
-            SlashResult result = new SlashResult { IsSlash = false, Context = SlashContext.Neutral };
+            SlashResult result = new SlashResult {
+                IsSlash = false,
+                Context = SlashContext.Neutral,
+            };
 
             try {
-                if (!Ruleset.Logic || Ruleset.Paused || GameManager.Instance.Phase != GamePhase.Play)
-                    return Fail(result, "not in play");
-
                 if (!selfStick || !selfStick.Player || c.contactCount == 0)
                     return Fail(result, "invalid stick/contact");
 
