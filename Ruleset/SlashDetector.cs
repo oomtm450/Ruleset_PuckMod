@@ -24,7 +24,7 @@ namespace oomtm450PuckMod_Ruleset {
         private const float MIN_ATTACKER_SWING_SPEED = 6.5f;   // Peak tip speed of the attacker's stick.
         private const float MAX_VICTIM_SWING_SPEED = 3.0f;     // Above this on a blade hit = mutual stick battle.
         private const float AGGRESSOR_RATIO = 2f;              // Attacker must be at least this many times faster than the victim stick.
-        private const float MIN_IMPULSE = 1.2f;
+        private const float MIN_IMPULSE = 1.6f;
         private const float MIN_APPROACH_DOT = 0.55f;          // How head-on the strike is (abs of dot between relative velocity and contact normal).
         private const float SWING_WINDOW = 0.15f;              // Seconds of history used for peak speed / height.
 
@@ -141,8 +141,7 @@ namespace oomtm450PuckMod_Ruleset {
                     return Fail(result, "invalid stick/contact");
 
                 // Who is hit ? Another stick, or an opposing player's body.
-                Collider otherCollider = c.GetContact(0).otherCollider;
-                Stick otherStick = SystemFunc.GetStick(otherCollider.gameObject);
+                Stick otherStick = c.GetContact(0).thisCollider.GetComponentInParent<Stick>();
                 //PlayerBody otherBody = otherStick ? null : SystemFunc.GetPlayerBody(c.gameObject);
 
                 Stick attackerStick;
@@ -182,11 +181,11 @@ namespace oomtm450PuckMod_Ruleset {
                 if (attacker.Team == victimPlayer.Team)
                     return Fail(result, $"Same team ({attacker.Username.Value} {victimPlayer.Username.Value})");
 
-                if (Codebase.PlayerFunc.IsGoalie(attacker))
+                /*if (Codebase.PlayerFunc.IsGoalie(attacker))
                     return Fail(result, "Goalie attacker");
 
                 if (Codebase.PlayerFunc.IsGoalie(victimPlayer))
-                    return Fail(result, "Goalie victim");
+                    return Fail(result, "Goalie victim");*/
 
                 string attackerId = attacker.SteamId.Value.ToString();
                 string victimId = victimPlayer.SteamId.Value.ToString();
