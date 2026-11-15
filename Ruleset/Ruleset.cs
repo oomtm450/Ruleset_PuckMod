@@ -1177,6 +1177,13 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Stick_OnCollision
+        [HarmonyPatch(typeof(Stick), "FixedUpdate")]
+        public static class Stick_FixedUpdate_Patch {
+            public static void Postfix(Stick __instance) {
+                StickSlash.StickSwingTracker.Record(__instance, __instance.BladeHandlePosition);
+            }
+        }
+
         [HarmonyPatch(typeof(Stick), "Awake")]
         public static class Stick_Awake_Patch {
             public static void Postfix(Stick __instance) {
