@@ -300,7 +300,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Int, maximum number of players per team where penalties don't count.
         /// </summary>
-        public int MaximumPenaltyImmunedPlayersCountPerTeam { get; set; } = 2;
+        public int MaximumPenaltyImmunedPlayersCountPerTeam { get; set; } = 0; // TODO put 2
 
         /// <summary>
         /// Bool, true if player interference is enabled.

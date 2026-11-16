@@ -246,15 +246,18 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.LogDebug($"SLASH candidate {pairKey} ctx={ctx} axe={isAxe} atkSpeed={atk.PeakSpeed:F2} vicSpeed={victimSpeed:F2} impulse={impulse:F2} approach={approach:F2} drop={drop:F2} down={atk.DownRatio:F2} behind={behind:F2}", Ruleset.ServerConfig);
                 }
 
+                if (!victimStick)
+                    return Fail(result, "No victim stick");
+
                 // 1. Clear aggressor with enough swing speed.
                 if (atk.PeakSpeed < MIN_ATTACKER_SWING_SPEED * m)
                     return Fail(result, "Swing too slow");
 
-                if (victimStick && atk.PeakSpeed < victimSpeed * AGGRESSOR_RATIO && !isAxe)
+                if (atk.PeakSpeed < victimSpeed * AGGRESSOR_RATIO && !isAxe)
                     return Fail(result, "No clear aggressor");
 
                 // 2. Mutual blade battle.
-                if (victimStick && !isAxe && victimSpeed > MAX_VICTIM_SWING_SPEED)
+                if (!isAxe && victimSpeed > MAX_VICTIM_SWING_SPEED)
                     return Fail(result, "Mutual blade battle");
 
                 // 3. Impact and angle.
