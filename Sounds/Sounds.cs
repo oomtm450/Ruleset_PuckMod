@@ -16,7 +16,7 @@ namespace oomtm450PuckMod_Sounds {
         /// <summary>
         /// Const string, version of the mod.
         /// </summary>
-        private static readonly string MOD_VERSION = "0.5.0";
+        private static readonly string MOD_VERSION = "0.5.1";
 
         /// <summary>
         /// List of string, last released versions of the mod.
@@ -38,6 +38,7 @@ namespace oomtm450PuckMod_Sounds {
             "0.4.3b",
             "0.4.3c",
             "0.4.3d",
+            "0.5.0",
         });
 
         /// <summary>
@@ -666,6 +667,7 @@ namespace oomtm450PuckMod_Sounds {
                 else {
                     EventManager.AddEventListener(nameof(Event_OnSceneLoaded), Event_OnSceneLoaded);
                     EventManager.AddEventListener(nameof(Event_OnClientStopped), Event_OnClientStopped);
+                    EventManager.AddEventListener(Codebase.Constants.SOUNDS_MOD_NAME + nameof(Event_PlaySoundOneShot), Event_PlaySoundOneShot);
                 }
 
                 Logging.Log("Unpatching unused code.", ServerConfig, true);
@@ -721,6 +723,7 @@ namespace oomtm450PuckMod_Sounds {
                 else {
                     EventManager.RemoveEventListener(nameof(Event_OnSceneLoaded), Event_OnSceneLoaded);
                     EventManager.RemoveEventListener(nameof(Event_OnClientStopped), Event_OnClientStopped);
+                    EventManager.RemoveEventListener(Codebase.Constants.SOUNDS_MOD_NAME + nameof(Event_PlaySoundOneShot), Event_PlaySoundOneShot);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER_TO_CLIENT);
                 }
 
@@ -793,13 +796,16 @@ namespace oomtm450PuckMod_Sounds {
                             break;
 
                         case Codebase.SoundsSystem.PLAY_SOUND:
-                            if (!string.IsNullOrEmpty(_currentMusicPlayingType))
-                                break;
-
-                            if (value == Codebase.SoundsSystem.FACEOFF_MUSIC)
+                            if (value == Codebase.SoundsSystem.FACEOFF_MUSIC) {
+                                if (!string.IsNullOrEmpty(_currentMusicPlayingType))
+                                    break;
                                 PlayFaceoffMusic();
-                            else if (value == Codebase.SoundsSystem.POWERPLAY_MUSIC)
+                            }
+                            else if (value == Codebase.SoundsSystem.POWERPLAY_MUSIC) {
+                                if (!string.IsNullOrEmpty(_currentMusicPlayingType))
+                                    break;
                                 PlayPowerplayMusic();
+                            }
                             break;
 
                         case Codebase.SoundsSystem.STOP_SOUND:
@@ -820,6 +826,68 @@ namespace oomtm450PuckMod_Sounds {
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(Event_OnSoundsTrigger)}.\n{ex}", ServerConfig);
+            }
+        }
+
+        public static void Event_PlaySoundOneShot(Dictionary<string, object> message) {
+            try {
+                if (_soundsSystem == null)
+                    return;
+                if (_soundsSystem.Errors.Count != 0) {
+                    Logging.LogError($"There was an error when initializing {nameof(_soundsSystem)}.", ClientConfig);
+                    foreach (string error in _soundsSystem.Errors)
+                        Logging.LogError(error, ClientConfig);
+                }
+                if (_soundsSystem.Warnings.Count != 0) {
+                    Logging.LogError($"There was a warning when initializing {nameof(_soundsSystem)}.", ClientConfig);
+                    foreach (string warning in _soundsSystem.Warnings)
+                        Logging.LogError(warning, ClientConfig);
+                }
+                _soundsSystem.Warnings.Clear();
+
+                string name = "";
+                string type = "oneshot";
+                float delay = 0;
+                float volume = float.MaxValue;
+                bool loop = false;
+
+                foreach (KeyValuePair<string, object> kvp in message) {
+                    if (string.IsNullOrEmpty(kvp.Key))
+                        continue;
+
+                    string key = kvp.Key.ToLower();
+                    string value = kvp.Value.ToString();
+
+                    if (!NetworkCommunication.GetDataNamesToIgnore().Contains(key))
+                        Logging.Log($"Received data {key}. Content : {value}", ClientConfig);
+
+                    switch (key) {
+                        case "name":
+                            name = value;
+                            break;
+
+                        case "type":
+                            type = value;
+                            break;
+
+                        case "delay":
+                            delay = float.Parse(value, CultureInfo.InvariantCulture);
+                            break;
+
+                        case "volume":
+                            volume = float.Parse(value, CultureInfo.InvariantCulture);
+                            break;
+
+                        case "loop":
+                            loop = bool.Parse(value);
+                            break;
+                    }
+                }
+
+                _ = _soundsSystem.PlayAsync(name, type, volume, delay, loop);
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(Event_PlaySoundOneShot)}.\n{ex}", ClientConfig);
             }
         }
 

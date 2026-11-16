@@ -56,6 +56,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float RedTeamPenaltyTimerXOffset { get; set; } = RED_TEAM_PENALTY_TIMER_X_OFFSET_DEFAULT;
 
         /// <summary>
+        /// Bool, true if the refs sounds has to be played.
+        /// </summary>
+        public bool RefereeSounds { get; set; } = true;
+
+        /// <summary>
         /// Function that serialize the ClientConfig object.
         /// </summary>
         /// <returns>String, serialized ClientConfig.</returns>
@@ -104,6 +109,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                         LogInfo = config.LogInfo,
                         UseDefaultNumericValues = config.UseDefaultNumericValues,
                         TeamColor2DRefs = config.TeamColor2DRefs,
+                        RefereeSounds = config.RefereeSounds,
                     };
 
                     config = defaultConfig;

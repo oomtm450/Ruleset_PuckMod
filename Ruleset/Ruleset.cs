@@ -3828,6 +3828,16 @@ namespace oomtm450PuckMod_Ruleset {
                                 _refSignalsBlueTeam.ShowSignal(dataStr + "_" + RefSignals.BLUE);
                             else
                                 _refSignalsBlueTeam.ShowSignal(dataStr);
+
+                            if (ClientConfig.RefereeSounds) {
+                                EventManager.TriggerEvent(
+                                    Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySoundOneShot",
+                                    new Dictionary<string, object> {
+                                        { "name", "icing1" },
+                                        { "type", "ref" },
+                                    }
+                                );
+                            }
                         }
                         break;
 
@@ -3849,6 +3859,16 @@ namespace oomtm450PuckMod_Ruleset {
                                 _refSignalsRedTeam.ShowSignal(dataStr + "_" + RefSignals.RED);
                             else
                                 _refSignalsRedTeam.ShowSignal(dataStr);
+
+                            if (ClientConfig.RefereeSounds) {
+                                EventManager.TriggerEvent(
+                                    Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySoundOneShot",
+                                    new Dictionary<string, object> {
+                                        { "name", "icing1" },
+                                        { "type", "ref" },
+                                    }
+                                );
+                            }
                         }
                         break;
 
