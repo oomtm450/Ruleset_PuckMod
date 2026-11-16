@@ -3829,15 +3829,8 @@ namespace oomtm450PuckMod_Ruleset {
                             else
                                 _refSignalsBlueTeam.ShowSignal(dataStr);
 
-                            if (ClientConfig.RefereeSounds) {
-                                EventManager.TriggerEvent(
-                                    Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySoundOneShot",
-                                    new Dictionary<string, object> {
-                                        { "name", "icing1" },
-                                        { "type", "ref" },
-                                    }
-                                );
-                            }
+                            if (ClientConfig.RefereeSounds)
+                                PlayRefSound(dataStr);
                         }
                         break;
 
@@ -3860,15 +3853,8 @@ namespace oomtm450PuckMod_Ruleset {
                             else
                                 _refSignalsRedTeam.ShowSignal(dataStr);
 
-                            if (ClientConfig.RefereeSounds) {
-                                EventManager.TriggerEvent(
-                                    Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySoundOneShot",
-                                    new Dictionary<string, object> {
-                                        { "name", "icing1" },
-                                        { "type", "ref" },
-                                    }
-                                );
-                            }
+                            if (ClientConfig.RefereeSounds)
+                                PlayRefSound(dataStr);
                         }
                         break;
 
@@ -4690,6 +4676,30 @@ namespace oomtm450PuckMod_Ruleset {
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(ReceiveData)}.\n{ex}", ServerConfig);
             }
+        }
+
+        private static void PlayRefSound(string dataStr) {
+            string refCallSound = "";
+            switch (dataStr) {
+                case RefSignals.ICING_LINESMAN:
+                    refCallSound = "icing1";
+                    break;
+
+                case RefSignals.OFFSIDE_LINESMAN:
+                    refCallSound = "offside1";
+                    break;
+            }
+
+            if (string.IsNullOrEmpty(refCallSound))
+                return;
+
+            EventManager.TriggerEvent(
+                Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySoundOneShot",
+                new Dictionary<string, object> {
+                    { "name", refCallSound },
+                    { "type", "ref" },
+                }
+            );
         }
 
         internal static void FreezeStick(Stick stick) {

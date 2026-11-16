@@ -874,10 +874,6 @@ namespace oomtm450PuckMod_Sounds {
                             delay = float.Parse(value, CultureInfo.InvariantCulture);
                             break;
 
-                        case "volume":
-                            volume = float.Parse(value, CultureInfo.InvariantCulture);
-                            break;
-
                         case "loop":
                             loop = bool.Parse(value);
                             break;
