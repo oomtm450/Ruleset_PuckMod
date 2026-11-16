@@ -2701,15 +2701,15 @@ namespace oomtm450PuckMod_Ruleset {
                     if (ServerFunc.IsDedicatedServer() || _refSignalsBlueTeam == null || _refSignalsRedTeam == null)
                         return true;
 
-                    if (_refSignalsBlueTeam.WasJustShownOrHidden) {
-                        _refSignalsBlueTeam.WasJustShownOrHidden = false;
-                        _refSignalsRedTeam.WasJustShownOrHidden = false;
+                    if (_refSignalsBlueTeam.WasJustShownOrHidden == 1) {
+                        _refSignalsBlueTeam.WasJustShownOrHidden = 0;
+                        _refSignalsRedTeam.WasJustShownOrHidden = 0;
                         return false;
                     }
 
-                    if (_refSignalsRedTeam.WasJustShownOrHidden) {
-                        _refSignalsBlueTeam.WasJustShownOrHidden = false;
-                        _refSignalsRedTeam.WasJustShownOrHidden = false;
+                    if (_refSignalsRedTeam.WasJustShownOrHidden == 1) {
+                        _refSignalsBlueTeam.WasJustShownOrHidden = 0;
+                        _refSignalsRedTeam.WasJustShownOrHidden = 0;
                         return false;
                     }
                 }
