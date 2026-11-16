@@ -25,7 +25,7 @@ namespace oomtm450PuckMod_Ruleset {
         private const float MIN_ATTACKER_SWING_SPEED = 6f;   // Peak tip speed of the attacker's stick.
         private const float MAX_VICTIM_SWING_SPEED = 2.5f;     // Above this on a blade hit = mutual stick battle.
         private const float AGGRESSOR_RATIO = 2f;              // Attacker must be at least this many times faster than the victim stick.
-        private const float MIN_IMPULSE = 1.6f;
+        private const float MIN_IMPULSE = 1.5f;
         private const float MIN_APPROACH_DOT = 0.55f;          // How head-on the strike is (abs of dot between relative velocity and contact normal).
         private const float SWING_WINDOW = 0.15f;              // Seconds of history used for peak speed / height.
 
@@ -103,6 +103,8 @@ namespace oomtm450PuckMod_Ruleset {
             if (!stick || !_samples.TryGetValue(stick, out LockList<Sample> list) || list.Count < 2)
                 return (0f, float.MinValue, 0f);
 
+            list = new LockList<Sample>(list);
+
             float now = Time.time;
             float peakSpeed = 0f, peakY = float.MinValue, downRatio = 0f;
             for (int i = 1; i < list.Count; i++) {
@@ -140,7 +142,7 @@ namespace oomtm450PuckMod_Ruleset {
 
             try {
                 if (!selfStick || !selfStick.Player || c.contactCount == 0)
-                    return Fail(result, "invalid stick/contact");
+                    return Fail(result, "Invalid stick/contact");
 
                 // Who is hit ? Another stick, or an opposing player's body.
                 Stick otherStick = c.GetContact(0).thisCollider.GetComponentInParent<Stick>();
@@ -253,27 +255,34 @@ namespace oomtm450PuckMod_Ruleset {
 
                 // 1. Clear aggressor with enough swing speed.
                 if (atk.PeakSpeed < MIN_ATTACKER_SWING_SPEED * m)
-                    return Fail(result, "Swing too slow");
+                    return Fail(result, $"Swing too slow (atk.PeakSpeed:{atk.PeakSpeed} < MIN_ATTACKER_SWING_SPEED:{MIN_ATTACKER_SWING_SPEED} * m:{m} ({MIN_ATTACKER_SWING_SPEED * m}))");
 
-                if (atk.PeakSpeed < victimSpeed * AGGRESSOR_RATIO && !isAxe)
-                    return Fail(result, "No clear aggressor");
+                if (!isAxe) {
+                    if (atk.PeakSpeed < victimSpeed * AGGRESSOR_RATIO)
+                        return Fail(result, $"No clear aggressor (atk.PeakSpeed:{atk.PeakSpeed} < victimSpeed:{victimSpeed} * AGGRESSOR_RATIO:{AGGRESSOR_RATIO} ({victimSpeed * AGGRESSOR_RATIO}))");
 
-                // 2. Mutual blade battle.
-                if (!isAxe && victimSpeed > MAX_VICTIM_SWING_SPEED)
-                    return Fail(result, "Mutual blade battle");
+                    // 2. Mutual blade battle.
+                    if (victimSpeed > MAX_VICTIM_SWING_SPEED)
+                        return Fail(result, $"Mutual blade battle (victimSpeed:{victimSpeed} > MAX_VICTIM_SWING_SPEED:{MAX_VICTIM_SWING_SPEED})");
 
-                // 3. Impact and angle.
-                if (impulse < MIN_IMPULSE * m)
-                    return Fail(result, "Impact too light");
+                    // 3. Angle.
+                    if (approach < MIN_APPROACH_DOT)
+                        return Fail(result, $"Glancing hit (approach:{approach} < MIN_APPROACH_DOT:{MIN_APPROACH_DOT})");
 
-                if (approach < MIN_APPROACH_DOT && !isAxe)
-                    return Fail(result, "Glancing hit");
+                    /*// 4. Attacker playing the puck = stick check. An axe is never legal.
+                    if (Ruleset.PlayerTouchedPuckRecently(attackerId, PUCK_PLAY_EXEMPTION_MS))
+                        return Fail(result, "Attacker playing the puck");*/
+                }
 
-                // 4. Attacker playing the puck = stick check. An axe is never legal.
-                if (!isAxe && Ruleset.PlayerTouchedPuckRecently(attackerId, PUCK_PLAY_EXEMPTION_MS))
+                // 4. Attacker playing the puck.
+                if (Ruleset.PlayerTouchedPuckRecently(attackerId, PUCK_PLAY_EXEMPTION_MS))
                     return Fail(result, "Attacker playing the puck");
 
-                // 5. Scrum.
+                // 5. Impact.
+                if (impulse < MIN_IMPULSE * m)
+                    return Fail(result, $"Impact too light (impulse:{impulse} < MIN_IMPULSE:{MIN_IMPULSE} * m:{m} ({MIN_IMPULSE * m}))");
+
+                // 6. Scrum.
                 if (!isAxe && ctx != SlashContext.VictimHasPuckFromBehind &&
                     CountPlayersNear(contactPoint, SCRUM_RADIUS, attackerId, victimId) >= SCRUM_PLAYER_COUNT &&
                     atk.PeakSpeed < MIN_ATTACKER_SWING_SPEED * SCRUM_SPEED_MULTIPLIER)
