@@ -78,6 +78,12 @@ namespace oomtm450PuckMod_Ruleset {
             "pim",
         });
 
+        private const int OFFSIDE_PENDING_AUDIO_COUNT = 3;
+        private const int OFFSIDE_CANCELLED_AUDIO_COUNT = 3;
+
+        private const int ICING_PENDING_AUDIO_COUNT = 3;
+        private const int ICING_CANCELLED_AUDIO_COUNT = 3;
+
         internal const string REF_UI_DEFAULT_KEY = "F7";
 
         private static Dictionary<PlayerTeam, Dictionary<string, Quaternion>> POSITION_ROTATION_ON_FACEOFF = null;
@@ -3830,12 +3836,15 @@ namespace oomtm450PuckMod_Ruleset {
                                 _refSignalsBlueTeam.ShowSignal(dataStr);
 
                             if (ClientConfig.RefereeSounds)
-                                PlayRefSound(dataStr);
+                                PlayRefSoundPending(dataStr);
                         }
                         break;
 
                     case RefSignals.STOP_SIGNAL_BLUE: // CLIENT-SIDE : Hide blue team ref signal in the UI.
                         StopBlueRefSignals(dataStr);
+
+                        if (ClientConfig.RefereeSounds)
+                            PlayRefSoundCancelled(dataStr);
                         break;
 
                     case RefSignals.SHOW_SIGNAL_RED: // CLIENT-SIDE : Show red team ref signal in the UI.
@@ -3854,12 +3863,14 @@ namespace oomtm450PuckMod_Ruleset {
                                 _refSignalsRedTeam.ShowSignal(dataStr);
 
                             if (ClientConfig.RefereeSounds)
-                                PlayRefSound(dataStr);
+                                PlayRefSoundPending(dataStr);
                         }
                         break;
 
                     case RefSignals.STOP_SIGNAL_RED: // CLIENT-SIDE : Hide red team ref signal in the UI.
                         StopRedRefSignals(dataStr);
+                        if (ClientConfig.RefereeSounds)
+                            PlayRefSoundCancelled(dataStr);
                         break;
 
                     case RefSignals.STOP_SIGNAL: // CLIENT-SIDE : Hide all ref signals in the UI.
@@ -4678,15 +4689,39 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void PlayRefSound(string dataStr) {
+        private static void PlayRefSoundPending(string dataStr) {
             string refCallSound = "";
             switch (dataStr) {
                 case RefSignals.ICING_LINESMAN:
-                    refCallSound = "icing1";
+                    refCallSound = $"icing_on_{new System.Random().Next(1, ICING_PENDING_AUDIO_COUNT + 1)}";
                     break;
 
                 case RefSignals.OFFSIDE_LINESMAN:
-                    refCallSound = "offside1";
+                    refCallSound = $"offside_on_{new System.Random().Next(1, OFFSIDE_PENDING_AUDIO_COUNT + 1)}";
+                    break;
+            }
+
+            if (string.IsNullOrEmpty(refCallSound))
+                return;
+
+            EventManager.TriggerEvent(
+                Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySoundOneShot",
+                new Dictionary<string, object> {
+                    { "name", refCallSound },
+                    { "type", "ref" },
+                }
+            );
+        }
+
+        private static void PlayRefSoundCancelled(string dataStr) {
+            string refCallSound = "";
+            switch (dataStr) {
+                case RefSignals.ICING_LINESMAN:
+                    refCallSound = $"icing_off_{new System.Random().Next(1, ICING_CANCELLED_AUDIO_COUNT + 1)}";
+                    break;
+
+                case RefSignals.OFFSIDE_LINESMAN:
+                    refCallSound = $"offside_off_{new System.Random().Next(1, OFFSIDE_CANCELLED_AUDIO_COUNT + 1)}";
                     break;
             }
 
