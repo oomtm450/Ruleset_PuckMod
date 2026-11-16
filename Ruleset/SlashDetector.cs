@@ -42,6 +42,9 @@ namespace oomtm450PuckMod_Ruleset {
         private const int SCRUM_PLAYER_COUNT = 2;              // Other players (besides attacker/victim) near the contact.
         private const float SCRUM_SPEED_MULTIPLIER = 1.5f;     // In a scrum, swing must be this much harder than the minimum.
 
+        private const float LIFT_MIN_UP_RATIO = 0.45f;   // swing direction mostly upward at contact
+        private const float LIFT_OVERRIDE_SPEED_MULT = 2f; // a very hard upward swing is still a slash
+
         private const int PAIR_COOLDOWN_MS = 1000;
         private const float SAMPLE_HISTORY = 0.3f;
         #endregion
@@ -99,14 +102,17 @@ namespace oomtm450PuckMod_Ruleset {
             list.RemoveAll(s => now - s.Time > SAMPLE_HISTORY);
         }
 
-        private static (float PeakSpeed, float PeakY, float DownRatio) Analyze(Stick stick, float window) {
+        private static (float PeakSpeed, float PeakY, float DownRatio, float RecentUpRatio) Analyze(Stick stick, float window) {
             if (!stick || !_samples.TryGetValue(stick, out LockList<Sample> list) || list.Count < 2)
-                return (0f, float.MinValue, 0f);
+                return (0f, float.MinValue, 0f, 0f);
 
             list = new LockList<Sample>(list);
 
             float now = Time.time;
             float peakSpeed = 0f, peakY = float.MinValue, downRatio = 0f;
+            Vector3 recentDelta = Vector3.zero;
+            float recentTime = 0f;
+
             for (int i = 1; i < list.Count; i++) {
                 if (now - list[i].Time > window)
                     continue;
@@ -121,9 +127,19 @@ namespace oomtm450PuckMod_Ruleset {
                 }
 
                 peakY = Mathf.Max(peakY, list[i].TipPos.y);
+
+                // Last ~60 ms of motion, i.e. what the stick was doing at contact.
+                if (now - list[i].Time <= 0.06f) {
+                    recentDelta += list[i].RelPos - list[i - 1].RelPos;
+                    recentTime += dt;
+                }
             }
 
-            return (peakSpeed, peakY, downRatio);
+            float recentUp = 0f;
+            if (recentTime > 0f && recentDelta.sqrMagnitude > 0.0001f)
+                recentUp = recentDelta.normalized.y; // +1 = straight up, -1 = straight down
+
+            return (peakSpeed, peakY, downRatio, recentUp);
         }
         #endregion
 
@@ -250,43 +266,48 @@ namespace oomtm450PuckMod_Ruleset {
 
                 // Tuning log for near-misses and hits.
                 if (atk.PeakSpeed >= MIN_ATTACKER_SWING_SPEED * m * 0.5f) {
-                    Logging.LogDebug($"SLASH candidate {pairKey} ctx={ctx} axe={isAxe} atkSpeed={atk.PeakSpeed:F2} vicSpeed={victimSpeed:F2} impulse={impulse:F2} approach={approach:F2} drop={drop:F2} down={atk.DownRatio:F2} behind={behind:F2}", Ruleset.ServerConfig);
+                    Logging.LogDebug($"SLASH candidate {pairKey} ctx={ctx} axe={isAxe} up={atk.RecentUpRatio:F2} atkSpeed={atk.PeakSpeed:F2} vicSpeed={victimSpeed:F2} impulse={impulse:F2} approach={approach:F2} drop={drop:F2} down={atk.DownRatio:F2} behind={behind:F2}", Ruleset.ServerConfig);
                 }
 
                 // 1. Clear aggressor with enough swing speed.
                 if (atk.PeakSpeed < MIN_ATTACKER_SWING_SPEED * m)
                     return Fail(result, $"Swing too slow (atk.PeakSpeed:{atk.PeakSpeed} < MIN_ATTACKER_SWING_SPEED:{MIN_ATTACKER_SWING_SPEED} * m:{m} ({MIN_ATTACKER_SWING_SPEED * m}))");
 
+                // 2. Attacker playing the puck.
+                if (Ruleset.PlayerTouchedPuckRecently(attackerId, PUCK_PLAY_EXEMPTION_MS))
+                    return Fail(result, "Attacker playing the puck");
+
+                // 3. Impact.
+                if (impulse < MIN_IMPULSE * m)
+                    return Fail(result, $"Impact too light (impulse:{impulse} < MIN_IMPULSE:{MIN_IMPULSE} * m:{m} ({MIN_IMPULSE * m}))");
+
                 if (!isAxe) {
                     if (atk.PeakSpeed < victimSpeed * AGGRESSOR_RATIO)
                         return Fail(result, $"No clear aggressor (atk.PeakSpeed:{atk.PeakSpeed} < victimSpeed:{victimSpeed} * AGGRESSOR_RATIO:{AGGRESSOR_RATIO} ({victimSpeed * AGGRESSOR_RATIO}))");
 
-                    // 2. Mutual blade battle.
+                    // 4. Mutual blade battle.
                     if (victimSpeed > MAX_VICTIM_SWING_SPEED)
                         return Fail(result, $"Mutual blade battle (victimSpeed:{victimSpeed} > MAX_VICTIM_SWING_SPEED:{MAX_VICTIM_SWING_SPEED})");
 
-                    // 3. Angle.
+                    // 5. Angle.
                     if (approach < MIN_APPROACH_DOT)
                         return Fail(result, $"Glancing hit (approach:{approach} < MIN_APPROACH_DOT:{MIN_APPROACH_DOT})");
 
-                    /*// 4. Attacker playing the puck = stick check. An axe is never legal.
+                    // 6. Stick lift: attacker's blade comes up under the victim's stick.
+                    if (atk.RecentUpRatio > LIFT_MIN_UP_RATIO &&
+                        atk.PeakSpeed < MIN_ATTACKER_SWING_SPEED * LIFT_OVERRIDE_SPEED_MULT)
+                        return Fail(result, "Stick lift");
+
+                    /*// 2. Attacker playing the puck = stick check. An axe is never legal.
                     if (Ruleset.PlayerTouchedPuckRecently(attackerId, PUCK_PLAY_EXEMPTION_MS))
                         return Fail(result, "Attacker playing the puck");*/
+
+                    // 7. Scrum.
+                    if (ctx != SlashContext.VictimHasPuckFromBehind &&
+                        CountPlayersNear(contactPoint, SCRUM_RADIUS, attackerId, victimId) >= SCRUM_PLAYER_COUNT &&
+                        atk.PeakSpeed < MIN_ATTACKER_SWING_SPEED * SCRUM_SPEED_MULTIPLIER)
+                        return Fail(result, "Scrum");
                 }
-
-                // 4. Attacker playing the puck.
-                if (Ruleset.PlayerTouchedPuckRecently(attackerId, PUCK_PLAY_EXEMPTION_MS))
-                    return Fail(result, "Attacker playing the puck");
-
-                // 5. Impact.
-                if (impulse < MIN_IMPULSE * m)
-                    return Fail(result, $"Impact too light (impulse:{impulse} < MIN_IMPULSE:{MIN_IMPULSE} * m:{m} ({MIN_IMPULSE * m}))");
-
-                // 6. Scrum.
-                if (!isAxe && ctx != SlashContext.VictimHasPuckFromBehind &&
-                    CountPlayersNear(contactPoint, SCRUM_RADIUS, attackerId, victimId) >= SCRUM_PLAYER_COUNT &&
-                    atk.PeakSpeed < MIN_ATTACKER_SWING_SPEED * SCRUM_SPEED_MULTIPLIER)
-                    return Fail(result, "Scrum");
 
                 _pairCooldown[pairKey] = now;
                 result.IsSlash = true;
