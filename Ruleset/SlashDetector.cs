@@ -171,6 +171,9 @@ namespace oomtm450PuckMod_Ruleset {
                 else
                     return Fail(result, "Target is not a stick");
 
+                if (!victimStick)
+                    return Fail(result, "No victim stick");
+
                 Player attacker = attackerStick.Player;
                 result.Attacker = attacker;
                 result.Victim = victimPlayer;
@@ -206,7 +209,7 @@ namespace oomtm450PuckMod_Ruleset {
                 float drop = peakY - contactY;
 
                 // Axe : high tip, big vertical drop, mostly downward swing, on the shaft (or on a player).
-                bool isAxe = drop > AXE_MIN_DROP && atk.DownRatio > AXE_MIN_DOWN_RATIO && (victimStick == null);
+                bool isAxe = drop > AXE_MIN_DROP && atk.DownRatio > AXE_MIN_DOWN_RATIO;
                 result.IsAxe = isAxe;
 
                 // Context : puck and position of the attacker relative to the victim.
@@ -246,9 +249,6 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.LogDebug($"SLASH candidate {pairKey} ctx={ctx} axe={isAxe} atkSpeed={atk.PeakSpeed:F2} vicSpeed={victimSpeed:F2} impulse={impulse:F2} approach={approach:F2} drop={drop:F2} down={atk.DownRatio:F2} behind={behind:F2}", Ruleset.ServerConfig);
                 }
 
-                if (!victimStick)
-                    return Fail(result, "No victim stick");
-
                 // 1. Clear aggressor with enough swing speed.
                 if (atk.PeakSpeed < MIN_ATTACKER_SWING_SPEED * m)
                     return Fail(result, "Swing too slow");
@@ -279,12 +279,12 @@ namespace oomtm450PuckMod_Ruleset {
 
                 _pairCooldown[pairKey] = now;
                 result.IsSlash = true;
-                result.Reason = isAxe ? "axe" : (ctx == SlashContext.VictimHasPuckFromBehind ? "slash from behind on puck carrier" : "slash");
+                result.Reason = isAxe ? "Axe" : (ctx == SlashContext.VictimHasPuck ? "Slash on puck carrier" : (ctx == SlashContext.VictimHasPuckFromBehind ? "Slash from behind on puck carrier" : "Slash"));
                 return result;
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(SlashDetector)}.{nameof(Evaluate)}.\n{ex}", Ruleset.ServerConfig);
-                return Fail(result, "exception");
+                return Fail(result, "Exception");
             }
         }
 
