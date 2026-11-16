@@ -1,5 +1,6 @@
 ﻿using Codebase;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -21,8 +22,8 @@ namespace oomtm450PuckMod_Ruleset {
 
     internal static class SlashDetector {
         #region Tunables (TODO : move to PenaltyConfig once values are settled)
-        private const float MIN_ATTACKER_SWING_SPEED = 6.5f;   // Peak tip speed of the attacker's stick.
-        private const float MAX_VICTIM_SWING_SPEED = 3.0f;     // Above this on a blade hit = mutual stick battle.
+        private const float MIN_ATTACKER_SWING_SPEED = 6f;   // Peak tip speed of the attacker's stick.
+        private const float MAX_VICTIM_SWING_SPEED = 2.5f;     // Above this on a blade hit = mutual stick battle.
         private const float AGGRESSOR_RATIO = 2f;              // Attacker must be at least this many times faster than the victim stick.
         private const float MIN_IMPULSE = 1.6f;
         private const float MIN_APPROACH_DOT = 0.55f;          // How head-on the strike is (abs of dot between relative velocity and contact normal).
@@ -47,6 +48,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private struct Sample {
             internal Vector3 TipPos;
+            internal Vector3 RelPos;
             internal float Time;
         }
 
@@ -59,13 +61,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         internal static void RecordAll() {
             foreach (Player player in PlayerManager.Instance.GetSpawnedPlayers()) {
-                if (!Codebase.PlayerFunc.IsPlayerPlaying(player) || !player.Stick)
+                if (!Codebase.PlayerFunc.IsPlayerPlaying(player) || !player.Stick || !player.PlayerBody)
                     continue;
 
-                Record(player.Stick, GetTipPosition(player.Stick));
+                Record(player.Stick, GetTipPosition(player.Stick), player.PlayerBody);
             }
 
-            // Prune destroyed sticks.
             foreach (Stick dead in _samples.Keys.Where(x => !x).ToList())
                 _samples.Remove(dead);
         }
@@ -83,7 +84,7 @@ namespace oomtm450PuckMod_Ruleset {
             return stick.Rigidbody.position;
         }
 
-        private static void Record(Stick stick, Vector3 tipPos) {
+        private static void Record(Stick stick, Vector3 tipPos, PlayerBody body) {
             if (!_samples.TryGetValue(stick, out LockList<Sample> list)) {
                 list = new LockList<Sample>();
                 _samples[stick] = list;
@@ -92,6 +93,7 @@ namespace oomtm450PuckMod_Ruleset {
             float now = Time.time;
             list.Add(new Sample {
                 TipPos = tipPos,
+                RelPos = body.transform.InverseTransformPoint(tipPos),
                 Time = now,
             });
             list.RemoveAll(s => now - s.Time > SAMPLE_HISTORY);
@@ -108,7 +110,7 @@ namespace oomtm450PuckMod_Ruleset {
                     continue;
 
                 float dt = Mathf.Max(list[i].Time - list[i - 1].Time, 0.0001f);
-                Vector3 v = (list[i].TipPos - list[i - 1].TipPos) / dt;
+                Vector3 v = (list[i].RelPos - list[i - 1].RelPos) / dt;
                 float speed = v.magnitude;
 
                 if (speed > peakSpeed) {
