@@ -1195,7 +1195,7 @@ namespace oomtm450PuckMod_Ruleset {
         public class CustomStickCollisionListener : MonoBehaviour {
             private void OnCollisionEnter(Collision collision) {
                 // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || Paused /*|| GameManager.Instance.Phase != GamePhase.Play || !Logic*/)
+                if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Play || !Logic)
                     return;
 
                 try {

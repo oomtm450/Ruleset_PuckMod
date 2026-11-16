@@ -22,8 +22,8 @@ namespace oomtm450PuckMod_Ruleset {
 
     internal static class SlashDetector {
         #region Tunables (TODO : move to PenaltyConfig once values are settled)
-        private const float MIN_ATTACKER_SWING_SPEED = 6f;   // Peak tip speed of the attacker's stick.
-        private const float MAX_VICTIM_SWING_SPEED = 2.5f;     // Above this on a blade hit = mutual stick battle.
+        private const float MIN_ATTACKER_SWING_SPEED = 30f;   // Peak tip speed of the attacker's stick.
+        private const float MAX_VICTIM_SWING_SPEED = 10f;     // Above this on a blade hit = mutual stick battle.
         private const float AGGRESSOR_RATIO = 2f;              // Attacker must be at least this many times faster than the victim stick.
         private const float MIN_IMPULSE = 1.5f;
         private const float MIN_APPROACH_DOT = 0.55f;          // How head-on the strike is (abs of dot between relative velocity and contact normal).
@@ -42,8 +42,8 @@ namespace oomtm450PuckMod_Ruleset {
         private const int SCRUM_PLAYER_COUNT = 2;              // Other players (besides attacker/victim) near the contact.
         private const float SCRUM_SPEED_MULTIPLIER = 1.5f;     // In a scrum, swing must be this much harder than the minimum.
 
-        private const float LIFT_MIN_UP_RATIO = 0.45f;   // swing direction mostly upward at contact
-        private const float LIFT_OVERRIDE_SPEED_MULT = 2f; // a very hard upward swing is still a slash
+        private const float LIFT_MIN_UP_RATIO = 0.15f;   // swing direction mostly upward at contact
+        private const float LIFT_MAX_DOWN_RATIO = -0.19f;   // swing direction mostly upward at contact
 
         private const int PAIR_COOLDOWN_MS = 1000;
         private const float SAMPLE_HISTORY = 0.3f;
@@ -221,7 +221,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 // Swing data.
                 var atk = Analyze(attackerStick, SWING_WINDOW);
-                float victimSpeed = victimStick ? Analyze(victimStick, SWING_WINDOW).PeakSpeed : 0f;
+                float victimSpeed = Analyze(victimStick, SWING_WINDOW).PeakSpeed;
 
                 Vector3 contactPoint = c.GetContact(0).point;
                 float contactY = contactPoint.y - Ruleset.ArenaOffsetY;
@@ -286,7 +286,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return Fail(result, $"No clear aggressor (atk.PeakSpeed:{atk.PeakSpeed} < victimSpeed:{victimSpeed} * AGGRESSOR_RATIO:{AGGRESSOR_RATIO} ({victimSpeed * AGGRESSOR_RATIO}))");
 
                     // 4. Mutual blade battle.
-                    if (victimSpeed > MAX_VICTIM_SWING_SPEED)
+                    if (ctx != SlashContext.VictimHasPuckFromBehind && victimSpeed > MAX_VICTIM_SWING_SPEED)
                         return Fail(result, $"Mutual blade battle (victimSpeed:{victimSpeed} > MAX_VICTIM_SWING_SPEED:{MAX_VICTIM_SWING_SPEED})");
 
                     // 5. Angle.
@@ -294,9 +294,8 @@ namespace oomtm450PuckMod_Ruleset {
                         return Fail(result, $"Glancing hit (approach:{approach} < MIN_APPROACH_DOT:{MIN_APPROACH_DOT})");
 
                     // 6. Stick lift: attacker's blade comes up under the victim's stick.
-                    if (atk.RecentUpRatio > LIFT_MIN_UP_RATIO &&
-                        atk.PeakSpeed < MIN_ATTACKER_SWING_SPEED * LIFT_OVERRIDE_SPEED_MULT)
-                        return Fail(result, "Stick lift");
+                    if (atk.RecentUpRatio > LIFT_MIN_UP_RATIO || atk.DownRatio < LIFT_MAX_DOWN_RATIO)
+                        return Fail(result, $"Stick lift (atk.RecentUpRatio:{atk.RecentUpRatio} > LIFT_MIN_UP_RATIO:{LIFT_MIN_UP_RATIO})");
 
                     /*// 2. Attacker playing the puck = stick check. An axe is never legal.
                     if (Ruleset.PlayerTouchedPuckRecently(attackerId, PUCK_PLAY_EXEMPTION_MS))
