@@ -976,14 +976,17 @@ namespace oomtm450PuckMod_Ruleset {
 
                         string lastPlayerHitSteamId = lastPlayerHit.SteamId.Value.ToString();
 
+                        bool hasLastPlayerJumped = lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY;
+                        bool hasCurrentPlayerJumped = playerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY;
+
                         bool hasLastPlayerDived;
-                        if (_dives.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitDateTime) && lastPlayerHitDateTime > now)
+                        if (!hasLastPlayerJumped && _dives.TryGetValue(lastPlayerHitSteamId, out DateTime lastPlayerHitDateTime) && lastPlayerHitDateTime > now)
                             hasLastPlayerDived = true;
                         else
                             hasLastPlayerDived = false;
 
                         bool hasOtherPlayerDived;
-                        if (_dives.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > now)
+                        if (!hasCurrentPlayerJumped && _dives.TryGetValue(currentPlayerSteamId, out DateTime otherPlayerHitDateTime) && otherPlayerHitDateTime > now)
                             hasOtherPlayerDived = true;
                         else
                             hasOtherPlayerDived = false;
@@ -996,9 +999,6 @@ namespace oomtm450PuckMod_Ruleset {
                             _playersWasLastRanIntoWithoutPuckTime.AddOrUpdate(lastPlayerHitSteamId, (currentPlayerSteamId, now));
                             _playersWasLastRanIntoWithoutPuckTime.AddOrUpdate(currentPlayerSteamId, (lastPlayerHitSteamId, now));
                         }
-
-                        bool hasLastPlayerJumped = lastPlayerHit.PlayerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY;
-                        bool hasCurrentPlayerJumped = playerBody.transform.position.y > ServerConfig.Penalty.JumpHeightMinimum + ArenaOffsetY;
 
                         bool lastPlayerWasCharged = playerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(currentPlayerSteamId, out var currentPlayerSprintTime) && currentPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && currentPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime && hasCurrentPlayerJumped;
                         bool currentPlayerWasCharged = lastPlayerHit.PlayerBody.Speed.Value > ServerConfig.Penalty.ChargingSpeedThreshold && _playersLastSprintTime.TryGetValue(lastPlayerHitSteamId, out var lastPlayerSprintTime) && lastPlayerSprintTime.WasSprinting(ServerConfig.Penalty.ChargingLastSprintTimeThreshold) && lastPlayerSprintTime.TotalSprintTime > ServerConfig.Penalty.ChargingMinimumTotalSprintTime && hasLastPlayerJumped;
