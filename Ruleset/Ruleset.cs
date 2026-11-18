@@ -2905,11 +2905,10 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void HandleStickBodyResult(StickBodyResult sbr) {
-            string victimSteamId = sbr.Victim.SteamId.Value.ToString();
             if (sbr.IsHooking)
-                PenaltyModule.GivePenalty(PenaltyType.Hooking, sbr.Attacker, victimSteamId);
+                PenaltyModule.GivePenalty(PenaltyType.Hooking, sbr.Attacker, sbr.Victim.SteamId.Value.ToString());
             else if (sbr.IsHighStick)
-                PenaltyModule.GivePenalty(PenaltyType.HighStick, sbr.Attacker, victimSteamId);
+                PenaltyModule.GivePenalty(PenaltyType.HighStick, sbr.Attacker, sbr.Victim.SteamId.Value.ToString());
         }
 
         private static void ResetGame(bool resetRefSteamIds = false) {
