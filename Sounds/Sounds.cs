@@ -852,7 +852,7 @@ namespace oomtm450PuckMod_Sounds {
                 string name = "";
                 string type = "";
                 float delay = 0;
-                float volume = float.MaxValue;
+                float volume = 1f;
                 bool loop = false;
                 bool cancelCurrent = false;
                 bool oneShot = false;
@@ -892,6 +892,10 @@ namespace oomtm450PuckMod_Sounds {
                             oneShot = bool.Parse(value);
                             if (oneShot && string.IsNullOrEmpty(type))
                                 type = "oneshot";
+                            break;
+
+                        case "volume":
+                            volume = float.Parse(value);
                             break;
                     }
                 }
