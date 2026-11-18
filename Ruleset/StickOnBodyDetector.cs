@@ -120,7 +120,7 @@ namespace oomtm450PuckMod_Ruleset {
                             Logging.LogDebug($"HIGHSTICK not hard enough {pairKey} height:{contactHeight:F2} swing:{swing:F2} impulse={impulse:F2} hard:{hard}", Ruleset.ServerConfig);
                     }
                     else
-                        Logging.LogDebug($"HIGHSTICK too low {pairKey} height{}{contactHeight:F2} victimBodyPosition:{victimBody.transform.position.y}", Ruleset.ServerConfig);
+                        Logging.LogDebug($"HIGHSTICK too low {pairKey} height:{contactHeight:F2} victimBodyPositionY:{victimBody.transform.position.y}", Ruleset.ServerConfig);
                 }
 
                 // ---------- Hooking : start/refresh the contact session ----------
