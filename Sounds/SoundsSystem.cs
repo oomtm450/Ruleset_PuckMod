@@ -438,7 +438,8 @@ namespace oomtm450PuckMod_Sounds {
                 PowerplayMusicList.Add(clipName, weight);
         }
 
-        internal async Awaitable PlayAsync(string name, string type, float vol = float.MaxValue, float delay = 0, bool loop = false, bool oneShot = false) {
+        internal async Awaitable PlayAsync(string name, string type, float vol = float.MaxValue, float delay = 0, bool loop = false, bool oneShot = false,
+            bool cancelPlaying = false) {
             await Awaitable.MainThreadAsync();
 
             if (string.IsNullOrEmpty(name))
@@ -512,8 +513,12 @@ namespace oomtm450PuckMod_Sounds {
                     else
                         audioSource.PlayOneShot(clip, vol);
                 }
-                else
+                else {
+                    if (cancelPlaying)
+                        audioSource.Stop();
+
                     _ = ApplyPendingClipWhenIdleAsync(audioSource, clip, true, delay);
+                }
             }
         }
 

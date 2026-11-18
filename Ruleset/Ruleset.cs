@@ -4725,7 +4725,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void PlayRefSoundPending(string dataStr) {
+        private static void PlayRefSoundPending(string dataStr) { // TODO : Add mercy time for like 100ms or less. If PlayRefSoundCancelled is called within this time, don't play any sound.
             string refCallSound = "";
             switch (dataStr) {
                 case RefSignals.ICING_LINESMAN:
@@ -4744,7 +4744,8 @@ namespace oomtm450PuckMod_Ruleset {
                 Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySoundOneShot",
                 new Dictionary<string, object> {
                     { "name", refCallSound },
-                    { "type", "refon" },
+                    { "type", "ref" },
+                    { "cancelcurrent", true },
                 }
             );
         }
@@ -4768,7 +4769,8 @@ namespace oomtm450PuckMod_Ruleset {
                 Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySoundOneShot",
                 new Dictionary<string, object> {
                     { "name", refCallSound },
-                    { "type", "refoff" },
+                    { "type", "ref" },
+                    { "cancelcurrent", true },
                 }
             );
         }

@@ -850,6 +850,7 @@ namespace oomtm450PuckMod_Sounds {
                 float delay = 0;
                 float volume = float.MaxValue;
                 bool loop = false;
+                bool cancelCurrent = false;
 
                 foreach (KeyValuePair<string, object> kvp in message) {
                     if (string.IsNullOrEmpty(kvp.Key))
@@ -877,10 +878,14 @@ namespace oomtm450PuckMod_Sounds {
                         case "loop":
                             loop = bool.Parse(value);
                             break;
+
+                        case "cancelcurrent":
+                            cancelCurrent = bool.Parse(value);
+                            break;
                     }
                 }
 
-                _ = _soundsSystem.PlayAsync(name, type, volume, delay, loop, true);
+                _ = _soundsSystem.PlayAsync(name, type, volume, delay, loop, true, cancelCurrent);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(Event_PlaySoundOneShot)}.\n{ex}", ClientConfig);
