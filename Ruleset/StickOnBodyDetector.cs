@@ -1,6 +1,7 @@
 ﻿using Codebase;
 using System;
 using UnityEngine;
+using UnityEngine.XR;
 
 namespace oomtm450PuckMod_Ruleset {
     internal struct StickBodyResult {
@@ -92,9 +93,8 @@ namespace oomtm450PuckMod_Ruleset {
                         float impulse = c.impulse.magnitude;
                         bool hard = swing >= HIGH_STICK_MIN_SWING_SPEED || impulse >= Ruleset.ServerConfig.Penalty.HighStickForceThreshold;
 
-                        Logging.LogDebug($"HIGHSTICK candidate {pairKey} height={contactHeight:F2} swing={swing:F2} impulse={impulse:F2} hard={hard}", Ruleset.ServerConfig);
-
                         if (hard) {
+                            Logging.LogDebug($"HIGHSTICK candidate {pairKey} height={contactHeight:F2} swing={swing:F2} impulse={impulse:F2} hard={hard}", Ruleset.ServerConfig);
                             if (!_highStickHits.TryGetValue(pairKey, out LockList<float> hits)) {
                                 hits = new LockList<float>();
                                 _highStickHits[pairKey] = hits;
@@ -116,7 +116,11 @@ namespace oomtm450PuckMod_Ruleset {
                                 return result;
                             }
                         }
+                        else
+                            Logging.LogDebug($"HIGHSTICK not hard enough {pairKey} height={contactHeight:F2} swing={swing:F2} impulse={impulse:F2} hard={hard}", Ruleset.ServerConfig);
                     }
+                    else
+                        Logging.LogDebug($"HIGHSTICK too low {pairKey} height={contactHeight:F2}", Ruleset.ServerConfig);
                 }
 
                 // ---------- Hooking : start/refresh the contact session ----------
