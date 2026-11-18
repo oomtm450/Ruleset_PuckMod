@@ -460,10 +460,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, time in the box for a hooking penalty in milliseconds.
         /// </summary>
         public int HookingTime { get; set; } = PenaltyModule.LONG_PENALTY_TIME_MS;
-        /// <summary>
-        /// Float, hooking force threshold to consider a hooking penalty.
-        /// </summary>
-        public float HookingForceThreshold { get; set; } = 10f;
 
         /// <summary>
         /// Bool, true if the numeric values has to be replaced be the default ones. Make this false to use custom values.
