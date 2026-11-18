@@ -491,9 +491,9 @@ namespace oomtm450PuckMod_Sounds {
                 _currentAudioSource = audioSource;
 
                 if (vol == float.MaxValue)
-                    vol = SettingsManager.GlobalVolume;
+                    vol = 1f;
 
-                vol *= volModifier;
+                vol *= SettingsManager.GlobalVolume * volModifier;
 
                 if (type == Codebase.SoundsSystem.MUSIC || type == Codebase.SoundsSystem.GOAL_MUSIC) {
                     _currentAudioSource = audioSource;
