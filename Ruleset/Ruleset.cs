@@ -4744,7 +4744,7 @@ namespace oomtm450PuckMod_Ruleset {
                 Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySoundOneShot",
                 new Dictionary<string, object> {
                     { "name", refCallSound },
-                    { "type", "ref" },
+                    { "type", "refon" },
                 }
             );
         }
@@ -4768,7 +4768,7 @@ namespace oomtm450PuckMod_Ruleset {
                 Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySoundOneShot",
                 new Dictionary<string, object> {
                     { "name", refCallSound },
-                    { "type", "ref" },
+                    { "type", "refoff" },
                 }
             );
         }
