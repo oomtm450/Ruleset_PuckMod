@@ -163,7 +163,7 @@ namespace oomtm450PuckMod_Ruleset {
                     return Fail(result, "Invalid stick/contact");
 
                 // Who is hit ? Another stick, or an opposing player's body.
-                Stick otherStick = c.GetContact(0).thisCollider.GetComponentInParent<Stick>();
+                Stick otherStick = c.GetContact(0).otherCollider.GetComponentInParent<Stick>();
                 //PlayerBody otherBody = otherStick ? null : SystemFunc.GetPlayerBody(c.gameObject);
 
                 Stick attackerStick;
