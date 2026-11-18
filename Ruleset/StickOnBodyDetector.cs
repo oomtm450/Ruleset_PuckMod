@@ -51,10 +51,10 @@ namespace oomtm450PuckMod_Ruleset {
             internal float PressDv;        // total push of the stick on the victim, any direction (m/s)
         }
 
-        private static readonly Dictionary<string, HookSession> _hooks = new Dictionary<string, HookSession>();
-        private static readonly Dictionary<string, float> _hookCooldown = new Dictionary<string, float>();
-        private static readonly Dictionary<string, List<float>> _highStickHits = new Dictionary<string, List<float>>();
-        private static readonly Dictionary<string, float> _highStickCooldown = new Dictionary<string, float>();
+        private static readonly LockDictionary<string, HookSession> _hooks = new LockDictionary<string, HookSession>();
+        private static readonly LockDictionary<string, float> _hookCooldown = new LockDictionary<string, float>();
+        private static readonly LockDictionary<string, LockList<float>> _highStickHits = new LockDictionary<string, LockList<float>>();
+        private static readonly LockDictionary<string, float> _highStickCooldown = new LockDictionary<string, float>();
 
         /// <summary>
         /// Call on faceoff / goal / intermission, along with the other Reset functions.
@@ -96,8 +96,8 @@ namespace oomtm450PuckMod_Ruleset {
                         Logging.LogDebug($"HIGHSTICK candidate {pairKey} height={contactHeight:F2} swing={swing:F2} impulse={impulse:F2} hard={hard}", Ruleset.ServerConfig);
 
                         if (hard) {
-                            if (!_highStickHits.TryGetValue(pairKey, out List<float> hits)) {
-                                hits = new List<float>();
+                            if (!_highStickHits.TryGetValue(pairKey, out LockList<float> hits)) {
+                                hits = new LockList<float>();
                                 _highStickHits[pairKey] = hits;
                             }
 

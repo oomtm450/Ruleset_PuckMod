@@ -438,7 +438,7 @@ namespace oomtm450PuckMod_Sounds {
                 PowerplayMusicList.Add(clipName, weight);
         }
 
-        internal async Awaitable PlayAsync(string name, string type, float vol = float.MaxValue, float delay = 0, bool loop = false) {
+        internal async Awaitable PlayAsync(string name, string type, float vol = float.MaxValue, float delay = 0, bool loop = false, bool oneShot = false) {
             await Awaitable.MainThreadAsync();
 
             if (string.IsNullOrEmpty(name))
@@ -493,10 +493,10 @@ namespace oomtm450PuckMod_Sounds {
                 if (type == Codebase.SoundsSystem.MUSIC || type == Codebase.SoundsSystem.GOAL_MUSIC) {
                     audioSource.priority = 0;
                     _currentAudioSource = audioSource;
-                    if (vol != float.MaxValue)
-                        ChangeVolume(vol);
-                    else
-                        ChangeVolume(SettingsManager.GlobalVolume * SettingsManager.GameVolume * volModifier);
+                    if (vol == float.MaxValue)
+                        vol = SettingsManager.GlobalVolume * SettingsManager.GameVolume * volModifier;
+
+                    ChangeVolume(vol);
                 }
                 else {
                     _currentAudioSource = null;
@@ -507,8 +507,10 @@ namespace oomtm450PuckMod_Sounds {
                     audioSource.clip = clip;
                     if (delay <= 0)
                         audioSource.Play();
-                    else
+                    else if (!oneShot)
                         audioSource.PlayDelayed(delay);
+                    else
+                        audioSource.PlayOneShot(clip, vol);
                 }
                 else
                     _ = ApplyPendingClipWhenIdleAsync(audioSource, clip, true, delay);

@@ -880,7 +880,7 @@ namespace oomtm450PuckMod_Sounds {
                     }
                 }
 
-                _ = _soundsSystem.PlayAsync(name, type, volume, delay, loop);
+                _ = _soundsSystem.PlayAsync(name, type, volume, delay, loop, true);
             }
             catch (Exception ex) {
                 Logging.LogError($"Error in {nameof(Event_PlaySoundOneShot)}.\n{ex}", ClientConfig);

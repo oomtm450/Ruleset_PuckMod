@@ -1199,6 +1199,11 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     if (collision.gameObject.layer == LayerMask.NameToLayer("Player")) {
+                        PlayerBody victim = SystemFunc.GetPlayerBody(collision.gameObject);
+
+                        if (Codebase.PlayerFunc.IsGoalie(victim.Player))
+                            return;
+
                         HandleStickBodyResult(StickOnBodyDetector.OnEnter(stick, collision));
                         return;
                     }
@@ -1238,6 +1243,11 @@ namespace oomtm450PuckMod_Ruleset {
 
                     Stick stick = SystemFunc.GetStick(gameObject);
                     if (!stick || !stick.Player || !stick.Player.IsCharacterSpawned)
+                        return;
+
+                    PlayerBody victim = SystemFunc.GetPlayerBody(collision.gameObject);
+
+                    if (Codebase.PlayerFunc.IsGoalie(victim.Player))
                         return;
 
                     HandleStickBodyResult(StickOnBodyDetector.OnStay(stick, collision));
