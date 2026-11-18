@@ -78,11 +78,11 @@ namespace oomtm450PuckMod_Ruleset {
             "pim",
         });
 
-        private const int OFFSIDE_PENDING_AUDIO_COUNT = 3;
-        private const int OFFSIDE_CANCELLED_AUDIO_COUNT = 3;
+        private const int OFFSIDE_PENDING_AUDIO_COUNT = 6;
+        private const int OFFSIDE_CANCELLED_AUDIO_COUNT = 6;
 
-        private const int ICING_PENDING_AUDIO_COUNT = 3;
-        private const int ICING_CANCELLED_AUDIO_COUNT = 3;
+        private const int ICING_PENDING_AUDIO_COUNT = 6;
+        private const int ICING_CANCELLED_AUDIO_COUNT = 6;
 
         internal const string REF_UI_DEFAULT_KEY = "F7";
 
