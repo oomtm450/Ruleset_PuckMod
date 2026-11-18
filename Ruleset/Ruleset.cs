@@ -918,14 +918,8 @@ namespace oomtm450PuckMod_Ruleset {
                     return;
 
                 try {
-                    if (collision.gameObject.layer != LayerMask.NameToLayer("Player")) {
-                        if (collision.gameObject.layer != LayerMask.NameToLayer("Stick")) {
-                            return;
-                        }
-
-                        // Stick collision with body. // TODO
+                    if (collision.gameObject.layer != LayerMask.NameToLayer("Player"))
                         return;
-                    }
 
                     PlayerBody playerBody = SystemFunc.GetPlayerBody(collision.gameObject);
 
@@ -1199,12 +1193,17 @@ namespace oomtm450PuckMod_Ruleset {
                     return;
 
                 try {
-                    if (collision.gameObject.layer != LayerMask.NameToLayer("Stick"))
-                        return;
-
                     Stick stick = SystemFunc.GetStick(collision.gameObject);
 
                     if (!stick || !stick.Player || !stick.Player.IsCharacterSpawned)
+                        return;
+
+                    if (collision.gameObject.layer == LayerMask.NameToLayer("Player")) {
+                        HandleStickBodyResult(StickOnBodyDetector.OnEnter(stick, collision));
+                        return;
+                    }
+
+                    if (collision.gameObject.layer != LayerMask.NameToLayer("Stick"))
                         return;
 
                     ContactPoint contact = collision.GetContact(0);
@@ -1218,7 +1217,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
 
                     if (ServerConfig.Penalty.Slashing) {
-                        SlashResult slash = SlashDetector.Evaluate(stick, collision);
+                        SlashResult slash = StickOnStickDetector.Evaluate(stick, collision);
                         Logging.LogDebug($"Slash - IsSlash:{slash.IsSlash} Reason:{slash.Reason} IsAxe:{slash.IsAxe}", ServerConfig);
                         if (slash.IsSlash)
                             PenaltyModule.GivePenalty(PenaltyType.Slashing, slash.Attacker, slash.Victim.SteamId.Value.ToString());
@@ -1226,6 +1225,25 @@ namespace oomtm450PuckMod_Ruleset {
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(CustomStickCollisionListener)}.{nameof(OnCollisionEnter)}.\n{ex}", ServerConfig);
+                }
+            }
+
+            private void OnCollisionStay(Collision collision) {
+                try {
+                    if (!ServerFunc.IsDedicatedServer() || Paused || GameManager.Instance.Phase != GamePhase.Play || !Logic)
+                        return;
+
+                    if (collision.gameObject.layer != LayerMask.NameToLayer("Player"))
+                        return;
+
+                    Stick stick = SystemFunc.GetStick(gameObject);
+                    if (!stick || !stick.Player || !stick.Player.IsCharacterSpawned)
+                        return;
+
+                    HandleStickBodyResult(StickOnBodyDetector.OnStay(stick, collision));
+                }
+                catch (Exception ex) {
+                    Logging.LogError($"Error in {nameof(CustomStickCollisionListener)}.{nameof(OnCollisionStay)}.\n{ex}", ServerConfig);
                 }
             }
         }
@@ -1317,7 +1335,8 @@ namespace oomtm450PuckMod_Ruleset {
                         _dictPlayersPositionsForIcing.Clear();
                         ResetInt();
 
-                        SlashDetector.Reset();
+                        StickOnStickDetector.Reset();
+                        StickOnBodyDetector.Reset();
 
                         // Reset collisions tracker.
                         _playerCollisions.Clear();
@@ -1958,7 +1977,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!Logic)
                     return;
 
-                SlashDetector.RecordAll();
+                StickOnStickDetector.RecordAll();
 
                 Puck puck = null;
                 List<Player> players = null;
@@ -2873,6 +2892,14 @@ namespace oomtm450PuckMod_Ruleset {
             _harmony.Patch(typeof(Stick).GetMethod("Server_ApplyForces", BindingFlags.NonPublic | BindingFlags.Instance), new HarmonyMethod(typeof(Stick_Server_ApplyForces_Patch).GetMethod("Prefix")));
             _harmony.Patch(typeof(Stick).GetMethod("Server_ClearRollVelocity", BindingFlags.NonPublic | BindingFlags.Instance), new HarmonyMethod(typeof(Stick_Server_ClearRollVelocity_Patch).GetMethod("Prefix")));
             _harmony.Patch(typeof(Stick).GetMethod("Server_ApplyFeedbackForces", BindingFlags.NonPublic | BindingFlags.Instance), new HarmonyMethod(typeof(Stick_Server_ApplyFeedbackForces_Patch).GetMethod("Prefix")));
+        }
+
+        private static void HandleStickBodyResult(StickBodyResult sbr) {
+            string victimSteamId = sbr.Victim.SteamId.Value.ToString();
+            if (sbr.IsHooking)
+                PenaltyModule.GivePenalty(PenaltyType.Hooking, sbr.Attacker, victimSteamId);
+            else if (sbr.IsHighStick)
+                PenaltyModule.GivePenalty(PenaltyType.HighStick, sbr.Attacker, victimSteamId);
         }
 
         private static void ResetGame(bool resetRefSteamIds = false) {
@@ -5134,7 +5161,7 @@ namespace oomtm450PuckMod_Ruleset {
                     Logging.LogWarning($"Server game version is {Application.version} and not {Codebase.Constants.CURRENT_APPLICATION_VERSION} !", ServerConfig);
 
                 _harmony.PatchAll();
-                UnpatchStickFreezeFunctions();
+                //UnpatchStickFreezeFunctions();
 
                 Logging.Log($"Enabled.", ServerConfig, true);
 
@@ -5404,6 +5431,13 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             return fakedClaimedPositions;
+        }
+
+        internal static bool PlayerWasCollidedRecently(string steamId, int milliseconds) {
+            DateTime now = DateTime.UtcNow;
+            return new List<PlayerCollision>(_playerCollisions).Any(x =>
+                (x.Player1SteamId == steamId || x.Player2SteamId == steamId) &&
+                (now - x.DateTime).TotalMilliseconds < milliseconds);
         }
 
         internal static string GetPuckCarrierSteamId(bool checkForChallenge = true) {

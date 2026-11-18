@@ -20,7 +20,7 @@ namespace oomtm450PuckMod_Ruleset {
         internal string Reason;
     }
 
-    internal static class SlashDetector {
+    internal static class StickOnStickDetector {
         #region Tunables (TODO : move to PenaltyConfig once values are settled)
         private const float MIN_ATTACKER_SWING_SPEED = 30f;   // Peak tip speed of the attacker's stick.
         private const float MAX_VICTIM_SWING_SPEED = 10f;     // Above this on a blade hit = mutual stick battle.
@@ -144,6 +144,8 @@ namespace oomtm450PuckMod_Ruleset {
         #endregion
 
         #region Decision
+        internal static float GetPeakSwingSpeed(Stick stick) => Analyze(stick, SWING_WINDOW).PeakSpeed;
+
         /// <summary>
         /// Call from the stick's OnCollisionEnter patch, once the blade/shaft detection is done.
         /// Safe to call from both sticks of the same collision (pair cooldown prevents double calls).
@@ -168,18 +170,26 @@ namespace oomtm450PuckMod_Ruleset {
                 Stick victimStick;
                 Player victimPlayer;
 
+                (float PeakSpeed, float PeakY, float DownRatio, float RecentUpRatio) attackerAnalyze, victimAnalyze;
+
                 if (otherStick && otherStick.Player) {
                     // Aggressor = the stick with the highest recent swing speed.
-                    float selfPeak = Analyze(selfStick, SWING_WINDOW).PeakSpeed;
-                    float otherPeak = Analyze(otherStick, SWING_WINDOW).PeakSpeed;
+                    var self = Analyze(selfStick, SWING_WINDOW);
+                    var other = Analyze(otherStick, SWING_WINDOW);
 
-                    if (selfPeak >= otherPeak) {
+                    if (self.PeakSpeed >= other.PeakSpeed) {
                         attackerStick = selfStick;
+                        attackerAnalyze = self;
+
                         victimStick = otherStick;
+                        victimAnalyze = other;
                     }
                     else {
                         attackerStick = otherStick;
+                        attackerAnalyze = other;
+
                         victimStick = selfStick;
+                        victimAnalyze = self;
                     }
                     victimPlayer = victimStick.Player;
                 }
@@ -220,16 +230,15 @@ namespace oomtm450PuckMod_Ruleset {
                     return Fail(result, "Pair cooldown");
 
                 // Swing data.
-                var atk = Analyze(attackerStick, SWING_WINDOW);
-                float victimSpeed = Analyze(victimStick, SWING_WINDOW).PeakSpeed;
+                float victimSpeed = victimAnalyze.PeakSpeed;
 
                 Vector3 contactPoint = c.GetContact(0).point;
                 float contactY = contactPoint.y - Ruleset.ArenaOffsetY;
-                float peakY = atk.PeakY - Ruleset.ArenaOffsetY;
+                float peakY = attackerAnalyze.PeakY - Ruleset.ArenaOffsetY;
                 float drop = peakY - contactY;
 
                 // Axe : high tip, big vertical drop, mostly downward swing, on the shaft (or on a player).
-                bool isAxe = drop > AXE_MIN_DROP && atk.DownRatio > AXE_MIN_DOWN_RATIO;
+                bool isAxe = drop > AXE_MIN_DROP && attackerAnalyze.DownRatio > AXE_MIN_DOWN_RATIO;
                 result.IsAxe = isAxe;
 
                 // Context : puck and position of the attacker relative to the victim.
@@ -265,13 +274,13 @@ namespace oomtm450PuckMod_Ruleset {
                 float approach = Mathf.Abs(Vector3.Dot(c.relativeVelocity.normalized, c.GetContact(0).normal));
 
                 // Tuning log for near-misses and hits.
-                if (atk.PeakSpeed >= MIN_ATTACKER_SWING_SPEED * m * 0.5f) {
-                    Logging.LogDebug($"SLASH candidate {pairKey} ctx={ctx} axe={isAxe} up={atk.RecentUpRatio:F2} atkSpeed={atk.PeakSpeed:F2} vicSpeed={victimSpeed:F2} impulse={impulse:F2} approach={approach:F2} drop={drop:F2} down={atk.DownRatio:F2} behind={behind:F2}", Ruleset.ServerConfig);
+                if (attackerAnalyze.PeakSpeed >= MIN_ATTACKER_SWING_SPEED * m * 0.5f) {
+                    Logging.LogDebug($"SLASH candidate {pairKey} ctx={ctx} axe={isAxe} up={attackerAnalyze.RecentUpRatio:F2} atkSpeed={attackerAnalyze.PeakSpeed:F2} vicSpeed={victimSpeed:F2} impulse={impulse:F2} approach={approach:F2} drop={drop:F2} down={attackerAnalyze.DownRatio:F2} behind={behind:F2}", Ruleset.ServerConfig);
                 }
 
                 // 1. Clear aggressor with enough swing speed.
-                if (atk.PeakSpeed < MIN_ATTACKER_SWING_SPEED * m)
-                    return Fail(result, $"Swing too slow (atk.PeakSpeed:{atk.PeakSpeed} < MIN_ATTACKER_SWING_SPEED:{MIN_ATTACKER_SWING_SPEED} * m:{m} ({MIN_ATTACKER_SWING_SPEED * m}))");
+                if (attackerAnalyze.PeakSpeed < MIN_ATTACKER_SWING_SPEED * m)
+                    return Fail(result, $"Swing too slow (attackerAnalyze.PeakSpeed:{attackerAnalyze.PeakSpeed} < MIN_ATTACKER_SWING_SPEED:{MIN_ATTACKER_SWING_SPEED} * m:{m} ({MIN_ATTACKER_SWING_SPEED * m}))");
 
                 // 2. Attacker playing the puck.
                 if (Ruleset.PlayerTouchedPuckRecently(attackerId, PUCK_PLAY_EXEMPTION_MS))
@@ -282,8 +291,8 @@ namespace oomtm450PuckMod_Ruleset {
                     return Fail(result, $"Impact too light (impulse:{impulse} < MIN_IMPULSE:{MIN_IMPULSE} * m:{m} ({MIN_IMPULSE * m}))");
 
                 if (!isAxe) {
-                    if (atk.PeakSpeed < victimSpeed * AGGRESSOR_RATIO)
-                        return Fail(result, $"No clear aggressor (atk.PeakSpeed:{atk.PeakSpeed} < victimSpeed:{victimSpeed} * AGGRESSOR_RATIO:{AGGRESSOR_RATIO} ({victimSpeed * AGGRESSOR_RATIO}))");
+                    if (attackerAnalyze.PeakSpeed < victimSpeed * AGGRESSOR_RATIO)
+                        return Fail(result, $"No clear aggressor (attackerAnalyze.PeakSpeed:{attackerAnalyze.PeakSpeed} < victimSpeed:{victimSpeed} * AGGRESSOR_RATIO:{AGGRESSOR_RATIO} ({victimSpeed * AGGRESSOR_RATIO}))");
 
                     // 4. Mutual blade battle.
                     if (ctx != SlashContext.VictimHasPuckFromBehind && victimSpeed > MAX_VICTIM_SWING_SPEED)
@@ -294,8 +303,8 @@ namespace oomtm450PuckMod_Ruleset {
                         return Fail(result, $"Glancing hit (approach:{approach} < MIN_APPROACH_DOT:{MIN_APPROACH_DOT})");
 
                     // 6. Stick lift: attacker's blade comes up under the victim's stick.
-                    if (atk.RecentUpRatio > LIFT_MIN_UP_RATIO || atk.DownRatio < LIFT_MAX_DOWN_RATIO)
-                        return Fail(result, $"Stick lift (atk.RecentUpRatio:{atk.RecentUpRatio} > LIFT_MIN_UP_RATIO:{LIFT_MIN_UP_RATIO})");
+                    if (attackerAnalyze.RecentUpRatio > LIFT_MIN_UP_RATIO || attackerAnalyze.DownRatio < LIFT_MAX_DOWN_RATIO)
+                        return Fail(result, $"Stick lift (attackerAnalyze.RecentUpRatio:{attackerAnalyze.RecentUpRatio} > LIFT_MIN_UP_RATIO:{LIFT_MIN_UP_RATIO} || attackerAnalyze.DownRatio:{attackerAnalyze.DownRatio} < LIFT_MAX_DOWN_RATIO:{LIFT_MAX_DOWN_RATIO})");
 
                     /*// 2. Attacker playing the puck = stick check. An axe is never legal.
                     if (Ruleset.PlayerTouchedPuckRecently(attackerId, PUCK_PLAY_EXEMPTION_MS))
@@ -304,7 +313,7 @@ namespace oomtm450PuckMod_Ruleset {
                     // 7. Scrum.
                     if (ctx != SlashContext.VictimHasPuckFromBehind &&
                         CountPlayersNear(contactPoint, SCRUM_RADIUS, attackerId, victimId) >= SCRUM_PLAYER_COUNT &&
-                        atk.PeakSpeed < MIN_ATTACKER_SWING_SPEED * SCRUM_SPEED_MULTIPLIER)
+                        attackerAnalyze.PeakSpeed < MIN_ATTACKER_SWING_SPEED * SCRUM_SPEED_MULTIPLIER)
                         return Fail(result, "Scrum");
                 }
 
@@ -314,7 +323,7 @@ namespace oomtm450PuckMod_Ruleset {
                 return result;
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(SlashDetector)}.{nameof(Evaluate)}.\n{ex}", Ruleset.ServerConfig);
+                Logging.LogError($"Error in {nameof(StickOnStickDetector)}.{nameof(Evaluate)}.\n{ex}", Ruleset.ServerConfig);
                 return Fail(result, "Exception");
             }
         }
