@@ -450,7 +450,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, high stick force threshold to consider a slashing penalty.
         /// </summary>
-        public float HighStickForceThreshold { get; set; } = 10f;
+        public float HighStickForceThreshold { get; set; } = 5f;
 
         /// <summary>
         /// Bool, true if hooking is enabled.

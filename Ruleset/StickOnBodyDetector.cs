@@ -34,7 +34,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         // High stick (on a player).
         private const float HEAD_HEIGHT = Codebase.Constants.SHOULDERS_HEIGHT; // Contact above this, relative to the victim's body origin, = head/face. TODO : check the player's real height.
-        private const float HIGH_STICK_MIN_SWING_SPEED = 5f;   // Relative swing speed (SlashDetector tracker) for a hit to be "hard".
+        private const float HIGH_STICK_MIN_SWING_SPEED = 40f;   // Relative swing speed (SlashDetector tracker) for a hit to be "hard".
         private const float HIGH_STICK_HIT_GAP = 0.25f;        // Two contacts closer than this are the same swing.
         private const float HIGH_STICK_WINDOW = 5f;            // Seconds : 2 hard hits inside this = penalty.
         private const int HIGH_STICK_HITS_NEEDED = 2;
@@ -94,7 +94,7 @@ namespace oomtm450PuckMod_Ruleset {
                         bool hard = swing >= HIGH_STICK_MIN_SWING_SPEED || impulse >= Ruleset.ServerConfig.Penalty.HighStickForceThreshold;
 
                         if (hard) {
-                            Logging.LogDebug($"HIGHSTICK candidate {pairKey} height={contactHeight:F2} swing={swing:F2} impulse={impulse:F2} hard={hard}", Ruleset.ServerConfig);
+                            Logging.LogDebug($"HIGHSTICK candidate {pairKey} height:{contactHeight:F2} swing:{swing:F2} impulse:{impulse:F2} hard:{hard}", Ruleset.ServerConfig);
                             if (!_highStickHits.TryGetValue(pairKey, out LockList<float> hits)) {
                                 hits = new LockList<float>();
                                 _highStickHits[pairKey] = hits;
@@ -117,10 +117,10 @@ namespace oomtm450PuckMod_Ruleset {
                             }
                         }
                         else
-                            Logging.LogDebug($"HIGHSTICK not hard enough {pairKey} height={contactHeight:F2} swing={swing:F2} impulse={impulse:F2} hard={hard}", Ruleset.ServerConfig);
+                            Logging.LogDebug($"HIGHSTICK not hard enough {pairKey} height:{contactHeight:F2} swing:{swing:F2} impulse={impulse:F2} hard:{hard}", Ruleset.ServerConfig);
                     }
                     else
-                        Logging.LogDebug($"HIGHSTICK too low {pairKey} height={contactHeight:F2}", Ruleset.ServerConfig);
+                        Logging.LogDebug($"HIGHSTICK too low {pairKey} height{}{contactHeight:F2} victimBodyPosition:{victimBody.transform.position.y}", Ruleset.ServerConfig);
                 }
 
                 // ---------- Hooking : start/refresh the contact session ----------
