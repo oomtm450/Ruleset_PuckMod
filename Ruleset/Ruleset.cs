@@ -1193,7 +1193,7 @@ namespace oomtm450PuckMod_Ruleset {
                     return;
 
                 try {
-                    Stick stick = SystemFunc.GetStick(collision.gameObject);
+                    Stick stick = SystemFunc.GetStick(gameObject);
 
                     if (!stick || !stick.Player || !stick.Player.IsCharacterSpawned)
                         return;
