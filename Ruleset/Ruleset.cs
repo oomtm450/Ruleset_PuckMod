@@ -1636,7 +1636,27 @@ namespace oomtm450PuckMod_Ruleset {
                                     ClientConfig.Save();
                                     _refSignalsBlueTeam?.Change2DRefsScale(ClientConfig.TwoDRefsScale);
                                     _refSignalsRedTeam?.Change2DRefsScale(ClientConfig.TwoDRefsScale);
-                                    SystemFunc.AddClientChatMessage($"Adjusted client 2D refs scale to {scale.ToString(CultureInfo.InvariantCulture)}");
+                                    SystemFunc.AddClientChatMessage($"Adjusted 2D refs scale to {scale.ToString(CultureInfo.InvariantCulture)}");
+                                }
+                            }
+
+                            return false;
+                        }
+                        else if (content.StartsWith(@"/refvol")) {
+                            content = content.Replace(@"/refvol", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Ref volume is currently at {ClientConfig.RefereeSoundsVolume.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (float.TryParse(content, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float refVol)) {
+                                    if (refVol > 2f)
+                                        refVol = 2f;
+                                    else if (refVol < 0)
+                                        refVol = 0;
+
+                                    ClientConfig.RefereeSoundsVolume = refVol;
+                                    ClientConfig.Save();
+                                    SystemFunc.AddClientChatMessage($"Adjusted ref volume to {refVol.ToString(CultureInfo.InvariantCulture)}");
                                 }
                             }
 
@@ -4741,11 +4761,12 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             EventManager.TriggerEvent(
-                Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySoundOneShot",
+                Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySound",
                 new Dictionary<string, object> {
                     { "name", refCallSound },
                     { "type", "ref" },
                     { "cancelcurrent", true },
+                    { "volume", ClientConfig.RefereeSoundsVolume },
                 }
             );
         }
@@ -4766,11 +4787,12 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             EventManager.TriggerEvent(
-                Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySoundOneShot",
+                Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySound",
                 new Dictionary<string, object> {
                     { "name", refCallSound },
                     { "type", "ref" },
                     { "cancelcurrent", true },
+                    { "volume", ClientConfig.RefereeSoundsVolume },
                 }
             );
         }

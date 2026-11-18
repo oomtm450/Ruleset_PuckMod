@@ -46,6 +46,10 @@ namespace oomtm450PuckMod_Sounds {
         /// </summary>
         private static readonly ReadOnlyCollection<string> DATA_NAMES_TO_IGNORE = new ReadOnlyCollection<string>(new List<string> {
             "eventName",
+            "eventname",
+            "name",
+            "type",
+            "cancelcurrent",
         });
         #endregion
 
@@ -667,7 +671,7 @@ namespace oomtm450PuckMod_Sounds {
                 else {
                     EventManager.AddEventListener(nameof(Event_OnSceneLoaded), Event_OnSceneLoaded);
                     EventManager.AddEventListener(nameof(Event_OnClientStopped), Event_OnClientStopped);
-                    EventManager.AddEventListener(Codebase.Constants.SOUNDS_MOD_NAME + nameof(Event_PlaySoundOneShot), Event_PlaySoundOneShot);
+                    EventManager.AddEventListener(Codebase.Constants.SOUNDS_MOD_NAME + nameof(Event_PlaySound), Event_PlaySound);
                 }
 
                 Logging.Log("Unpatching unused code.", ServerConfig, true);
@@ -723,7 +727,7 @@ namespace oomtm450PuckMod_Sounds {
                 else {
                     EventManager.RemoveEventListener(nameof(Event_OnSceneLoaded), Event_OnSceneLoaded);
                     EventManager.RemoveEventListener(nameof(Event_OnClientStopped), Event_OnClientStopped);
-                    EventManager.RemoveEventListener(Codebase.Constants.SOUNDS_MOD_NAME + nameof(Event_PlaySoundOneShot), Event_PlaySoundOneShot);
+                    EventManager.RemoveEventListener(Codebase.Constants.SOUNDS_MOD_NAME + nameof(Event_PlaySound), Event_PlaySound);
                     NetworkManager.Singleton?.CustomMessagingManager?.UnregisterNamedMessageHandler(Constants.FROM_SERVER_TO_CLIENT);
                 }
 
@@ -829,7 +833,7 @@ namespace oomtm450PuckMod_Sounds {
             }
         }
 
-        public static void Event_PlaySoundOneShot(Dictionary<string, object> message) {
+        public static void Event_PlaySound(Dictionary<string, object> message) {
             try {
                 if (_soundsSystem == null)
                     return;
@@ -846,11 +850,12 @@ namespace oomtm450PuckMod_Sounds {
                 _soundsSystem.Warnings.Clear();
 
                 string name = "";
-                string type = "oneshot";
+                string type = "";
                 float delay = 0;
                 float volume = float.MaxValue;
                 bool loop = false;
                 bool cancelCurrent = false;
+                bool oneShot = false;
 
                 foreach (KeyValuePair<string, object> kvp in message) {
                     if (string.IsNullOrEmpty(kvp.Key))
@@ -882,13 +887,19 @@ namespace oomtm450PuckMod_Sounds {
                         case "cancelcurrent":
                             cancelCurrent = bool.Parse(value);
                             break;
+
+                        case "oneshot":
+                            oneShot = bool.Parse(value);
+                            if (oneShot && string.IsNullOrEmpty(type))
+                                type = "oneshot";
+                            break;
                     }
                 }
 
-                _ = _soundsSystem.PlayAsync(name, type, volume, delay, loop, true, cancelCurrent);
+                _ = _soundsSystem.PlayAsync(name, type, volume, delay, loop, oneShot, cancelCurrent);
             }
             catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(Event_PlaySoundOneShot)}.\n{ex}", ClientConfig);
+                Logging.LogError($"Error in {nameof(Event_PlaySound)}.\n{ex}", ClientConfig);
             }
         }
 

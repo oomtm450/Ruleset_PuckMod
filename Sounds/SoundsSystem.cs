@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.Networking;
+using UnityEngine.Rendering;
 using static oomtm450PuckMod_Sounds.SoundsSystem;
 
 namespace oomtm450PuckMod_Sounds {
@@ -485,27 +486,29 @@ namespace oomtm450PuckMod_Sounds {
                 AudioSource audioSource = soundObject.GetComponent<AudioSource>();
 
                 audioSource.loop = loop;
-
-                vol *= volModifier;
-                audioSource.volume = vol;
-
                 delay += delayModifier;
 
-                if (type == Codebase.SoundsSystem.MUSIC || type == Codebase.SoundsSystem.GOAL_MUSIC) {
-                    audioSource.priority = 0;
-                    _currentAudioSource = audioSource;
-                    if (vol == float.MaxValue)
-                        vol = SettingsManager.GlobalVolume * SettingsManager.GameVolume * volModifier;
+                _currentAudioSource = audioSource;
 
-                    ChangeVolume(vol);
+                if (vol == float.MaxValue)
+                    vol = SettingsManager.GlobalVolume;
+
+                vol *= volModifier;
+
+                if (type == Codebase.SoundsSystem.MUSIC || type == Codebase.SoundsSystem.GOAL_MUSIC) {
+                    _currentAudioSource = audioSource;
+
+                    audioSource.priority = 0;
                 }
                 else {
                     _currentAudioSource = null;
-                    audioSource.volume = SettingsManager.GlobalVolume * SettingsManager.GameVolume * volModifier;
+
+                    vol *= SettingsManager.GameVolume;
                 }
 
                 if (!audioSource.isPlaying) {
                     audioSource.clip = clip;
+                    audioSource.volume = vol;
                     if (delay <= 0)
                         audioSource.Play();
                     else if (!oneShot)
@@ -517,7 +520,7 @@ namespace oomtm450PuckMod_Sounds {
                     if (cancelPlaying)
                         audioSource.Stop();
 
-                    _ = ApplyPendingClipWhenIdleAsync(audioSource, clip, true, delay);
+                    _ = ApplyPendingClipWhenIdleAsync(audioSource, clip, true, delay, oneShot, vol);
                 }
             }
         }
@@ -570,11 +573,14 @@ namespace oomtm450PuckMod_Sounds {
             }, null);
         }
 
-        internal void ChangeVolume(float vol) {
+        internal void ChangeVolume(float vol, bool applyGlobalVolume = true) {
             if (_currentAudioSource == null)
                 return;
 
-            _currentAudioSource.volume = SettingsManager.GlobalVolume * vol;
+            if (applyGlobalVolume)
+                vol = SettingsManager.GlobalVolume * vol;
+
+            _currentAudioSource.volume = vol;
         }
 
         internal static void ChangeHornVolume(float hornVol, AudioSource hornAudioSource) {
@@ -697,20 +703,31 @@ namespace oomtm450PuckMod_Sounds {
             return sound;
         }
 
-        private async Awaitable ApplyPendingClipWhenIdleAsync(AudioSource audioSource, AudioClip clip, bool play = false, float delay = 0) {
+        private async Awaitable ApplyPendingClipWhenIdleAsync(AudioSource audioSource, AudioClip clip, bool play = false, float delay = 0, bool oneShot = false,
+            float vol = float.MaxValue) {
             while (audioSource != null && audioSource.isPlaying)
                 await Awaitable.NextFrameAsync();
 
             if (audioSource == null || clip == null)
                 return;
 
+            if (vol == float.MaxValue)
+                vol = SettingsManager.GlobalVolume;
+
             audioSource.clip = clip;
+            audioSource.volume = vol;
 
             if (play) {
                 if (delay <= 0)
                     audioSource.Play();
-                else
+                else if (!oneShot)
                     audioSource.PlayDelayed(delay);
+                else {
+                    if (vol == float.MaxValue)
+                        audioSource.PlayOneShot(clip);
+                    else
+                        audioSource.PlayOneShot(clip, vol);
+                }
             }
         }
 
