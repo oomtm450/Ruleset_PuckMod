@@ -424,7 +424,7 @@ namespace oomtm450PuckMod_Ruleset {
             DateTime now = DateTime.UtcNow;
             if (!string.IsNullOrEmpty(receivingPlayerSteamId)) {
                 List<Penalty> allPenalties = GetAllPenalties();
-                if (allPenalties.Where(x => x.Team == penalizedPlayer.Team && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
+                if (allPenalties.Where(x => x.Team == penalizedPlayer.Team && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (now - x.PenaltyDateTime).TotalMilliseconds < 4000)) // TODO : Config.
                     return false;
 
                 if ((penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.GoalieInterference) && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Charging) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
