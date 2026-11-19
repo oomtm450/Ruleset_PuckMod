@@ -3301,11 +3301,11 @@ namespace oomtm450PuckMod_Ruleset {
             }
 
             bool goalieIsInHisCrease = true;
-            float adjustedGoalieRadius = ServerConfig.GInt.GoalieRadius * (_arenaScaleX > _arenaScaleZ ? _arenaScaleX : _arenaScaleZ);
-            if (goalie.PlayerBody.Rigidbody.transform.position.x - adjustedGoalieRadius < startX ||
-                goalie.PlayerBody.Rigidbody.transform.position.x + adjustedGoalieRadius > endX ||
-                goalie.PlayerBody.Rigidbody.transform.position.z - adjustedGoalieRadius < startZ ||
-                goalie.PlayerBody.Rigidbody.transform.position.z + adjustedGoalieRadius > endZ) {
+            float adjustedGoalieRadius = ServerConfig.GInt.GoalieRadius;
+            if (goalie.PlayerBody.Rigidbody.transform.position.x + adjustedGoalieRadius < startX ||
+                goalie.PlayerBody.Rigidbody.transform.position.x - adjustedGoalieRadius > endX ||
+                goalie.PlayerBody.Rigidbody.transform.position.z + adjustedGoalieRadius < startZ ||
+                goalie.PlayerBody.Rigidbody.transform.position.z - adjustedGoalieRadius > endZ) {
                 goalieIsInHisCrease = false;
             }
 
