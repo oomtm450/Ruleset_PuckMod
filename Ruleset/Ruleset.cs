@@ -3212,8 +3212,10 @@ namespace oomtm450PuckMod_Ruleset {
                 || !puck.Rigidbody)
                 return false;
 
+            PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
+
             if ((ServerConfig.Icing.SkaterBehindHashmarksCancelsIcing && icingObj.AnySkaterBehindHashmarks) ||
-                (ServerConfig.Icing.GoalieOutOfCreaseCancelsIcing && !IsGoalieInHisCrease(team))) {
+                (ServerConfig.Icing.GoalieOutOfCreaseCancelsIcing && !IsGoalieInHisCrease(otherTeam))) {
                 ResetIcing(team);
                 return false;
             }
@@ -3226,7 +3228,6 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!icingObj.DeltaHasBeenChecked && ++icingObj.FrameCheck > ((float)ServerManager.Instance.ServerConfig.tickRate)) {
                     icingObj.DeltaHasBeenChecked = true;
 
-                    PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
                     List<Codebase.Zone> otherTeamZones = ZoneFunc.GetTeamZones(otherTeam, true);
                     List<string> otherTeamPlayersSteamId = _playersZone.Where(x => x.Value.Team == otherTeam && x.Value.Zone == otherTeamZones[0]).Select(x => x.Key).ToList();
 
