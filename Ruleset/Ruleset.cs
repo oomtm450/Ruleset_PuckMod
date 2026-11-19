@@ -547,20 +547,22 @@ namespace oomtm450PuckMod_Ruleset {
                         _puckZoneLastTouched = _puckZone;
 
                         PlayerTeam playerOtherTeam = TeamFunc.GetOtherTeam(playerBody.Player.Team);
-                        if (IsIcingPossible(__instance, playerOtherTeam)) {
-                            if (IsIcing(playerOtherTeam))
-                                WarnIcing(false, playerOtherTeam);
-                            ResetIcings();
+                        if (IsIcing(playerOtherTeam)) {
+                            WarnIcing(false, playerOtherTeam);
+                            ResetIcings(true);
                         }
-                        else if (IsIcingPossible(__instance, playerBody.Player.Team)) {
+                        else if (IsIcingPossible(__instance, playerOtherTeam))
+                            ResetIcings();
+                        else if (IsIcing(playerBody.Player.Team)) {
                             if (_playersZone.TryGetValue(playerBody.Player.SteamId.Value.ToString(), out var playerZone)) {
                                 if (ZoneFunc.GetTeamZones(playerOtherTeam, true).Any(x => x == playerZone.Zone)) {
-                                    if (IsIcing(playerBody.Player.Team))
-                                        WarnIcing(false, playerBody.Player.Team);
+                                    WarnIcing(false, playerBody.Player.Team);
                                 }
                             }
-                            ResetIcings();
+                            ResetIcings(true);
                         }
+                        else if (IsIcingPossible(__instance, playerBody.Player.Team))
+                            ResetIcings();
                         return;
                     }
 
@@ -775,15 +777,19 @@ namespace oomtm450PuckMod_Ruleset {
 
                     // Icing logic.
                     if (IsIcing(otherTeam)) {
-                        if (!isGoalie)
+                        if (!isGoalie) {
                             CallIcing(otherTeam);
-                        else
+                            ResetIcings();
+                        }
+                        else {
                             WarnIcing(false, otherTeam);
+                            ResetIcings(true);
+                        }
                     }
-                    else if (IsIcing(stick.Player.Team))
+                    else if (IsIcing(stick.Player.Team)) {
                         WarnIcing(false, stick.Player.Team);
-
-                    ResetIcings();
+                        ResetIcings(true);
+                    }
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(Puck_OnCollisionStay_Patch)} Postfix().\n{ex}", ServerConfig);
@@ -1324,7 +1330,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                         ResetOffsides();
                         ResetHighSticks();
-                        ResetIcings();
+                        ResetIcings(true);
                         _dictPlayersPositionsForIcing.Clear();
                         ResetInt();
 
@@ -2303,7 +2309,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (closestPlayerToPuckTeam != PlayerTeam.None) {
                             if (IsIcing(closestPlayerToPuckTeam)) {
                                 icingHasToBeWarned[closestPlayerToPuckTeam] = false;
-                                ResetIcings();
+                                ResetIcings(true);
                             }
                             else {
                                 PlayerTeam closestPlayerToEndBoardOtherTeam = TeamFunc.GetOtherTeam(closestPlayerToPuckTeam);
@@ -2316,6 +2322,8 @@ namespace oomtm450PuckMod_Ruleset {
                                 CallIcing(PlayerTeam.Blue);
                             else if (IsIcing(PlayerTeam.Red))
                                 CallIcing(PlayerTeam.Red);
+                            else
+                                ResetIcings();
                         }
                     }
                 }
@@ -3006,15 +3014,16 @@ namespace oomtm450PuckMod_Ruleset {
             WarnCall(active, team, Rule.HighStick);
         }
 
-        private static void ResetIcing(PlayerTeam team) {
+        private static void ResetIcing(PlayerTeam team, bool removeIsActive = false) {
             _isIcingPossible[team] = new IcingObject();
-            _isIcingActive[team] = false;
+            if (removeIsActive)
+                _isIcingActive[team] = false;
             _isIcingActiveTimers[team].Change(Timeout.Infinite, Timeout.Infinite);
         }
 
-        private static void ResetIcings() {
+        private static void ResetIcings(bool removeIsActive = false) {
             foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingPossible.Keys))
-                ResetIcing(key);
+                ResetIcing(key, removeIsActive);
         }
 
         private static void ResetIcingCallback(object stateInfo) {
@@ -3067,7 +3076,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (clearViolations)
                 _puckValidator?.ClearViolations();
 
-            ResetIcings();
+            ResetIcings(true);
             ResetHighSticks();
 
             NetworkCommunication.SendDataToAll(SoundsSystem.PLAY_SOUND, SoundsSystem.FormatSoundStrForCommunication(SoundsSystem.WHISTLE),
@@ -5184,16 +5193,14 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void ServerManager_Update_IcingLogic(PlayerTeam team, Puck puck, Dictionary<PlayerTeam, bool?> icingHasToBeWarned) {
-            if (!IsIcingEnabled(team))
+            if (!IsIcingEnabled(team) || (icingHasToBeWarned[team] != null && !((bool)icingHasToBeWarned[team])))
                 return;
-
-            PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
 
             if (!IsIcingPossible(puck, team, false) && _isIcingActive[team]) {
                 WarnIcing(false, team);
-                ResetIcing(team);
+                ResetIcing(team, true);
             }
-            else if (!_isIcingActive[team] && IsIcingPossible(puck, team) && _puckZone == ZoneFunc.GetTeamZones(otherTeam)[1]) {
+            else if (!_isIcingActive[team] && IsIcingPossible(puck, team) && _puckZone == ZoneFunc.GetTeamZones(TeamFunc.GetOtherTeam(team))[1]) {
                 _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
                 _isIcingActiveTimers[team].Change((int)(ServerConfig.Icing.MaxActiveTime * _arenaScaleZ), Timeout.Infinite);
                 icingHasToBeWarned[team] = true;
