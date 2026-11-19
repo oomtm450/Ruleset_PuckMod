@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -1063,25 +1064,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return;
                     }
 
-                    (double startX, double endX) = (0, 0);
-                    (double startZ, double endZ) = (0, 0);
-                    if (goalie.Team == PlayerTeam.Blue) {
-                        (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.BlueTeam_BluePaint];
-                        (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BluePaint];
-                    }
-                    else {
-                        (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.RedTeam_BluePaint];
-                        (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[IceElement.RedTeam_BluePaint];
-                    }
-
-                    bool goalieIsInHisCrease = true;
-                    float adjustedGoalieRadius = ServerConfig.GInt.GoalieRadius * (_arenaScaleX > _arenaScaleZ ? _arenaScaleX : _arenaScaleZ);
-                    if (goalie.PlayerBody.Rigidbody.transform.position.x - adjustedGoalieRadius < startX ||
-                        goalie.PlayerBody.Rigidbody.transform.position.x + adjustedGoalieRadius > endX ||
-                        goalie.PlayerBody.Rigidbody.transform.position.z - adjustedGoalieRadius < startZ ||
-                        goalie.PlayerBody.Rigidbody.transform.position.z + adjustedGoalieRadius > endZ) {
-                        goalieIsInHisCrease = false;
-                    }
+                    bool goalieIsInHisCrease = IsGoalieInHisCrease(goalie);
 
                     PlayerTeam goalieOtherTeam = TeamFunc.GetOtherTeam(goalie.Team);
 
@@ -2352,10 +2335,8 @@ namespace oomtm450PuckMod_Ruleset {
                 try {
                     // Warn icings.
                     foreach (var kvp in icingHasToBeWarned) {
-                        if (kvp.Value != null) {
+                        if (kvp.Value != null)
                             WarnIcing((bool)kvp.Value, kvp.Key);
-                            break;
-                        }
                     }
 
                     // Warn or call off offsides.
@@ -3025,15 +3006,15 @@ namespace oomtm450PuckMod_Ruleset {
             WarnCall(active, team, Rule.HighStick);
         }
 
+        private static void ResetIcing(PlayerTeam team) {
+            _isIcingPossible[team] = new IcingObject();
+            _isIcingActive[team] = false;
+            _isIcingActiveTimers[team].Change(Timeout.Infinite, Timeout.Infinite);
+        }
+
         private static void ResetIcings() {
             foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingPossible.Keys))
-                _isIcingPossible[key] = new IcingObject();
-
-            foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingActive.Keys))
-                _isIcingActive[key] = false;
-
-            foreach (PlayerTeam key in new List<PlayerTeam>(_isIcingActiveTimers.Keys))
-                _isIcingActiveTimers[key].Change(Timeout.Infinite, Timeout.Infinite);
+                ResetIcing(key);
         }
 
         private static void ResetIcingCallback(object stateInfo) {
@@ -3225,8 +3206,17 @@ namespace oomtm450PuckMod_Ruleset {
         private static bool IsIcingPossible(Puck puck, PlayerTeam team, bool checkPossibleTime = true) {
             IcingObject icingObj = _isIcingPossible[team];
 
-            if (!IsIcingEnabled(team) || icingObj.Watch == null || icingObj.AnyPlayersBehindHashmarks || !puck || !puck.Rigidbody)
+            if (!IsIcingEnabled(team)
+                || icingObj.Watch == null
+                || !puck
+                || !puck.Rigidbody)
                 return false;
+
+            if ((ServerConfig.Icing.SkaterBehindHashmarksCancelsIcing && icingObj.AnySkaterBehindHashmarks) ||
+                (ServerConfig.Icing.GoalieOutOfCreaseCancelsIcing && !IsGoalieInHisCrease(team))) {
+                ResetIcing(team);
+                return false;
+            }
 
             if (!checkPossibleTime)
                 return true;
@@ -3279,6 +3269,37 @@ namespace oomtm450PuckMod_Ruleset {
                 return ServerConfig.GInt.BlueTeam;
             else
                 return ServerConfig.GInt.RedTeam;
+        }
+
+        private static bool IsGoalieInHisCrease(PlayerTeam team) {
+            Player goalie = PlayerManager.Instance.GetPlayersByTeam(team).Where(x => Codebase.PlayerFunc.IsPlayerPlaying(x) && Codebase.PlayerFunc.IsGoalie(x)).FirstOrDefault();
+            if (goalie == null || !goalie)
+                return true;
+
+            return IsGoalieInHisCrease(goalie);
+        }
+
+        private static bool IsGoalieInHisCrease(Player goalie) {
+            double startX, endX, startZ, endZ;
+            if (goalie.Team == PlayerTeam.Blue) {
+                (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.BlueTeam_BluePaint];
+                (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BluePaint];
+            }
+            else {
+                (startX, endX) = ZoneFunc.ICE_X_POSITIONS[IceElement.RedTeam_BluePaint];
+                (startZ, endZ) = ZoneFunc.ICE_Z_POSITIONS[IceElement.RedTeam_BluePaint];
+            }
+
+            bool goalieIsInHisCrease = true;
+            float adjustedGoalieRadius = ServerConfig.GInt.GoalieRadius * (_arenaScaleX > _arenaScaleZ ? _arenaScaleX : _arenaScaleZ);
+            if (goalie.PlayerBody.Rigidbody.transform.position.x - adjustedGoalieRadius < startX ||
+                goalie.PlayerBody.Rigidbody.transform.position.x + adjustedGoalieRadius > endX ||
+                goalie.PlayerBody.Rigidbody.transform.position.z - adjustedGoalieRadius < startZ ||
+                goalie.PlayerBody.Rigidbody.transform.position.z + adjustedGoalieRadius > endZ) {
+                goalieIsInHisCrease = false;
+            }
+
+            return goalieIsInHisCrease;
         }
 
         private static void ResetGoalAndAssistAttribution(PlayerTeam team, Puck puck = null) {
@@ -5168,8 +5189,8 @@ namespace oomtm450PuckMod_Ruleset {
             PlayerTeam otherTeam = TeamFunc.GetOtherTeam(team);
 
             if (!IsIcingPossible(puck, team, false) && _isIcingActive[team]) {
-                _isIcingActive[team] = false;
                 WarnIcing(false, team);
+                ResetIcing(team);
             }
             else if (!_isIcingActive[team] && IsIcingPossible(puck, team) && _puckZone == ZoneFunc.GetTeamZones(otherTeam)[1]) {
                 _puckLastStateBeforeCall[Rule.Icing] = (puck.Rigidbody.transform.position, _puckZone);
@@ -5912,14 +5933,14 @@ namespace oomtm450PuckMod_Ruleset {
 
         internal int FrameCheck { get; set; } = 0;
 
-        internal bool AnyPlayersBehindHashmarks { get; set; } = false;
+        internal bool AnySkaterBehindHashmarks { get; set; } = false;
 
         internal IcingObject() { }
 
-        internal IcingObject(Stopwatch watch, float delta, bool anyPlayersBehindHashmarks) {
+        internal IcingObject(Stopwatch watch, float delta, bool anySkaterBehindHashmarks) {
             Watch = watch;
             Delta = delta;
-            AnyPlayersBehindHashmarks = anyPlayersBehindHashmarks;
+            AnySkaterBehindHashmarks = anySkaterBehindHashmarks;
         }
     }
 

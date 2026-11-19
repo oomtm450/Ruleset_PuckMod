@@ -246,11 +246,17 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                         Offside = new OffsideConfig {
                             BlueTeam = config.Offside.BlueTeam,
                             RedTeam = config.Offside.RedTeam,
+                            IntentionalOffsideBlueTeam = config.Offside.IntentionalOffsideBlueTeam,
+                            IntentionalOffsideRedTeam = config.Offside.IntentionalOffsideRedTeam,
                         },
                         Icing = new IcingConfig {
                             BlueTeam = config.Icing.BlueTeam,
                             RedTeam = config.Icing.RedTeam,
                             Deferred = config.Icing.Deferred,
+                            StaminaDrain = config.Icing.StaminaDrain,
+                            StaminaDrainGoalie = config.Icing.StaminaDrainGoalie,
+                            GoalieOutOfCreaseCancelsIcing = config.Icing.GoalieOutOfCreaseCancelsIcing,
+                            SkaterBehindHashmarksCancelsIcing = config.Icing.SkaterBehindHashmarksCancelsIcing,
                         },
                         HighStick = new HighStickConfig {
                             BlueTeam = config.HighStick.BlueTeam,
@@ -555,6 +561,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
     /// Class containing the config for icings.
     /// </summary>
     public class IcingConfig : ISubConfig {
+        #region Properties
         /// <summary>
         /// Bool, true if blue team icings are activated.
         /// </summary>
@@ -646,6 +653,17 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Int, time in period seconds between 2 icings to apply additional stamina drain penalties.
         /// </summary>
         public int StaminaDrainDivisionAmountPenaltyTime { get; set; } = 21;
+
+        /// <summary>
+        /// Bool, true if a goalie gets out of his crease cancels an icing for the other team.
+        /// </summary>
+        public bool GoalieOutOfCreaseCancelsIcing { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true if a skater camping behind his hashmarks cancels an icing for the other team.
+        /// </summary>
+        public bool SkaterBehindHashmarksCancelsIcing { get; set; } = false;
+        #endregion
 
         #region Constructors
         /// <summary>

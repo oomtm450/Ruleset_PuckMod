@@ -435,6 +435,16 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public int StaminaDrainDivisionAmountPenaltyTime { get; } = 21;
 
         /// <summary>
+        /// Bool, true if a goalie gets out of his crease cancels an icing for the other team.
+        /// </summary>
+        public bool GoalieOutOfCreaseCancelsIcing { get; } = true;
+
+        /// <summary>
+        /// Bool, true if a skater camping behind his hashmarks cancels an icing for the other team.
+        /// </summary>
+        public bool SkaterBehindHashmarksCancelsIcing { get; } = false;
+
+        /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.
         /// </summary>
         /// <param name="oldConfig">ISubConfig, config with old values.</param>
