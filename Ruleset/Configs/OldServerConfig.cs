@@ -479,14 +479,19 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float Delta { get; } = 18f;
 
         /// <summary>
-        /// Bool, true to make a jumping high stick a hand pass situation for blue team.
+        /// Bool, true to make a high stick a hand pass situation for blue team.
         /// </summary>
         public bool HandPassBlueTeam { get; } = true;
 
         /// <summary>
-        /// Bool, true to make a jumping high stick a hand pass situation for red team.
+        /// Bool, true to make a high stick a hand pass situation for red team.
         /// </summary>
         public bool HandPassRedTeam { get; } = true;
+
+        /// <summary>
+        /// Bool, true to make only jumping high stick a hand pass situation.
+        /// </summary>
+        public bool HandPassWhileJumpingOnly { get; } = false;
 
         /// <summary>
         /// Method that updates this config with the new default values, if the old default values were used.

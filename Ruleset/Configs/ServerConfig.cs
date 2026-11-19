@@ -257,6 +257,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                             RedTeam = config.HighStick.RedTeam,
                             HandPassBlueTeam = config.HighStick.HandPassBlueTeam,
                             HandPassRedTeam = config.HighStick.HandPassRedTeam,
+                            HandPassWhileJumpingOnly = config.HighStick.HandPassWhileJumpingOnly,
                         },
                         Penalty = penaltyConfig,
                         Faceoff = new FaceoffConfig {
@@ -708,14 +709,19 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float Delta { get; set; } = 20f;
 
         /// <summary>
-        /// Bool, true to make a jumping high stick a hand pass situation for blue team.
+        /// Bool, true to make a high stick a hand pass situation for blue team.
         /// </summary>
         public bool HandPassBlueTeam { get; set; } = true;
 
         /// <summary>
-        /// Bool, true to make a jumping high stick a hand pass situation for red team.
+        /// Bool, true to make a high stick a hand pass situation for red team.
         /// </summary>
         public bool HandPassRedTeam { get; set; } = true;
+
+        /// <summary>
+        /// Bool, true to make only jumping high stick a hand pass situation.
+        /// </summary>
+        public bool HandPassWhileJumpingOnly { get; set; } = false;
 
         #region Constructors
         /// <summary>
