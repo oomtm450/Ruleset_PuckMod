@@ -373,7 +373,30 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static bool GivePenalty(PenaltyType penaltyType, Player penalizedPlayer, string receivingPlayerSteamId = "", Player referee = null) {
+            string penalizedPlayerSteamId;
+
+            try {
+                penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
+                if (string.IsNullOrEmpty(penalizedPlayerSteamId))
+                    return false;
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(GivePenalty)} 1.\n{ex}", Ruleset.ServerConfig);
+                return false;
+            }
+
+            if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> penaltyList)) {
+                penaltyList = new LockList<Penalty>();
+                PenalizedPlayers.Add(penalizedPlayerSteamId, penaltyList);
+            }
+
+            if (penaltyList.Count == Ruleset.ServerConfig.Penalty.MaxPenaltiesCountPerPlayer)
+                return false;
+
             if (referee == null) {
+                if (penaltyList.Any(x => x.CurrentPenalty))
+                    return false;
+
                 if (!Ruleset.ServerConfig.Penalty.Interference && (penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.Tripping))
                     return false;
                 if (!Ruleset.ServerConfig.Penalty.GoalieInterference && penaltyType == PenaltyType.GoalieInterference)
@@ -399,26 +422,6 @@ namespace oomtm450PuckMod_Ruleset {
             List<Player> teamPlayers = PlayerManager.Instance.GetPlayersByTeam(penalizedPlayer.Team).Where(x => !Codebase.PlayerFunc.IsGoalie(x)).ToList();
 
             if (teamPlayers.Count < Ruleset.ServerConfig.Penalty.MaximumPenaltyImmunedPlayersCountPerTeam)
-                return false;
-
-            string penalizedPlayerSteamId;
-
-            try {
-                penalizedPlayerSteamId = penalizedPlayer.SteamId.Value.ToString();
-                if (string.IsNullOrEmpty(penalizedPlayerSteamId))
-                    return false;
-            }
-            catch (Exception ex) {
-                Logging.LogError($"Error in {nameof(GivePenalty)} 1.\n{ex}", Ruleset.ServerConfig);
-                return false;
-            }
-
-            if (!PenalizedPlayers.TryGetValue(penalizedPlayerSteamId, out LockList<Penalty> penaltyList)) {
-                penaltyList = new LockList<Penalty>();
-                PenalizedPlayers.Add(penalizedPlayerSteamId, penaltyList);
-            }
-
-            if (penaltyList.Count == Ruleset.ServerConfig.Penalty.MaxPenaltiesCountPerPlayer)
                 return false;
 
             DateTime now = DateTime.UtcNow;
