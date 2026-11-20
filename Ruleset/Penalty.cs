@@ -373,28 +373,6 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         internal static bool GivePenalty(PenaltyType penaltyType, Player penalizedPlayer, string receivingPlayerSteamId = "", Player referee = null) {
-            if (referee == null) {
-                if (!Ruleset.ServerConfig.Penalty.Interference && (penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.Tripping))
-                    return false;
-                if (!Ruleset.ServerConfig.Penalty.GoalieInterference && penaltyType == PenaltyType.GoalieInterference)
-                    return false;
-                if (!Ruleset.ServerConfig.Penalty.DelayOfGame && penaltyType == PenaltyType.DelayOfGame)
-                    return false;
-                if (!Ruleset.ServerConfig.Penalty.FaceoffViolation && penaltyType == PenaltyType.FaceoffViolation)
-                    return false;
-                if (!Ruleset.ServerConfig.Penalty.Embellishment && penaltyType == PenaltyType.Embellishment)
-                    return false;
-                if (!Ruleset.ServerConfig.Penalty.Roughing && penaltyType == PenaltyType.Roughing)
-                    return false;
-                if (!Ruleset.ServerConfig.Penalty.Charging && penaltyType == PenaltyType.Charging)
-                    return false;
-            }
-
-            List<Player> teamPlayers = PlayerManager.Instance.GetPlayersByTeam(penalizedPlayer.Team).Where(x => !Codebase.PlayerFunc.IsGoalie(x)).ToList();
-
-            if (teamPlayers.Count < Ruleset.ServerConfig.Penalty.MaximumPenaltyImmunedPlayersCountPerTeam)
-                return false;
-
             string penalizedPlayerSteamId;
 
             try {
@@ -415,10 +393,41 @@ namespace oomtm450PuckMod_Ruleset {
             if (penaltyList.Count == Ruleset.ServerConfig.Penalty.MaxPenaltiesCountPerPlayer)
                 return false;
 
+            if (referee == null) {
+                if (penaltyList.Any(x => x.CurrentPenalty))
+                    return false;
+
+                if (!Ruleset.ServerConfig.Penalty.Interference && (penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.Tripping))
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.GoalieInterference && penaltyType == PenaltyType.GoalieInterference)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.DelayOfGame && penaltyType == PenaltyType.DelayOfGame)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.FaceoffViolation && penaltyType == PenaltyType.FaceoffViolation)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.Embellishment && penaltyType == PenaltyType.Embellishment)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.Roughing && penaltyType == PenaltyType.Roughing)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.Charging && penaltyType == PenaltyType.Charging)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.Slashing && penaltyType == PenaltyType.Slashing)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.HighStick && penaltyType == PenaltyType.HighStick)
+                    return false;
+                if (!Ruleset.ServerConfig.Penalty.Hooking && penaltyType == PenaltyType.Hooking)
+                    return false;
+            }
+
+            List<Player> teamPlayers = PlayerManager.Instance.GetPlayersByTeam(penalizedPlayer.Team).Where(x => !Codebase.PlayerFunc.IsGoalie(x)).ToList();
+
+            if (teamPlayers.Count < Ruleset.ServerConfig.Penalty.MaximumPenaltyImmunedPlayersCountPerTeam)
+                return false;
+
             DateTime now = DateTime.UtcNow;
             if (!string.IsNullOrEmpty(receivingPlayerSteamId)) {
                 List<Penalty> allPenalties = GetAllPenalties();
-                if (allPenalties.Where(x => x.Team == penalizedPlayer.Team && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
+                if (allPenalties.Where(x => x.Team == penalizedPlayer.Team && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (now - x.PenaltyDateTime).TotalMilliseconds < 4000)) // TODO : Config.
                     return false;
 
                 if ((penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.GoalieInterference) && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Charging) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
@@ -875,6 +884,15 @@ namespace oomtm450PuckMod_Ruleset {
 
                 case PenaltyType.Charging:
                     return Ruleset.ServerConfig.Penalty.ChargingTime;
+
+                case PenaltyType.Slashing:
+                    return Ruleset.ServerConfig.Penalty.SlashingTime;
+
+                case PenaltyType.HighStick:
+                    return Ruleset.ServerConfig.Penalty.HighStickTime;
+
+                case PenaltyType.Hooking:
+                    return Ruleset.ServerConfig.Penalty.HookingTime;
             }
 
             return PenaltyModule.LONG_PENALTY_TIME_MS;
@@ -976,5 +994,9 @@ namespace oomtm450PuckMod_Ruleset {
         FaceoffViolation,
         Roughing,
         Charging,
+        Slashing,
+        [Description("High stick"), Category("ToString")]
+        HighStick,
+        Hooking,
     }
 }
