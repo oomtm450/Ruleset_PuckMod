@@ -3923,7 +3923,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 _refSignalsBlueTeam.ShowSignal(dataStr);
 
                             if (ClientConfig.RefereeSounds)
-                                PlayRefSoundPending(dataStr);
+                                PlayRefSoundPending(dataStr, PlayerTeam.Blue);
                         }
                         break;
 
@@ -3931,7 +3931,7 @@ namespace oomtm450PuckMod_Ruleset {
                         StopBlueRefSignals(dataStr);
 
                         if (ClientConfig.RefereeSounds)
-                            PlayRefSoundCancelled(dataStr);
+                            PlayRefSoundCancelled(dataStr, PlayerTeam.Blue);
                         break;
 
                     case RefSignals.SHOW_SIGNAL_RED: // CLIENT-SIDE : Show red team ref signal in the UI.
@@ -3950,14 +3950,14 @@ namespace oomtm450PuckMod_Ruleset {
                                 _refSignalsRedTeam.ShowSignal(dataStr);
 
                             if (ClientConfig.RefereeSounds)
-                                PlayRefSoundPending(dataStr);
+                                PlayRefSoundPending(dataStr, PlayerTeam.Red);
                         }
                         break;
 
                     case RefSignals.STOP_SIGNAL_RED: // CLIENT-SIDE : Hide red team ref signal in the UI.
                         StopRedRefSignals(dataStr);
                         if (ClientConfig.RefereeSounds)
-                            PlayRefSoundCancelled(dataStr);
+                            PlayRefSoundCancelled(dataStr, PlayerTeam.Red);
                         break;
 
                     case RefSignals.STOP_SIGNAL: // CLIENT-SIDE : Hide all ref signals in the UI.
@@ -4776,7 +4776,7 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void PlayRefSoundPending(string dataStr) { // TODO : Add mercy time for like 100ms or less. If PlayRefSoundCancelled is called within this time, don't play any sound.
+        private static void PlayRefSoundPending(string dataStr, PlayerTeam team) { // TODO : Add mercy time for like 100ms or less. If PlayRefSoundCancelled is called within this time, don't play any sound.
             string refCallSound = "";
             switch (dataStr) {
                 case RefSignals.ICING_LINESMAN:
@@ -4795,14 +4795,14 @@ namespace oomtm450PuckMod_Ruleset {
                 Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySound",
                 new Dictionary<string, object> {
                     { "name", refCallSound },
-                    { "type", "ref" },
+                    { "type", dataStr + (team == PlayerTeam.Blue ? "b" : "r") },
                     { "cancelcurrent", true },
                     { "volume", ClientConfig.RefereeSoundsVolume },
                 }
             );
         }
 
-        private static void PlayRefSoundCancelled(string dataStr) {
+        private static void PlayRefSoundCancelled(string dataStr, PlayerTeam team) {
             string refCallSound = "";
             switch (dataStr) {
                 case RefSignals.ICING_LINESMAN:
@@ -4821,7 +4821,7 @@ namespace oomtm450PuckMod_Ruleset {
                 Codebase.Constants.SOUNDS_MOD_NAME + "Event_PlaySound",
                 new Dictionary<string, object> {
                     { "name", refCallSound },
-                    { "type", "ref" },
+                    { "type", dataStr + (team == PlayerTeam.Blue ? "b" : "r") },
                     { "cancelcurrent", true },
                     { "volume", ClientConfig.RefereeSoundsVolume },
                 }

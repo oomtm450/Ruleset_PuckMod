@@ -24,7 +24,6 @@ namespace oomtm450PuckMod_Ruleset {
         private const float MIN_ATTACKER_SWING_SPEED = 30f;   // Peak tip speed of the attacker's stick.
         private const float MAX_VICTIM_SWING_SPEED = 10f;     // Above this on a blade hit = mutual stick battle.
         private const float AGGRESSOR_RATIO = 2f;              // Attacker must be at least this many times faster than the victim stick.
-        private const float MIN_IMPULSE = 6f;
         private const float MIN_APPROACH_DOT = 0.55f;          // How head-on the strike is (abs of dot between relative velocity and contact normal).
         private const float SWING_WINDOW = 0.15f;              // Seconds of history used for peak speed / height.
 
@@ -286,8 +285,8 @@ namespace oomtm450PuckMod_Ruleset {
                     return Fail(result, "Attacker playing the puck");
 
                 // 3. Impact.
-                if (impulse < MIN_IMPULSE * m)
-                    return Fail(result, $"Impact too light (impulse:{impulse} < MIN_IMPULSE:{MIN_IMPULSE} * m:{m} ({MIN_IMPULSE * m}))");
+                if (impulse < Ruleset.ServerConfig.Penalty.SlashingForceThreshold * m)
+                    return Fail(result, $"Impact too light (impulse:{impulse} < MIN_IMPULSE:{Ruleset.ServerConfig.Penalty.SlashingForceThreshold} * m:{m} ({Ruleset.ServerConfig.Penalty.SlashingForceThreshold * m}))");
 
                 if (!isAxe) {
                     if (attackerAnalyze.PeakSpeed < victimSpeed * AGGRESSOR_RATIO)
