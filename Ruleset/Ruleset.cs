@@ -790,6 +790,8 @@ namespace oomtm450PuckMod_Ruleset {
                         WarnIcing(false, stick.Player.Team);
                         ResetIcings(true);
                     }
+                    else
+                        ResetIcings();
                 }
                 catch (Exception ex) {
                     Logging.LogError($"Error in {nameof(Puck_OnCollisionStay_Patch)} Postfix().\n{ex}", ServerConfig);
