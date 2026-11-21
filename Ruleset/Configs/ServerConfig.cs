@@ -440,11 +440,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, slash force threshold to consider a slashing penalty.
         /// </summary>
-        public float SlashingAxeForceThreshold { get; set; } = 8.5f;
+        public float SlashingAxeForceThreshold { get; set; } = 5.35f;
         /// <summary>
         /// Float, slash force threshold to consider a slashing penalty.
         /// </summary>
-        public float SlashingForceThreshold { get; set; } = 4.35f;
+        public float SlashingForceThreshold { get; set; } = 4.375f;
 
         /// <summary>
         /// Bool, true if high stick penalty is enabled.
