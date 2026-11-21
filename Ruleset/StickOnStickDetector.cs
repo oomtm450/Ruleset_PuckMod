@@ -27,7 +27,7 @@ namespace oomtm450PuckMod_Ruleset {
         private const float MIN_APPROACH_DOT = 0.55f;          // How head-on the strike is (abs of dot between relative velocity and contact normal).
         private const float SWING_WINDOW = 0.15f;              // Seconds of history used for peak speed / height.
 
-        private const float AXE_MIN_DROP = 0.5f;               // Vertical drop (in ice-relative units) between peak height and contact.
+        private const float AXE_MIN_DROP = 1f;               // Vertical drop (in ice-relative units) between peak height and contact.
         private const float AXE_MIN_DOWN_RATIO = 0.6f;         // -v.y / |v| at the fastest sample.
 
         private const float BEHIND_DOT = -0.3f;                // dot(victimFacing, toAttacker) below this = attacker is behind.

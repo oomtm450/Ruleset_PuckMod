@@ -1652,6 +1652,27 @@ namespace oomtm450PuckMod_Ruleset {
 
                             return false;
                         }
+                        else if (content.StartsWith(@"/refsound")) {
+                            content = content.Replace(@"/refsounds", "").Replace(@"/refsound", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Ref sounds is currently {(ClientConfig.RefereeSounds ? "enabled" : "disabled")}.");
+                            else {
+                                bool refSounds;
+                                if (content == "true" || content == "1")
+                                    refSounds = true;
+                                else if (content == "false" || content == "0")
+                                    refSounds = false;
+                                else
+                                    return true;
+
+                                ClientConfig.RefereeSounds = refSounds;
+                                ClientConfig.Save();
+                                SystemFunc.AddClientChatMessage($"{(refSounds ? "Enabled" : "Disabled")} ref sounds.");
+                            }
+
+                            return false;
+                        }
                         /*else if (content.StartsWith(@"/board")) {
                             content = content.Replace(@"/board", "").Trim();
                             _boardWindowsDefaultHeight = float.Parse(content, CultureInfo.InvariantCulture);
@@ -1890,7 +1911,7 @@ namespace oomtm450PuckMod_Ruleset {
                         content = content.ToLowerInvariant();
 
                         if (content == @"/help")
-                            SystemFunc.AddClientChatMessage("Ruleset commands:\n<b>/refvol</b> - Change the volume of refs (0.0-2.0)\n<b>/refscale</b> - Change the scale of the 2D refs images (0.0-2.0)\n<b>/voteref</b> - Vote to become ref\n<b>/voteremoveref</b> - Vote to remove a ref (Number, Name, SteamId or nothing if you are ref and want to remove yourself)\n<b>REF UI</b> - F7 to open\n");
+                            SystemFunc.AddClientChatMessage("Ruleset commands:\n<b>/refsounds</b> - Enable or disable the sounds of refs (true-false)\n<b>/refvol</b> - Change the volume of refs (0.0-2.0)\n<b>/refscale</b> - Change the scale of the 2D refs images (0.0-2.0)\n<b>/voteref</b> - Vote to become ref\n<b>/voteremoveref</b> - Vote to remove a ref (Number, Name, SteamId or nothing if you are ref and want to remove yourself)\n<b>REF UI</b> - F7 to open\n");
                     }
                 }
                 catch (Exception ex) {

@@ -37,11 +37,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public string ModName { get; } = Constants.MOD_NAME;
 
         /// <summary>
-        /// Bool, true if the numeric values has to be replaced be the default ones. Make this false to use custom values.
-        /// </summary>
-        public bool UseDefaultNumericValues { get; set; } = true;
-
-        /// <summary>
         /// Bool, true if the refs has to be team color coded.
         /// </summary>
         public bool TeamColor2DRefs { get; set; } = true;
@@ -119,17 +114,6 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                     config.RefereeSoundsVolume = 0;
 
                 config.Save();
-
-                if (config.UseDefaultNumericValues) {
-                    ClientConfig defaultConfig = new Configs.ClientConfig {
-                        LogInfo = config.LogInfo,
-                        UseDefaultNumericValues = config.UseDefaultNumericValues,
-                        TeamColor2DRefs = config.TeamColor2DRefs,
-                        RefereeSounds = config.RefereeSounds,
-                    };
-
-                    config = defaultConfig;
-                }
 
                 return config;
             }
