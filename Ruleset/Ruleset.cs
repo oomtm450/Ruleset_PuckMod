@@ -16,7 +16,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;

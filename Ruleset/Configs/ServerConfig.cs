@@ -438,13 +438,9 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         public int SlashingTime { get; set; } = PenaltyModule.LONG_PENALTY_TIME_MS;
         /// <summary>
-        /// Int, time between allowed slashes in milliseconds.
-        /// </summary>
-        public int SlashingAllowedHitMillisecondsThreshold { get; set; } = 400;
-        /// <summary>
         /// Float, slash force threshold to consider a slashing penalty.
         /// </summary>
-        public float SlashingForceThreshold { get; set; } = 8.2f;
+        public float SlashingForceThreshold { get; set; } = 8.18f;
 
         /// <summary>
         /// Bool, true if high stick penalty is enabled.
@@ -455,7 +451,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// </summary>
         public int HighStickTime { get; set; } = PenaltyModule.LONG_PENALTY_TIME_MS;
         /// <summary>
-        /// Float, high stick force threshold to consider a slashing penalty.
+        /// Float, high stick force threshold to consider a high stick penalty.
         /// </summary>
         public float HighStickForceThreshold { get; set; } = 10f;
 
