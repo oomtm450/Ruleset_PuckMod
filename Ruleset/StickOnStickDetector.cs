@@ -40,8 +40,8 @@ namespace oomtm450PuckMod_Ruleset {
         private const int SCRUM_PLAYER_COUNT = 2;              // Other players (besides attacker/victim) near the contact.
         private const float SCRUM_SPEED_MULTIPLIER = 1.5f;     // In a scrum, swing must be this much harder than the minimum.
 
-        private const float LIFT_MIN_UP_RATIO = 0.15f;   // swing direction mostly upward at contact
-        private const float LIFT_MAX_DOWN_RATIO = -0.19f;   // swing direction mostly upward at contact
+        private const float LIFT_MIN_UP_RATIO = 0.08f;
+        private const float LIFT_MAX_DOWN_RATIO = -0.08f;
 
         private const int PAIR_COOLDOWN_MS = 1000;
         private const float SAMPLE_HISTORY = 0.3f;
