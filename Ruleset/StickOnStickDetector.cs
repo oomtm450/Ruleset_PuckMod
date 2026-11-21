@@ -253,10 +253,13 @@ namespace oomtm450PuckMod_Ruleset {
                 PlayerBody victimBody = victimPlayer.PlayerBody;
                 PlayerBody attackerBody = attacker.PlayerBody;
                 if (victimBody && attackerBody) {
-                    Vector3 facing = victimBody.Rigidbody.linearVelocity;
+                    // Direction the victim's body is pointing, flattened onto the ice.
+                    Vector3 facing = victimBody.Rigidbody.rotation * Vector3.forward;   // or victimBody.transform.forward
                     facing.y = 0f;
-                    if (facing.magnitude < FACING_MIN_SPEED) {
-                        facing = victimBody.transform.forward;
+
+                    if (facing.sqrMagnitude < 0.01f) {
+                        // Body is tilted or lying sideways, so forward points mostly up or down. Not reliable.
+                        facing = victimBody.Rigidbody.linearVelocity;
                         facing.y = 0f;
                     }
                     facing.Normalize();
