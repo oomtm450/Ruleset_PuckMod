@@ -78,6 +78,8 @@ namespace oomtm450PuckMod_Ruleset {
             "pim",
         });
 
+        private const int HARDCODED_SEED = 450;
+
         private const int OFFSIDE_PENDING_AUDIO_COUNT = 12;
         private const int OFFSIDE_CANCELLED_AUDIO_COUNT = 12;
 
@@ -4802,11 +4804,11 @@ namespace oomtm450PuckMod_Ruleset {
             string refCallSound = "";
             switch (dataStr) {
                 case RefSignals.ICING_LINESMAN:
-                    refCallSound = $"icing_on_{new System.Random().Next(1, ICING_PENDING_AUDIO_COUNT + 1)}";
+                    refCallSound = $"icing_on_{new System.Random(HARDCODED_SEED).Next(1, ICING_PENDING_AUDIO_COUNT + 1)}";
                     break;
 
                 case RefSignals.OFFSIDE_LINESMAN:
-                    refCallSound = $"offside_on_{new System.Random().Next(1, OFFSIDE_PENDING_AUDIO_COUNT + 1)}";
+                    refCallSound = $"offside_on_{new System.Random(HARDCODED_SEED).Next(1, OFFSIDE_PENDING_AUDIO_COUNT + 1)}";
                     break;
             }
 
@@ -4828,11 +4830,11 @@ namespace oomtm450PuckMod_Ruleset {
             string refCallSound = "";
             switch (dataStr) {
                 case RefSignals.ICING_LINESMAN:
-                    refCallSound = $"icing_off_{new System.Random().Next(1, ICING_CANCELLED_AUDIO_COUNT + 1)}";
+                    refCallSound = $"icing_off_{new System.Random(HARDCODED_SEED).Next(1, ICING_CANCELLED_AUDIO_COUNT + 1)}";
                     break;
 
                 case RefSignals.OFFSIDE_LINESMAN:
-                    refCallSound = $"offside_off_{new System.Random().Next(1, OFFSIDE_CANCELLED_AUDIO_COUNT + 1)}";
+                    refCallSound = $"offside_off_{new System.Random(HARDCODED_SEED).Next(1, OFFSIDE_CANCELLED_AUDIO_COUNT + 1)}";
                     break;
             }
 
