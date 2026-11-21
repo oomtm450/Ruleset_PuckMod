@@ -1690,6 +1690,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                                     ClientConfig.PenaltyLabelUIFontSize = fontSize;
                                     ClientConfig.Save();
+
+                                    PenLabelUI.ChangeLabelsFontSize(fontSize);
+
                                     SystemFunc.AddClientChatMessage($"Adjusted penalty timers label UI font size to {fontSize.ToString(CultureInfo.InvariantCulture)}");
                                 }
                             }

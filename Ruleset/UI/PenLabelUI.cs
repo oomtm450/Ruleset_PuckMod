@@ -55,6 +55,11 @@ namespace oomtm450PuckMod_Ruleset.UI {
 
         private static VisualElement GetPanel(PlayerTeam team) => team == PlayerTeam.Blue ? _bluePanel : _redPanel;
 
+        internal static void ChangeLabelsFontSize(int fontSize) {
+            foreach (Label label in _activeLabels.Values)
+                label.style.fontSize = fontSize;
+        }
+
         internal static void AddPenaltiesLabel() {
             try {
                 if (_activeLabels.Count != 0)
