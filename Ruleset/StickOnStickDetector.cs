@@ -239,7 +239,9 @@ namespace oomtm450PuckMod_Ruleset {
                 float drop = peakY - contactY;
 
                 // Axe : high tip, big vertical drop, mostly downward swing, on the shaft (or on a player).
-                bool isAxe = drop > AXE_MIN_DROP && attackerAnalyze.DownRatio > AXE_MIN_DOWN_RATIO;
+                float downAtContact = -attackerAnalyze.RecentUpRatio;   // +1 = straight down at contact
+                float downScore = Mathf.Max(attackerAnalyze.DownRatio, downAtContact);
+                bool isAxe = drop > AXE_MIN_DROP && downScore > AXE_MIN_DOWN_RATIO;
                 result.IsAxe = isAxe;
 
                 // Context : puck and position of the attacker relative to the victim.
