@@ -34,7 +34,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         // High stick (on a player).
         private const float HEAD_HEIGHT = Codebase.Constants.SHOULDERS_HEIGHT - 0.04f; // Contact above this, relative to the victim's body origin, = head/face. TODO : check the player's real height.
-        private const float HIGH_STICK_MIN_SWING_SPEED = 40f;   // Relative swing speed (SlashDetector tracker) for a hit to be "hard".
+        private const float HIGH_STICK_MIN_SWING_SPEED = 40.2f;   // Relative swing speed (SlashDetector tracker) for a hit to be "hard".
         private const float HIGH_STICK_HIT_GAP = 0.25f;        // Two contacts closer than this are the same swing.
         private const float HIGH_STICK_WINDOW = 5f;            // Seconds : 2 hard hits inside this = penalty.
         private const int HIGH_STICK_HITS_NEEDED = 2;
