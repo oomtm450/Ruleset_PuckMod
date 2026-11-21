@@ -90,7 +90,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     if (onHead) {
                         float swing = StickOnStickDetector.GetPeakSwingSpeed(stick);
-                        float impulse = c.impulse.magnitude;
+                        float impulse = ImpactUtil.GetImpact(c);
                         bool hard = swing >= HIGH_STICK_MIN_SWING_SPEED || impulse >= Ruleset.ServerConfig.Penalty.HighStickForceThreshold;
 
                         if (hard) {
@@ -162,7 +162,7 @@ namespace oomtm450PuckMod_Ruleset {
                 Vector3 v = victimBody.Rigidbody.linearVelocity;
                 v.y = 0f;
 
-                float dv = c.impulse.magnitude / Mathf.Max(victimBody.Rigidbody.mass, 0.01f);
+                float dv = ImpactUtil.GetImpact(c) / Mathf.Max(victimBody.Rigidbody.mass, 0.01f);
                 session.PressDv += dv;
 
                 if (v.magnitude > 0.5f) {

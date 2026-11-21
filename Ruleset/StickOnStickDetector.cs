@@ -212,11 +212,14 @@ namespace oomtm450PuckMod_Ruleset {
                 if (attacker.Team == victimPlayer.Team)
                     return Fail(result, $"Same team ({attacker.Username.Value} {victimPlayer.Username.Value})");
 
-                /*if (Codebase.PlayerFunc.IsGoalie(attacker))
+                if (Codebase.PlayerFunc.IsGoalie(attacker))
                     return Fail(result, "Goalie attacker");
 
                 if (Codebase.PlayerFunc.IsGoalie(victimPlayer))
-                    return Fail(result, "Goalie victim");*/
+                    return Fail(result, "Goalie victim");
+
+                if (!victimPlayer.PlayerBody.IsUpright)
+                    return Fail(result, "Victim is on the ground");
 
                 string attackerId = attacker.SteamId.Value.ToString();
                 string victimId = victimPlayer.SteamId.Value.ToString();
@@ -268,7 +271,7 @@ namespace oomtm450PuckMod_Ruleset {
                 result.Context = ctx;
                 float m = GetThresholdMultiplier(ctx);
 
-                float impulse = c.impulse.magnitude;
+                float impulse = ImpactUtil.GetImpact(c);
                 float approach = Mathf.Abs(Vector3.Dot(c.relativeVelocity.normalized, c.GetContact(0).normal));
 
                 // Tuning log for near-misses and hits.
@@ -284,11 +287,11 @@ namespace oomtm450PuckMod_Ruleset {
                 if (Ruleset.PlayerTouchedPuckRecently(attackerId, PUCK_PLAY_EXEMPTION_MS))
                     return Fail(result, "Attacker playing the puck");
 
-                // 3. Impact.
-                if (impulse < Ruleset.ServerConfig.Penalty.SlashingForceThreshold * m)
-                    return Fail(result, $"Impact too light (impulse:{impulse} < MIN_IMPULSE:{Ruleset.ServerConfig.Penalty.SlashingForceThreshold} * m:{m} ({Ruleset.ServerConfig.Penalty.SlashingForceThreshold * m}))");
-
                 if (!isAxe) {
+                    // 3.1. Impact.
+                    if (impulse < Ruleset.ServerConfig.Penalty.SlashingForceThreshold * m)
+                        return Fail(result, $"Impact too light (impulse:{impulse} < MIN_IMPULSE:{Ruleset.ServerConfig.Penalty.SlashingForceThreshold} * m:{m} ({Ruleset.ServerConfig.Penalty.SlashingForceThreshold * m}))");
+
                     if (attackerAnalyze.PeakSpeed < victimSpeed * AGGRESSOR_RATIO)
                         return Fail(result, $"No clear aggressor (attackerAnalyze.PeakSpeed:{attackerAnalyze.PeakSpeed} < victimSpeed:{victimSpeed} * AGGRESSOR_RATIO:{AGGRESSOR_RATIO} ({victimSpeed * AGGRESSOR_RATIO}))");
 
@@ -313,6 +316,11 @@ namespace oomtm450PuckMod_Ruleset {
                         CountPlayersNear(contactPoint, SCRUM_RADIUS, attackerId, victimId) >= SCRUM_PLAYER_COUNT &&
                         attackerAnalyze.PeakSpeed < MIN_ATTACKER_SWING_SPEED * SCRUM_SPEED_MULTIPLIER)
                         return Fail(result, "Scrum");
+                }
+                else {
+                    // 3.2. Impact.
+                    if (impulse < Ruleset.ServerConfig.Penalty.SlashingAxeForceThreshold * m)
+                        return Fail(result, $"Impact too light (impulse:{impulse} < MIN_IMPULSE:{Ruleset.ServerConfig.Penalty.SlashingAxeForceThreshold} * m:{m} ({Ruleset.ServerConfig.Penalty.SlashingAxeForceThreshold * m}))");
                 }
 
                 _pairCooldown[pairKey] = now;

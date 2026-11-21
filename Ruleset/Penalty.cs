@@ -435,6 +435,9 @@ namespace oomtm450PuckMod_Ruleset {
 
                 if (penaltyType == PenaltyType.Roughing && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Interference || x.PenaltyType == PenaltyType.GoalieInterference || x.PenaltyType == PenaltyType.Charging) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
                     return false;
+
+                if ((penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.GoalieInterference || penaltyType == PenaltyType.Slashing || penaltyType == PenaltyType.HighStick || penaltyType == PenaltyType.Hooking) && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Interference || x.PenaltyType == PenaltyType.GoalieInterference || x.PenaltyType == PenaltyType.Hooking || x.PenaltyType == PenaltyType.Slashing || x.PenaltyType == PenaltyType.HighStick) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
+                    return false;
             }
 
             if ((((penalizedPlayer.Team == PlayerTeam.Blue && PenalizedPlayersCountBlueTeam >= Ruleset.ServerConfig.Penalty.MaxPenalizedPlayersPerTeam) ||
