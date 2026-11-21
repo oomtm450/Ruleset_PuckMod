@@ -62,6 +62,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public float RefereeSoundsVolume { get; set; } = 1.0f;
 
         /// <summary>
+        /// Int, font size for the penalty label UI. (Penalty timers)
+        /// </summary>
+        public int PenaltyLabelUIFontSize { get; set; } = 18;
+
+        /// <summary>
         /// Function that serialize the ClientConfig object.
         /// </summary>
         /// <returns>String, serialized ClientConfig.</returns>
@@ -112,6 +117,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                     config.RefereeSoundsVolume = 2f;
                 else if (config.RefereeSoundsVolume < 0)
                     config.RefereeSoundsVolume = 0;
+
+                if (config.PenaltyLabelUIFontSize > 300)
+                    config.PenaltyLabelUIFontSize = 300;
+                else if (config.PenaltyLabelUIFontSize < 0)
+                    config.PenaltyLabelUIFontSize = 0;
 
                 config.Save();
 

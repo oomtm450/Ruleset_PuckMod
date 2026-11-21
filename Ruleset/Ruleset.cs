@@ -1675,6 +1675,26 @@ namespace oomtm450PuckMod_Ruleset {
 
                             return false;
                         }
+                        else if (content.StartsWith(@"/penlabelfontsize")) {
+                            content = content.Replace(@"/penlabelfontsize", "").Trim();
+
+                            if (string.IsNullOrEmpty(content))
+                                SystemFunc.AddClientChatMessage($"Penalty timers label UI font size is currently at {ClientConfig.PenaltyLabelUIFontSize.ToString(CultureInfo.InvariantCulture)}");
+                            else {
+                                if (int.TryParse(content, out int fontSize)) {
+                                    if (fontSize > 300)
+                                        fontSize = 300;
+                                    else if (fontSize < 0)
+                                        fontSize = 0;
+
+                                    ClientConfig.PenaltyLabelUIFontSize = fontSize;
+                                    ClientConfig.Save();
+                                    SystemFunc.AddClientChatMessage($"Adjusted penalty timers label UI font size to {fontSize.ToString(CultureInfo.InvariantCulture)}");
+                                }
+                            }
+
+                            return false;
+                        }
                         /*else if (content.StartsWith(@"/board")) {
                             content = content.Replace(@"/board", "").Trim();
                             _boardWindowsDefaultHeight = float.Parse(content, CultureInfo.InvariantCulture);
@@ -1913,7 +1933,7 @@ namespace oomtm450PuckMod_Ruleset {
                         content = content.ToLowerInvariant();
 
                         if (content == @"/help")
-                            SystemFunc.AddClientChatMessage("Ruleset commands:\n<b>/refsounds</b> - Enable or disable the sounds of refs (true-false)\n<b>/refvol</b> - Change the volume of refs (0.0-2.0)\n<b>/refscale</b> - Change the scale of the 2D refs images (0.0-2.0)\n<b>/voteref</b> - Vote to become ref\n<b>/voteremoveref</b> - Vote to remove a ref (Number, Name, SteamId or nothing if you are ref and want to remove yourself)\n<b>REF UI</b> - F7 to open\n");
+                            SystemFunc.AddClientChatMessage("Ruleset commands:\n<b>/penlabelfontsize</b> - Change font size of the penalty timers. (0-300)\n<b>/refsounds</b> - Enable or disable the sounds of refs (true-false)\n<b>/refvol</b> - Change the volume of refs (0.0-2.0)\n<b>/refscale</b> - Change the scale of the 2D refs images (0.0-2.0)\n<b>/voteref</b> - Vote to become ref\n<b>/voteremoveref</b> - Vote to remove a ref (Number, Name, SteamId or nothing if you are ref and want to remove yourself)\n<b>REF UI</b> - F7 to open\n");
                     }
                 }
                 catch (Exception ex) {
