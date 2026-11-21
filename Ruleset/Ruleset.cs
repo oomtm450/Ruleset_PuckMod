@@ -4824,7 +4824,7 @@ namespace oomtm450PuckMod_Ruleset {
                     { "name", refCallSound },
                     { "type", dataStr + (team == PlayerTeam.Blue ? "b" : "r") },
                     { "cancelcurrent", true },
-                    { "volume", ClientConfig.RefereeSoundsVolume },
+                    { "volume", ClientConfig.RefereeSoundsVolume * 0.4f },
                 }
             );
         }
