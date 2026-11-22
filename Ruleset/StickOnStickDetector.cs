@@ -50,6 +50,8 @@ namespace oomtm450PuckMod_Ruleset {
         private const float STUCK_AFTER = 0.2f;    // A session older than this = hooked/stuck, not a swing.
 
         private const int PUCK_CONTESTED_MS = 400;
+
+        private const float SLASH_MIN_IMPULSE = 2.5f;   // Starting point, tune with more logs.
         #endregion
 
         private struct Sample {
@@ -314,6 +316,10 @@ namespace oomtm450PuckMod_Ruleset {
                 if (attackerAnalyze.PeakSpeed >= MIN_ATTACKER_SWING_SPEED * m * 0.5f) {
                     Logging.LogDebug($"SLASH candidate {pairKey} ctx={ctx} axe={isAxe} up={attackerAnalyze.RecentUpRatio:F2} atkSpeed={attackerAnalyze.PeakSpeed:F2} vicSpeed={victimSpeed:F2} impulse={impulse:F2} approach={approach:F2} drop={drop:F2} down={attackerAnalyze.DownRatio:F2} behind={behind:F2}", Ruleset.ServerConfig);
                 }
+
+                float minImpulse = Mathf.Max(Ruleset.ServerConfig.Penalty.SlashingForceThreshold * m, SLASH_MIN_IMPULSE);
+                if (impulse < minImpulse)
+                    return Fail(result, $"Impact too light (impulse:{impulse} < minImpulse:{minImpulse})");
 
                 // 1. Clear aggressor with enough swing speed.
                 if (attackerAnalyze.PeakSpeed < MIN_ATTACKER_SWING_SPEED * m)
