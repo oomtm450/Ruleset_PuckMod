@@ -440,11 +440,11 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Float, slash force threshold to consider a slashing penalty.
         /// </summary>
-        public float SlashingAxeForceThreshold { get; set; } = 5.35f;
+        public float SlashingAxeForceThreshold { get; set; } = 5.3f;
         /// <summary>
         /// Float, slash force threshold to consider a slashing penalty.
         /// </summary>
-        public float SlashingForceThreshold { get; set; } = 4.375f;
+        public float SlashingForceThreshold { get; set; } = 4.275f;
         /// <summary>
         /// Int, slashing can be called after this number of milliseconds after a faceoff since the last touch.
         /// </summary>
