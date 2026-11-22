@@ -445,6 +445,10 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, slash force threshold to consider a slashing penalty.
         /// </summary>
         public float SlashingForceThreshold { get; set; } = 4.375f;
+        /// <summary>
+        /// Int, slashing can be called after this number of milliseconds after a faceoff since the last touch.
+        /// </summary>
+        public int SlashingFaceoffProtectionMilliseconds { get; set; } = 1000;
 
         /// <summary>
         /// Bool, true if high stick penalty is enabled.

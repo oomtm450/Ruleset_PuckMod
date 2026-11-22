@@ -222,6 +222,12 @@ namespace oomtm450PuckMod_Ruleset {
                 if (attacker.Team == victimPlayer.Team)
                     return Fail(result, $"Same team ({attacker.Username.Value} {victimPlayer.Username.Value})");
 
+                if (Ruleset.ServerConfig.Penalty.SlashingFaceoffProtectionMilliseconds > (DateTime.UtcNow - Ruleset.Faceoffs.Last().DateTime).TotalMilliseconds - ((Ruleset.FaceoffDuration + 1) * 1000))
+                    return Fail(result, $"Faceoff was not {Ruleset.ServerConfig.Penalty.SlashingFaceoffProtectionMilliseconds} milliseconds ago or more");
+
+                if (Ruleset.Faceoffs.Last().PeriodTickRemaining >= GameManager.Instance.Tick + 2)
+                    
+
                 if (Codebase.PlayerFunc.IsGoalie(attacker))
                     return Fail(result, "Goalie attacker");
 

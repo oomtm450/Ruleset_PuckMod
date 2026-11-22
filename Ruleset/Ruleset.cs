@@ -122,7 +122,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Int, duration of a faceoff.
         /// </summary>
-        private static int _faceoffDuration = 3;
+        internal static int FaceoffDuration { get; set; } = 3;
 
         /// <summary>
         /// Int, duration of a period.
@@ -347,7 +347,7 @@ namespace oomtm450PuckMod_Ruleset {
             { PlayerTeam.Red, 0 },
         };
 
-        private static readonly LockList<FaceoffState> _faceoffs = new LockList<FaceoffState>();
+        internal static LockList<FaceoffState> Faceoffs { get; } = new LockList<FaceoffState>();
 
         private static readonly LockDictionary<PlayerTeam, LockList<FaceoffState>> _goals = new LockDictionary<PlayerTeam, LockList<FaceoffState>> {
             { PlayerTeam.Blue, new LockList<FaceoffState>() },
@@ -1406,7 +1406,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (_periodTickRemaining == -1)
                             _periodTickRemaining = _playDuration;
 
-                        _faceoffs.Add(
+                        Faceoffs.Add(
                             new FaceoffState(_periodTickRemaining, NextFaceoffSpot, newGameState.BlueScore, newGameState.RedScore, newGameState.Period, newGameState.IsOvertime)
                         );
 
@@ -1590,7 +1590,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     ResetGame(false);
 
-                    _faceoffDuration = __instance.Config.phaseDurationMap[GamePhase.FaceOff];
+                    FaceoffDuration = __instance.Config.phaseDurationMap[GamePhase.FaceOff];
                     _playDuration = __instance.Config.phaseDurationMap[GamePhase.Play];
                 }
                 catch (Exception ex) {
@@ -2137,10 +2137,10 @@ namespace oomtm450PuckMod_Ruleset {
                             Logging.LogDebug($"(lastTouchTime.LastTouchTime - lastTouchOtherTeamTime.LastTouchTime).TotalMilliseconds : {(lastTouchTime.LastTouchTime - lastTouchOtherTeamTime.LastTouchTime).TotalMilliseconds}", ServerConfig, true); // TODO
                             Logging.LogDebug($"ServerConfig.Penalty.DelayOfGameMillisecondsThreshold : {ServerConfig.Penalty.DelayOfGameMillisecondsThreshold}", ServerConfig, true); // TODO
                             Logging.LogDebug("otherTeamTouchedTooClose : " + otherTeamTouchedTooClose, ServerConfig, true); // TODO
-                            Logging.LogDebug("ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds - ((_faceoffDuration + 1) * 1000) : " + (ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds - ((_faceoffDuration + 1) * 1000)), ServerConfig, true); // TODO
+                            Logging.LogDebug("ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (DateTime.UtcNow - Faceoffs.Last().DateTime).TotalMilliseconds - ((FaceoffDuration + 1) * 1000) : " + (ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (DateTime.UtcNow - Faceoffs.Last().DateTime).TotalMilliseconds - ((FaceoffDuration + 1) * 1000)), ServerConfig, true); // TODO
                             Logging.LogDebug("ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds : " + ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds, ServerConfig, true); // TODO
-                            Logging.LogDebug("(DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds : " + (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds, ServerConfig, true); // TODO
-                            //Logging.LogDebug("(_faceoffDuration + 1) * 1000 : " + ((_faceoffDuration + 1) * 1000), ServerConfig, true);
+                            Logging.LogDebug("(DateTime.UtcNow - Faceoffs.Last().DateTime).TotalMilliseconds : " + (DateTime.UtcNow - Faceoffs.Last().DateTime).TotalMilliseconds, ServerConfig, true); // TODO
+                            //Logging.LogDebug("(FaceoffDuration + 1) * 1000 : " + ((FaceoffDuration + 1) * 1000), ServerConfig, true);
 
                             playerTouched = (playerTouched || playerWasLastInPossession);
                             if (!playerTouched ||
@@ -2149,7 +2149,7 @@ namespace oomtm450PuckMod_Ruleset {
                                 (_lastPlayerOnPuckTeam == PlayerTeam.Blue && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.BlueTeam_Zone) || (_lastPlayerOnPuckTeam == PlayerTeam.Red && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_BehindGoalLine && _puckLastStateBeforeCall[Rule.DelayOfGame].Zone != Codebase.Zone.RedTeam_Zone)) {
                                 CallDelayOfGameStoppage(_lastPlayerOnPuckTeam);
                             }
-                            else if (ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds - ((_faceoffDuration + 1) * 1000)) {
+                            else if (ServerConfig.Penalty.DelayOfGameFaceoffProtectionMilliseconds > (DateTime.UtcNow - Faceoffs.Last().DateTime).TotalMilliseconds - ((FaceoffDuration + 1) * 1000)) {
                                 CallDelayOfGameStoppage(_lastPlayerOnPuckTeam, true);
                             }
                             else {
@@ -2975,7 +2975,7 @@ namespace oomtm450PuckMod_Ruleset {
             NextFaceoffSpot = FaceoffSpot.Center;
             _lastStoppageReason = Rule.None;
             _periodTickRemaining = -1;
-            _faceoffs.Clear();
+            Faceoffs.Clear();
 
             foreach (PlayerTeam key in new List<PlayerTeam>(_goals.Keys))
                 _goals[key] = new LockList<FaceoffState>();
@@ -3179,7 +3179,7 @@ namespace oomtm450PuckMod_Ruleset {
                 return;
 
             ChangedPhase = true;
-            GameManager.Instance.Server_SetGameState(GamePhase.FaceOff, _faceoffDuration);
+            GameManager.Instance.Server_SetGameState(GamePhase.FaceOff, FaceoffDuration);
 
             if (ServerConfig.Faceoff.ResetPlayersOnFaceoff) {
                 foreach (Player player in PlayerManager.Instance.GetSpawnedPlayers()) {
@@ -4454,20 +4454,20 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!int.TryParse(dataStr, out int lastFaceoffCount))
                             break;
 
-                        if (_faceoffs.Count < lastFaceoffCount)
+                        if (Faceoffs.Count < lastFaceoffCount)
                             break;
 
-                        List<FaceoffState> lastFaceoffsReversed = new List<FaceoffState>(_faceoffs);
+                        List<FaceoffState> lastFaceoffsReversed = new List<FaceoffState>(Faceoffs);
                         lastFaceoffsReversed.Reverse();
                         FaceoffState lastFaceoff = lastFaceoffsReversed.ElementAt(lastFaceoffCount - 1);
                         while (true) {
-                            FaceoffState lastFaceoffToRemove = _faceoffs.Last();
+                            FaceoffState lastFaceoffToRemove = Faceoffs.Last();
                             if (lastFaceoffToRemove != lastFaceoff)
-                                _faceoffs.Remove(lastFaceoffToRemove);
+                                Faceoffs.Remove(lastFaceoffToRemove);
                             else
                                 break;
                         }
-                        _faceoffs.Remove(lastFaceoff);
+                        Faceoffs.Remove(lastFaceoff);
 
                         NextFaceoffSpot = lastFaceoff.FaceoffSpot;
                         _periodTickRemaining = lastFaceoff.PeriodTickRemaining;
@@ -4643,7 +4643,7 @@ namespace oomtm450PuckMod_Ruleset {
                         if (!HasRefPowers(faceoffViolationReferee))
                             break;
 
-                        if (!IsAdmin(faceoffViolationReferee.SteamId.Value.ToString()) && (DateTime.UtcNow - _faceoffs.Last().DateTime).TotalMilliseconds > 4000 + ((_faceoffDuration + 1) * 1000)) // TODO : Config.
+                        if (!IsAdmin(faceoffViolationReferee.SteamId.Value.ToString()) && (DateTime.UtcNow - Faceoffs.Last().DateTime).TotalMilliseconds > 4000 + ((FaceoffDuration + 1) * 1000)) // TODO : Config.
                             break;
 
                         int faceoffViolationTeamInt;
