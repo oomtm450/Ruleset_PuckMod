@@ -12,9 +12,14 @@ namespace oomtm450PuckMod_Ruleset {
     internal class RefSoundDelayer : MonoBehaviour {
         #region Constants
         /// <summary>
-        /// Float, mercy time in seconds before a ref sound is actually played.
+        /// Float, mercy time in seconds before a pending ref sound is actually played.
         /// </summary>
-        internal const float DELAY_SECONDS = 0.15f;
+        internal const float DELAY_SECONDS_PENDING = 0.25f;
+
+        /// <summary>
+        /// Float, mercy time in seconds before a cancelled ref sound is actually played.
+        /// </summary>
+        internal const float DELAY_SECONDS_CANCELLED = 0.2f;
         #endregion
 
         #region Classes
@@ -62,7 +67,7 @@ namespace oomtm450PuckMod_Ruleset {
             // Nothing waiting (or a duplicate of the same kind, which simply replaces the old one).
             _entries[key] = new Entry {
                 IsPending = isPending,
-                DueTime = Time.unscaledTime + DELAY_SECONDS,
+                DueTime = Time.unscaledTime + (isPending ? DELAY_SECONDS_PENDING : DELAY_SECONDS_CANCELLED),
                 Play = play,
             };
         }
