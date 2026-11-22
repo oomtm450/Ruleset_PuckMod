@@ -22,7 +22,7 @@ namespace oomtm450PuckMod_Ruleset {
     internal static class StickOnStickDetector {
         #region Tunables (TODO : move to PenaltyConfig once values are settled)
         private const float MIN_ATTACKER_SWING_SPEED = 29f;   // Peak tip speed of the attacker's stick.
-        private const float MAX_VICTIM_SWING_SPEED = 10f;     // Above this on a blade hit = mutual stick battle.
+        private const float MAX_VICTIM_SWING_SPEED = 15f;     // Above this on a blade hit = mutual stick battle.
         private const float AGGRESSOR_RATIO = 1.9f;              // Attacker must be at least this many times faster than the victim stick.
         private const float MIN_APPROACH_DOT = 0.55f;          // How head-on the strike is (abs of dot between relative velocity and contact normal).
         private const float SWING_WINDOW = 0.15f;              // Seconds of history used for peak speed / height.
