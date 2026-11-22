@@ -112,7 +112,7 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static bool _harmonyPatched = false;
 
-        private static System.Random _refSoundsRNG = new System.Random(HARDCODED_SEED);
+        private static readonly System.Random _refSoundsRNG = new System.Random(HARDCODED_SEED); // TODO : Get a seed from the server to have same ref sounds.
 
         /// <summary>
         /// Bool, true if glass barriers have been lowered.
