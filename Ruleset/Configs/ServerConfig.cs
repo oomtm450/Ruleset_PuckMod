@@ -107,7 +107,7 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// <summary>
         /// Bool, authorize ref mode to be voted or activated by an admin.
         /// </summary>
-        public bool RefMode { get; set; } = true;
+        public bool RefMode { get; set; } = false;
 
         /// <summary>
         /// Int, number of games a newly added ref will be doing before being automaticaly removed.
