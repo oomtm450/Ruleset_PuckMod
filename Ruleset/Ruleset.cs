@@ -112,6 +112,8 @@ namespace oomtm450PuckMod_Ruleset {
         /// </summary>
         private static bool _harmonyPatched = false;
 
+        private static System.Random _refSoundsRNG = new System.Random(HARDCODED_SEED);
+
         /// <summary>
         /// Bool, true if glass barriers have been lowered.
         /// </summary>
@@ -4825,15 +4827,25 @@ namespace oomtm450PuckMod_Ruleset {
             }
         }
 
-        private static void PlayRefSoundPending(string dataStr, PlayerTeam team) { // TODO : Add mercy time for like 100ms or less. If PlayRefSoundCancelled is called within this time, don't play any sound.
+        private static void PlayRefSoundPending(string dataStr, PlayerTeam team) {
+            RefSoundDelayer.Schedule(dataStr + (team == PlayerTeam.Blue ? "b" : "r"), true,
+                () => PlayRefSoundPendingNow(dataStr, team));
+        }
+
+        private static void PlayRefSoundCancelled(string dataStr, PlayerTeam team) {
+            RefSoundDelayer.Schedule(dataStr + (team == PlayerTeam.Blue ? "b" : "r"), false,
+                () => PlayRefSoundCancelledNow(dataStr, team));
+        }
+
+        private static void PlayRefSoundPendingNow(string dataStr, PlayerTeam team) {
             string refCallSound = "";
             switch (dataStr) {
                 case RefSignals.ICING_LINESMAN:
-                    refCallSound = $"icing_on_{new System.Random(HARDCODED_SEED).Next(1, ICING_PENDING_AUDIO_COUNT + 1)}";
+                    refCallSound = $"icing_on_{_refSoundsRNG.Next(1, ICING_PENDING_AUDIO_COUNT + 1)}";
                     break;
 
                 case RefSignals.OFFSIDE_LINESMAN:
-                    refCallSound = $"offside_on_{new System.Random(HARDCODED_SEED).Next(1, OFFSIDE_PENDING_AUDIO_COUNT + 1)}";
+                    refCallSound = $"offside_on_{_refSoundsRNG.Next(1, OFFSIDE_PENDING_AUDIO_COUNT + 1)}";
                     break;
             }
 
@@ -4851,15 +4863,15 @@ namespace oomtm450PuckMod_Ruleset {
             );
         }
 
-        private static void PlayRefSoundCancelled(string dataStr, PlayerTeam team) {
+        private static void PlayRefSoundCancelledNow(string dataStr, PlayerTeam team) {
             string refCallSound = "";
             switch (dataStr) {
                 case RefSignals.ICING_LINESMAN:
-                    refCallSound = $"icing_off_{new System.Random(HARDCODED_SEED).Next(1, ICING_CANCELLED_AUDIO_COUNT + 1)}";
+                    refCallSound = $"icing_off_{_refSoundsRNG.Next(1, ICING_CANCELLED_AUDIO_COUNT + 1)}";
                     break;
 
                 case RefSignals.OFFSIDE_LINESMAN:
-                    refCallSound = $"offside_off_{new System.Random(HARDCODED_SEED).Next(1, OFFSIDE_CANCELLED_AUDIO_COUNT + 1)}";
+                    refCallSound = $"offside_off_{_refSoundsRNG.Next(1, OFFSIDE_CANCELLED_AUDIO_COUNT + 1)}";
                     break;
             }
 

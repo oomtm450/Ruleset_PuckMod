@@ -43,7 +43,7 @@ namespace oomtm450PuckMod_Ruleset {
         private const float LIFT_MIN_UP_RATIO = 0.08f;
         private const float LIFT_MAX_DOWN_RATIO = -0.08f;
 
-        private const int PAIR_COOLDOWN_MS = 1000;
+        private const int PAIR_COOLDOWN_MS = 500;
         private const float SAMPLE_HISTORY = 0.3f;
 
         private const float CONTACT_GAP = 0.15f;   // Sticks touching again within this = same engagement (hook/stuck), not a new swing.
