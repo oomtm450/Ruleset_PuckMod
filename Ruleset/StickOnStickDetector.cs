@@ -48,6 +48,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private const float CONTACT_GAP = 0.15f;   // Contacts closer than this belong to the same session.
         private const float STUCK_AFTER = 0.2f;    // A session older than this = hooked/stuck, not a swing.
+
+        private const int PUCK_CONTESTED_MS = 400;
         #endregion
 
         private struct Sample {
@@ -296,7 +298,12 @@ namespace oomtm450PuckMod_Ruleset {
                     fromBehind = behind < BEHIND_DOT;
                 }
 
-                SlashContext ctx = victimHasPuck ? (fromBehind ? SlashContext.VictimHasPuckFromBehind : SlashContext.VictimHasPuck) : SlashContext.Neutral;
+                bool contested = Ruleset.PlayerTouchedPuckRecently(attackerId, PUCK_CONTESTED_MS)
+                  && Ruleset.PlayerTouchedPuckRecently(victimId, PUCK_CONTESTED_MS);
+
+                    SlashContext ctx = (victimHasPuck && !contested)
+                        ? (fromBehind ? SlashContext.VictimHasPuckFromBehind : SlashContext.VictimHasPuck)
+                        : SlashContext.Neutral;
                 result.Context = ctx;
                 float m = GetThresholdMultiplier(ctx);
 
