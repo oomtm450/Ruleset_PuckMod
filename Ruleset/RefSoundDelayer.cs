@@ -14,12 +14,12 @@ namespace oomtm450PuckMod_Ruleset {
         /// <summary>
         /// Float, mercy time in seconds before a pending ref sound is actually played.
         /// </summary>
-        internal const float DELAY_SECONDS_PENDING = 0.4f;
+        internal const float DELAY_SECONDS_PENDING = 0.35f;
 
         /// <summary>
         /// Float, mercy time in seconds before a cancelled ref sound is actually played.
         /// </summary>
-        internal const float DELAY_SECONDS_CANCELLED = 0.3f;
+        internal const float DELAY_SECONDS_CANCELLED = 0.25f;
         #endregion
 
         #region Classes
