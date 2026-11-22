@@ -46,7 +46,8 @@ namespace oomtm450PuckMod_Ruleset {
         private const int PAIR_COOLDOWN_MS = 500;
         private const float SAMPLE_HISTORY = 0.3f;
 
-        private const float CONTACT_GAP = 0.15f;   // Sticks touching again within this = same engagement (hook/stuck), not a new swing.
+        private const float CONTACT_GAP = 0.15f;   // Contacts closer than this belong to the same session.
+        private const float STUCK_AFTER = 0.2f;    // A session older than this = hooked/stuck, not a swing.
         #endregion
 
         private struct Sample {
@@ -55,9 +56,14 @@ namespace oomtm450PuckMod_Ruleset {
             internal float Time;
         }
 
+        private struct ContactSession {
+            internal float Start;
+            internal float Last;
+        }
+
+        private static readonly LockDictionary<string, ContactSession> _contacts = new LockDictionary<string, ContactSession>();
         private static readonly LockDictionary<Stick, LockList<Sample>> _samples = new LockDictionary<Stick, LockList<Sample>>();
         private static readonly LockDictionary<string, DateTime> _pairCooldown = new LockDictionary<string, DateTime>();
-        private static readonly LockDictionary<string, float> _lastContact = new LockDictionary<string, float>();
 
         #region Tracking
         /// <summary>
@@ -81,7 +87,7 @@ namespace oomtm450PuckMod_Ruleset {
         internal static void Reset() {
             _samples.Clear();
             _pairCooldown.Clear();
-            _lastContact.Clear();
+            _contacts.Clear();
         }
 
         // TODO : Replace with the real blade tip point if you have it. The Rigidbody position is only a placeholder.
@@ -228,13 +234,17 @@ namespace oomtm450PuckMod_Ruleset {
                 string attackerId = attacker.SteamId.Value.ToString();
                 string victimId = victimPlayer.SteamId.Value.ToString();
 
-                // Continuous contact : a hooked or stuck stick re-enters the collision over and over. Only the first touch can be a swing.
                 string contactKey = string.CompareOrdinal(attackerId, victimId) < 0 ? attackerId + "|" + victimId : victimId + "|" + attackerId;
-                float contactTime = Time.time;
-                bool continuing = _lastContact.TryGetValue(contactKey, out float lastContactTime) && contactTime - lastContactTime < CONTACT_GAP;
-                _lastContact[contactKey] = contactTime;   // Always refresh, so a stuck contact keeps itself "continuing".
-                if (continuing)
-                    return Fail(result, "Continuous contact");
+                float t = Time.time;
+
+                if (!_contacts.TryGetValue(contactKey, out ContactSession session) || t - session.Last > CONTACT_GAP)
+                    session = new ContactSession { Start = t, Last = t };
+                else
+                    session.Last = t;
+                _contacts[contactKey] = session;
+
+                if (t - session.Start > STUCK_AFTER)
+                    return Fail(result, $"Stuck contact ({t - session.Start:F2}s)");
 
                 // Cooldown, so one swing is one call.
                 string pairKey = attackerId + ">" + victimId;
