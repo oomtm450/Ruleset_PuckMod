@@ -45,6 +45,8 @@ namespace oomtm450PuckMod_Ruleset {
 
         private const int PAIR_COOLDOWN_MS = 1000;
         private const float SAMPLE_HISTORY = 0.3f;
+
+        private const float CONTACT_GAP = 0.15f;   // Sticks touching again within this = same engagement (hook/stuck), not a new swing.
         #endregion
 
         private struct Sample {
@@ -55,6 +57,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private static readonly LockDictionary<Stick, LockList<Sample>> _samples = new LockDictionary<Stick, LockList<Sample>>();
         private static readonly LockDictionary<string, DateTime> _pairCooldown = new LockDictionary<string, DateTime>();
+        private static readonly LockDictionary<string, float> _lastContact = new LockDictionary<string, float>();
 
         #region Tracking
         /// <summary>
@@ -78,6 +81,7 @@ namespace oomtm450PuckMod_Ruleset {
         internal static void Reset() {
             _samples.Clear();
             _pairCooldown.Clear();
+            _lastContact.Clear();
         }
 
         // TODO : Replace with the real blade tip point if you have it. The Rigidbody position is only a placeholder.
@@ -224,6 +228,14 @@ namespace oomtm450PuckMod_Ruleset {
                 string attackerId = attacker.SteamId.Value.ToString();
                 string victimId = victimPlayer.SteamId.Value.ToString();
 
+                // Continuous contact : a hooked or stuck stick re-enters the collision over and over. Only the first touch can be a swing.
+                string contactKey = string.CompareOrdinal(attackerId, victimId) < 0 ? attackerId + "|" + victimId : victimId + "|" + attackerId;
+                float contactTime = Time.time;
+                bool continuing = _lastContact.TryGetValue(contactKey, out float lastContactTime) && contactTime - lastContactTime < CONTACT_GAP;
+                _lastContact[contactKey] = contactTime;   // Always refresh, so a stuck contact keeps itself "continuing".
+                if (continuing)
+                    return Fail(result, "Continuous contact");
+
                 // Cooldown, so one swing is one call.
                 string pairKey = attackerId + ">" + victimId;
                 DateTime now = DateTime.UtcNow;
@@ -253,22 +265,18 @@ namespace oomtm450PuckMod_Ruleset {
                 PlayerBody victimBody = victimPlayer.PlayerBody;
                 PlayerBody attackerBody = attacker.PlayerBody;
                 if (victimBody && attackerBody) {
-                    // Direction the victim's body is pointing, flattened onto the ice.
-                    Vector3 facing = victimBody.Rigidbody.rotation * Vector3.forward;   // or victimBody.transform.forward
-                    facing.y = 0f;
-
-                    if (facing.sqrMagnitude < 0.01f) {
-                        // Body is tilted or lying sideways, so forward points mostly up or down. Not reliable.
-                        facing = victimBody.Rigidbody.linearVelocity;
-                        facing.y = 0f;
-                    }
-                    facing.Normalize();
-
                     Vector3 toAttacker = attackerBody.transform.position - victimBody.transform.position;
-                    toAttacker.y = 0f;
-                    toAttacker.Normalize();
+                    toAttacker.y = 0f; toAttacker.Normalize();
 
-                    behind = Vector3.Dot(facing, toAttacker);
+                    Vector3 fwd = victimBody.Rigidbody.rotation * Vector3.forward;
+                    fwd.y = 0f; fwd.Normalize();
+                    float behindFwd = Vector3.Dot(fwd, toAttacker);
+
+                    Vector3 vel = victimBody.Rigidbody.linearVelocity; vel.y = 0f;
+                    float bodySpeed = vel.magnitude;
+                    float behindVel = bodySpeed >= FACING_MIN_SPEED ? Vector3.Dot(vel.normalized, toAttacker) : behindFwd;
+
+                    behind = Mathf.Max(behindFwd, behindVel);   // behind only if BOTH say so
                     fromBehind = behind < BEHIND_DOT;
                 }
 
