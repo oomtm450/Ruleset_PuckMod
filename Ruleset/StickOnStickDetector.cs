@@ -312,14 +312,14 @@ namespace oomtm450PuckMod_Ruleset {
                 float impulse = ImpactUtil.GetImpact(c);
                 float approach = Mathf.Abs(Vector3.Dot(c.relativeVelocity.normalized, c.GetContact(0).normal));
 
+                float minImpulse = Mathf.Max(Ruleset.ServerConfig.Penalty.SlashingForceThreshold * m, SLASH_MIN_IMPULSE);
+                if (impulse < minImpulse)
+                    return Fail(result, $"Impact too light (impulse:{impulse} < minImpulse:{minImpulse})");
+
                 // Tuning log for near-misses and hits.
                 if (attackerAnalyze.PeakSpeed >= MIN_ATTACKER_SWING_SPEED * m * 0.5f) {
                     Logging.LogDebug($"SLASH candidate {pairKey} ctx={ctx} axe={isAxe} up={attackerAnalyze.RecentUpRatio:F2} atkSpeed={attackerAnalyze.PeakSpeed:F2} vicSpeed={victimSpeed:F2} impulse={impulse:F2} approach={approach:F2} drop={drop:F2} down={attackerAnalyze.DownRatio:F2} behind={behind:F2}", Ruleset.ServerConfig);
                 }
-
-                float minImpulse = Mathf.Max(Ruleset.ServerConfig.Penalty.SlashingForceThreshold * m, SLASH_MIN_IMPULSE);
-                if (impulse < minImpulse)
-                    return Fail(result, $"Impact too light (impulse:{impulse} < minImpulse:{minImpulse})");
 
                 // 1. Clear aggressor with enough swing speed.
                 if (attackerAnalyze.PeakSpeed < MIN_ATTACKER_SWING_SPEED * m)
