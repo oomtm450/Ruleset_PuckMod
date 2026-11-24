@@ -1000,10 +1000,10 @@ namespace oomtm450PuckMod_Stats {
                                 }
 
                                 bool goalieIsInHisCrease = true;
-                                if (player.PlayerBody.Rigidbody.transform.position.x - ServerConfig.GoalieRadius < startX ||
-                                    player.PlayerBody.Rigidbody.transform.position.x + ServerConfig.GoalieRadius > endX ||
-                                    player.PlayerBody.Rigidbody.transform.position.z - ServerConfig.GoalieRadius < startZ ||
-                                    player.PlayerBody.Rigidbody.transform.position.z + ServerConfig.GoalieRadius > endZ) {
+                                if (player.PlayerBody.Rigidbody.transform.position.x + ServerConfig.GoalieRadius < startX ||
+                                    player.PlayerBody.Rigidbody.transform.position.x - ServerConfig.GoalieRadius > endX ||
+                                    player.PlayerBody.Rigidbody.transform.position.z + ServerConfig.GoalieRadius < startZ ||
+                                    player.PlayerBody.Rigidbody.transform.position.z - ServerConfig.GoalieRadius > endZ) {
                                     goalieIsInHisCrease = false;
                                 }
 
