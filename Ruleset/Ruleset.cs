@@ -4839,6 +4839,9 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void PlayRefSoundPendingNow(string dataStr, PlayerTeam team) {
+            if (dataStr == RefSignals.OFFSIDE_LINESMAN && IsPuckInOwnZone(team))
+                return;
+
             string refCallSound = "";
             switch (dataStr) {
                 case RefSignals.ICING_LINESMAN:
@@ -4865,6 +4868,9 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void PlayRefSoundCancelledNow(string dataStr, PlayerTeam team) {
+            if (dataStr == RefSignals.OFFSIDE_LINESMAN && IsPuckInOwnZone(team))
+                return;
+
             string refCallSound = "";
             switch (dataStr) {
                 case RefSignals.ICING_LINESMAN:
@@ -4888,6 +4894,15 @@ namespace oomtm450PuckMod_Ruleset {
                     { "volume", ClientConfig.RefereeSoundsVolume * 0.4f },
                 }
             );
+        }
+
+        private static bool IsPuckInOwnZone(PlayerTeam team) {
+            Puck puck = PuckManager.Instance.GetPuck();
+            if (puck == null || !puck)
+                return false;
+
+            Codebase.Zone puckZone = ZoneFunc.GetZone(puck.Rigidbody.transform.position, ZoneFunc.DEFAULT_ZONE, Codebase.Constants.PUCK_RADIUS);
+            return ZoneFunc.GetTeamZones(team).Contains(puckZone);
         }
 
         internal static void FreezeStick(Stick stick) {
