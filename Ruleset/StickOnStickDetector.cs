@@ -353,7 +353,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return Fail(result, "Attacker playing the puck");*/
 
                     // 7. Scrum.
-                    if ((ctx != SlashContext.VictimHasPuckFromBehind && ctx != SlashContext.VictimFromBehind) &&
+                    if (ctx != SlashContext.VictimHasPuckFromBehind &&
                         CountPlayersNear(contactPoint, SCRUM_RADIUS, attackerId, victimId) >= SCRUM_PLAYER_COUNT &&
                         attackerAnalyze.PeakSpeed < MIN_ATTACKER_SWING_SPEED * SCRUM_SPEED_MULTIPLIER)
                         return Fail(result, "Scrum");
