@@ -4843,6 +4843,9 @@ namespace oomtm450PuckMod_Ruleset {
         }
 
         private static void PlayRefSoundPendingNow(string dataStr, PlayerTeam team) {
+            if (GameManager.Instance.Phase != GamePhase.Play)
+                return;
+
             if (dataStr == RefSignals.OFFSIDE_LINESMAN && IsPuckInOwnZone(team))
                 return;
 
