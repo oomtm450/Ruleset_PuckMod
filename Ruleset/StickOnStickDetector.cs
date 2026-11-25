@@ -378,13 +378,13 @@ namespace oomtm450PuckMod_Ruleset {
         private static float GetThresholdMultiplier(SlashContext ctx) {
             switch (ctx) {
                 case SlashContext.VictimHasPuckFromBehind:
-                    return 0.6f; // Much more sensitive.
+                    return 0.6f;
                 case SlashContext.VictimHasPuck:
                     return 0.8f;
                 case SlashContext.VictimFromBehind:
-                    return 1.0f; // Much more sensitive.
+                    return 1.0f;
                 default:
-                    return 1.15f;   // No puck : still caught, but needs a harder swing.
+                    return 1.15f;
             }
         }
 
