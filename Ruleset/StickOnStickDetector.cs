@@ -51,7 +51,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private const int PUCK_CONTESTED_MS = 400;
 
-        private const float SLASH_MIN_IMPULSE = 6.5f;
+        private const float SLASH_MIN_IMPULSE = 5.3f;
         #endregion
 
         private struct Sample {
