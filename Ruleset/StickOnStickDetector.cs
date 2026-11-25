@@ -337,7 +337,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return Fail(result, $"No clear aggressor (attackerAnalyze.PeakSpeed:{attackerAnalyze.PeakSpeed} < victimSpeed:{victimSpeed} * AGGRESSOR_RATIO:{AGGRESSOR_RATIO} ({victimSpeed * AGGRESSOR_RATIO}))");
 
                     // 4. Mutual blade battle.
-                    if ((ctx != SlashContext.VictimHasPuckFromBehind || ctx != SlashContext.VictimFromBehind) && victimSpeed > MAX_VICTIM_SWING_SPEED)
+                    if ((ctx != SlashContext.VictimHasPuckFromBehind && ctx != SlashContext.VictimFromBehind) && victimSpeed > MAX_VICTIM_SWING_SPEED)
                         return Fail(result, $"Mutual blade battle (victimSpeed:{victimSpeed} > MAX_VICTIM_SWING_SPEED:{MAX_VICTIM_SWING_SPEED})");
 
                     // 5. Angle.
@@ -353,7 +353,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return Fail(result, "Attacker playing the puck");*/
 
                     // 7. Scrum.
-                    if ((ctx != SlashContext.VictimHasPuckFromBehind || ctx != SlashContext.VictimFromBehind) &&
+                    if ((ctx != SlashContext.VictimHasPuckFromBehind && ctx != SlashContext.VictimFromBehind) &&
                         CountPlayersNear(contactPoint, SCRUM_RADIUS, attackerId, victimId) >= SCRUM_PLAYER_COUNT &&
                         attackerAnalyze.PeakSpeed < MIN_ATTACKER_SWING_SPEED * SCRUM_SPEED_MULTIPLIER)
                         return Fail(result, "Scrum");
