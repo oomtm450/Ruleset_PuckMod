@@ -8,6 +8,7 @@ namespace oomtm450PuckMod_Ruleset {
         Neutral,
         VictimHasPuck,
         VictimHasPuckFromBehind,
+        VictimFromBehind,
     }
 
     internal struct SlashResult {
@@ -303,9 +304,10 @@ namespace oomtm450PuckMod_Ruleset {
                 bool contested = Ruleset.PlayerTouchedPuckRecently(attackerId, PUCK_CONTESTED_MS)
                   && Ruleset.PlayerTouchedPuckRecently(victimId, PUCK_CONTESTED_MS);
 
-                    SlashContext ctx = (victimHasPuck && !contested)
-                        ? (fromBehind ? SlashContext.VictimHasPuckFromBehind : SlashContext.VictimHasPuck)
-                        : SlashContext.Neutral;
+                SlashContext ctx = (victimHasPuck && !contested)
+                    ? (fromBehind ? SlashContext.VictimHasPuckFromBehind : SlashContext.VictimHasPuck)
+                    : (fromBehind ? SlashContext.VictimFromBehind : SlashContext.Neutral);
+
                 result.Context = ctx;
                 float m = GetThresholdMultiplier(ctx);
 
@@ -338,7 +340,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return Fail(result, $"No clear aggressor (attackerAnalyze.PeakSpeed:{attackerAnalyze.PeakSpeed} < victimSpeed:{victimSpeed} * AGGRESSOR_RATIO:{AGGRESSOR_RATIO} ({victimSpeed * AGGRESSOR_RATIO}))");
 
                     // 4. Mutual blade battle.
-                    if (ctx != SlashContext.VictimHasPuckFromBehind && victimSpeed > MAX_VICTIM_SWING_SPEED)
+                    if ((ctx != SlashContext.VictimHasPuckFromBehind || ctx != SlashContext.VictimFromBehind) && victimSpeed > MAX_VICTIM_SWING_SPEED)
                         return Fail(result, $"Mutual blade battle (victimSpeed:{victimSpeed} > MAX_VICTIM_SWING_SPEED:{MAX_VICTIM_SWING_SPEED})");
 
                     // 5. Angle.
@@ -354,7 +356,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return Fail(result, "Attacker playing the puck");*/
 
                     // 7. Scrum.
-                    if (ctx != SlashContext.VictimHasPuckFromBehind &&
+                    if ((ctx != SlashContext.VictimHasPuckFromBehind || ctx != SlashContext.VictimFromBehind) &&
                         CountPlayersNear(contactPoint, SCRUM_RADIUS, attackerId, victimId) >= SCRUM_PLAYER_COUNT &&
                         attackerAnalyze.PeakSpeed < MIN_ATTACKER_SWING_SPEED * SCRUM_SPEED_MULTIPLIER)
                         return Fail(result, "Scrum");
@@ -367,7 +369,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                 _pairCooldown[pairKey] = now;
                 result.IsSlash = true;
-                result.Reason = isAxe ? "Axe" : (ctx == SlashContext.VictimHasPuck ? "Slash on puck carrier" : (ctx == SlashContext.VictimHasPuckFromBehind ? "Slash from behind on puck carrier" : "Slash"));
+                result.Reason = isAxe ? "Axe" : (ctx == SlashContext.VictimHasPuck ? "Slash on puck carrier" : (ctx == SlashContext.VictimHasPuckFromBehind ? "Slash from behind on puck carrier" : (ctx == SlashContext.VictimFromBehind ? "Slash from behind" : "Slash")));
                 return result;
             }
             catch (Exception ex) {
@@ -382,6 +384,8 @@ namespace oomtm450PuckMod_Ruleset {
                     return 0.6f; // Much more sensitive.
                 case SlashContext.VictimHasPuck:
                     return 0.8f;
+                case SlashContext.VictimFromBehind:
+                    return 1.0f; // Much more sensitive.
                 default:
                     return 1.15f;   // No puck : still caught, but needs a harder swing.
             }
