@@ -383,7 +383,7 @@ namespace oomtm450PuckMod_Ruleset {
                 case SlashContext.VictimHasPuck:
                     return 0.8f;
                 default:
-                    return 1f;   // No puck : still caught, but needs a harder swing.
+                    return 1.2f;   // No puck : still caught, but needs a harder swing.
             }
         }
 
