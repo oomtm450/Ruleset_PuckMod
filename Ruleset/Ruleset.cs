@@ -1208,6 +1208,8 @@ namespace oomtm450PuckMod_Ruleset {
                     if (collision.gameObject.layer != LayerMask.NameToLayer("Stick"))
                         return;
 
+                    StickOnStickDetector.RegisterContact(stick, collision);
+
                     ContactPoint contact = collision.GetContact(0);
                     Collider thisCollider = contact.thisCollider;
                     Collider otherCollider = contact.otherCollider;
@@ -1241,6 +1243,8 @@ namespace oomtm450PuckMod_Ruleset {
                     Stick stick = SystemFunc.GetStick(gameObject);
                     if (!stick || !stick.Player || !stick.Player.IsCharacterSpawned)
                         return;
+
+                    StickOnStickDetector.RegisterContact(stick, collision);
 
                     PlayerBody victim = SystemFunc.GetPlayerBody(collision.gameObject);
 

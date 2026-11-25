@@ -49,6 +49,7 @@ namespace oomtm450PuckMod_Ruleset {
 
         private const float CONTACT_GAP = 0.15f;   // Contacts closer than this belong to the same session.
         private const float STUCK_AFTER = 0.2f;    // A session older than this = hooked/stuck, not a swing.
+        private const float STUCK_RELEASE_WINDOW = 0.5f; // After a stuck session, the release/fling is not a swing.
 
         private const int PUCK_CONTESTED_MS = 400;
 
@@ -69,6 +70,8 @@ namespace oomtm450PuckMod_Ruleset {
         private static readonly LockDictionary<string, ContactSession> _contacts = new LockDictionary<string, ContactSession>();
         private static readonly LockDictionary<Stick, LockList<Sample>> _samples = new LockDictionary<Stick, LockList<Sample>>();
         private static readonly LockDictionary<string, DateTime> _pairCooldown = new LockDictionary<string, DateTime>();
+
+        private static readonly LockDictionary<string, float> _recentlyStuck = new LockDictionary<string, float>();
 
         #region Tracking
         /// <summary>
@@ -242,17 +245,11 @@ namespace oomtm450PuckMod_Ruleset {
                 string attackerId = attacker.SteamId.Value.ToString();
                 string victimId = victimPlayer.SteamId.Value.ToString();
 
-                string contactKey = string.CompareOrdinal(attackerId, victimId) < 0 ? attackerId + "|" + victimId : victimId + "|" + attackerId;
-                float t = Time.time;
+                string contactKey = GetContactKey(attackerId, victimId);
+                RegisterContact(selfStick, c);
 
-                if (!_contacts.TryGetValue(contactKey, out ContactSession session) || t - session.Last > CONTACT_GAP)
-                    session = new ContactSession { Start = t, Last = t };
-                else
-                    session.Last = t;
-                _contacts[contactKey] = session;
-
-                if (t - session.Start > STUCK_AFTER)
-                    return Fail(result, $"Stuck contact ({t - session.Start:F2}s)");
+                if (_recentlyStuck.TryGetValue(contactKey, out float stuckT) && Time.time - stuckT < STUCK_RELEASE_WINDOW)
+                    return Fail(result, $"Stuck contact / release ({Time.time - stuckT:F2}s ago)");
 
                 // Cooldown, so one swing is one call.
                 string pairKey = attackerId + ">" + victimId;
@@ -348,10 +345,6 @@ namespace oomtm450PuckMod_Ruleset {
                     if (attackerAnalyze.RecentUpRatio > LIFT_MIN_UP_RATIO || attackerAnalyze.DownRatio < LIFT_MAX_DOWN_RATIO)
                         return Fail(result, $"Stick lift (attackerAnalyze.RecentUpRatio:{attackerAnalyze.RecentUpRatio} > LIFT_MIN_UP_RATIO:{LIFT_MIN_UP_RATIO} || attackerAnalyze.DownRatio:{attackerAnalyze.DownRatio} < LIFT_MAX_DOWN_RATIO:{LIFT_MAX_DOWN_RATIO})");
 
-                    /*// 2. Attacker playing the puck = stick check. An axe is never legal.
-                    if (Ruleset.PlayerTouchedPuckRecently(attackerId, PUCK_PLAY_EXEMPTION_MS))
-                        return Fail(result, "Attacker playing the puck");*/
-
                     // 7. Scrum.
                     if (ctx != SlashContext.VictimHasPuckFromBehind &&
                         CountPlayersNear(contactPoint, SCRUM_RADIUS, attackerId, victimId) >= SCRUM_PLAYER_COUNT &&
@@ -409,6 +402,37 @@ namespace oomtm450PuckMod_Ruleset {
             result.Reason = reason;
             return result;
         }
+
+        /// <summary>
+        /// Call on Enter AND Stay for any stick-vs-stick contact (blade/blade included).
+        /// </summary>
+        internal static void RegisterContact(Stick selfStick, Collision c) {
+            try {
+                if (!selfStick || !selfStick.Player || c.contactCount == 0)
+                    return;
+
+                Stick other = c.GetContact(0).otherCollider.GetComponentInParent<Stick>();
+                if (!other || !other.Player)
+                    return;
+
+                string key = GetContactKey(selfStick.Player.SteamId.Value.ToString(), other.Player.SteamId.Value.ToString());
+                float t = Time.time;
+
+                if (!_contacts.TryGetValue(key, out ContactSession s) || t - s.Last > CONTACT_GAP)
+                    s = new ContactSession { Start = t, Last = t };
+                else
+                    s.Last = t;
+                _contacts[key] = s;
+
+                if (s.Last - s.Start > STUCK_AFTER)
+                    _recentlyStuck[key] = t;
+            }
+            catch (Exception ex) {
+                Logging.LogError($"Error in {nameof(StickOnStickDetector)}.{nameof(RegisterContact)}.\n{ex}", Ruleset.ServerConfig);
+            }
+        }
+
+        private static string GetContactKey(string idA, string idB) => string.CompareOrdinal(idA, idB) < 0 ? idA + "|" + idB : idB + "|" + idA;
         #endregion
     }
 }
