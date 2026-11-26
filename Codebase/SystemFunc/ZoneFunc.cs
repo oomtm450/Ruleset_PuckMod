@@ -184,17 +184,14 @@ namespace Codebase {
         /// <param name="radius">Float, radius of the object linked to the position that is being checked.</param>
         /// <returns>Bool, is behind hashmarks or not.</returns>
         internal static bool IsBehindHashmarks(PlayerTeam team, Vector3 position, float radius = 0) {
-            float zMax = position.z + radius;
-
             if (team == PlayerTeam.Red) {
-                double hashMarkZPosition = ICE_Z_POSITIONS[IceElement.RedTeam_HashMarks].Start + (ICE_Z_POSITIONS[IceElement.RedTeam_HashMarks].End - ICE_Z_POSITIONS[IceElement.RedTeam_HashMarks].Start);
-                if (zMax < hashMarkZPosition)
-                    return true;
+                double hashMarkZPosition = ICE_Z_POSITIONS[IceElement.RedTeam_HashMarks].End;
+                return position.z + radius < hashMarkZPosition;
             }
-            else if (team == PlayerTeam.Blue) {
-                double hashMarkZPosition = ICE_Z_POSITIONS[IceElement.BlueTeam_HashMarks].End - (ICE_Z_POSITIONS[IceElement.BlueTeam_HashMarks].End - ICE_Z_POSITIONS[IceElement.BlueTeam_HashMarks].Start);
-                if (zMax > hashMarkZPosition)
-                    return true;
+
+            if (team == PlayerTeam.Blue) {
+                double hashMarkZPosition = ICE_Z_POSITIONS[IceElement.BlueTeam_HashMarks].Start;
+                return position.z - radius > hashMarkZPosition;
             }
 
             return false;
