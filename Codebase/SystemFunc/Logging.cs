@@ -13,7 +13,7 @@ namespace Codebase {
         /// <param name="config">IConfig, config to use to check if info must be logged.</param>
         /// <param name="bypassConfig">Bool, true to bypass the logs config. False by default.</param>
         public static void Log(string msg, IConfig config, bool bypassConfig = false) {
-            if (bypassConfig || config == null || config.LogInfo)
+            if (bypassConfig || config.LogInfo)
                 Debug.Log($"[{config.ModName}] {msg}");
         }
 
@@ -24,7 +24,7 @@ namespace Codebase {
         /// <param name="config">IConfig, config to use to check if info must be logged.</param>
         /// <param name="bypassConfig">Bool, true to bypass the logs config. False by default.</param>
         public static void LogDebug(string msg, IConfig config, bool bypassConfig = false) {
-            if (bypassConfig || config == null || config.LogInfo)
+            if (bypassConfig || config.LogInfo)
                 Debug.Log($"[{config.ModName}] DEBUG - {msg}");
         }
 
@@ -44,7 +44,7 @@ namespace Codebase {
         /// <param name="config">IConfig, config to use to check if info must be logged.</param>
         /// <param name="bypassConfig">Bool, true to bypass the logs config. False by default.</param>
         public static void LogWarning(string msg, IConfig config, bool bypassConfig = false) {
-            if (bypassConfig || config == null || config.LogInfo)
+            if (bypassConfig || config.LogInfo)
                 Debug.LogWarning($"[{config.ModName}] {msg}");
         }
     }

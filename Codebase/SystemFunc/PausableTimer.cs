@@ -47,8 +47,10 @@ namespace Codebase {
 
         public void AddTime(long milliseconds) {
             _intervalMilliseconds += milliseconds;
-            Pause();
-            Start();
+            if (_isRunning) {
+                Pause();
+                Start();
+            }
         }
 
         public void TimerCallback(object state) {

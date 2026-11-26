@@ -233,7 +233,7 @@ namespace oomtm450PuckMod_Ruleset.FaceoffViolation {
 
             try {
                 Ruleset.DoFaceoff("", "", 0, 0, false, true, false, false);
-                PenaltyModule.AddTimeToAllPenalties((long)(DateTime.UtcNow - Ruleset.LastPlayPhaseStartDateTime).TotalMilliseconds);
+                PenaltyModule.AddTimeToAllActivePenalties((long)(DateTime.UtcNow - Ruleset.LastPlayPhaseStartDateTime).TotalMilliseconds);
             }
             catch (Exception ex) {
                 Logging.LogError($"Failed to restart faceoff.\n{ex}", Ruleset.ServerConfig);

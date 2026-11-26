@@ -430,13 +430,13 @@ namespace oomtm450PuckMod_Ruleset {
                 if (allPenalties.Where(x => x.Team == penalizedPlayer.Team && x.PenaltyType == penaltyType && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (now - x.PenaltyDateTime).TotalMilliseconds < 4000)) // TODO : Config.
                     return false;
 
-                if ((penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.GoalieInterference) && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Charging) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
+                if ((penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.GoalieInterference) && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Charging) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (now - x.PenaltyDateTime).TotalMilliseconds < 4000)) // TODO : Config.
                     return false;
 
-                if (penaltyType == PenaltyType.Roughing && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Interference || x.PenaltyType == PenaltyType.GoalieInterference || x.PenaltyType == PenaltyType.Charging) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
+                if (penaltyType == PenaltyType.Roughing && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Interference || x.PenaltyType == PenaltyType.GoalieInterference || x.PenaltyType == PenaltyType.Charging) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (now - x.PenaltyDateTime).TotalMilliseconds < 4000)) // TODO : Config.
                     return false;
 
-                if ((penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.GoalieInterference || penaltyType == PenaltyType.Slashing || penaltyType == PenaltyType.HighStick || penaltyType == PenaltyType.Hooking) && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Interference || x.PenaltyType == PenaltyType.GoalieInterference || x.PenaltyType == PenaltyType.Hooking || x.PenaltyType == PenaltyType.Slashing || x.PenaltyType == PenaltyType.HighStick) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (x.PenaltyDateTime - now).TotalMilliseconds < 4000)) // TODO : Config.
+                if ((penaltyType == PenaltyType.Interference || penaltyType == PenaltyType.GoalieInterference || penaltyType == PenaltyType.Slashing || penaltyType == PenaltyType.HighStick || penaltyType == PenaltyType.Hooking) && allPenalties.Where(x => x.Team == penalizedPlayer.Team && (x.PenaltyType == PenaltyType.Interference || x.PenaltyType == PenaltyType.GoalieInterference || x.PenaltyType == PenaltyType.Hooking || x.PenaltyType == PenaltyType.Slashing || x.PenaltyType == PenaltyType.HighStick) && x.ReceivingPlayerSteamId == receivingPlayerSteamId).Any(x => (now - x.PenaltyDateTime).TotalMilliseconds < 4000)) // TODO : Config.
                     return false;
             }
 
@@ -590,15 +590,19 @@ namespace oomtm450PuckMod_Ruleset {
 
                 Player penalizedPlayer = PlayerManager.Instance.GetPlayerBySteamId(firstPenalty.SteamId);
                 if (penalizedPlayer == null || !penalizedPlayer || !penalizedPlayer.IsCharacterSpawned)
-                    return;
+                    continue;
 
                 TeleportPlayer(penalizedPlayer);
             }
         }
 
-        internal static void AddTimeToAllPenalties(long milliseconds) {
-            foreach (Penalty penalty in GetAllPenalties())
+        internal static void AddTimeToAllActivePenalties(long milliseconds) {
+            foreach (Penalty penalty in GetAllPenalties()) {
+                if (!penalty.CurrentPenalty)
+                    continue;
+
                 penalty.Timer.AddTime(milliseconds);
+            }
         }
 
         internal static void TeleportPlayers() {

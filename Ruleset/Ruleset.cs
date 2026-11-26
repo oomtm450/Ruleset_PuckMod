@@ -1542,7 +1542,7 @@ namespace oomtm450PuckMod_Ruleset {
                         return false;
                 }
                 catch (Exception ex) {
-                    Logging.LogError($"Error in {nameof(PlayerPosition_Server_Claim_Patch)} Prefix().\n{ex}", ServerConfig);
+                    Logging.LogError($"Error in {nameof(PlayerPosition_Server_Unclaim_Patch)} Prefix().\n{ex}", ServerConfig);
                 }
 
                 return true;
@@ -1973,10 +1973,7 @@ namespace oomtm450PuckMod_Ruleset {
                             continue;
 
                         if (puck.Rigidbody.transform.position.y < -Y_NETWORK_BOUND) {
-                            if (ServerConfig.Faceoff.UseDefaultPuckDropHeight)
-                                puck.Rigidbody.transform.position = new Vector3(ArenaOffsetX, puck.Rigidbody.transform.position.y + ArenaOffsetY, ArenaOffsetZ);
-                            else
-                                puck.Rigidbody.transform.position = new Vector3(ArenaOffsetX, ServerConfig.Faceoff.PuckDropHeight + ArenaOffsetY, ArenaOffsetZ);
+                            puck.Rigidbody.transform.position = new Vector3(ArenaOffsetX, ServerConfig.Faceoff.PuckDropHeight + ArenaOffsetY, ArenaOffsetZ);
 
                             puck.Rigidbody.linearVelocity = Vector3.zero;
                             puck.Rigidbody.angularVelocity = Vector3.zero;
@@ -2038,8 +2035,7 @@ namespace oomtm450PuckMod_Ruleset {
                     }
 
                     if (PenaltyTimersElapsed.Count != 0) {
-                        List<Penalty> penaltyTimersElapsed = new List<Penalty>(PenaltyTimersElapsed);
-                        PenaltyTimersElapsed.Clear();
+                        List<Penalty> penaltyTimersElapsed = PenaltyTimersElapsed.Drain();
 
                         foreach (Penalty penaltyToRemove in penaltyTimersElapsed)
                             Penalty.PenaltyTimer_Action(penaltyToRemove);
@@ -3437,7 +3433,7 @@ namespace oomtm450PuckMod_Ruleset {
 
                     player.PlayerBody.Stamina.Value = 1f / staminaDrainDivisionAmountGoalie;
 
-                    if (!!ServerConfig.Icing.StaminaDrain)
+                    if (!ServerConfig.Icing.StaminaDrain)
                         break;
                 }
                 else if (ServerConfig.Icing.StaminaDrain)
@@ -4049,7 +4045,7 @@ namespace oomtm450PuckMod_Ruleset {
                             PausableTimer newTimer = new PausableTimer(() => {
                                 PenLabelUI.PenaltyTimers.Remove(PenLabelUI.PenaltyTimers.First(x => x.SteamId == playerPenaltyTimerSplitted[0] && x.Timer.TimerEnded()));
                                 if (PenLabelUI.PenaltyTimers.Count(x => x.SteamId == playerPenaltyTimerSplitted[0]) != 0)
-                                    PenLabelUI.PenaltyTimers.First().Timer.Start();
+                                    PenLabelUI.PenaltyTimers.First(x => x.SteamId == playerPenaltyTimerSplitted[0]).Timer.Start();
                             }, long.Parse(playerPenaltyTimerSplitted[1]));
                             if (playerPenaltyTimerSplitted[2] == "1")
                                 newTimer.Start();
@@ -4484,7 +4480,7 @@ namespace oomtm450PuckMod_Ruleset {
                         else {
                             char lastFaceoffCountLastChar = dataStr.Last();
                             if (lastFaceoffCountLastChar == '1')
-                                SystemChatMessages.Add($"#{revertToLastFaceoffReferee.Number.Value} {revertToLastFaceoffReferee.Username.Value} REVERTED TO {dataStr}ST FACEOFF");
+                                SystemChatMessages.Add($"#{revertToLastFaceoffReferee.Number.Value} {revertToLastFaceoffReferee.Username.Value} REVERTED TO {dataStr}ST LAST FACEOFF");
                             else if (lastFaceoffCountLastChar == '2')
                                 SystemChatMessages.Add($"#{revertToLastFaceoffReferee.Number.Value} {revertToLastFaceoffReferee.Username.Value} REVERTED TO {dataStr}ND LAST FACEOFF");
                             else if (lastFaceoffCountLastChar == '3')
@@ -4975,7 +4971,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (puck.Rigidbody.transform.position.x > 0)
                     faceoffSpot = FaceoffSpot.RedTeamDZoneRight;
                 else
-                    faceoffSpot = FaceoffSpot.RedTeamDZoneRight;
+                    faceoffSpot = FaceoffSpot.RedTeamDZoneLeft;
             }
 
             _goals[byTeam].Add(new FaceoffState {
