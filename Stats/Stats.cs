@@ -175,6 +175,15 @@ namespace oomtm450PuckMod_Stats {
         private const string SOG_HEADER_LABEL_NAME = "SOGHeaderLabel";
 
         private const string SOG_LABEL = "SOGLabel";
+
+        /// <summary>Const int, width of the S/SV% column on the scoreboard (header and rows).</summary>
+        private const int SOG_COLUMN_WIDTH = 80;
+
+        /// <summary>Const int, width of the ping column on the scoreboard (header and rows). The text is right aligned in it.</summary>
+        private const int PING_COLUMN_WIDTH = 80;
+
+        /// <summary>Const int, space left between the right edge of the scoreboard rows and the ping column.</summary>
+        private const int SCOREBOARD_RIGHT_INSET = 8;
         #endregion
 
         #region Fields and Properties
@@ -397,6 +406,8 @@ namespace oomtm450PuckMod_Stats {
         private static readonly List<string> _hasUpdatedUIScoreboard = new List<string>();
 
         private static readonly LockDictionary<string, Label> _sogLabels = new LockDictionary<string, Label>();
+
+        private static bool _scoreboardAlignErrorLogged = false;
         #endregion
 
         #region Harmony Patches
@@ -2477,71 +2488,72 @@ namespace oomtm450PuckMod_Stats {
         /// Method used to modify the scoreboard to add additional stats.
         /// </summary>
         /// <param name="enable">Bool, true if new stats scoreboard has to added to the scoreboard. False if they need to be removed.</param>
-        private static void ScoreboardModifications(bool enable) { // TODO
+        private static void ScoreboardModifications(bool enable) {
             if (UIManager.Instance == null || UIManager.Instance.Scoreboard == null)
                 return;
 
             VisualElement scoreboardContainer = SystemFunc.GetPrivateField<VisualElement>(typeof(UIScoreboard), UIManager.Instance.Scoreboard, "scoreboard");
 
+            // Header.
             if (!_hasUpdatedUIScoreboard.Contains("header") && enable) {
                 VisualElement templateContainer = scoreboardContainer.Children().ElementAt(1).Children().ElementAt(0);
 
                 Label sogHeader = new Label("S/SV%") {
                     name = SOG_HEADER_LABEL_NAME,
                 };
+                sogHeader.style.width = SOG_COLUMN_WIDTH;
+                sogHeader.style.flexShrink = 0;
+                sogHeader.style.unityTextAlign = TextAnchor.UpperCenter;
                 templateContainer.Add(sogHeader);
-                sogHeader.style.translate = new Vector3(sogHeader.resolvedStyle.translate.x - 200, sogHeader.resolvedStyle.translate.y - 2, sogHeader.resolvedStyle.translate.z);
+                sogHeader.style.translate = new Vector3(0, 0, 0); // X is set by AlignScoreboardColumns.
 
-                foreach (VisualElement templateContainerChild in templateContainer.Children()) {
-                    foreach (VisualElement child in templateContainerChild.Children()) {
-                        if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
-                            child.style.translate = new Vector3(child.resolvedStyle.translate.x - 95, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
-                    }
-                }
+                VisualElement headerPing = FindHeaderPing(templateContainer);
+                if (headerPing != null)
+                    StylePingColumn(headerPing);
 
                 _hasUpdatedUIScoreboard.Add("header");
             }
             else if (_hasUpdatedUIScoreboard.Contains("header") && !enable) {
                 VisualElement templateContainer = scoreboardContainer.Children().ElementAt(1).Children().ElementAt(0);
 
-                templateContainer.Remove(templateContainer.Children().First(x => x.name == SOG_HEADER_LABEL_NAME));
+                VisualElement sogHeader = templateContainer.Q(SOG_HEADER_LABEL_NAME);
+                if (sogHeader != null)
+                    sogHeader.parent.Remove(sogHeader);
 
-                foreach (VisualElement templateContainerChild in templateContainer.Children()) {
-                    foreach (VisualElement child in templateContainerChild.Children()) {
-                        if (child.name == "GoalsLabel" || child.name == "AssistsLabel" || child.name == "PointsLabel")
-                            child.style.translate = new Vector3(child.resolvedStyle.translate.x + 95, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
-                    }
-                }
+                ResetScoreboardTranslate(templateContainer.Q("GoalsLabel"));
+                ResetScoreboardTranslate(templateContainer.Q("AssistsLabel"));
+                ResetScoreboardTranslate(templateContainer.Q("PointsLabel"));
+                ResetPingColumn(FindHeaderPing(templateContainer));
             }
 
+            // Rows.
             foreach (var kvp in SystemFunc.GetPrivateField<Dictionary<Player, VisualElement>>(typeof(UIScoreboard), UIManager.Instance.Scoreboard, "playerVisualElementMap")) {
                 string playerSteamId = kvp.Key.SteamId.Value.ToString();
-                int usernameCharCountLabelOffset = (kvp.Key.Username.Value.ToString().Length - 6) * 5;
-                int usernameCharCountLabelOffsetForPing = kvp.Key.Username.Value.ToString().Length * 4;
 
                 if (string.IsNullOrEmpty(playerSteamId))
                     continue;
 
-                if (!_hasUpdatedUIScoreboard.Contains(playerSteamId) && enable) {
+                bool hasUpdatedPlayer = _hasUpdatedUIScoreboard.Contains(playerSteamId);
+
+                if (!hasUpdatedPlayer && enable) {
                     if (kvp.Value.childCount == 1) {
                         VisualElement playerContainer = kvp.Value.Children().First();
 
                         Label sogLabel = new Label("0") {
                             name = SOG_LABEL,
                         };
-                        sogLabel.style.flexGrow = 1;
-                        sogLabel.style.unityTextAlign = TextAnchor.UpperRight;
+                        sogLabel.style.flexGrow = 0;
+                        sogLabel.style.flexShrink = 0;
+                        sogLabel.style.width = SOG_COLUMN_WIDTH;
+                        sogLabel.style.unityTextAlign = TextAnchor.UpperCenter;
                         playerContainer.Add(sogLabel);
-                        sogLabel.style.translate = new Vector3(sogLabel.resolvedStyle.translate.x - 208, sogLabel.resolvedStyle.translate.y, sogLabel.resolvedStyle.translate.z);
                         _sogLabels.Add(playerSteamId, sogLabel);
 
-                        foreach (VisualElement child in playerContainer.Children()) {
-                            if (child.name == "Goals" || child.name == "Assists" || child.name == "Points")
-                                child.style.translate = new Vector3(child.resolvedStyle.translate.x - usernameCharCountLabelOffset, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
-                            else if (child.name == "Ping")
-                                child.style.translate = new Vector3(child.resolvedStyle.translate.x + 120 - usernameCharCountLabelOffsetForPing, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
-                        }
+                        VisualElement ping = playerContainer.Q("Ping");
+                        if (ping != null)
+                            StylePingColumn(ping);
 
+                        // The X position of every column is set by AlignScoreboardColumns.
                         _hasUpdatedUIScoreboard.Add(playerSteamId);
 
                         if (!_sog.TryGetValue(playerSteamId, out int _))
@@ -2550,32 +2562,178 @@ namespace oomtm450PuckMod_Stats {
                         if (!_savePerc.TryGetValue(playerSteamId, out (int, int) _))
                             _savePerc.Add(playerSteamId, (0, 0));
                     }
-                    else if (_hasUpdatedUIScoreboard.Contains(playerSteamId) && !enable) {
-                        VisualElement playerContainer = kvp.Value.Children().First();
-
-                        playerContainer.Remove(playerContainer.Children().First(x => x.name == SOG_LABEL));
-
-                        foreach (VisualElement child in playerContainer.Children()) {
-                            if (child.name == "Goals" || child.name == "Assists" || child.name == "Points")
-                                child.style.translate = new Vector3(child.resolvedStyle.translate.x + usernameCharCountLabelOffset, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
-                            else if (child.name == "Ping")
-                                child.style.translate = new Vector3(child.resolvedStyle.translate.x - 120 + usernameCharCountLabelOffsetForPing, child.resolvedStyle.translate.y, child.resolvedStyle.translate.z);
-                        }
-                    }
                     else {
                         Logging.LogError($"Not adding player {kvp.Key.Username.Value}, childCount {kvp.Value.childCount}.", ClientConfig);
                         foreach (var test in kvp.Value.Children())
                             Logging.LogError($"{test.name}", ClientConfig);
                     }
                 }
+                else if (hasUpdatedPlayer && !enable && kvp.Value.childCount > 0) {
+                    VisualElement playerContainer = kvp.Value.Children().First();
+
+                    VisualElement sogLabel = playerContainer.Q(SOG_LABEL);
+                    if (sogLabel != null)
+                        playerContainer.Remove(sogLabel);
+
+                    ResetScoreboardTranslate(playerContainer.Q("Goals"));
+                    ResetScoreboardTranslate(playerContainer.Q("Assists"));
+                    ResetScoreboardTranslate(playerContainer.Q("Points"));
+                    ResetPingColumn(playerContainer.Q("Ping"));
+                }
             }
 
-            if (!enable) {
+            if (enable) {
+                if (_hasUpdatedUIScoreboard.Contains("header")) {
+                    try {
+                        AlignScoreboardColumns(scoreboardContainer);
+                    }
+                    catch (Exception ex) {
+                        if (!_scoreboardAlignErrorLogged) {
+                            _scoreboardAlignErrorLogged = true;
+                            Logging.LogError($"Error in {nameof(AlignScoreboardColumns)}.\n{ex}", ClientConfig);
+                        }
+                    }
+                }
+            }
+            else {
                 _sog.Clear();
                 _savePerc.Clear();
                 _sogLabels.Clear();
                 _hasUpdatedUIScoreboard.Clear();
             }
+        }
+
+        /// <summary>
+        /// Method that places the Goals, Assists, Points, S/SV% and Ping columns of the header and of every player row at the same X positions.
+        /// The positions are measured from the actual layout (right edge of the rows and width of the columns) each time, so they do not depend
+        /// on usernames, screen size or the way the game lays out its rows. Ping is on the far right, then S/SV%, then Points, Assists and Goals.
+        /// </summary>
+        /// <param name="scoreboardContainer">VisualElement, container of the scoreboard.</param>
+        private static void AlignScoreboardColumns(VisualElement scoreboardContainer) {
+            Dictionary<Player, VisualElement> rows = SystemFunc.GetPrivateField<Dictionary<Player, VisualElement>>(typeof(UIScoreboard), UIManager.Instance.Scoreboard, "playerVisualElementMap");
+
+            // Measure the columns on the first row that has a valid layout.
+            bool measured = false;
+            float rightEdge = 0, goalsWidth = 0, assistsWidth = 0, pointsWidth = 0, scale = 1;
+            foreach (var kvp in rows) {
+                if (kvp.Value.childCount == 0)
+                    continue;
+
+                VisualElement container = kvp.Value.Children().First();
+                VisualElement goals = container.Q("Goals");
+                VisualElement assists = container.Q("Assists");
+                VisualElement points = container.Q("Points");
+                if (!HasValidLayout(container) || !HasValidLayout(goals) || !HasValidLayout(assists) || !HasValidLayout(points))
+                    continue;
+
+                scale = container.worldBound.width / container.layout.width;
+                rightEdge = container.LocalToWorld(new Vector2(container.contentRect.xMax, 0)).x - (SCOREBOARD_RIGHT_INSET * scale);
+                goalsWidth = goals.worldBound.width;
+                assistsWidth = assists.worldBound.width;
+                pointsWidth = points.worldBound.width;
+                measured = true;
+                break;
+            }
+
+            if (!measured)
+                return;
+
+            // Target X (in world space) of each column, from the right.
+            float pingRight = rightEdge;
+            float sogCenter = pingRight - (PING_COLUMN_WIDTH * scale) - (SOG_COLUMN_WIDTH * scale / 2f);
+            float pointsCenter = pingRight - (PING_COLUMN_WIDTH * scale) - (SOG_COLUMN_WIDTH * scale) - (pointsWidth / 2f);
+            float assistsCenter = pointsCenter - (pointsWidth / 2f) - (assistsWidth / 2f);
+            float goalsCenter = assistsCenter - (assistsWidth / 2f) - (goalsWidth / 2f);
+
+            // Header.
+            VisualElement templateContainer = scoreboardContainer.Children().ElementAt(1).Children().ElementAt(0);
+            AlignScoreboardElement(templateContainer.Q("GoalsLabel"), goalsCenter, false);
+            AlignScoreboardElement(templateContainer.Q("AssistsLabel"), assistsCenter, false);
+            AlignScoreboardElement(templateContainer.Q("PointsLabel"), pointsCenter, false);
+            AlignScoreboardElement(templateContainer.Q(SOG_HEADER_LABEL_NAME), sogCenter, false);
+            AlignScoreboardElement(FindHeaderPing(templateContainer), pingRight, true);
+
+            // Rows.
+            foreach (var kvp in rows) {
+                if (kvp.Value.childCount == 0)
+                    continue;
+
+                VisualElement container = kvp.Value.Children().First();
+                AlignScoreboardElement(container.Q("Goals"), goalsCenter, false);
+                AlignScoreboardElement(container.Q("Assists"), assistsCenter, false);
+                AlignScoreboardElement(container.Q("Points"), pointsCenter, false);
+                AlignScoreboardElement(container.Q(SOG_LABEL), sogCenter, false);
+                AlignScoreboardElement(container.Q("Ping"), pingRight, true);
+            }
+        }
+
+        /// <summary>
+        /// Method that moves an element, with its translate, so its center (or its right edge) is at a given X in world space.
+        /// It uses the layout position of the element (without its translate), so the result is the same every time it is called.
+        /// </summary>
+        /// <param name="element">VisualElement, element to move. Does nothing if null or if its layout is not valid yet.</param>
+        /// <param name="targetWorldX">Float, X position in world space to reach.</param>
+        /// <param name="alignRightEdge">Bool, true to align the right edge of the element, false to align its center.</param>
+        private static void AlignScoreboardElement(VisualElement element, float targetWorldX, bool alignRightEdge) {
+            if (!HasValidLayout(element))
+                return;
+
+            float targetLocalX = element.parent.WorldToLocal(new Vector2(targetWorldX, 0)).x;
+            float currentLayoutX = alignRightEdge ? element.layout.xMax : element.layout.center.x;
+            float translateX = targetLocalX - currentLayoutX;
+
+            Vector3 currentTranslate = element.resolvedStyle.translate;
+            if (Math.Abs(currentTranslate.x - translateX) < 0.25f)
+                return;
+
+            element.style.translate = new Vector3(translateX, currentTranslate.y, currentTranslate.z);
+        }
+
+        private static bool HasValidLayout(VisualElement element) {
+            return element != null && element.parent != null && !float.IsNaN(element.layout.x) && !float.IsNaN(element.layout.width) && element.layout.width > 0;
+        }
+
+        /// <summary>
+        /// Function that finds the ping label of the scoreboard header.
+        /// </summary>
+        /// <param name="templateContainer">VisualElement, container of the scoreboard header.</param>
+        /// <returns>VisualElement, ping label of the header. Null if not found.</returns>
+        private static VisualElement FindHeaderPing(VisualElement templateContainer) {
+            VisualElement ping = templateContainer.Q("PingLabel");
+            if (ping != null)
+                return ping;
+
+            return templateContainer.Query<VisualElement>().Where(x => x.name != null && x.name.IndexOf("Ping", StringComparison.OrdinalIgnoreCase) >= 0).First();
+        }
+
+        /// <summary>
+        /// Method that gives the ping column a fixed width and right aligns its text.
+        /// </summary>
+        private static void StylePingColumn(VisualElement ping) {
+            ping.style.width = PING_COLUMN_WIDTH;
+            ping.style.flexShrink = 0;
+
+            Label label = ping as Label ?? ping.Q<Label>();
+            if (label != null)
+                label.style.unityTextAlign = (TextAnchor)(((int)label.resolvedStyle.unityTextAlign / 3) * 3 + 2); // Same vertical alignment, but right.
+        }
+
+        private static void ResetPingColumn(VisualElement ping) {
+            if (ping == null)
+                return;
+
+            ping.style.translate = StyleKeyword.Null;
+            ping.style.width = StyleKeyword.Null;
+            ping.style.flexShrink = StyleKeyword.Null;
+
+            Label label = ping as Label ?? ping.Q<Label>();
+            if (label != null)
+                label.style.unityTextAlign = StyleKeyword.Null;
+        }
+
+        private static void ResetScoreboardTranslate(VisualElement element) {
+            if (element != null)
+                element.style.translate = StyleKeyword.Null;
         }
 
         /// <summary>
