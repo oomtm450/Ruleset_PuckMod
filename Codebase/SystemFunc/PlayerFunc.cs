@@ -148,6 +148,25 @@ namespace Codebase {
 
             return "";
         }
+
+        /// <summary>
+        /// Function that checks if a goalie is past their own blue line, in their defensive zone.
+        /// Uses the arena-adjusted ice positions, so it follows the arena scale and offset.
+        /// </summary>
+        public static bool IsGoalieInOwnZone(Player goalie) {
+            float z = goalie.PlayerBody.Rigidbody.transform.position.z;
+
+            switch (goalie.Team) {
+                case PlayerTeam.Blue: // Blue defends the +Z end.
+                    return z > ZoneFunc.ICE_Z_POSITIONS[IceElement.BlueTeam_BlueLine].Start;
+
+                case PlayerTeam.Red:  // Red defends the -Z end.
+                    return z < ZoneFunc.ICE_Z_POSITIONS[IceElement.RedTeam_BlueLine].End;
+
+                default:
+                    return false;
+            }
+        }
         #endregion
     }
 }

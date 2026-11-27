@@ -983,7 +983,7 @@ namespace oomtm450PuckMod_Stats {
                     bool isGoalie = PlayerFunc.IsGoalie(player);
 
                     if (_puckRaycast.PuckIsGoingToNet[player.Team]) {
-                        if (isGoalie && Math.Abs(player.PlayerBody.Rigidbody.transform.position.z) > 13.5) { // TODO : Cpnfig.
+                        if (isGoalie && PlayerFunc.IsGoalieInOwnZone(player)) { // TODO : Config.
                             PlayerTeam shooterTeam = otherTeam;
                             string shooterSteamId = _lastPlayerOnPuckTipIncludedSteamId[shooterTeam].SteamId;
                             if (!string.IsNullOrEmpty(shooterSteamId)) {
@@ -1008,7 +1008,7 @@ namespace oomtm450PuckMod_Stats {
                         }
                     }
                     else {
-                        if (_lastTeamOnPuckTipIncluded == otherTeam && isGoalie && Math.Abs(player.PlayerBody.Rigidbody.transform.position.z) > 13.5) { // TODO : Config.
+                        if (_lastTeamOnPuckTipIncluded == otherTeam && isGoalie && PlayerFunc.IsGoalieInOwnZone(player)) { // TODO : Config.
                             if ((player.Team == PlayerTeam.Blue && _puckZCoordinateDifference > ServerConfig.GoalieSaveCreaseSystemZDelta) || (player.Team == PlayerTeam.Red && _puckZCoordinateDifference < -ServerConfig.GoalieSaveCreaseSystemZDelta)) {
                                 (double startX, double endX) = (0, 0);
                                 (double startZ, double endZ) = (0, 0);
