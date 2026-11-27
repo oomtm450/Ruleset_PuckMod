@@ -493,9 +493,13 @@ namespace oomtm450PuckMod_Stats {
                     if (goalPlayer != null) {
                         Player lastTouchPlayerTipIncluded = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam].SteamId).FirstOrDefault();
                         if (lastTouchPlayerTipIncluded != null && lastTouchPlayerTipIncluded.SteamId.Value.ToString() != goalPlayer.SteamId.Value.ToString()) {
+                            var newGoalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam].SteamId).FirstOrDefault();
+                            if (newGoalPlayer == null || !newGoalPlayer)
+                                return true;
+                            
                             secondAssistPlayer = assistPlayer;
                             assistPlayer = goalPlayer;
-                            goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam].SteamId).FirstOrDefault();
+                            goalPlayer = newGoalPlayer;
 
                             while (assistPlayer != null && assistPlayer.SteamId.Value.ToString() == goalPlayer.SteamId.Value.ToString()) {
                                 assistPlayer = secondAssistPlayer;
@@ -510,7 +514,11 @@ namespace oomtm450PuckMod_Stats {
                     else {
                         // If own goal, add goal attribution to last player on puck on the other team.
                         ChatManager.Instance.Server_BroadcastChatMessage($"OWN GOAL BY {PlayerManager.Instance.GetPlayerBySteamId(_lastPlayerOnPuckTipIncludedSteamId[TeamFunc.GetOtherTeam(byTeam)].SteamId).Username.Value}");
-                        goalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam].SteamId).FirstOrDefault();
+                        var newGoalPlayer = PlayerManager.Instance.GetPlayers().Where(x => x.SteamId.Value.ToString() == _lastPlayerOnPuckTipIncludedSteamId[byTeam].SteamId).FirstOrDefault();
+                        if (newGoalPlayer == null || !newGoalPlayer)
+                            return true;
+
+                        goalPlayer = newGoalPlayer;
 
                         bool saveWasCounted = false;
                         if (goalPlayer != null)
@@ -820,7 +828,7 @@ namespace oomtm450PuckMod_Stats {
             public static void Postfix() {
                 try {
                     // If this is the server, do not use the patch.
-                    if (ServerFunc.IsDedicatedServer() || !NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton == null || NetworkManager.Singleton.CustomMessagingManager == null)
+                    if (ServerFunc.IsDedicatedServer() || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.CustomMessagingManager == null)
                         return;
 
                     if (!_hasRegisteredWithNamedMessageHandler || !_serverHasResponded) {
@@ -1250,8 +1258,8 @@ namespace oomtm450PuckMod_Stats {
         public class PlayerBody_OnStandUp_Patch {
             [HarmonyPostfix]
             public static void Postfix(PlayerBody __instance) {
-                // If this is not the server or game is not started, do not use the patch.
-                if (!ServerFunc.IsDedicatedServer() || _paused || GameManager.Instance.Phase != GamePhase.Play || !_logic)
+                // If this is not the server, do not use the patch.
+                if (!ServerFunc.IsDedicatedServer())
                     return;
 
                 try {
@@ -1311,6 +1319,9 @@ namespace oomtm450PuckMod_Stats {
                         foreach (Stopwatch watch in _playersCurrentPuckTouch.Values)
                             watch.Stop();
                         _playersCurrentPuckTouch.Clear();
+
+                        // Reset stand up time.
+                        _playerIsDown.Clear();
 
                         // Only emit on a real transition into GameOver. The prefix sees the old phase, so a re-asserted GameOver is skipped.
                         if (phase == GamePhase.GameOver && __instance.GameState.Value.Phase != GamePhase.GameOver)
@@ -1668,7 +1679,6 @@ namespace oomtm450PuckMod_Stats {
                 Server_RegisterNamedMessageHandler();
 
                 ulong clientId = (ulong)message["clientId"];
-                string clientSteamId = PlayerManager.Instance.GetPlayerByClientId(clientId).SteamId.Value.ToString();
                 try {
                     _playersInfo.Add(clientId, ("", ""));
                 }
@@ -1919,14 +1929,17 @@ namespace oomtm450PuckMod_Stats {
                 if (string.IsNullOrEmpty(steamId))
                     continue;
 
+                if (starPoints.ContainsKey(steamId))
+                    continue;
+
                 starPoints.Add(steamId, 0);
 
                 double gwgModifier = gwgSteamId == steamId ? 0.55d : 0; // TODO : Config.
                 double teamModifier = winningTeam == player.Team ? 1.1d : 1d; // TODO : Config.
 
                 if (PlayerFunc.IsGoalie(player) || player.PlayerPosition.Name == PlayerFunc.GOALIE_POSITION) {
-                    if (_savePerc.TryGetValue(steamId, out var saveValues))
-                        starPoints[steamId] += ((((double)saveValues.Saves) / ((double)saveValues.Shots)) - 0.300d) * ((double)saveValues.Saves) * 30d;
+                    if (_savePerc.TryGetValue(steamId, out var saveValues) && saveValues.Saves != 0 && saveValues.Shots != 0)
+                        starPoints[steamId] += ((double)saveValues.Saves / saveValues.Shots - 0.300d) * saveValues.Saves * 30d;
 
                     if (_sog.TryGetValue(steamId, out int shots))
                         starPoints[steamId] += ((double)shots) * 1d; // TODO : Config.
@@ -1944,7 +1957,7 @@ namespace oomtm450PuckMod_Stats {
                 else {
                     if (_sog.TryGetValue(steamId, out int shots)) {
                         starPoints[steamId] += ((double)shots) * 4d; // TODO : Config.
-                        starPoints[steamId] += (((double)(player.Goals.Value + 1)) / ((double)shots) - 0.25d) * ((double)shots) * 4d; // TODO : Config.
+                        starPoints[steamId] += (player.Goals.Value * 4d) - shots; // TODO : Config.
                     }
 
                     if (_passes.TryGetValue(steamId, out int passes))
@@ -2415,14 +2428,14 @@ namespace oomtm450PuckMod_Stats {
         private static void ReceiveData_SOG(string playerSteamId, string dataStr) {
             int sog = int.Parse(dataStr);
 
-            if (_sog.TryGetValue(playerSteamId, out int _)) {
+            if (_sog.TryGetValue(playerSteamId, out int _))
                 _sog[playerSteamId] = sog;
-                Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-                if (currentPlayer != null && currentPlayer && !PlayerFunc.IsGoalie(currentPlayer))
-                    _sogLabels[playerSteamId].text = sog.ToString();
-            }
             else
                 _sog.Add(playerSteamId, sog);
+
+            Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
+            if (currentPlayer != null && currentPlayer && !PlayerFunc.IsGoalie(currentPlayer) && _sogLabels.ContainsKey(playerSteamId))
+                _sogLabels[playerSteamId].text = sog.ToString();
 
             // Write to client-side file.
             WriteClientSideFile_SOG();
@@ -2448,14 +2461,14 @@ namespace oomtm450PuckMod_Stats {
             int saves = int.Parse(dataStrSplitted[0]);
             int shots = int.Parse(dataStrSplitted[1]);
 
-            if (_savePerc.TryGetValue(playerSteamId, out var _)) {
+            if (_savePerc.TryGetValue(playerSteamId, out var _))
                 _savePerc[playerSteamId] = (saves, shots);
-                Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
-                if (currentPlayer && PlayerFunc.IsGoalie(currentPlayer))
-                    _sogLabels[playerSteamId].text = GetGoalieSavePerc(saves, shots);
-            }
             else
                 _savePerc.Add(playerSteamId, (saves, shots));
+
+            Player currentPlayer = PlayerManager.Instance.GetPlayerBySteamId(playerSteamId);
+            if (currentPlayer != null && currentPlayer && PlayerFunc.IsGoalie(currentPlayer) && _sogLabels.ContainsKey(playerSteamId))
+                _sogLabels[playerSteamId].text = GetGoalieSavePerc(saves, shots);
 
             // Write to client-side file.
             WriteClientSideFile_SavePerc();
@@ -2489,8 +2502,15 @@ namespace oomtm450PuckMod_Stats {
         /// </summary>
         /// <param name="enable">Bool, true if new stats scoreboard has to added to the scoreboard. False if they need to be removed.</param>
         private static void ScoreboardModifications(bool enable) {
-            if (UIManager.Instance == null || UIManager.Instance.Scoreboard == null)
+            if (UIManager.Instance == null || UIManager.Instance.Scoreboard == null) {
+                if (!enable) {
+                    _sog.Clear();
+                    _savePerc.Clear();
+                    _sogLabels.Clear();
+                    _hasUpdatedUIScoreboard.Clear();
+                }
                 return;
+            }
 
             VisualElement scoreboardContainer = SystemFunc.GetPrivateField<VisualElement>(typeof(UIScoreboard), UIManager.Instance.Scoreboard, "scoreboard");
 
