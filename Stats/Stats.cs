@@ -478,6 +478,9 @@ namespace oomtm450PuckMod_Stats {
 
                         if (goalPlayer != null)
                             goalsList.Add(goalPlayer.SteamId.Value.ToString());
+                        else
+                            goalsList.Add("");
+
                         if (assistPlayer != null)
                             assistsList.Add(assistPlayer.SteamId.Value.ToString());
                         if (secondAssistPlayer != null)
@@ -2071,12 +2074,18 @@ namespace oomtm450PuckMod_Stats {
                     stickSavesDict.Add(kvp.Key, (playersUsername.TryGetValue(kvp.Key, out string username) == true ? username : "", kvp.Value));
 
                 List<string> blueGoalsDict = new List<string>();
-                foreach (var goalSteamId in _blueGoals)
+                foreach (var goalSteamId in _blueGoals) {
+                    if (string.IsNullOrEmpty(goalSteamId))
+                        continue;
                     blueGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
+                }
 
                 List<string> redGoalsDict = new List<string>();
-                foreach (var goalSteamId in _redGoals)
+                foreach (var goalSteamId in _redGoals) {
+                    if (string.IsNullOrEmpty(goalSteamId))
+                        continue;
                     redGoalsDict.Add(goalSteamId + "," + (playersUsername.TryGetValue(goalSteamId, out string username) == true ? username : ""));
+                }
 
                 List<string> blueAssistsDict = new List<string>();
                 foreach (var assistSteamId in _blueAssists)
@@ -2905,7 +2914,7 @@ namespace oomtm450PuckMod_Stats {
         /// </summary>
         /// <param name="playerSteamId">String, steam Id of the player.</param>
         private static void LogGWG(string playerSteamId) {
-            if (ServerConfig.LogStats)
+            if (ServerConfig.LogStats && !string.IsNullOrEmpty(playerSteamId))
                 Logging.Log($"playerSteamId:{playerSteamId},gwg:1", ServerConfig);
         }
 
