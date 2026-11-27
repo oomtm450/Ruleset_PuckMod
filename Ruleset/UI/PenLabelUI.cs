@@ -47,12 +47,18 @@ namespace oomtm450PuckMod_Ruleset.UI {
             label.AddToClassList("player-label");
             label.AddToClassList("player-name");
             label.AddToClassList(team == PlayerTeam.Blue ? "player-name--blue" : "player-name--red");
+            label.style.fontSize = Ruleset.ClientConfig.PenaltyLabelUIFontSize;
 
             GetPanel(team).Add(label);
             _activeLabels[team] = label;
         }
 
         private static VisualElement GetPanel(PlayerTeam team) => team == PlayerTeam.Blue ? _bluePanel : _redPanel;
+
+        internal static void ChangeLabelsFontSize(int fontSize) {
+            foreach (Label label in _activeLabels.Values)
+                label.style.fontSize = fontSize;
+        }
 
         internal static void AddPenaltiesLabel() {
             try {

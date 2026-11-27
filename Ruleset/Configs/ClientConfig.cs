@@ -3,6 +3,7 @@ using Codebase.Configs;
 using Newtonsoft.Json;
 using System;
 using System.IO;
+using UnityEngine.UIElements;
 
 namespace oomtm450PuckMod_Ruleset.Configs {
     /// <summary>
@@ -36,17 +37,12 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         public string ModName { get; } = Constants.MOD_NAME;
 
         /// <summary>
-        /// Bool, true if the numeric values has to be replaced be the default ones. Make this false to use custom values.
-        /// </summary>
-        public bool UseDefaultNumericValues { get; set; } = true;
-
-        /// <summary>
         /// Bool, true if the refs has to be team color coded.
         /// </summary>
         public bool TeamColor2DRefs { get; set; } = true;
 
         /// <summary>
-        /// Float, scale of the 2D refs from 0.0 to 2.0 for the music.
+        /// Float, scale of the 2D refs from 0.0 to 2.0.
         /// </summary>
         public float TwoDRefsScale { get; set; } = 1.0f;
 
@@ -54,6 +50,21 @@ namespace oomtm450PuckMod_Ruleset.Configs {
         /// Float, X offset for the penalty timer UI of the red team.
         /// </summary>
         public float RedTeamPenaltyTimerXOffset { get; set; } = RED_TEAM_PENALTY_TIMER_X_OFFSET_DEFAULT;
+
+        /// <summary>
+        /// Bool, true if the refs sounds has to be played.
+        /// </summary>
+        public bool RefereeSounds { get; set; } = true;
+
+        /// <summary>
+        /// Float, refs sounds volume from 0.0 to 2.0.
+        /// </summary>
+        public float RefereeSoundsVolume { get; set; } = 1.0f;
+
+        /// <summary>
+        /// Int, font size for the penalty label UI. (Penalty timers)
+        /// </summary>
+        public int PenaltyLabelUIFontSize { get; set; } = 18;
 
         /// <summary>
         /// Function that serialize the ClientConfig object.
@@ -97,17 +108,22 @@ namespace oomtm450PuckMod_Ruleset.Configs {
                 else if (config.RedTeamPenaltyTimerXOffset > 100f)
                     config.RedTeamPenaltyTimerXOffset = 100f;
 
+                if (config.TwoDRefsScale > 2f)
+                    config.TwoDRefsScale = 2f;
+                else if (config.TwoDRefsScale < 0)
+                    config.TwoDRefsScale = 0;
+
+                if (config.RefereeSoundsVolume > 2f)
+                    config.RefereeSoundsVolume = 2f;
+                else if (config.RefereeSoundsVolume < 0)
+                    config.RefereeSoundsVolume = 0;
+
+                if (config.PenaltyLabelUIFontSize > 300)
+                    config.PenaltyLabelUIFontSize = 300;
+                else if (config.PenaltyLabelUIFontSize < 0)
+                    config.PenaltyLabelUIFontSize = 0;
+
                 config.Save();
-
-                if (config.UseDefaultNumericValues) {
-                    ClientConfig defaultConfig = new Configs.ClientConfig {
-                        LogInfo = config.LogInfo,
-                        UseDefaultNumericValues = config.UseDefaultNumericValues,
-                        TeamColor2DRefs = config.TeamColor2DRefs,
-                    };
-
-                    config = defaultConfig;
-                }
 
                 return config;
             }

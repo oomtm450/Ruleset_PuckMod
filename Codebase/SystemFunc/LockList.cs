@@ -83,6 +83,14 @@ namespace Codebase {
                 _list.Insert(index, item);
         }
 
+        public List<T> Drain() {
+            lock (_locker) {
+                var list = new List<T>(_list);
+                _list.Clear();
+                return list;
+            }
+        }
+
         public IEnumerator<T> GetEnumerator() {
             lock (_locker)
                 return _list.GetEnumerator();

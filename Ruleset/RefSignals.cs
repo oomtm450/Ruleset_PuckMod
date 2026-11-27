@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
@@ -44,12 +45,16 @@ namespace oomtm450PuckMod_Ruleset {
         private readonly Dictionary<string, Image> _images = new Dictionary<string, Image>();
         private readonly List<GameObject> _imageGameObjects = new List<GameObject>();
         private Canvas _canvas;
+        private int _wasJustShownOrHidden = 0;
         #endregion
 
         #region Properties
         internal List<string> Errors { get; } = new List<string>();
 
-        internal bool WasJustShownOrHidden { get; set; } = false;
+        internal int WasJustShownOrHidden {
+            get => _wasJustShownOrHidden;
+            set => Interlocked.Exchange(ref _wasJustShownOrHidden, value);
+        }
         #endregion
 
         #region Methods/Functions
@@ -148,7 +153,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (_images[signal].enabled)
                 return;
 
-            WasJustShownOrHidden = true;
+            WasJustShownOrHidden = 1;
             _images[signal].enabled = true;
         }
 
@@ -156,7 +161,7 @@ namespace oomtm450PuckMod_Ruleset {
             if (!_images[signal].enabled)
                 return;
 
-            WasJustShownOrHidden = true;
+            WasJustShownOrHidden = 1;
             _images[signal].enabled = false;
         }
 
@@ -165,7 +170,7 @@ namespace oomtm450PuckMod_Ruleset {
                 if (!image.enabled)
                     continue;
 
-                WasJustShownOrHidden = true;
+                WasJustShownOrHidden = 1;
                 image.enabled = false;
             }
         }

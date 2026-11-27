@@ -12,6 +12,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Configs\IConfig.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Configs\ISubConfig.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\Constants.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)systemfunc\ImpactUtil.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\LockList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\LockDictionary.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemFunc\Logging.cs" />
